@@ -74,6 +74,13 @@ export default function Workout() {
   const [exerciseId, setExerciseId] = useState('')
   const selectedExercise = exercises?.find((e) => e.id === exerciseId)
 
+  // Fehler aus den Schreibvorgängen sichtbar machen (statt still zu scheitern)
+  const saveError = (addSet.error ||
+    addSets.error ||
+    updateSet.error ||
+    deleteSet.error ||
+    createWorkout.error) as Error | null
+
   // Historie der gewählten Übung (ohne heute) → für Tipp & letzte Leistung
   const history = useMemo<SetWithDate[]>(() => {
     if (!exerciseId || !allSets) return []
@@ -143,6 +150,7 @@ export default function Workout() {
           >
             Training starten
           </button>
+          {saveError && <p className="text-sm text-red-400">⚠️ {saveError.message}</p>}
         </div>
       </div>
     )
@@ -160,6 +168,15 @@ export default function Workout() {
           })}
         </p>
       </header>
+
+      {saveError && (
+        <div className="card border border-red-500/40 text-sm text-red-400">
+          ⚠️ Konnte nicht speichern: {saveError.message}
+          <div className="mt-1 text-xs text-slate-400">
+            Tipp: Sind die Datenbank-Updates (Migrationen 0002 & 0003) in Supabase ausgeführt?
+          </div>
+        </div>
+      )}
 
       <div className="card space-y-3">
         <div>
