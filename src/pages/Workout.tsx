@@ -109,6 +109,7 @@ export default function Workout() {
         reps: d.reps,
         weight: d.weight,
         set_type: type,
+        to_failure: false,
       }
     })
     await addSets.mutateAsync(inputs)
@@ -125,6 +126,7 @@ export default function Workout() {
       reps: d.reps,
       weight: d.weight,
       set_type: type,
+      to_failure: false,
     })
   }
 
@@ -217,13 +219,28 @@ export default function Workout() {
                           </button>
                         ))}
                       </div>
-                      <button
-                        className="px-2 text-slate-500 hover:text-red-400"
-                        aria-label="Satz löschen"
-                        onClick={() => deleteSet.mutate(s)}
-                      >
-                        ✕
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => updateSet.mutate({ id: s.id, to_failure: !s.to_failure })}
+                          aria-label="Bis zum Versagen markieren"
+                          title="Bis zum Versagen"
+                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            s.to_failure
+                              ? 'bg-orange-500 text-slate-900'
+                              : 'bg-slate-700 text-slate-400'
+                          }`}
+                        >
+                          🔥 Versagen
+                        </button>
+                        <button
+                          className="px-2 text-slate-500 hover:text-red-400"
+                          aria-label="Satz löschen"
+                          onClick={() => deleteSet.mutate(s)}
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <Stepper

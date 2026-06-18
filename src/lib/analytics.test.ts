@@ -19,6 +19,7 @@ function mkSet(
   weight: number,
   set_number = 1,
   set_type: SetType = 'working',
+  to_failure = false,
 ): SetWithDate {
   counter += 1
   return {
@@ -30,6 +31,7 @@ function mkSet(
     reps,
     weight,
     set_type,
+    to_failure,
     created_at: `${date}T10:00:00Z`,
     date,
   }
@@ -173,5 +175,19 @@ describe('progressionSuggestion (Double Progression)', () => {
 
   it('gibt Start-Hinweis ohne Daten', () => {
     expect(progressionSuggestion(ex, []).action).toBe('start')
+  })
+
+  it('weist im Bereich auf Reserve hin, wenn NICHT bis Versagen', () => {
+    const sets = [mkSet('2026-01-10', 9, 50, 1, 'working', false)]
+    const s = progressionSuggestion(ex, sets)
+    expect(s.action).toBe('hold')
+    expect(s.reason).toContain('Reserve')
+  })
+
+  it('erkennt "bis Versagen" im Bereich (kein Reserve-Hinweis)', () => {
+    const sets = [mkSet('2026-01-10', 9, 50, 1, 'working', true)]
+    const s = progressionSuggestion(ex, sets)
+    expect(s.action).toBe('hold')
+    expect(s.reason).not.toContain('Reserve')
   })
 })

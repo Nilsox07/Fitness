@@ -71,7 +71,7 @@ export default function History() {
                                 : s.set_type === 'drop'
                                   ? 'Drop '
                                   : ''
-                            return `${prefix}${s.reps}×${s.weight}kg`
+                            return `${prefix}${s.reps}×${s.weight}kg${s.to_failure ? ' 🔥' : ''}`
                           })
                           .join(' · ')}
                       </div>

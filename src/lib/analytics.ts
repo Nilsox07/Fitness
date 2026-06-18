@@ -46,7 +46,7 @@ export interface SessionSummary {
   bestEstimated1RM: number
   /** Volumen der Session */
   volume: number
-  sets: Pick<WorkoutSet, 'reps' | 'weight' | 'set_number'>[]
+  sets: Pick<WorkoutSet, 'reps' | 'weight' | 'set_number' | 'to_failure'>[]
 }
 
 /**
@@ -71,7 +71,12 @@ export function summarizeSessions(sets: SetWithDate[]): SessionSummary[] {
       bestEstimated1RM: round1(bestEstimated1RM),
       volume: totalVolume(daySets),
       sets: daySets
-        .map((s) => ({ reps: s.reps, weight: s.weight, set_number: s.set_number }))
+        .map((s) => ({
+          reps: s.reps,
+          weight: s.weight,
+          set_number: s.set_number,
+          to_failure: s.to_failure,
+        }))
         .sort((a, b) => a.set_number - b.set_number),
     })
   }
@@ -220,6 +225,8 @@ export function progressionSuggestion(
   const workingSets = last.sets.filter((s) => s.weight === topWeight)
   const minReps = Math.min(...workingSets.map((s) => s.reps))
   const setCount = workingSets.length
+  // Wurde am Arbeitsgewicht bis zum Versagen gegangen?
+  const reachedFailure = workingSets.some((s) => s.to_failure)
   const { target_rep_min, target_rep_max, increment } = exercise
 
   // Stagnation: gleiches Top-Gewicht in den letzten 3 Sessions ohne Wdh.-Zuwachs
@@ -230,12 +237,14 @@ export function progressionSuggestion(
     minReps < target_rep_max
 
   if (minReps >= target_rep_max) {
+    const next = round1(topWeight + increment)
+    const closer = reachedFailure
+      ? `alle Sätze am oberen Wdh.-Ziel`
+      : `alle Sätze am oberen Ziel und noch Reserve (nicht bis Versagen) — klar steigern`
     return {
       action: 'increase',
-      suggestedWeight: round1(topWeight + increment),
-      reason: `Letztes Mal ${setCount}×${minReps} @ ${topWeight} kg geschafft — alle Sätze am oberen Wdh.-Ziel. Versuch ${round1(
-        topWeight + increment,
-      )} kg.`,
+      suggestedWeight: next,
+      reason: `Letztes Mal ${setCount}×${minReps} @ ${topWeight} kg, ${closer}. Versuch ${next} kg.`,
     }
   }
 
@@ -256,9 +265,13 @@ export function progressionSuggestion(
     }
   }
 
+  // Innerhalb des Bereichs: Gewicht halten, Wdh. steigern
+  const within = reachedFailure
+    ? `Bleib beim Gewicht, die Wdh. kommen mit der Zeit (Ziel ${target_rep_max}).`
+    : `Du hattest noch Reserve — hol mehr Wdh. raus (Ziel ${target_rep_max}), dann steigern.`
   return {
     action: 'hold',
     suggestedWeight: topWeight,
-    reason: `Letztes Mal ${setCount}×${minReps} @ ${topWeight} kg. Bleib beim Gewicht und steigere die Wdh. Richtung ${target_rep_max}.`,
+    reason: `Letztes Mal ${setCount}×${minReps} @ ${topWeight} kg. ${within}`,
   }
 }

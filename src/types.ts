@@ -58,6 +58,8 @@ export interface WorkoutSet {
   reps: number
   weight: number
   set_type: SetType
+  /** Satz bis zum Muskelversagen ausgeführt? (Default false = noch Reserve) */
+  to_failure: boolean
   created_at: string
 }
 
