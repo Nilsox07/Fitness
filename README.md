@@ -75,6 +75,34 @@ den Browser („Zum Startbildschirm hinzufügen") als App installieren.
 5. **Auswertung** zeigt Trainingshäufigkeit, Wochen-Volumen, Volumen je
    Muskelgruppe sowie Kraft-Fortschritt und persönliche Rekorde je Übung.
 
+## Deploy (Vercel)
+
+Die App ist für ein Deployment auf [Vercel](https://vercel.com) vorbereitet
+([`vercel.json`](vercel.json) enthält Build-Befehl, Output-Verzeichnis und das
+SPA-Routing, damit Deep-Links wie `/analytics` direkt funktionieren).
+
+1. Code zu GitHub pushen (ist bereits geschehen).
+2. Auf [vercel.com](https://vercel.com) mit GitHub anmelden → **Add New… →
+   Project** → dieses Repository importieren. Vercel erkennt Vite automatisch.
+3. Unter **Settings → Environment Variables** die beiden Werte aus deiner `.env`
+   hinterlegen (für alle Environments):
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. **Deploy** klicken. Du bekommst eine HTTPS-URL (z. B.
+   `https://dein-projekt.vercel.app`). Jeder weitere Git-Push deployt
+   automatisch neu.
+5. In Supabase unter **Authentication → URL Configuration** die Vercel-URL als
+   **Site URL** (und ggf. unter **Redirect URLs**) eintragen, damit Login &
+   E-Mail-Bestätigung sauber funktionieren.
+
+Am Handy die URL im Browser öffnen → „Zum Startbildschirm hinzufügen", dann
+läuft sie wie eine native App. Die HTTPS-URL kannst du auch Freunden geben –
+jeder registriert sich mit eigenem Account und hat seine eigenen Daten.
+
+> Hinweis: Der `VITE_SUPABASE_ANON_KEY` ist ein öffentlicher Client-Key und darf
+> im Browser/Frontend stehen. Der Schutz der Daten erfolgt über die Row-Level-
+> Security-Policies in Supabase, nicht über Geheimhaltung dieses Keys.
+
 ## Wie der Steigerungs-Tipp funktioniert
 
 Prinzip der **Double Progression**: Schaffst du in deinem letzten Training alle
