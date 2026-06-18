@@ -2,15 +2,17 @@ import { useMemo, useState } from 'react'
 import { useExercises } from '../hooks/useExercises'
 import {
   useAddSet,
+  useAddSets,
   useAllSets,
   useCreateWorkout,
   useDeleteSet,
+  useUpdateSet,
   useWorkoutSets,
   useWorkouts,
 } from '../hooks/useWorkouts'
 import { Stepper } from '../components/Stepper'
 import { progressionSuggestion, summarizeSessions } from '../lib/analytics'
-import type { SetWithDate } from '../types'
+import { SET_TYPES, SET_TYPE_SHORT, type Exercise, type SetType, type SetWithDate } from '../types'
 
 function todayLocal(): string {
   const d = new Date()
@@ -19,11 +21,40 @@ function todayLocal(): string {
   ).padStart(2, '0')}`
 }
 
+const roundHalf = (v: number) => Math.round(v * 2) / 2
+
 const tipStyles: Record<string, string> = {
   increase: 'text-brand',
   hold: 'text-sky-300',
   deload: 'text-amber-300',
   start: 'text-slate-400',
+}
+
+// Farbe der Typ-Chips
+const typeChip: Record<SetType, string> = {
+  warmup: 'bg-amber-500 text-slate-900',
+  working: 'bg-brand text-slate-900',
+  drop: 'bg-sky-500 text-slate-900',
+}
+
+// Deine Standard-Struktur
+const TEMPLATE: SetType[] = ['warmup', 'working', 'working', 'drop']
+
+/** Vorschlag für Wdh/Gewicht je Satz-Typ, abgeleitet vom Arbeitsgewicht. */
+function deriveSet(type: SetType, base: number, ex: Exercise): { reps: number; weight: number } {
+  switch (type) {
+    case 'warmup':
+      return { reps: 10, weight: roundHalf(base * 0.5) }
+    case 'drop':
+      return { reps: ex.target_rep_max, weight: roundHalf(base * 0.7) }
+    default:
+      return { reps: ex.target_rep_min, weight: base }
+  }
+}
+
+/** Nächster Satz-Typ nach deinem Muster (Aufwärm, Arbeit, Arbeit, Drop, …). */
+function patternType(index: number): SetType {
+  return TEMPLATE[index] ?? 'working'
 }
 
 export default function Workout() {
@@ -33,18 +64,17 @@ export default function Workout() {
   const { data: allSets } = useAllSets()
   const createWorkout = useCreateWorkout()
   const addSet = useAddSet()
+  const addSets = useAddSets()
+  const updateSet = useUpdateSet()
   const deleteSet = useDeleteSet()
 
   const todaysWorkout = workouts?.find((w) => w.date === today)
   const { data: workoutSets } = useWorkoutSets(todaysWorkout?.id)
 
   const [exerciseId, setExerciseId] = useState('')
-  const [reps, setReps] = useState(10)
-  const [weight, setWeight] = useState(20)
-
   const selectedExercise = exercises?.find((e) => e.id === exerciseId)
 
-  // Historie der gewählten Übung (ohne das heutige Training) → für Tipp & letzte Leistung
+  // Historie der gewählten Übung (ohne heute) → für Tipp & letzte Leistung
   const history = useMemo<SetWithDate[]>(() => {
     if (!exerciseId || !allSets) return []
     return allSets.filter((s) => s.exercise_id === exerciseId && s.date !== today)
@@ -60,28 +90,41 @@ export default function Workout() {
     return sessions[sessions.length - 1] ?? null
   }, [history])
 
-  function selectExercise(id: string) {
-    setExerciseId(id)
-    const ex = exercises?.find((e) => e.id === id)
-    const hist = (allSets ?? []).filter((s) => s.exercise_id === id && s.date !== today)
-    const sug = ex ? progressionSuggestion(ex, hist) : null
-    if (sug && sug.suggestedWeight > 0) setWeight(sug.suggestedWeight)
-    if (ex) setReps(ex.target_rep_min)
-  }
-
-  const setsForExercise = (workoutSets ?? []).filter((s) => s.exercise_id === exerciseId)
-  // höchste vorhandene Satz-Nummer + 1 → keine doppelten Nummern, auch nach dem
-  // Löschen eines mittleren Satzes
+  const setsForExercise = (workoutSets ?? [])
+    .filter((s) => s.exercise_id === exerciseId)
+    .sort((a, b) => a.set_number - b.set_number)
   const nextSetNumber = setsForExercise.reduce((max, s) => Math.max(max, s.set_number), 0) + 1
 
-  async function logSet() {
-    if (!todaysWorkout || !exerciseId) return
+  // Arbeitsgewicht als Basis für Vorschläge
+  const workingBase = suggestion && suggestion.suggestedWeight > 0 ? suggestion.suggestedWeight : 20
+
+  async function addTemplate() {
+    if (!todaysWorkout || !selectedExercise) return
+    const inputs = TEMPLATE.map((type, i) => {
+      const d = deriveSet(type, workingBase, selectedExercise!)
+      return {
+        workout_id: todaysWorkout.id,
+        exercise_id: exerciseId,
+        set_number: nextSetNumber + i,
+        reps: d.reps,
+        weight: d.weight,
+        set_type: type,
+      }
+    })
+    await addSets.mutateAsync(inputs)
+  }
+
+  async function addOne() {
+    if (!todaysWorkout || !selectedExercise) return
+    const type = patternType(setsForExercise.length)
+    const d = deriveSet(type, workingBase, selectedExercise)
     await addSet.mutateAsync({
       workout_id: todaysWorkout.id,
       exercise_id: exerciseId,
       set_number: nextSetNumber,
-      reps,
-      weight,
+      reps: d.reps,
+      weight: d.weight,
+      set_type: type,
     })
   }
 
@@ -122,7 +165,7 @@ export default function Workout() {
           <select
             className="input"
             value={exerciseId}
-            onChange={(e) => selectExercise(e.target.value)}
+            onChange={(e) => setExerciseId(e.target.value)}
           >
             <option value="">— wählen —</option>
             {exercises?.map((ex) => (
@@ -154,43 +197,81 @@ export default function Workout() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <Stepper label="Wdh" value={reps} onChange={setReps} step={1} min={0} />
-              <Stepper
-                label="Gewicht"
-                value={weight}
-                onChange={setWeight}
-                step={selectedExercise.increment}
-                min={0}
-                suffix="kg"
-              />
-            </div>
-
-            <button className="btn-primary w-full" onClick={logSet} disabled={addSet.isPending}>
-              Satz {nextSetNumber} hinzufügen
-            </button>
-
+            {/* Editierbare Satz-Zeilen */}
             {setsForExercise.length > 0 && (
-              <ul className="space-y-1 pt-1">
+              <ul className="space-y-2">
                 {setsForExercise.map((s) => (
-                  <li
-                    key={s.id}
-                    className="flex items-center justify-between rounded-lg bg-slate-900/50 px-3 py-2 text-sm"
-                  >
-                    <span>
-                      Satz {s.set_number}: <strong>{s.reps}</strong> Wdh ×{' '}
-                      <strong>{s.weight} kg</strong>
-                    </span>
-                    <button
-                      className="text-slate-500 hover:text-red-400"
-                      aria-label="Satz löschen"
-                      onClick={() => deleteSet.mutate(s)}
-                    >
-                      ✕
-                    </button>
+                  <li key={s.id} className="rounded-xl bg-slate-900/50 p-2.5 ring-1 ring-slate-700/50">
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="flex gap-1">
+                        {SET_TYPES.map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => updateSet.mutate({ id: s.id, set_type: t })}
+                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                              s.set_type === t ? typeChip[t] : 'bg-slate-700 text-slate-400'
+                            }`}
+                          >
+                            {SET_TYPE_SHORT[t]}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        className="px-2 text-slate-500 hover:text-red-400"
+                        aria-label="Satz löschen"
+                        onClick={() => deleteSet.mutate(s)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Stepper
+                        label="Wdh"
+                        hideLabel
+                        compact
+                        value={s.reps}
+                        step={1}
+                        min={0}
+                        onChange={(reps) => updateSet.mutate({ id: s.id, reps })}
+                      />
+                      <Stepper
+                        label="Gewicht"
+                        hideLabel
+                        compact
+                        suffix="kg"
+                        value={s.weight}
+                        step={selectedExercise.increment}
+                        min={0}
+                        onChange={(weight) => updateSet.mutate({ id: s.id, weight })}
+                      />
+                    </div>
                   </li>
                 ))}
               </ul>
+            )}
+
+            {/* Aktionen */}
+            {setsForExercise.length === 0 ? (
+              <div className="space-y-2">
+                <button
+                  className="btn-primary w-full"
+                  onClick={addTemplate}
+                  disabled={addSets.isPending}
+                >
+                  Standard-Sätze anlegen
+                </button>
+                <p className="text-center text-xs text-slate-500">
+                  1 Aufwärmen · 2 Arbeitssätze · 1 Dropsatz — danach nur noch Gewicht/Wdh anpassen
+                </p>
+                <button className="btn-ghost w-full" onClick={addOne} disabled={addSet.isPending}>
+                  + Einzelnen Satz
+                </button>
+              </div>
+            ) : (
+              <button className="btn-ghost w-full" onClick={addOne} disabled={addSet.isPending}>
+                + Satz hinzufügen
+              </button>
             )}
           </>
         )}

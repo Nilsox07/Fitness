@@ -1,4 +1,13 @@
-import type { Exercise, SetWithDate, WorkoutSet } from '../types'
+import type { Exercise, SetType, SetWithDate, WorkoutSet } from '../types'
+
+/**
+ * Nur die schweren Arbeitssätze — Basis für Kraft-Fortschritt, 1RM, PRs und den
+ * Steigerungs-Tipp. Aufwärm- und Dropsätze werden hier ausgeblendet, damit sie
+ * die Kraftwerte nicht verfälschen (sie zählen weiterhin ins Gesamt-Volumen).
+ */
+export function onlyWorking<T extends { set_type: SetType }>(sets: T[]): T[] {
+  return sets.filter((s) => s.set_type === 'working')
+}
 
 /**
  * Geschätztes 1-Rep-Max (1RM) nach der Epley-Formel.
@@ -80,7 +89,8 @@ export interface PersonalRecords {
   maxVolumeSession: number
 }
 
-export function personalRecords(sets: SetWithDate[]): PersonalRecords {
+export function personalRecords(allSets: SetWithDate[]): PersonalRecords {
+  const sets = onlyWorking(allSets)
   if (sets.length === 0) {
     return { maxWeight: 0, maxReps: 0, maxEstimated1RM: 0, maxVolumeSession: 0 }
   }
@@ -193,9 +203,10 @@ export interface ProgressionSuggestion {
  */
 export function progressionSuggestion(
   exercise: Pick<Exercise, 'target_rep_min' | 'target_rep_max' | 'increment'>,
-  sets: SetWithDate[],
+  allSets: SetWithDate[],
 ): ProgressionSuggestion {
-  const sessions = summarizeSessions(sets)
+  // Nur Arbeitssätze bestimmen die Empfehlung
+  const sessions = summarizeSessions(onlyWorking(allSets))
   if (sessions.length === 0) {
     return {
       action: 'start',

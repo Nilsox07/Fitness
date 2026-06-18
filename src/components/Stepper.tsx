@@ -7,6 +7,10 @@ interface StepperProps {
   step?: number
   min?: number
   suffix?: string
+  /** Label visuell ausblenden (bleibt für Screenreader erhalten). */
+  hideLabel?: boolean
+  /** Kompaktere Darstellung für editierbare Listen-Zeilen. */
+  compact?: boolean
 }
 
 /**
@@ -14,7 +18,16 @@ interface StepperProps {
  * Das Feld ist direkt eintippbar; beim Fokussieren wird der vorhandene Wert
  * markiert, sodass die Eingabe ihn ersetzt (kein manuelles Löschen nötig).
  */
-export function Stepper({ label, value, onChange, step = 1, min = 0, suffix }: StepperProps) {
+export function Stepper({
+  label,
+  value,
+  onChange,
+  step = 1,
+  min = 0,
+  suffix,
+  hideLabel = false,
+  compact = false,
+}: StepperProps) {
   const clamp = (v: number) => Math.max(min, Math.round(v * 100) / 100)
   const [text, setText] = useState(String(value))
 
@@ -38,13 +51,18 @@ export function Stepper({ label, value, onChange, step = 1, min = 0, suffix }: S
     setText(String(next))
   }
 
+  const btnClass = compact ? 'btn-ghost w-9 px-0 py-1.5 text-lg' : 'btn-ghost w-12 text-xl'
+  const inputClass = compact
+    ? 'w-full rounded-lg bg-slate-900 px-2 py-1.5 text-center font-semibold text-slate-100 outline-none ring-1 ring-slate-700 focus:ring-2 focus:ring-brand'
+    : 'w-full rounded-xl bg-slate-900 px-3 py-2.5 text-center text-lg font-semibold text-slate-100 outline-none ring-1 ring-slate-700 focus:ring-2 focus:ring-brand'
+
   return (
     <div>
-      <span className="label">{label}</span>
-      <div className="flex items-stretch gap-2">
+      {!hideLabel && <span className="label">{label}</span>}
+      <div className="flex items-stretch gap-1.5">
         <button
           type="button"
-          className="btn-ghost w-12 text-xl"
+          className={btnClass}
           onClick={() => adjust(-step)}
           aria-label={`${label} verringern`}
         >
@@ -54,7 +72,7 @@ export function Stepper({ label, value, onChange, step = 1, min = 0, suffix }: S
           <input
             type="text"
             inputMode={Number.isInteger(step) ? 'numeric' : 'decimal'}
-            className="w-full rounded-xl bg-slate-900 px-3 py-2.5 text-center text-lg font-semibold text-slate-100 outline-none ring-1 ring-slate-700 focus:ring-2 focus:ring-brand"
+            className={inputClass}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onFocus={(e) => e.currentTarget.select()}
@@ -62,14 +80,14 @@ export function Stepper({ label, value, onChange, step = 1, min = 0, suffix }: S
             aria-label={label}
           />
           {suffix ? (
-            <span className="pointer-events-none absolute right-3 text-sm text-slate-400">
+            <span className="pointer-events-none absolute right-2 text-xs text-slate-400">
               {suffix}
             </span>
           ) : null}
         </div>
         <button
           type="button"
-          className="btn-ghost w-12 text-xl"
+          className={btnClass}
           onClick={() => adjust(step)}
           aria-label={`${label} erhöhen`}
         >

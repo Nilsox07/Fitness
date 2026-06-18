@@ -64,7 +64,15 @@ export default function History() {
                       <div className="text-slate-400">
                         {exSets
                           .sort((a, b) => a.set_number - b.set_number)
-                          .map((s) => `${s.reps}×${s.weight}kg`)
+                          .map((s) => {
+                            const prefix =
+                              s.set_type === 'warmup'
+                                ? 'Aufw. '
+                                : s.set_type === 'drop'
+                                  ? 'Drop '
+                                  : ''
+                            return `${prefix}${s.reps}×${s.weight}kg`
+                          })
                           .join(' · ')}
                       </div>
                     </li>

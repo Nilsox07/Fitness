@@ -14,6 +14,7 @@ import { useExercises } from '../hooks/useExercises'
 import { useAllSets } from '../hooks/useWorkouts'
 import {
   frequencyStats,
+  onlyWorking,
   personalRecords,
   summarizeSessions,
   weeklyVolume,
@@ -63,7 +64,8 @@ export default function Analytics() {
 
   const progress = useMemo(
     () =>
-      summarizeSessions(exerciseSets).map((s) => ({
+      // Kraftverlauf nur aus Arbeitssätzen (Aufwärm-/Dropsätze ausgeblendet)
+      summarizeSessions(onlyWorking(exerciseSets)).map((s) => ({
         date: new Date(s.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
         topWeight: s.topWeight,
         est1RM: s.bestEstimated1RM,
@@ -127,6 +129,7 @@ export default function Analytics() {
           {/* Kraft-Fortschritt pro Übung */}
           <section className="card space-y-3">
             <h2 className="font-semibold">Kraft-Fortschritt</h2>
+            <p className="-mt-1 text-xs text-slate-500">Basierend auf deinen Arbeitssätzen.</p>
             <select
               className="input"
               value={exerciseId}

@@ -12,6 +12,22 @@ export const MUSCLE_GROUPS = [
 
 export type MuscleGroup = (typeof MUSCLE_GROUPS)[number]
 
+export const SET_TYPES = ['warmup', 'working', 'drop'] as const
+export type SetType = (typeof SET_TYPES)[number]
+
+export const SET_TYPE_LABEL: Record<SetType, string> = {
+  warmup: 'Aufwärmen',
+  working: 'Arbeitssatz',
+  drop: 'Dropsatz',
+}
+
+/** Kurzkennung für kompakte Anzeige (Verlauf, Badges). */
+export const SET_TYPE_SHORT: Record<SetType, string> = {
+  warmup: 'Aufw.',
+  working: 'Arbeit',
+  drop: 'Drop',
+}
+
 export interface Exercise {
   id: string
   user_id: string
@@ -41,6 +57,7 @@ export interface WorkoutSet {
   set_number: number
   reps: number
   weight: number
+  set_type: SetType
   created_at: string
 }
 

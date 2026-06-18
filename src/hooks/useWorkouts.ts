@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
-import type { SetWithDate, Workout, WorkoutSet } from '../types'
+import type { SetType, SetWithDate, Workout, WorkoutSet } from '../types'
 
 export function useWorkouts() {
   return useQuery({
@@ -69,20 +69,65 @@ export function useCreateWorkout() {
   })
 }
 
+export interface SetInput {
+  workout_id: string
+  exercise_id: string
+  set_number: number
+  reps: number
+  weight: number
+  set_type: SetType
+}
+
 export function useAddSet() {
   const qc = useQueryClient()
   const { user } = useAuth()
   return useMutation({
-    mutationFn: async (input: {
-      workout_id: string
-      exercise_id: string
-      set_number: number
-      reps: number
-      weight: number
-    }) => {
+    mutationFn: async (input: SetInput) => {
       const { data, error } = await supabase
         .from('workout_sets')
         .insert({ ...input, user_id: user!.id })
+        .select()
+        .single()
+      if (error) throw error
+      return data as WorkoutSet
+    },
+    onSuccess: (s) => {
+      qc.invalidateQueries({ queryKey: ['sets', 'workout', s.workout_id] })
+      qc.invalidateQueries({ queryKey: ['sets', 'all'] })
+    },
+  })
+}
+
+/** Mehrere Sätze auf einmal anlegen (z. B. die Satz-Vorlage). */
+export function useAddSets() {
+  const qc = useQueryClient()
+  const { user } = useAuth()
+  return useMutation({
+    mutationFn: async (inputs: SetInput[]) => {
+      const rows = inputs.map((i) => ({ ...i, user_id: user!.id }))
+      const { data, error } = await supabase.from('workout_sets').insert(rows).select()
+      if (error) throw error
+      return data as WorkoutSet[]
+    },
+    onSuccess: (rows) => {
+      const workoutId = rows[0]?.workout_id
+      if (workoutId) qc.invalidateQueries({ queryKey: ['sets', 'workout', workoutId] })
+      qc.invalidateQueries({ queryKey: ['sets', 'all'] })
+    },
+  })
+}
+
+export function useUpdateSet() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...patch
+    }: { id: string } & Partial<Pick<WorkoutSet, 'reps' | 'weight' | 'set_type'>>) => {
+      const { data, error } = await supabase
+        .from('workout_sets')
+        .update(patch)
+        .eq('id', id)
         .select()
         .single()
       if (error) throw error

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { SetWithDate } from '../types'
+import type { SetType, SetWithDate } from '../types'
 import {
   estimate1RM,
   frequencyStats,
   isoWeekKey,
+  onlyWorking,
   personalRecords,
   progressionSuggestion,
   summarizeSessions,
@@ -12,7 +13,13 @@ import {
 } from './analytics'
 
 let counter = 0
-function mkSet(date: string, reps: number, weight: number, set_number = 1): SetWithDate {
+function mkSet(
+  date: string,
+  reps: number,
+  weight: number,
+  set_number = 1,
+  set_type: SetType = 'working',
+): SetWithDate {
   counter += 1
   return {
     id: `s${counter}`,
@@ -22,6 +29,7 @@ function mkSet(date: string, reps: number, weight: number, set_number = 1): SetW
     set_number,
     reps,
     weight,
+    set_type,
     created_at: `${date}T10:00:00Z`,
     date,
   }
@@ -93,6 +101,41 @@ describe('frequencyStats', () => {
   })
   it('ist leer ohne Daten', () => {
     expect(frequencyStats([]).totalSessions).toBe(0)
+  })
+})
+
+describe('Satz-Typen', () => {
+  it('onlyWorking filtert Aufwärm- und Dropsätze heraus', () => {
+    const sets = [
+      mkSet('2026-01-10', 10, 40, 1, 'warmup'),
+      mkSet('2026-01-10', 5, 80, 2, 'working'),
+      mkSet('2026-01-10', 12, 55, 3, 'drop'),
+    ]
+    expect(onlyWorking(sets)).toHaveLength(1)
+    expect(onlyWorking(sets)[0].weight).toBe(80)
+  })
+
+  it('PRs ignorieren Aufwärm-/Dropsätze (nur Arbeitssatz zählt)', () => {
+    const sets = [
+      mkSet('2026-01-10', 10, 40, 1, 'warmup'),
+      mkSet('2026-01-10', 5, 80, 2, 'working'),
+      mkSet('2026-01-10', 20, 60, 3, 'drop'),
+    ]
+    const pr = personalRecords(sets)
+    expect(pr.maxWeight).toBe(80) // nicht das leichtere Aufwärm-/Dropgewicht
+    expect(pr.maxReps).toBe(5) // nicht die 20 Drop-Wdh
+  })
+
+  it('progressionSuggestion bewertet nur den Arbeitssatz', () => {
+    const ex = { target_rep_min: 8, target_rep_max: 12, increment: 2.5 }
+    const sets = [
+      mkSet('2026-01-10', 12, 30, 1, 'warmup'), // leicht, 12 Wdh
+      mkSet('2026-01-10', 9, 60, 2, 'working'), // echter Arbeitssatz, im Bereich
+      mkSet('2026-01-10', 15, 45, 3, 'drop'),
+    ]
+    const s = progressionSuggestion(ex, sets)
+    expect(s.action).toBe('hold')
+    expect(s.suggestedWeight).toBe(60)
   })
 })
 
