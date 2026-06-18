@@ -258,10 +258,17 @@ export function progressionSuggestion(
   }
 
   if (minReps < target_rep_min) {
+    if (reachedFailure) {
+      return {
+        action: 'hold',
+        suggestedWeight: topWeight,
+        reason: `Nur ${minReps} Wdh. bis zum Versagen bei ${topWeight} kg — das Gewicht ist noch zu schwer. Bleib dran, bis du mind. ${target_rep_min} Wdh. schaffst.`,
+      }
+    }
     return {
       action: 'hold',
       suggestedWeight: topWeight,
-      reason: `Letztes Mal nur ${minReps} Wdh. bei ${topWeight} kg. Bleib beim Gewicht, bis du mind. ${target_rep_min} Wdh. sauber schaffst.`,
+      reason: `Nur ${minReps} Wdh. bei ${topWeight} kg und nicht bis ans Limit. Nächstes Mal voll ausreizen — dann zeigt sich, ob das Gewicht passt.`,
     }
   }
 

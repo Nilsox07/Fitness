@@ -109,7 +109,7 @@ export default function Workout() {
         reps: d.reps,
         weight: d.weight,
         set_type: type,
-        to_failure: false,
+        to_failure: type !== 'warmup',
       }
     })
     await addSets.mutateAsync(inputs)
@@ -126,7 +126,7 @@ export default function Workout() {
       reps: d.reps,
       weight: d.weight,
       set_type: type,
-      to_failure: false,
+      to_failure: type !== 'warmup',
     })
   }
 
@@ -223,15 +223,15 @@ export default function Workout() {
                         <button
                           type="button"
                           onClick={() => updateSet.mutate({ id: s.id, to_failure: !s.to_failure })}
-                          aria-label="Bis zum Versagen markieren"
-                          title="Bis zum Versagen"
+                          aria-label="Bis zum Versagen umschalten"
+                          title="Antippen, wenn du diesen Satz NICHT bis zum Versagen gemacht hast"
                           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                             s.to_failure
                               ? 'bg-orange-500 text-slate-900'
                               : 'bg-slate-700 text-slate-400'
                           }`}
                         >
-                          🔥 Versagen
+                          {s.to_failure ? '🔥 Versagen' : 'nicht ans Limit'}
                         </button>
                         <button
                           className="px-2 text-slate-500 hover:text-red-400"
