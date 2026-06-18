@@ -313,6 +313,26 @@ export default function Workout() {
           </ul>
         </div>
       )}
+
+      {/* Kleine Erklärung */}
+      <div className="rounded-xl bg-slate-900/40 p-3 text-xs leading-relaxed text-slate-500">
+        <p className="mb-1 font-semibold text-slate-400">So erfasst du am besten</p>
+        <ul className="list-disc space-y-1 pl-4">
+          <li>
+            Trag nur <span className="text-slate-300">saubere Wdh</span> ein (volle Bewegung, eigene
+            Kraft) — die letzte halbe/erzwungene Wdh lässt du weg.
+          </li>
+          <li>
+            <span className="text-orange-400">🔥 Versagen</span> ist Standard. Tipp es nur{' '}
+            <span className="text-slate-300">aus</span> („nicht ans Limit"), wenn du den Satz mal
+            nicht bis zum Limit gemacht hast.
+          </li>
+          <li>
+            Der Tipp oben sagt dir dann, ob du das Gewicht <span className="text-slate-300">halten,
+            steigern</span> oder reduzieren solltest.
+          </li>
+        </ul>
+      </div>
     </div>
   )
 }
