@@ -49,10 +49,15 @@ export default function Exercises() {
 
   async function save() {
     if (!form.name.trim()) return
+    // Ungültige/leere Zahlenfelder absichern (DB verlangt min>0, max>=min, increment>0)
+    const repMin = Math.max(1, Math.round(form.target_rep_min) || 1)
+    const repMax = Math.max(repMin, Math.round(form.target_rep_max) || repMin)
+    const increment = form.increment > 0 ? form.increment : 2.5
+    const clean = { ...form, target_rep_min: repMin, target_rep_max: repMax, increment }
     if (editing) {
-      await updateEx.mutateAsync({ id: editing.id, ...form })
+      await updateEx.mutateAsync({ id: editing.id, ...clean })
     } else {
-      await createEx.mutateAsync(form)
+      await createEx.mutateAsync(clean)
     }
     setOpen(false)
   }
@@ -133,9 +138,11 @@ export default function Exercises() {
                 <label className="label">Wdh min</label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   min={1}
                   className="input"
                   value={form.target_rep_min}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) =>
                     setForm({ ...form, target_rep_min: Number(e.target.value) })
                   }
@@ -145,9 +152,11 @@ export default function Exercises() {
                 <label className="label">Wdh max</label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   min={1}
                   className="input"
                   value={form.target_rep_max}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) =>
                     setForm({ ...form, target_rep_max: Number(e.target.value) })
                   }
@@ -157,10 +166,12 @@ export default function Exercises() {
                 <label className="label">+kg Schritt</label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   step="0.5"
                   min={0.5}
                   className="input"
                   value={form.increment}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={(e) => setForm({ ...form, increment: Number(e.target.value) })}
                 />
               </div>

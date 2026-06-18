@@ -70,13 +70,16 @@ export default function Workout() {
   }
 
   const setsForExercise = (workoutSets ?? []).filter((s) => s.exercise_id === exerciseId)
+  // höchste vorhandene Satz-Nummer + 1 → keine doppelten Nummern, auch nach dem
+  // Löschen eines mittleren Satzes
+  const nextSetNumber = setsForExercise.reduce((max, s) => Math.max(max, s.set_number), 0) + 1
 
   async function logSet() {
     if (!todaysWorkout || !exerciseId) return
     await addSet.mutateAsync({
       workout_id: todaysWorkout.id,
       exercise_id: exerciseId,
-      set_number: setsForExercise.length + 1,
+      set_number: nextSetNumber,
       reps,
       weight,
     })
@@ -164,7 +167,7 @@ export default function Workout() {
             </div>
 
             <button className="btn-primary w-full" onClick={logSet} disabled={addSet.isPending}>
-              Satz {setsForExercise.length + 1} hinzufügen
+              Satz {nextSetNumber} hinzufügen
             </button>
 
             {setsForExercise.length > 0 && (
