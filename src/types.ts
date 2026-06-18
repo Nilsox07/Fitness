@@ -1,0 +1,50 @@
+export const MUSCLE_GROUPS = [
+  'Brust',
+  'Rücken',
+  'Beine',
+  'Schultern',
+  'Bizeps',
+  'Trizeps',
+  'Bauch',
+  'Ganzkörper',
+  'Sonstige',
+] as const
+
+export type MuscleGroup = (typeof MUSCLE_GROUPS)[number]
+
+export interface Exercise {
+  id: string
+  user_id: string
+  name: string
+  muscle_group: MuscleGroup
+  notes: string | null
+  target_rep_min: number
+  target_rep_max: number
+  increment: number
+  created_at: string
+}
+
+export interface Workout {
+  id: string
+  user_id: string
+  date: string // YYYY-MM-DD
+  name: string | null
+  notes: string | null
+  created_at: string
+}
+
+export interface WorkoutSet {
+  id: string
+  user_id: string
+  workout_id: string
+  exercise_id: string
+  set_number: number
+  reps: number
+  weight: number
+  created_at: string
+}
+
+/** Ein Satz angereichert um Workout-Datum — für die Auswertung. */
+export interface SetWithDate extends WorkoutSet {
+  date: string
+}
