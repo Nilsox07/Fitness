@@ -6,6 +6,9 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# Öffentliche Supabase-Werte fürs Vercel-Deployment (anon-Key ist ein
+# öffentlicher Client-Key; Daten sind über RLS geschützt).
+!.env.production
 
 # Editor
 .vscode/*
