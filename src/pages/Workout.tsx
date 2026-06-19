@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
 import {
   useAddSet,
@@ -58,6 +59,7 @@ function patternType(index: number): SetType {
 }
 
 export default function Workout() {
+  const navigate = useNavigate()
   const today = todayLocal()
   const { data: workouts } = useWorkouts()
   const { data: exercises } = useExercises()
@@ -101,6 +103,9 @@ export default function Workout() {
     .filter((s) => s.exercise_id === exerciseId)
     .sort((a, b) => a.set_number - b.set_number)
   const nextSetNumber = setsForExercise.reduce((max, s) => Math.max(max, s.set_number), 0) + 1
+
+  // Übungen, für die heute schon mind. ein Satz erfasst wurde → Haken in der Auswahl
+  const doneExerciseIds = new Set((workoutSets ?? []).map((s) => s.exercise_id))
 
   // Arbeitsgewicht als Basis für Vorschläge
   const workingBase = suggestion && suggestion.suggestedWeight > 0 ? suggestion.suggestedWeight : 20
@@ -189,6 +194,7 @@ export default function Workout() {
             <option value="">— wählen —</option>
             {exercises?.map((ex) => (
               <option key={ex.id} value={ex.id}>
+                {doneExerciseIds.has(ex.id) ? '✓ ' : ''}
                 {ex.name}
               </option>
             ))}
@@ -328,6 +334,18 @@ export default function Workout() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Training abschließen */}
+      {workoutSets && workoutSets.length > 0 && (
+        <div className="space-y-1">
+          <button className="btn-primary w-full" onClick={() => navigate('/history')}>
+            Training speichern
+          </button>
+          <p className="text-center text-xs text-slate-500">
+            Deine Sätze sind automatisch gesichert — hier kommst du zum Verlauf.
+          </p>
         </div>
       )}
 
