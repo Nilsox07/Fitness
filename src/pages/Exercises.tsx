@@ -13,8 +13,8 @@ const empty: ExerciseInput = {
   name: '',
   muscle_group: 'Brust',
   notes: null,
-  target_rep_min: 8,
-  target_rep_max: 12,
+  target_rep_min: 4,
+  target_rep_max: 8,
   increment: 2.5,
 }
 
