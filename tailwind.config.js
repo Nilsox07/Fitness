@@ -4,9 +4,28 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Palette aus dem Moodboard
+        sand: {
+          light: '#FFE8CC',
+          DEFAULT: '#FFCC99',
+          dark: '#E8B27A',
+        },
+        ruby: {
+          light: '#C0392B',
+          DEFAULT: '#990000',
+          dark: '#7A0000',
+        },
+        cream: '#FFF6EC',
+        // warme Brauntöne für Text auf hellem Grund
+        cocoa: {
+          DEFAULT: '#5A2A1A',
+          light: '#8A5A45',
+          muted: '#B08968',
+        },
+        // Alias: „brand" zeigt jetzt auf Ruby Red (deckt bestehende Klassen ab)
         brand: {
-          DEFAULT: '#22c55e',
-          dark: '#16a34a',
+          DEFAULT: '#990000',
+          dark: '#7A0000',
         },
       },
     },

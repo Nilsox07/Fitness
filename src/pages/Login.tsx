@@ -35,11 +35,11 @@ export default function Login() {
       <div className="mb-8 text-center">
         <div className="text-4xl">🏋️</div>
         <h1 className="mt-2 text-2xl font-bold">Fitness Tracker</h1>
-        <p className="text-sm text-slate-400">Tracke deine Gym-Performance.</p>
+        <p className="text-sm text-cocoa-light">Tracke deine Gym-Performance.</p>
       </div>
 
       {!isSupabaseConfigured && (
-        <div className="card mb-4 text-sm text-amber-300">
+        <div className="card mb-4 text-sm text-amber-700">
           ⚠️ Supabase ist nicht konfiguriert. Lege eine <code>.env</code> nach Vorlage
           <code> .env.example</code> an (siehe README).
         </div>
@@ -76,7 +76,7 @@ export default function Login() {
           />
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
         {info && <p className="text-sm text-brand">{info}</p>}
 
         <button type="submit" className="btn-primary w-full" disabled={busy}>
@@ -86,7 +86,7 @@ export default function Login() {
 
       <button
         type="button"
-        className="mt-4 text-center text-sm text-slate-400 underline"
+        className="mt-4 text-center text-sm text-cocoa-light underline"
         onClick={() => {
           setMode(mode === 'login' ? 'signup' : 'login')
           setError(null)

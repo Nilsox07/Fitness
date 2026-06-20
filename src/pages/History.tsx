@@ -15,7 +15,7 @@ export default function History() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">Verlauf</h1>
-      {isLoading && <p className="text-slate-400">Lädt…</p>}
+      {isLoading && <p className="text-cocoa-light">Lädt…</p>}
 
       <ul className="space-y-2">
         {workouts?.map((w) => {
@@ -36,12 +36,12 @@ export default function History() {
                       year: 'numeric',
                     })}
                   </div>
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-cocoa-light">
                     {sets.length} Sätze · Volumen {Math.round(totalVolume(sets))} kg
                   </div>
                 </button>
                 <button
-                  className="ml-2 px-2 text-slate-500 hover:text-red-400"
+                  className="ml-2 px-2 text-cocoa-muted hover:text-red-600"
                   aria-label="Training löschen"
                   onClick={() => {
                     if (confirm('Dieses Training löschen?')) deleteWorkout.mutate(w.id)
@@ -52,7 +52,7 @@ export default function History() {
               </div>
 
               {isOpen && (
-                <ul className="mt-3 space-y-2 border-t border-slate-700 pt-3 text-sm">
+                <ul className="mt-3 space-y-2 border-t border-sand-dark pt-3 text-sm">
                   {Object.entries(
                     sets.reduce<Record<string, typeof sets>>((acc, s) => {
                       ;(acc[s.exercise_id] ??= []).push(s)
@@ -61,7 +61,7 @@ export default function History() {
                   ).map(([exId, exSets]) => (
                     <li key={exId}>
                       <div className="font-medium">{exName(exId)}</div>
-                      <div className="text-slate-400">
+                      <div className="text-cocoa-light">
                         {exSets
                           .sort((a, b) => a.set_number - b.set_number)
                           .map((s) => {
@@ -77,14 +77,14 @@ export default function History() {
                       </div>
                     </li>
                   ))}
-                  {sets.length === 0 && <li className="text-slate-500">Keine Sätze.</li>}
+                  {sets.length === 0 && <li className="text-cocoa-muted">Keine Sätze.</li>}
                 </ul>
               )}
             </li>
           )
         })}
         {workouts?.length === 0 && (
-          <li className="text-slate-400">Noch keine Trainings erfasst.</li>
+          <li className="text-cocoa-light">Noch keine Trainings erfasst.</li>
         )}
       </ul>
     </div>

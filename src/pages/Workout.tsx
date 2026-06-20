@@ -26,16 +26,16 @@ const roundHalf = (v: number) => Math.round(v * 2) / 2
 
 const tipStyles: Record<string, string> = {
   increase: 'text-brand',
-  hold: 'text-sky-300',
-  deload: 'text-amber-300',
-  start: 'text-slate-400',
+  hold: 'text-cocoa',
+  deload: 'text-amber-700',
+  start: 'text-cocoa-light',
 }
 
 // Farbe der Typ-Chips
 const typeChip: Record<SetType, string> = {
-  warmup: 'bg-amber-500 text-slate-900',
-  working: 'bg-brand text-slate-900',
-  drop: 'bg-sky-500 text-slate-900',
+  warmup: 'bg-amber-500 text-cream',
+  working: 'bg-brand text-cream',
+  drop: 'bg-cocoa text-cream',
 }
 
 // Deine Standard-Struktur
@@ -147,7 +147,7 @@ export default function Workout() {
       <div className="space-y-4">
         <h1 className="text-xl font-bold">Training</h1>
         <div className="card space-y-3 text-center">
-          <p className="text-slate-300">Heute noch kein Training erfasst.</p>
+          <p className="text-cocoa">Heute noch kein Training erfasst.</p>
           <button
             className="btn-primary w-full"
             onClick={() => createWorkout.mutate({ date: today })}
@@ -155,7 +155,7 @@ export default function Workout() {
           >
             Training starten
           </button>
-          {saveError && <p className="text-sm text-red-400">⚠️ {saveError.message}</p>}
+          {saveError && <p className="text-sm text-red-600">⚠️ {saveError.message}</p>}
         </div>
       </div>
     )
@@ -165,7 +165,7 @@ export default function Workout() {
     <div className="space-y-4">
       <header>
         <h1 className="text-xl font-bold">Training heute</h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-cocoa-light">
           {new Date(today).toLocaleDateString('de-DE', {
             weekday: 'long',
             day: 'numeric',
@@ -175,9 +175,9 @@ export default function Workout() {
       </header>
 
       {saveError && (
-        <div className="card border border-red-500/40 text-sm text-red-400">
+        <div className="card border border-red-400 text-sm text-red-600">
           ⚠️ Konnte nicht speichern: {saveError.message}
-          <div className="mt-1 text-xs text-slate-400">
+          <div className="mt-1 text-xs text-cocoa-light">
             Tipp: Sind die Datenbank-Updates (Migrationen 0002 & 0003) in Supabase ausgeführt?
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function Workout() {
             ))}
           </select>
           {exercises?.length === 0 && (
-            <p className="mt-1 text-sm text-amber-300">
+            <p className="mt-1 text-sm text-amber-700">
               Lege zuerst unter „Übungen" eine Übung an.
             </p>
           )}
@@ -209,11 +209,11 @@ export default function Workout() {
         {selectedExercise && (
           <>
             {suggestion && (
-              <div className="rounded-xl bg-slate-900/70 p-3 text-sm ring-1 ring-slate-700">
+              <div className="rounded-xl bg-sand/50 p-3 text-sm ring-1 ring-sand-dark">
                 <span className="font-semibold">💡 Tipp: </span>
                 <span className={tipStyles[suggestion.action]}>{suggestion.reason}</span>
                 {lastSession && (
-                  <div className="mt-1 text-xs text-slate-500">
+                  <div className="mt-1 text-xs text-cocoa-muted">
                     Letztes Training (
                     {new Date(lastSession.date).toLocaleDateString('de-DE')}):{' '}
                     {lastSession.sets.map((s) => `${s.reps}×${s.weight}kg`).join(', ')}
@@ -226,7 +226,7 @@ export default function Workout() {
             {setsForExercise.length > 0 && (
               <ul className="space-y-2">
                 {setsForExercise.map((s) => (
-                  <li key={s.id} className="rounded-xl bg-slate-900/50 p-2.5 ring-1 ring-slate-700/50">
+                  <li key={s.id} className="rounded-xl bg-sand/40 p-2.5 ring-1 ring-sand-dark/50">
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex gap-1">
                         {SET_TYPES.map((t) => (
@@ -235,7 +235,7 @@ export default function Workout() {
                             type="button"
                             onClick={() => updateSet.mutate({ id: s.id, set_type: t })}
                             className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                              s.set_type === t ? typeChip[t] : 'bg-slate-700 text-slate-400'
+                              s.set_type === t ? typeChip[t] : 'bg-sand-dark/50 text-cocoa-light'
                             }`}
                           >
                             {SET_TYPE_SHORT[t]}
@@ -250,14 +250,14 @@ export default function Workout() {
                           title="Antippen, wenn du diesen Satz NICHT bis zum Versagen gemacht hast"
                           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                             s.to_failure
-                              ? 'bg-orange-500 text-slate-900'
-                              : 'bg-slate-700 text-slate-400'
+                              ? 'bg-orange-500 text-cream'
+                              : 'bg-sand-dark/50 text-cocoa-light'
                           }`}
                         >
                           {s.to_failure ? '🔥 Versagen' : 'nicht ans Limit'}
                         </button>
                         <button
-                          className="px-2 text-slate-500 hover:text-red-400"
+                          className="px-2 text-cocoa-muted hover:text-red-600"
                           aria-label="Satz löschen"
                           onClick={() => deleteSet.mutate(s)}
                         >
@@ -301,7 +301,7 @@ export default function Workout() {
                 >
                   Standard-Sätze anlegen
                 </button>
-                <p className="text-center text-xs text-slate-500">
+                <p className="text-center text-xs text-cocoa-muted">
                   1 Aufwärmen · 2 Arbeitssätze · 1 Dropsatz — danach nur noch Gewicht/Wdh anpassen
                 </p>
                 <button className="btn-ghost w-full" onClick={addOne} disabled={addSet.isPending}>
@@ -321,7 +321,7 @@ export default function Workout() {
       {workoutSets && workoutSets.length > 0 && (
         <div className="card">
           <h2 className="mb-2 font-semibold">Heute erfasst</h2>
-          <ul className="space-y-1 text-sm text-slate-300">
+          <ul className="space-y-1 text-sm text-cocoa">
             {Object.entries(
               workoutSets.reduce<Record<string, number>>((acc, s) => {
                 acc[s.exercise_id] = (acc[s.exercise_id] ?? 0) + 1
@@ -330,7 +330,7 @@ export default function Workout() {
             ).map(([exId, count]) => (
               <li key={exId} className="flex justify-between">
                 <span>{exercises?.find((e) => e.id === exId)?.name ?? 'Übung'}</span>
-                <span className="text-slate-500">{count} Sätze</span>
+                <span className="text-cocoa-muted">{count} Sätze</span>
               </li>
             ))}
           </ul>
@@ -343,27 +343,27 @@ export default function Workout() {
           <button className="btn-primary w-full" onClick={() => navigate('/history')}>
             Training speichern
           </button>
-          <p className="text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-cocoa-muted">
             Deine Sätze sind automatisch gesichert — hier kommst du zum Verlauf.
           </p>
         </div>
       )}
 
       {/* Kleine Erklärung */}
-      <div className="rounded-xl bg-slate-900/40 p-3 text-xs leading-relaxed text-slate-500">
-        <p className="mb-1 font-semibold text-slate-400">So erfasst du am besten</p>
+      <div className="rounded-xl bg-sand/40 p-3 text-xs leading-relaxed text-cocoa-muted">
+        <p className="mb-1 font-semibold text-cocoa-light">So erfasst du am besten</p>
         <ul className="list-disc space-y-1 pl-4">
           <li>
-            Trag nur <span className="text-slate-300">saubere Wdh</span> ein (volle Bewegung, eigene
+            Trag nur <span className="text-cocoa">saubere Wdh</span> ein (volle Bewegung, eigene
             Kraft) — die letzte halbe/erzwungene Wdh lässt du weg.
           </li>
           <li>
             <span className="text-orange-400">🔥 Versagen</span> ist Standard. Tipp es nur{' '}
-            <span className="text-slate-300">aus</span> („nicht ans Limit"), wenn du den Satz mal
+            <span className="text-cocoa">aus</span> („nicht ans Limit"), wenn du den Satz mal
             nicht bis zum Limit gemacht hast.
           </li>
           <li>
-            Der Tipp oben sagt dir dann, ob du das Gewicht <span className="text-slate-300">halten,
+            Der Tipp oben sagt dir dann, ob du das Gewicht <span className="text-cocoa">halten,
             steigern</span> oder reduzieren solltest.
           </li>
         </ul>

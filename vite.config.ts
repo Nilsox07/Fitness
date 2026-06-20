@@ -14,8 +14,8 @@ export default defineConfig({
         name: 'Fitness Tracker',
         short_name: 'Fitness',
         description: 'Tracke deine Gym-Performance: Übungen, Sätze, Auswertung.',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#990000',
+        background_color: '#FFCC99',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

@@ -21,13 +21,13 @@ import {
 } from '../lib/analytics'
 import type { MuscleGroup } from '../types'
 
-const axisStyle = { fontSize: 11, fill: '#94a3b8' }
+const axisStyle = { fontSize: 11, fill: '#8A5A45' }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="card text-center">
       <div className="text-2xl font-bold text-brand">{value}</div>
-      <div className="text-xs text-slate-400">{label}</div>
+      <div className="text-xs text-cocoa-light">{label}</div>
     </div>
   )
 }
@@ -82,7 +82,7 @@ export default function Analytics() {
       <h1 className="text-xl font-bold">Auswertung</h1>
 
       {!hasData && (
-        <p className="text-slate-400">Noch keine Daten — erfasse dein erstes Training.</p>
+        <p className="text-cocoa-light">Noch keine Daten — erfasse dein erstes Training.</p>
       )}
 
       {hasData && (
@@ -99,13 +99,13 @@ export default function Analytics() {
             <h2 className="mb-3 font-semibold">Volumen pro Woche (kg)</h2>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={weekly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E8B27A" />
                 <XAxis dataKey="week" tick={axisStyle} />
                 <YAxis tick={axisStyle} width={40} />
                 <Tooltip
-                  contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 8 }}
+                  contentStyle={{ background: '#FFF6EC', border: '1px solid #E8B27A', borderRadius: 8 }}
                 />
-                <Bar dataKey="volume" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="volume" fill="#990000" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </section>
@@ -115,13 +115,13 @@ export default function Analytics() {
             <h2 className="mb-3 font-semibold">Volumen pro Muskelgruppe (kg)</h2>
             <ResponsiveContainer width="100%" height={Math.max(120, byMuscle.length * 34)}>
               <BarChart data={byMuscle} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E8B27A" />
                 <XAxis type="number" tick={axisStyle} />
                 <YAxis type="category" dataKey="group" tick={axisStyle} width={80} />
                 <Tooltip
-                  contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 8 }}
+                  contentStyle={{ background: '#FFF6EC', border: '1px solid #E8B27A', borderRadius: 8 }}
                 />
-                <Bar dataKey="volume" fill="#38bdf8" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="volume" fill="#C0392B" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </section>
@@ -129,7 +129,7 @@ export default function Analytics() {
           {/* Kraft-Fortschritt pro Übung */}
           <section className="card space-y-3">
             <h2 className="font-semibold">Kraft-Fortschritt</h2>
-            <p className="-mt-1 text-xs text-slate-500">Basierend auf deinen Arbeitssätzen.</p>
+            <p className="-mt-1 text-xs text-cocoa-muted">Basierend auf deinen Arbeitssätzen.</p>
             <select
               className="input"
               value={exerciseId}
@@ -144,7 +144,7 @@ export default function Analytics() {
             </select>
 
             {exerciseId && progress.length === 0 && (
-              <p className="text-sm text-slate-400">Noch keine Sätze für diese Übung.</p>
+              <p className="text-sm text-cocoa-light">Noch keine Sätze für diese Übung.</p>
             )}
 
             {progress.length > 0 && (
@@ -156,17 +156,17 @@ export default function Analytics() {
                 </div>
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={progress}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E8B27A" />
                     <XAxis dataKey="date" tick={axisStyle} />
                     <YAxis tick={axisStyle} width={40} />
                     <Tooltip
-                      contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 8 }}
+                      contentStyle={{ background: '#FFF6EC', border: '1px solid #E8B27A', borderRadius: 8 }}
                     />
                     <Line
                       type="monotone"
                       dataKey="topWeight"
                       name="Top-Gewicht"
-                      stroke="#22c55e"
+                      stroke="#990000"
                       strokeWidth={2}
                       dot={{ r: 3 }}
                     />
@@ -181,7 +181,7 @@ export default function Analytics() {
                     />
                   </LineChart>
                 </ResponsiveContainer>
-                <div className="flex gap-4 text-xs text-slate-400">
+                <div className="flex gap-4 text-xs text-cocoa-light">
                   <span>
                     <span className="text-brand">●</span> Top-Gewicht
                   </span>

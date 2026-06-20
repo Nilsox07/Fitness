@@ -53,8 +53,8 @@ export function Stepper({
 
   const btnClass = compact ? 'btn-ghost w-9 px-0 py-1.5 text-lg' : 'btn-ghost w-12 text-xl'
   const inputClass = compact
-    ? 'w-full rounded-lg bg-slate-900 px-2 py-1.5 text-center font-semibold text-slate-100 outline-none ring-1 ring-slate-700 focus:ring-2 focus:ring-brand'
-    : 'w-full rounded-xl bg-slate-900 px-3 py-2.5 text-center text-lg font-semibold text-slate-100 outline-none ring-1 ring-slate-700 focus:ring-2 focus:ring-brand'
+    ? 'w-full rounded-lg bg-white px-2 py-1.5 text-center font-semibold text-cocoa outline-none ring-1 ring-sand-dark focus:ring-2 focus:ring-brand'
+    : 'w-full rounded-xl bg-white px-3 py-2.5 text-center text-lg font-semibold text-cocoa outline-none ring-1 ring-sand-dark focus:ring-2 focus:ring-brand'
 
   return (
     <div>
@@ -80,7 +80,7 @@ export function Stepper({
             aria-label={label}
           />
           {suffix ? (
-            <span className="pointer-events-none absolute right-2 text-xs text-slate-400">
+            <span className="pointer-events-none absolute right-2 text-xs text-cocoa-light">
               {suffix}
             </span>
           ) : null}

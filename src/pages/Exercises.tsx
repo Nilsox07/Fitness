@@ -76,20 +76,20 @@ export default function Exercises() {
         </div>
       </header>
 
-      {isLoading && <p className="text-slate-400">Lädt…</p>}
+      {isLoading && <p className="text-cocoa-light">Lädt…</p>}
 
       <ul className="space-y-2">
         {exercises?.map((ex) => (
           <li key={ex.id} className="card flex items-center justify-between">
             <button className="flex-1 text-left" onClick={() => startEdit(ex)}>
               <div className="font-semibold">{ex.name}</div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-cocoa-light">
                 {ex.muscle_group} · Ziel {ex.target_rep_min}–{ex.target_rep_max} Wdh ·
                 +{ex.increment} kg
               </div>
             </button>
             <button
-              className="ml-2 px-2 text-slate-500 hover:text-red-400"
+              className="ml-2 px-2 text-cocoa-muted hover:text-red-600"
               aria-label="Übung löschen"
               onClick={() => {
                 if (confirm(`„${ex.name}" inkl. aller Sätze löschen?`)) deleteEx.mutate(ex.id)
@@ -100,7 +100,7 @@ export default function Exercises() {
           </li>
         ))}
         {exercises?.length === 0 && (
-          <li className="text-slate-400">Noch keine Übungen. Lege deine erste an.</li>
+          <li className="text-cocoa-light">Noch keine Übungen. Lege deine erste an.</li>
         )}
       </ul>
 
