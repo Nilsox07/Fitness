@@ -1,33 +1,30 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      // Farben kommen aus CSS-Variablen → Light/Dark per .dark-Klasse umschaltbar
       colors: {
-        // Dark + Crimson Theme
-        // Hintergründe / Flächen
         sand: {
-          light: '#1F2937', // Inputs / Ghost-Buttons
-          DEFAULT: '#232E44', // Panels / Insets
-          dark: '#344155', // Ränder / Chips
+          light: 'rgb(var(--c-sand-light) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--c-sand) / <alpha-value>)',
+          dark: 'rgb(var(--c-sand-dark) / <alpha-value>)',
         },
-        cream: '#161D2B', // Karten / Tab-Leiste
-        // Akzent (Crimson)
+        cream: 'rgb(var(--c-cream) / <alpha-value>)',
         ruby: {
-          light: '#FB7185',
-          DEFAULT: '#E11D48',
-          dark: '#BE123C',
+          light: 'rgb(var(--c-ruby-light) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--c-ruby) / <alpha-value>)',
+          dark: 'rgb(var(--c-ruby-dark) / <alpha-value>)',
         },
-        // Text
         cocoa: {
-          DEFAULT: '#E5E9F0',
-          light: '#94A3B8',
-          muted: '#64748B',
+          DEFAULT: 'rgb(var(--c-text) / <alpha-value>)',
+          light: 'rgb(var(--c-text-muted) / <alpha-value>)',
+          muted: 'rgb(var(--c-text-dim) / <alpha-value>)',
         },
-        // Alias: „brand" = Crimson-Akzent
         brand: {
-          DEFAULT: '#E11D48',
-          dark: '#BE123C',
+          DEFAULT: 'rgb(var(--c-ruby) / <alpha-value>)',
+          dark: 'rgb(var(--c-ruby-dark) / <alpha-value>)',
         },
       },
     },

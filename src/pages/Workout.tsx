@@ -27,7 +27,7 @@ const roundHalf = (v: number) => Math.round(v * 2) / 2
 const tipStyles: Record<string, string> = {
   increase: 'text-brand',
   hold: 'text-cocoa',
-  deload: 'text-amber-400',
+  deload: 'text-amber-600 dark:text-amber-400',
   start: 'text-cocoa-light',
 }
 
@@ -155,7 +155,7 @@ export default function Workout() {
           >
             Training starten
           </button>
-          {saveError && <p className="text-sm text-red-400">⚠️ {saveError.message}</p>}
+          {saveError && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {saveError.message}</p>}
         </div>
       </div>
     )
@@ -175,7 +175,7 @@ export default function Workout() {
       </header>
 
       {saveError && (
-        <div className="card border border-red-400 text-sm text-red-400">
+        <div className="card border border-red-400 text-sm text-red-500 dark:text-red-400">
           ⚠️ Konnte nicht speichern: {saveError.message}
           <div className="mt-1 text-xs text-cocoa-light">
             Tipp: Sind die Datenbank-Updates (Migrationen 0002 & 0003) in Supabase ausgeführt?
@@ -200,7 +200,7 @@ export default function Workout() {
             ))}
           </select>
           {exercises?.length === 0 && (
-            <p className="mt-1 text-sm text-amber-400">
+            <p className="mt-1 text-sm text-amber-600 dark:text-amber-400">
               Lege zuerst unter „Übungen" eine Übung an.
             </p>
           )}
@@ -257,7 +257,7 @@ export default function Workout() {
                           {s.to_failure ? '🔥 Versagen' : 'nicht ans Limit'}
                         </button>
                         <button
-                          className="px-2 text-cocoa-muted hover:text-red-400"
+                          className="px-2 text-cocoa-muted hover:text-red-500 dark:text-red-400"
                           aria-label="Satz löschen"
                           onClick={() => deleteSet.mutate(s)}
                         >

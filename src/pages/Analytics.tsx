@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllSets } from '../hooks/useWorkouts'
+import { useTheme } from '../lib/theme'
 import {
   frequencyStats,
   onlyWorking,
@@ -20,8 +21,6 @@ import {
   weeklyVolume,
 } from '../lib/analytics'
 import type { MuscleGroup } from '../types'
-
-const axisStyle = { fontSize: 11, fill: '#94A3B8' }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
@@ -36,6 +35,19 @@ export default function Analytics() {
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
   const [exerciseId, setExerciseId] = useState('')
+
+  // Diagramm-Farben passend zum aktiven Theme
+  const dark = useTheme().resolved === 'dark'
+  const chart = {
+    grid: dark ? '#243044' : '#E5E7EB',
+    axis: dark ? '#94A3B8' : '#5B6472',
+    tipBg: dark ? '#161D2B' : '#FFFFFF',
+    tipBorder: dark ? '#344155' : '#D2D6DD',
+    tipText: dark ? '#E5E9F0' : '#0B0F19',
+    primary: '#E11D48',
+    secondary: dark ? '#FB7185' : '#BE123C',
+  }
+  const axisStyle = { fontSize: 11, fill: chart.axis }
 
   const freq = useMemo(() => {
     const dates = (allSets ?? []).map((s) => s.date)
@@ -99,14 +111,14 @@ export default function Analytics() {
             <h2 className="mb-3 font-semibold">Volumen pro Woche (kg)</h2>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={weekly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#243044" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis dataKey="week" tick={axisStyle} />
                 <YAxis tick={axisStyle} width={40} />
                 <Tooltip
-                  contentStyle={{ background: '#161D2B', border: '1px solid #344155', color: '#E5E9F0', borderRadius: 8 }}
-                  labelStyle={{ color: '#E5E9F0' }}
+                  contentStyle={{ background: chart.tipBg, border: `1px solid ${chart.tipBorder}`, color: chart.tipText, borderRadius: 8 }}
+                  labelStyle={{ color: chart.tipText }}
                 />
-                <Bar dataKey="volume" fill="#E11D48" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="volume" fill={chart.primary} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </section>
@@ -116,14 +128,14 @@ export default function Analytics() {
             <h2 className="mb-3 font-semibold">Volumen pro Muskelgruppe (kg)</h2>
             <ResponsiveContainer width="100%" height={Math.max(120, byMuscle.length * 34)}>
               <BarChart data={byMuscle} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#243044" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis type="number" tick={axisStyle} />
                 <YAxis type="category" dataKey="group" tick={axisStyle} width={80} />
                 <Tooltip
-                  contentStyle={{ background: '#161D2B', border: '1px solid #344155', color: '#E5E9F0', borderRadius: 8 }}
-                  labelStyle={{ color: '#E5E9F0' }}
+                  contentStyle={{ background: chart.tipBg, border: `1px solid ${chart.tipBorder}`, color: chart.tipText, borderRadius: 8 }}
+                  labelStyle={{ color: chart.tipText }}
                 />
-                <Bar dataKey="volume" fill="#FB7185" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="volume" fill={chart.secondary} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </section>
@@ -158,18 +170,18 @@ export default function Analytics() {
                 </div>
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={progress}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#243044" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                     <XAxis dataKey="date" tick={axisStyle} />
                     <YAxis tick={axisStyle} width={40} />
                     <Tooltip
-                      contentStyle={{ background: '#161D2B', border: '1px solid #344155', color: '#E5E9F0', borderRadius: 8 }}
-                  labelStyle={{ color: '#E5E9F0' }}
+                      contentStyle={{ background: chart.tipBg, border: `1px solid ${chart.tipBorder}`, color: chart.tipText, borderRadius: 8 }}
+                  labelStyle={{ color: chart.tipText }}
                     />
                     <Line
                       type="monotone"
                       dataKey="topWeight"
                       name="Top-Gewicht"
-                      stroke="#E11D48"
+                      stroke={chart.primary}
                       strokeWidth={2}
                       dot={{ r: 3 }}
                     />

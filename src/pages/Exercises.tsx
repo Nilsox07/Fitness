@@ -89,7 +89,7 @@ export default function Exercises() {
               </div>
             </button>
             <button
-              className="ml-2 px-2 text-cocoa-muted hover:text-red-400"
+              className="ml-2 px-2 text-cocoa-muted hover:text-red-500 dark:text-red-400"
               aria-label="Übung löschen"
               onClick={() => {
                 if (confirm(`„${ex.name}" inkl. aller Sätze löschen?`)) deleteEx.mutate(ex.id)

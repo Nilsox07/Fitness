@@ -2,8 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light (Standard) */
 :root {
+  color-scheme: light;
+  --c-bg: 255 255 255;
+  --c-cream: 244 245 247;
+  --c-sand-light: 255 255 255;
+  --c-sand: 233 236 241;
+  --c-sand-dark: 210 214 221;
+  --c-ruby: 225 29 72;
+  --c-ruby-dark: 190 18 60;
+  --c-ruby-light: 251 113 133;
+  --c-text: 11 15 25;
+  --c-text-muted: 91 100 114;
+  --c-text-dim: 138 146 160;
+}
+
+/* Dark */
+.dark {
   color-scheme: dark;
+  --c-bg: 11 15 25;
+  --c-cream: 22 29 43;
+  --c-sand-light: 31 41 55;
+  --c-sand: 35 46 68;
+  --c-sand-dark: 52 65 85;
+  --c-ruby: 225 29 72;
+  --c-ruby-dark: 190 18 60;
+  --c-ruby-light: 251 113 133;
+  --c-text: 229 233 240;
+  --c-text-muted: 148 163 184;
+  --c-text-dim: 100 116 139;
 }
 
 html,
@@ -14,8 +42,8 @@ body,
 
 body {
   margin: 0;
-  background-color: #0b0f19; /* base */
-  color: #e5e9f0; /* ink */
+  background-color: rgb(var(--c-bg));
+  color: rgb(var(--c-text));
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
