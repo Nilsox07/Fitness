@@ -53,8 +53,8 @@ export function Stepper({
 
   const btnClass = compact ? 'btn-ghost w-9 px-0 py-1.5 text-lg' : 'btn-ghost w-12 text-xl'
   const inputClass = compact
-    ? 'w-full rounded-lg bg-white px-2 py-1.5 text-center font-semibold text-cocoa outline-none ring-1 ring-sand-dark focus:ring-2 focus:ring-brand'
-    : 'w-full rounded-xl bg-white px-3 py-2.5 text-center text-lg font-semibold text-cocoa outline-none ring-1 ring-sand-dark focus:ring-2 focus:ring-brand'
+    ? 'w-full rounded-lg bg-sand-light px-2 py-1.5 text-center font-semibold text-cocoa outline-none ring-1 ring-sand-dark focus:ring-2 focus:ring-brand'
+    : 'w-full rounded-xl bg-sand-light px-3 py-2.5 text-center text-lg font-semibold text-cocoa outline-none ring-1 ring-sand-dark focus:ring-2 focus:ring-brand'
 
   return (
     <div>

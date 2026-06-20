@@ -21,7 +21,7 @@ import {
 } from '../lib/analytics'
 import type { MuscleGroup } from '../types'
 
-const axisStyle = { fontSize: 11, fill: '#8A5A45' }
+const axisStyle = { fontSize: 11, fill: '#94A3B8' }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
@@ -99,13 +99,14 @@ export default function Analytics() {
             <h2 className="mb-3 font-semibold">Volumen pro Woche (kg)</h2>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={weekly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E8B27A" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#243044" />
                 <XAxis dataKey="week" tick={axisStyle} />
                 <YAxis tick={axisStyle} width={40} />
                 <Tooltip
-                  contentStyle={{ background: '#FFF6EC', border: '1px solid #E8B27A', borderRadius: 8 }}
+                  contentStyle={{ background: '#161D2B', border: '1px solid #344155', color: '#E5E9F0', borderRadius: 8 }}
+                  labelStyle={{ color: '#E5E9F0' }}
                 />
-                <Bar dataKey="volume" fill="#990000" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="volume" fill="#E11D48" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </section>
@@ -115,13 +116,14 @@ export default function Analytics() {
             <h2 className="mb-3 font-semibold">Volumen pro Muskelgruppe (kg)</h2>
             <ResponsiveContainer width="100%" height={Math.max(120, byMuscle.length * 34)}>
               <BarChart data={byMuscle} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E8B27A" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#243044" />
                 <XAxis type="number" tick={axisStyle} />
                 <YAxis type="category" dataKey="group" tick={axisStyle} width={80} />
                 <Tooltip
-                  contentStyle={{ background: '#FFF6EC', border: '1px solid #E8B27A', borderRadius: 8 }}
+                  contentStyle={{ background: '#161D2B', border: '1px solid #344155', color: '#E5E9F0', borderRadius: 8 }}
+                  labelStyle={{ color: '#E5E9F0' }}
                 />
-                <Bar dataKey="volume" fill="#C0392B" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="volume" fill="#FB7185" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </section>
@@ -156,17 +158,18 @@ export default function Analytics() {
                 </div>
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={progress}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E8B27A" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#243044" />
                     <XAxis dataKey="date" tick={axisStyle} />
                     <YAxis tick={axisStyle} width={40} />
                     <Tooltip
-                      contentStyle={{ background: '#FFF6EC', border: '1px solid #E8B27A', borderRadius: 8 }}
+                      contentStyle={{ background: '#161D2B', border: '1px solid #344155', color: '#E5E9F0', borderRadius: 8 }}
+                  labelStyle={{ color: '#E5E9F0' }}
                     />
                     <Line
                       type="monotone"
                       dataKey="topWeight"
                       name="Top-Gewicht"
-                      stroke="#990000"
+                      stroke="#E11D48"
                       strokeWidth={2}
                       dot={{ r: 3 }}
                     />

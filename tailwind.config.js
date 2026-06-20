@@ -4,28 +4,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Palette aus dem Moodboard
+        // Dark + Crimson Theme
+        // Hintergründe / Flächen
         sand: {
-          light: '#FFE8CC',
-          DEFAULT: '#FFCC99',
-          dark: '#E8B27A',
+          light: '#1F2937', // Inputs / Ghost-Buttons
+          DEFAULT: '#232E44', // Panels / Insets
+          dark: '#344155', // Ränder / Chips
         },
+        cream: '#161D2B', // Karten / Tab-Leiste
+        // Akzent (Crimson)
         ruby: {
-          light: '#C0392B',
-          DEFAULT: '#990000',
-          dark: '#7A0000',
+          light: '#FB7185',
+          DEFAULT: '#E11D48',
+          dark: '#BE123C',
         },
-        cream: '#FFF6EC',
-        // warme Brauntöne für Text auf hellem Grund
+        // Text
         cocoa: {
-          DEFAULT: '#5A2A1A',
-          light: '#8A5A45',
-          muted: '#B08968',
+          DEFAULT: '#E5E9F0',
+          light: '#94A3B8',
+          muted: '#64748B',
         },
-        // Alias: „brand" zeigt jetzt auf Ruby Red (deckt bestehende Klassen ab)
+        // Alias: „brand" = Crimson-Akzent
         brand: {
-          DEFAULT: '#990000',
-          dark: '#7A0000',
+          DEFAULT: '#E11D48',
+          dark: '#BE123C',
         },
       },
     },

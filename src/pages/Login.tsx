@@ -39,7 +39,7 @@ export default function Login() {
       </div>
 
       {!isSupabaseConfigured && (
-        <div className="card mb-4 text-sm text-amber-700">
+        <div className="card mb-4 text-sm text-amber-400">
           ⚠️ Supabase ist nicht konfiguriert. Lege eine <code>.env</code> nach Vorlage
           <code> .env.example</code> an (siehe README).
         </div>
@@ -76,7 +76,7 @@ export default function Login() {
           />
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
         {info && <p className="text-sm text-brand">{info}</p>}
 
         <button type="submit" className="btn-primary w-full" disabled={busy}>
