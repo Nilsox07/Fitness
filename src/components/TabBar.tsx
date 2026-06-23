@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 const tabs = [
   { to: '/', label: 'Training', icon: '🏋️' },
+  { to: '/nutrition', label: 'Essen', icon: '🍎' },
   { to: '/history', label: 'Verlauf', icon: '🗓️' },
   { to: '/analytics', label: 'Auswertung', icon: '📈' },
   { to: '/exercises', label: 'Übungen', icon: '📋' },
@@ -10,7 +11,7 @@ const tabs = [
 export function TabBar() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-md border-t border-sand-dark bg-cream/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5">
         {tabs.map((t) => (
           <NavLink
             key={t.to}

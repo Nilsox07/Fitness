@@ -7,6 +7,7 @@ import Workout from './pages/Workout'
 import Exercises from './pages/Exercises'
 import History from './pages/History'
 import Analytics from './pages/Analytics'
+import Nutrition from './pages/Nutrition'
 
 export default function App() {
   const { session, loading, recovery } = useAuth()
@@ -30,6 +31,7 @@ export default function App() {
       <main className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />
+          <Route path="/nutrition" element={<Nutrition />} />
           <Route path="/exercises" element={<Exercises />} />
           <Route path="/history" element={<History />} />
           <Route path="/analytics" element={<Analytics />} />
