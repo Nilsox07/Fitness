@@ -237,14 +237,23 @@ export function progressionSuggestion(
     minReps < target_rep_max
 
   if (minReps >= target_rep_max) {
-    const next = round1(topWeight + increment)
-    const closer = reachedFailure
-      ? `alle Sätze am oberen Wdh.-Ziel`
-      : `alle Sätze am oberen Ziel und noch Reserve (nicht bis Versagen) — klar steigern`
+    // Wie viel höher? Aus geschätztem 1RM das Gewicht ableiten, das dich wieder
+    // ans obere Wdh.-Ziel bringt. Sätze NICHT bis zum Versagen → ~2 Wdh Reserve
+    // einrechnen (du hättest mehr geschafft), das erhöht den Vorschlag.
+    const effectiveReps = minReps + (reachedFailure ? 0 : 2)
+    const est = estimate1RM(topWeight, effectiveReps)
+    const targetWeight = est / (1 + target_rep_max / 30)
+    let steps = Math.round((targetWeight - topWeight) / increment)
+    steps = Math.min(Math.max(steps, 1), 4) // mind. 1, max 4 Stufen (Ausreißer-Deckel)
+    const next = round1(topWeight + steps * increment)
+    const reserve = reachedFailure ? '' : ' – und das ohne bis ans Limit zu gehen'
     return {
       action: 'increase',
       suggestedWeight: next,
-      reason: `Letztes Mal ${setCount}×${minReps} @ ${topWeight} kg, ${closer}. Versuch ${next} kg.`,
+      reason:
+        steps >= 2
+          ? `Letztes Mal ${setCount}×${minReps} @ ${topWeight} kg${reserve}, klar über deinem Ziel (${target_rep_max} Wdh.). Überspring ${steps} Stufen und geh direkt auf ${next} kg.`
+          : `Letztes Mal ${setCount}×${minReps} @ ${topWeight} kg${reserve} — am oberen Wdh.-Ziel. Versuch ${next} kg.`,
     }
   }
 

@@ -155,6 +155,15 @@ describe('progressionSuggestion (Double Progression)', () => {
     expect(s.suggestedWeight).toBe(52.5)
   })
 
+  it('empfiehlt mehrere Stufen zu überspringen, wenn man klar über dem Ziel liegt', () => {
+    const ex48 = { target_rep_min: 4, target_rep_max: 8, increment: 2.5 }
+    const sets = [mkSet('2026-01-10', 14, 50, 1, 'working', true)] // 14 Wdh, Ziel 8
+    const s = progressionSuggestion(ex48, sets)
+    expect(s.action).toBe('increase')
+    expect(s.suggestedWeight).toBeGreaterThan(52.5) // mehr als eine Stufe
+    expect(s.reason).toContain('Überspring')
+  })
+
   it('empfiehlt Halten innerhalb des Bereichs', () => {
     const sets = [mkSet('2026-01-10', 10, 50, 1), mkSet('2026-01-10', 9, 50, 2)]
     const s = progressionSuggestion(ex, sets)
