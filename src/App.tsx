@@ -2,18 +2,23 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { TabBar } from './components/TabBar'
 import Login from './pages/Login'
+import ResetPassword from './pages/ResetPassword'
 import Workout from './pages/Workout'
 import Exercises from './pages/Exercises'
 import History from './pages/History'
 import Analytics from './pages/Analytics'
 
 export default function App() {
-  const { session, loading } = useAuth()
+  const { session, loading, recovery } = useAuth()
 
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center text-cocoa-light">Lädt…</div>
     )
+  }
+
+  if (recovery) {
+    return <ResetPassword />
   }
 
   if (!session) {

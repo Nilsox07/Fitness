@@ -30,6 +30,27 @@ export default function Login() {
     }
   }
 
+  async function handleReset() {
+    setError(null)
+    setInfo(null)
+    if (!email) {
+      setError('Bitte zuerst deine E-Mail eingeben.')
+      return
+    }
+    setBusy(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      })
+      if (error) throw error
+      setInfo('E-Mail zum Zurücksetzen verschickt – prüfe dein Postfach (auch Spam).')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unbekannter Fehler')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="mx-auto flex h-full max-w-md flex-col justify-center px-6">
       <div className="mb-8 text-center">
@@ -82,6 +103,17 @@ export default function Login() {
         <button type="submit" className="btn-primary w-full" disabled={busy}>
           {busy ? '…' : mode === 'login' ? 'Anmelden' : 'Registrieren'}
         </button>
+
+        {mode === 'login' && (
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={busy}
+            className="w-full text-center text-sm text-cocoa-light underline"
+          >
+            Passwort vergessen?
+          </button>
+        )}
       </form>
 
       <button
