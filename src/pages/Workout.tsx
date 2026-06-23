@@ -32,21 +32,45 @@ const tipStyles: Record<string, string> = {
 // Deine Standard-Struktur
 const TEMPLATE: SetType[] = ['warmup', 'working', 'working', 'drop']
 
-/** Vorschlag für Wdh/Gewicht je Satz-Typ, abgeleitet vom Arbeitsgewicht. */
-function deriveSet(type: SetType, base: number, ex: Exercise): { reps: number; weight: number } {
+/** Vorschlag je Satz-Typ: Gewicht vorbefüllt (vom Arbeitsgewicht abgeleitet),
+ *  Wdh bleiben leer (0) und werden im Gym eingetragen. */
+function deriveSet(type: SetType, base: number): { reps: number; weight: number } {
   switch (type) {
     case 'warmup':
-      return { reps: 10, weight: roundHalf(base * 0.5) }
+      return { reps: 0, weight: roundHalf(base * 0.5) }
     case 'drop':
-      return { reps: ex.target_rep_max, weight: roundHalf(base * 0.7) }
+      return { reps: 0, weight: roundHalf(base * 0.7) }
     default:
-      return { reps: ex.target_rep_min, weight: base }
+      return { reps: 0, weight: base }
   }
 }
 
 /** Nächster Satz-Typ nach deinem Muster (Aufwärm, Arbeit, Arbeit, Drop, …). */
 function patternType(index: number): SetType {
   return TEMPLATE[index] ?? 'working'
+}
+
+/** Baut die 4 Standard-Sätze für eine Übung (Wdh leer, Gewicht vorbefüllt). */
+function templateInputs(workoutId: string, ex: Exercise, base: number, startNo: number) {
+  return TEMPLATE.map((type, i) => {
+    const d = deriveSet(type, base)
+    return {
+      workout_id: workoutId,
+      exercise_id: ex.id,
+      set_number: startNo + i,
+      reps: d.reps,
+      weight: d.weight,
+      reps_right: ex.unilateral ? d.reps : null,
+      weight_right: ex.unilateral ? d.weight : null,
+      set_type: type,
+      to_failure: type !== 'warmup',
+    }
+  })
+}
+
+function baseFor(ex: Exercise, history: SetWithDate[]): number {
+  const sug = progressionSuggestion(ex, history)
+  return sug.suggestedWeight > 0 ? sug.suggestedWeight : 20
 }
 
 export default function Workout() {
@@ -97,30 +121,29 @@ export default function Workout() {
   // Arbeitsgewicht als Basis für Vorschläge
   const workingBase = suggestion && suggestion.suggestedWeight > 0 ? suggestion.suggestedWeight : 20
 
+  // Übung auswählen → bei leerem Stand automatisch die Standard-Sätze anlegen
+  function selectExercise(id: string) {
+    setExerciseId(id)
+    if (!id || !todaysWorkout || !exercises) return
+    const ex = exercises.find((e) => e.id === id)
+    if (!ex) return
+    const existing = (workoutSets ?? []).filter((s) => s.exercise_id === id)
+    if (existing.length > 0) return
+    const hist = (allSets ?? []).filter((s) => s.exercise_id === id && s.date !== today)
+    addSets.mutate(templateInputs(todaysWorkout.id, ex, baseFor(ex, hist), 1))
+  }
+
   async function addTemplate() {
     if (!todaysWorkout || !selectedExercise) return
-    const uni = selectedExercise.unilateral
-    const inputs = TEMPLATE.map((type, i) => {
-      const d = deriveSet(type, workingBase, selectedExercise!)
-      return {
-        workout_id: todaysWorkout.id,
-        exercise_id: exerciseId,
-        set_number: nextSetNumber + i,
-        reps: d.reps,
-        weight: d.weight,
-        reps_right: uni ? d.reps : null,
-        weight_right: uni ? d.weight : null,
-        set_type: type,
-        to_failure: type !== 'warmup',
-      }
-    })
-    await addSets.mutateAsync(inputs)
+    await addSets.mutateAsync(
+      templateInputs(todaysWorkout.id, selectedExercise, workingBase, nextSetNumber),
+    )
   }
 
   async function addOne() {
     if (!todaysWorkout || !selectedExercise) return
     const type = patternType(setsForExercise.length)
-    const d = deriveSet(type, workingBase, selectedExercise)
+    const d = deriveSet(type, workingBase)
     const uni = selectedExercise.unilateral
     await addSet.mutateAsync({
       workout_id: todaysWorkout.id,
@@ -182,7 +205,7 @@ export default function Workout() {
           <select
             className="input"
             value={exerciseId}
-            onChange={(e) => setExerciseId(e.target.value)}
+            onChange={(e) => selectExercise(e.target.value)}
           >
             <option value="">— wählen —</option>
             {exercises?.map((ex) => (
