@@ -112,6 +112,7 @@ export default function Workout() {
 
   async function addTemplate() {
     if (!todaysWorkout || !selectedExercise) return
+    const uni = selectedExercise.unilateral
     const inputs = TEMPLATE.map((type, i) => {
       const d = deriveSet(type, workingBase, selectedExercise!)
       return {
@@ -120,6 +121,8 @@ export default function Workout() {
         set_number: nextSetNumber + i,
         reps: d.reps,
         weight: d.weight,
+        reps_right: uni ? d.reps : null,
+        weight_right: uni ? d.weight : null,
         set_type: type,
         to_failure: type !== 'warmup',
       }
@@ -131,12 +134,15 @@ export default function Workout() {
     if (!todaysWorkout || !selectedExercise) return
     const type = patternType(setsForExercise.length)
     const d = deriveSet(type, workingBase, selectedExercise)
+    const uni = selectedExercise.unilateral
     await addSet.mutateAsync({
       workout_id: todaysWorkout.id,
       exercise_id: exerciseId,
       set_number: nextSetNumber,
       reps: d.reps,
       weight: d.weight,
+      reps_right: uni ? d.reps : null,
+      weight_right: uni ? d.weight : null,
       set_type: type,
       to_failure: type !== 'warmup',
     })
@@ -265,27 +271,86 @@ export default function Workout() {
                         </button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Stepper
-                        label="Wdh"
-                        hideLabel
-                        compact
-                        value={s.reps}
-                        step={1}
-                        min={0}
-                        onChange={(reps) => updateSet.mutate({ id: s.id, reps })}
-                      />
-                      <Stepper
-                        label="Gewicht"
-                        hideLabel
-                        compact
-                        suffix="kg"
-                        value={s.weight}
-                        step={selectedExercise.increment}
-                        min={0}
-                        onChange={(weight) => updateSet.mutate({ id: s.id, weight })}
-                      />
-                    </div>
+                    {selectedExercise.unilateral ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="w-12 shrink-0 text-xs font-semibold text-cocoa-light">
+                            Links
+                          </span>
+                          <div className="grid flex-1 grid-cols-2 gap-2">
+                            <Stepper
+                              label="Wdh links"
+                              hideLabel
+                              compact
+                              value={s.reps}
+                              step={1}
+                              min={0}
+                              onChange={(reps) => updateSet.mutate({ id: s.id, reps })}
+                            />
+                            <Stepper
+                              label="Gewicht links"
+                              hideLabel
+                              compact
+                              suffix="kg"
+                              value={s.weight}
+                              step={selectedExercise.increment}
+                              min={0}
+                              onChange={(weight) => updateSet.mutate({ id: s.id, weight })}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-12 shrink-0 text-xs font-semibold text-cocoa-light">
+                            Rechts
+                          </span>
+                          <div className="grid flex-1 grid-cols-2 gap-2">
+                            <Stepper
+                              label="Wdh rechts"
+                              hideLabel
+                              compact
+                              value={s.reps_right ?? 0}
+                              step={1}
+                              min={0}
+                              onChange={(reps_right) => updateSet.mutate({ id: s.id, reps_right })}
+                            />
+                            <Stepper
+                              label="Gewicht rechts"
+                              hideLabel
+                              compact
+                              suffix="kg"
+                              value={s.weight_right ?? 0}
+                              step={selectedExercise.increment}
+                              min={0}
+                              onChange={(weight_right) =>
+                                updateSet.mutate({ id: s.id, weight_right })
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Stepper
+                          label="Wdh"
+                          hideLabel
+                          compact
+                          value={s.reps}
+                          step={1}
+                          min={0}
+                          onChange={(reps) => updateSet.mutate({ id: s.id, reps })}
+                        />
+                        <Stepper
+                          label="Gewicht"
+                          hideLabel
+                          compact
+                          suffix="kg"
+                          value={s.weight}
+                          step={selectedExercise.increment}
+                          min={0}
+                          onChange={(weight) => updateSet.mutate({ id: s.id, weight })}
+                        />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

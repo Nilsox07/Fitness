@@ -71,7 +71,11 @@ export default function History() {
                                 : s.set_type === 'drop'
                                   ? 'Drop '
                                   : ''
-                            return `${prefix}${s.reps}×${s.weight}kg${s.to_failure ? ' 🔥' : ''}`
+                            const flame = s.to_failure ? ' 🔥' : ''
+                            if (s.reps_right != null) {
+                              return `${prefix}L ${s.reps}×${s.weight} / R ${s.reps_right}×${s.weight_right}kg${flame}`
+                            }
+                            return `${prefix}${s.reps}×${s.weight}kg${flame}`
                           })
                           .join(' · ')}
                       </div>

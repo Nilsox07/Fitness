@@ -75,6 +75,8 @@ export interface SetInput {
   set_number: number
   reps: number
   weight: number
+  reps_right?: number | null
+  weight_right?: number | null
   set_type: SetType
   to_failure: boolean
 }
@@ -124,7 +126,9 @@ export function useUpdateSet() {
     mutationFn: async ({
       id,
       ...patch
-    }: { id: string } & Partial<Pick<WorkoutSet, 'reps' | 'weight' | 'set_type' | 'to_failure'>>) => {
+    }: { id: string } & Partial<
+      Pick<WorkoutSet, 'reps' | 'weight' | 'reps_right' | 'weight_right' | 'set_type' | 'to_failure'>
+    >) => {
       const { data, error } = await supabase
         .from('workout_sets')
         .update(patch)

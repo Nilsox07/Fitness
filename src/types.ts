@@ -37,6 +37,8 @@ export interface Exercise {
   target_rep_min: number
   target_rep_max: number
   increment: number
+  /** Einseitig: links/rechts getrennt erfassen. */
+  unilateral: boolean
   created_at: string
 }
 
@@ -57,6 +59,9 @@ export interface WorkoutSet {
   set_number: number
   reps: number
   weight: number
+  /** rechte Seite bei einseitigen Übungen (sonst null); links = reps/weight */
+  reps_right: number | null
+  weight_right: number | null
   set_type: SetType
   /** Satz bis zum Muskelversagen ausgeführt? (Default false = noch Reserve) */
   to_failure: boolean

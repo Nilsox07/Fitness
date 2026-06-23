@@ -16,6 +16,7 @@ const empty: ExerciseInput = {
   target_rep_min: 4,
   target_rep_max: 8,
   increment: 2.5,
+  unilateral: false,
 }
 
 export default function Exercises() {
@@ -44,6 +45,7 @@ export default function Exercises() {
       target_rep_min: ex.target_rep_min,
       target_rep_max: ex.target_rep_max,
       increment: ex.increment,
+      unilateral: ex.unilateral,
     })
     setOpen(true)
   }
@@ -181,6 +183,25 @@ export default function Exercises() {
                 />
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, unilateral: !form.unilateral })}
+              className="flex w-full items-center justify-between rounded-xl bg-sand-light px-3 py-2.5 ring-1 ring-sand-dark"
+            >
+              <span className="text-sm font-medium text-cocoa">Einseitig (links/rechts)</span>
+              <span
+                className={`relative h-7 w-12 shrink-0 rounded-full transition ${
+                  form.unilateral ? 'bg-ruby' : 'bg-sand-dark'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-6 w-6 rounded-full bg-white transition-all ${
+                    form.unilateral ? 'left-[22px]' : 'left-0.5'
+                  }`}
+                />
+              </span>
+            </button>
+
             <div className="flex gap-2 pt-2">
               <button className="btn-ghost flex-1" onClick={() => setOpen(false)}>
                 Abbrechen

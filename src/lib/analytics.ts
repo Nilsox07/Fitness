@@ -19,13 +19,19 @@ export function estimate1RM(weight: number, reps: number): number {
   return weight * (1 + reps / 30)
 }
 
-/** Volumen eines einzelnen Satzes: Wdh × Gewicht. */
-export function setVolume(set: Pick<WorkoutSet, 'reps' | 'weight'>): number {
-  return set.reps * set.weight
+type VolumeSet = Pick<WorkoutSet, 'reps' | 'weight'> &
+  Partial<Pick<WorkoutSet, 'reps_right' | 'weight_right'>>
+
+/** Volumen eines Satzes: Wdh × Gewicht (bei einseitigen Übungen plus rechte Seite). */
+export function setVolume(set: VolumeSet): number {
+  const right = set.reps_right != null && set.weight_right != null
+    ? set.reps_right * set.weight_right
+    : 0
+  return set.reps * set.weight + right
 }
 
 /** Gesamtvolumen mehrerer Sätze. */
-export function totalVolume(sets: Pick<WorkoutSet, 'reps' | 'weight'>[]): number {
+export function totalVolume(sets: VolumeSet[]): number {
   return sets.reduce((sum, s) => sum + setVolume(s), 0)
 }
 

@@ -19,7 +19,13 @@ export function useExercises() {
 
 export type ExerciseInput = Pick<
   Exercise,
-  'name' | 'muscle_group' | 'notes' | 'target_rep_min' | 'target_rep_max' | 'increment'
+  | 'name'
+  | 'muscle_group'
+  | 'notes'
+  | 'target_rep_min'
+  | 'target_rep_max'
+  | 'increment'
+  | 'unilateral'
 >
 
 export function useCreateExercise() {

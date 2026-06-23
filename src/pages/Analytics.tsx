@@ -19,6 +19,7 @@ import {
   frequencyStats,
   onlyWorking,
   personalRecords,
+  setVolume,
   summarizeSessions,
   weeklyVolume,
 } from '../lib/analytics'
@@ -64,7 +65,7 @@ export default function Analytics() {
     const acc = new Map<string, number>()
     ;(allSets ?? []).forEach((s) => {
       const g = groupOf.get(s.exercise_id) ?? 'Sonstige'
-      acc.set(g, (acc.get(g) ?? 0) + s.reps * s.weight)
+      acc.set(g, (acc.get(g) ?? 0) + setVolume(s))
     })
     return [...acc.entries()]
       .map(([group, volume]) => ({ group, volume: Math.round(volume) }))

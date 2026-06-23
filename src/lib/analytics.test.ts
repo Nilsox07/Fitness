@@ -30,6 +30,8 @@ function mkSet(
     set_number,
     reps,
     weight,
+    reps_right: null,
+    weight_right: null,
     set_type,
     to_failure,
     created_at: `${date}T10:00:00Z`,
@@ -54,6 +56,9 @@ describe('estimate1RM (Epley)', () => {
 describe('Volumen', () => {
   it('summiert Wdh × Gewicht', () => {
     expect(totalVolume([{ reps: 10, weight: 50 }, { reps: 8, weight: 60 }])).toBe(980)
+  })
+  it('zählt bei einseitigen Sätzen beide Seiten', () => {
+    expect(totalVolume([{ reps: 8, weight: 40, reps_right: 8, weight_right: 40 }])).toBe(640)
   })
 })
 
