@@ -7,6 +7,7 @@ import {
   type ExerciseInput,
 } from '../hooks/useExercises'
 import { supabase } from '../lib/supabase'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { MUSCLE_GROUPS, type Exercise } from '../types'
 
 const empty: ExerciseInput = {
@@ -67,6 +68,7 @@ export default function Exercises() {
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Übungen</h1>
         <div className="flex gap-2">
+          <ThemeToggle />
           <button className="btn-ghost text-sm" onClick={() => supabase.auth.signOut()}>
             Abmelden
           </button>

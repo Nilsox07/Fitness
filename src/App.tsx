@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { TabBar } from './components/TabBar'
-import { ThemeToggle } from './components/ThemeToggle'
 import Login from './pages/Login'
 import Workout from './pages/Workout'
 import Exercises from './pages/Exercises'
@@ -18,17 +17,11 @@ export default function App() {
   }
 
   if (!session) {
-    return (
-      <>
-        <ThemeToggle />
-        <Login />
-      </>
-    )
+    return <Login />
   }
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col">
-      <ThemeToggle />
       <main className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />
