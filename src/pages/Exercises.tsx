@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   useCreateExercise,
   useDeleteExercise,
@@ -6,8 +7,6 @@ import {
   useUpdateExercise,
   type ExerciseInput,
 } from '../hooks/useExercises'
-import { supabase } from '../lib/supabase'
-import { ThemeToggle } from '../components/ThemeToggle'
 import { MUSCLE_GROUPS, type Exercise } from '../types'
 
 const empty: ExerciseInput = {
@@ -20,6 +19,7 @@ const empty: ExerciseInput = {
 }
 
 export default function Exercises() {
+  const navigate = useNavigate()
   const { data: exercises, isLoading } = useExercises()
   const createEx = useCreateExercise()
   const updateEx = useUpdateExercise()
@@ -68,9 +68,12 @@ export default function Exercises() {
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Übungen</h1>
         <div className="flex gap-2">
-          <ThemeToggle />
-          <button className="btn-ghost text-sm" onClick={() => supabase.auth.signOut()}>
-            Abmelden
+          <button
+            className="btn-ghost text-base"
+            onClick={() => navigate('/profile')}
+            aria-label="Profil & Einstellungen"
+          >
+            ⚙️
           </button>
           <button className="btn-primary text-sm" onClick={startNew}>
             + Neu

@@ -12,7 +12,9 @@ import {
 } from 'recharts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllSets } from '../hooks/useWorkouts'
+import { useAllFoodEntries } from '../hooks/useNutrition'
 import { useTheme } from '../lib/theme'
+import { usePrefs } from '../lib/prefs'
 import {
   frequencyStats,
   onlyWorking,
@@ -87,13 +89,40 @@ export default function Analytics() {
 
   const prs = useMemo(() => personalRecords(exerciseSets), [exerciseSets])
 
+  // Ernährung (nur wenn aktiviert)
+  const { showNutrition } = usePrefs()
+  const { data: foodEntries } = useAllFoodEntries()
+  const dailyKcal = useMemo(() => {
+    const map = new Map<string, { kcal: number; protein: number }>()
+    ;(foodEntries ?? []).forEach((e) => {
+      const d = map.get(e.date) ?? { kcal: 0, protein: 0 }
+      d.kcal += e.kcal
+      d.protein += e.protein
+      map.set(e.date, d)
+    })
+    return [...map.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, v]) => ({
+        date: new Date(date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+        kcal: Math.round(v.kcal),
+        protein: Math.round(v.protein),
+      }))
+  }, [foodEntries])
+  const avgKcal = dailyKcal.length
+    ? Math.round(dailyKcal.reduce((s, d) => s + d.kcal, 0) / dailyKcal.length)
+    : 0
+  const avgProtein = dailyKcal.length
+    ? Math.round(dailyKcal.reduce((s, d) => s + d.protein, 0) / dailyKcal.length)
+    : 0
+  const showNutritionSection = showNutrition && dailyKcal.length > 0
+
   const hasData = (allSets?.length ?? 0) > 0
 
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold">Auswertung</h1>
 
-      {!hasData && (
+      {!hasData && !showNutritionSection && (
         <p className="text-cocoa-light">Noch keine Daten — erfasse dein erstes Training.</p>
       )}
 
@@ -206,6 +235,31 @@ export default function Analytics() {
                 </div>
               </>
             )}
+          </section>
+        </>
+      )}
+
+      {/* Ernährung – Tagesverlauf (nur wenn aktiviert & Daten vorhanden) */}
+      {showNutritionSection && (
+        <>
+          <section className="grid grid-cols-2 gap-2">
+            <Stat label="Ø kcal/Tag" value={avgKcal} />
+            <Stat label="Ø Eiweiß/Tag" value={`${avgProtein} g`} />
+          </section>
+          <section className="card">
+            <h2 className="mb-3 font-semibold">Kalorien pro Tag</h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={dailyKcal}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+                <XAxis dataKey="date" tick={axisStyle} />
+                <YAxis tick={axisStyle} width={40} />
+                <Tooltip
+                  contentStyle={{ background: chart.tipBg, border: `1px solid ${chart.tipBorder}`, color: chart.tipText, borderRadius: 8 }}
+                  labelStyle={{ color: chart.tipText }}
+                />
+                <Bar dataKey="kcal" fill={chart.primary} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </section>
         </>
       )}

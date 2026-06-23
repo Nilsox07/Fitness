@@ -8,6 +8,7 @@ import Exercises from './pages/Exercises'
 import History from './pages/History'
 import Analytics from './pages/Analytics'
 import Nutrition from './pages/Nutrition'
+import Profile from './pages/Profile'
 
 export default function App() {
   const { session, loading, recovery } = useAuth()
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/exercises" element={<Exercises />} />
           <Route path="/history" element={<History />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -48,6 +48,21 @@ export function useFoodEntries(date: string) {
   })
 }
 
+/** Alle Essens-Einträge (für die Auswertung / Tagesverlauf). */
+export function useAllFoodEntries() {
+  return useQuery({
+    queryKey: ['food_entries', 'all'],
+    queryFn: async (): Promise<FoodEntry[]> => {
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('*')
+        .order('date', { ascending: true })
+      if (error) throw error
+      return data as FoodEntry[]
+    },
+  })
+}
+
 export type FoodEntryInput = Pick<
   FoodEntry,
   'date' | 'name' | 'amount_g' | 'kcal' | 'protein' | 'carbs' | 'fat' | 'barcode'
@@ -66,7 +81,7 @@ export function useAddFoodEntry() {
       if (error) throw error
       return data as FoodEntry
     },
-    onSuccess: (e) => qc.invalidateQueries({ queryKey: ['food_entries', e.date] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['food_entries'] }),
   })
 }
 
@@ -78,6 +93,6 @@ export function useDeleteFoodEntry() {
       if (error) throw error
       return entry
     },
-    onSuccess: (e) => qc.invalidateQueries({ queryKey: ['food_entries', e.date] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['food_entries'] }),
   })
 }

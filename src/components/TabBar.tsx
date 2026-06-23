@@ -1,17 +1,23 @@
 import { NavLink } from 'react-router-dom'
-
-const tabs = [
-  { to: '/', label: 'Training', icon: '🏋️' },
-  { to: '/nutrition', label: 'Essen', icon: '🍎' },
-  { to: '/history', label: 'Verlauf', icon: '🗓️' },
-  { to: '/analytics', label: 'Auswertung', icon: '📈' },
-  { to: '/exercises', label: 'Übungen', icon: '📋' },
-]
+import { usePrefs } from '../lib/prefs'
 
 export function TabBar() {
+  const { showNutrition } = usePrefs()
+
+  const tabs = [
+    { to: '/', label: 'Training', icon: '🏋️' },
+    ...(showNutrition ? [{ to: '/nutrition', label: 'Essen', icon: '🍎' }] : []),
+    { to: '/history', label: 'Verlauf', icon: '🗓️' },
+    { to: '/analytics', label: 'Auswertung', icon: '📈' },
+    { to: '/exercises', label: 'Übungen', icon: '📋' },
+  ]
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-md border-t border-sand-dark bg-cream/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <div className="grid grid-cols-5">
+      <div
+        className="grid"
+        style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+      >
         {tabs.map((t) => (
           <NavLink
             key={t.to}
