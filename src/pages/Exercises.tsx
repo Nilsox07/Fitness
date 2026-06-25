@@ -7,6 +7,7 @@ import {
   useUpdateExercise,
   type ExerciseInput,
 } from '../hooks/useExercises'
+import { generateLadder } from '../lib/weights'
 import { MUSCLE_GROUPS, type Exercise } from '../types'
 
 const empty: ExerciseInput = {
@@ -17,6 +18,7 @@ const empty: ExerciseInput = {
   target_rep_max: 8,
   increment: 2.5,
   unilateral: false,
+  weight_steps: null,
 }
 
 export default function Exercises() {
@@ -29,6 +31,18 @@ export default function Exercises() {
   const [editing, setEditing] = useState<Exercise | null>(null)
   const [form, setForm] = useState<ExerciseInput>(empty)
   const [open, setOpen] = useState(false)
+  const [gen, setGen] = useState({ start: '', pattern: '', max: '' })
+
+  function generateSteps() {
+    const start = parseFloat(gen.start.replace(',', '.'))
+    const max = parseFloat(gen.max.replace(',', '.'))
+    const pattern = gen.pattern
+      .split(/[\s;]+/)
+      .map((t) => parseFloat(t.trim().replace(',', '.')))
+      .filter((n) => Number.isFinite(n) && n > 0)
+    const ladder = generateLadder(start, pattern, max)
+    if (ladder.length) setForm((f) => ({ ...f, weight_steps: ladder.join(' ') }))
+  }
 
   function startNew() {
     setEditing(null)
@@ -46,6 +60,7 @@ export default function Exercises() {
       target_rep_max: ex.target_rep_max,
       increment: ex.increment,
       unilateral: ex.unilateral,
+      weight_steps: ex.weight_steps,
     })
     setOpen(true)
   }
@@ -201,6 +216,58 @@ export default function Exercises() {
                 />
               </span>
             </button>
+
+            <div className="rounded-xl bg-sand-light p-3 ring-1 ring-sand-dark">
+              <label className="label">Gewichtsstufen (optional)</label>
+              <input
+                className="input"
+                placeholder="z. B. 4 9 13 18 22 (leer = gleichmäßige Schritte)"
+                value={form.weight_steps ?? ''}
+                onChange={(e) => setForm({ ...form, weight_steps: e.target.value || null })}
+              />
+              <p className="mt-1 text-xs text-cocoa-light">
+                Real wählbare Gewichte deines Geräts, mit Leerzeichen getrennt. +/- springt dann
+                exakt auf diese Werte.
+              </p>
+              <div className="mt-2 grid grid-cols-4 items-end gap-2">
+                <div>
+                  <label className="label">Start</label>
+                  <input
+                    className="input"
+                    inputMode="decimal"
+                    placeholder="4"
+                    value={gen.start}
+                    onChange={(e) => setGen({ ...gen, start: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="label">Muster</label>
+                  <input
+                    className="input"
+                    placeholder="5 4"
+                    value={gen.pattern}
+                    onChange={(e) => setGen({ ...gen, pattern: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="label">bis</label>
+                  <input
+                    className="input"
+                    inputMode="decimal"
+                    placeholder="100"
+                    value={gen.max}
+                    onChange={(e) => setGen({ ...gen, max: e.target.value })}
+                  />
+                </div>
+                <button type="button" className="btn-ghost" onClick={generateSteps}>
+                  Erzeugen
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-cocoa-muted">
+                Generator: Start + sich wiederholendes Zuwachs-Muster. Bsp. Start 4, Muster „5 4" →
+                4 · 9 · 13 · 18 · 22 …
+              </p>
+            </div>
 
             <div className="flex gap-2 pt-2">
               <button className="btn-ghost flex-1" onClick={() => setOpen(false)}>

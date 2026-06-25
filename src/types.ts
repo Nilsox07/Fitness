@@ -39,6 +39,8 @@ export interface Exercise {
   increment: number
   /** Einseitig: links/rechts getrennt erfassen. */
   unilateral: boolean
+  /** Optionale Liste real wählbarer Gewichte (Text, leer = gleichmäßige Schritte). */
+  weight_steps: string | null
   created_at: string
 }
 

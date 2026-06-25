@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ladderStep, snapToLadder } from '../lib/weights'
 
 interface StepperProps {
   label: string
@@ -11,6 +12,8 @@ interface StepperProps {
   hideLabel?: boolean
   /** Kompaktere Darstellung für editierbare Listen-Zeilen. */
   compact?: boolean
+  /** Optionale Gewichts-Leiter: +/- springt auf real wählbare Werte. */
+  steps?: number[]
 }
 
 /**
@@ -27,7 +30,9 @@ export function Stepper({
   suffix,
   hideLabel = false,
   compact = false,
+  steps,
 }: StepperProps) {
+  const hasLadder = !!steps && steps.length > 0
   const clamp = (v: number) => Math.max(min, Math.round(v * 100) / 100)
   const [text, setText] = useState(String(value))
 
@@ -38,15 +43,22 @@ export function Stepper({
 
   function commit(raw: string) {
     const n = parseFloat(raw.replace(',', '.'))
-    const next = Number.isNaN(n) ? min : clamp(n)
+    if (Number.isNaN(n)) {
+      onChange(min)
+      setText(String(min))
+      return
+    }
+    // Auf reale Stufen einrasten, wenn eine Leiter hinterlegt ist
+    const next = hasLadder ? snapToLadder(n, steps!) : clamp(n)
     onChange(next)
     setText(String(next))
   }
 
   // +/- rechnet auf dem gerade eingetippten Wert weiter (nicht auf einem alten)
   function adjust(delta: number) {
-    const base = parseFloat(text.replace(',', '.'))
-    const next = clamp((Number.isNaN(base) ? value : base) + delta)
+    const parsed = parseFloat(text.replace(',', '.'))
+    const base = Number.isNaN(parsed) ? value : parsed
+    const next = hasLadder ? ladderStep(base, steps!, delta) : clamp(base + delta)
     onChange(next)
     setText(String(next))
   }

@@ -1,5 +1,6 @@
 import { Stepper } from './Stepper'
 import { useDeleteSet, useUpdateSet } from '../hooks/useWorkouts'
+import { parseLadder } from '../lib/weights'
 import { SET_TYPES, SET_TYPE_SHORT, type Exercise, type SetType, type WorkoutSet } from '../types'
 
 const typeChip: Record<SetType, string> = {
@@ -12,6 +13,8 @@ const typeChip: Record<SetType, string> = {
 export function EditableSetRow({ set: s, exercise }: { set: WorkoutSet; exercise: Exercise }) {
   const updateSet = useUpdateSet()
   const deleteSet = useDeleteSet()
+  const ladder = parseLadder(exercise.weight_steps)
+  const weightSteps = ladder.length ? ladder : undefined
 
   return (
     <div className="rounded-xl bg-sand/40 p-2.5 ring-1 ring-sand-dark/50">
@@ -73,6 +76,7 @@ export function EditableSetRow({ set: s, exercise }: { set: WorkoutSet; exercise
                 suffix="kg"
                 value={s.weight}
                 step={exercise.increment}
+                steps={weightSteps}
                 min={0}
                 onChange={(weight) => updateSet.mutate({ id: s.id, weight })}
               />
@@ -97,6 +101,7 @@ export function EditableSetRow({ set: s, exercise }: { set: WorkoutSet; exercise
                 suffix="kg"
                 value={s.weight_right ?? 0}
                 step={exercise.increment}
+                steps={weightSteps}
                 min={0}
                 onChange={(weight_right) => updateSet.mutate({ id: s.id, weight_right })}
               />
@@ -121,6 +126,7 @@ export function EditableSetRow({ set: s, exercise }: { set: WorkoutSet; exercise
             suffix="kg"
             value={s.weight}
             step={exercise.increment}
+            steps={weightSteps}
             min={0}
             onChange={(weight) => updateSet.mutate({ id: s.id, weight })}
           />

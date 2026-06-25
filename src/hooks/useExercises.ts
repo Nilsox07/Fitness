@@ -26,6 +26,7 @@ export type ExerciseInput = Pick<
   | 'target_rep_max'
   | 'increment'
   | 'unilateral'
+  | 'weight_steps'
 >
 
 export function useCreateExercise() {

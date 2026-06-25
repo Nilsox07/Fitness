@@ -10,6 +10,7 @@ import {
   useWorkouts,
 } from '../hooks/useWorkouts'
 import { EditableSetRow } from '../components/EditableSetRow'
+import { parseLadder, snapToLadder } from '../lib/weights'
 import { progressionSuggestion, summarizeSessions } from '../lib/analytics'
 import { type Exercise, type SetType, type SetWithDate } from '../types'
 
@@ -50,18 +51,25 @@ function patternType(index: number): SetType {
   return TEMPLATE[index] ?? 'working'
 }
 
+/** Gewicht auf die Geräte-Leiter einrasten (falls hinterlegt). */
+function snapWeight(ex: Exercise, w: number): number {
+  const ladder = parseLadder(ex.weight_steps)
+  return ladder.length ? snapToLadder(w, ladder) : w
+}
+
 /** Baut die 4 Standard-Sätze für eine Übung (Wdh leer, Gewicht vorbefüllt). */
 function templateInputs(workoutId: string, ex: Exercise, base: number, startNo: number) {
   return TEMPLATE.map((type, i) => {
     const d = deriveSet(type, base)
+    const weight = snapWeight(ex, d.weight)
     return {
       workout_id: workoutId,
       exercise_id: ex.id,
       set_number: startNo + i,
       reps: d.reps,
-      weight: d.weight,
+      weight,
       reps_right: ex.unilateral ? d.reps : null,
-      weight_right: ex.unilateral ? d.weight : null,
+      weight_right: ex.unilateral ? weight : null,
       set_type: type,
       to_failure: type !== 'warmup',
     }
@@ -145,14 +153,15 @@ export default function Workout() {
     const type = patternType(setsForExercise.length)
     const d = deriveSet(type, workingBase)
     const uni = selectedExercise.unilateral
+    const weight = snapWeight(selectedExercise, d.weight)
     await addSet.mutateAsync({
       workout_id: todaysWorkout.id,
       exercise_id: exerciseId,
       set_number: nextSetNumber,
       reps: d.reps,
-      weight: d.weight,
+      weight,
       reps_right: uni ? d.reps : null,
-      weight_right: uni ? d.weight : null,
+      weight_right: uni ? weight : null,
       set_type: type,
       to_failure: type !== 'warmup',
     })
