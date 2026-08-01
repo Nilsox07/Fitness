@@ -48,3 +48,31 @@ export function generateLadder(start: number, pattern: number[], max: number): n
   }
   return out
 }
+
+/**
+ * Alle erreichbaren Summen aus Teilmengen der Zusatzgewichte – inkl. 0 (nichts drauf).
+ * z. B. [2.5, 5, 7] → 0, 2.5, 5, 7, 7.5, 9.5, 12, 14.5
+ */
+export function subsetSums(addons: number[]): number[] {
+  const clean = addons.filter((n) => Number.isFinite(n) && n > 0)
+  const sums = new Set<number>([0])
+  for (const a of clean) {
+    for (const s of [...sums]) sums.add(round1(s + a))
+  }
+  return [...sums].sort((x, y) => x - y)
+}
+
+/**
+ * Verfeinert eine Basis-Leiter, indem auf jedes Basisgewicht jede Kombination
+ * der Zusatzgewichte gelegt werden kann. Ergebnis: sortiert & eindeutig.
+ * z. B. base=[13,18], addons=[2.5,5] → 13, 15.5, 18, 20.5, 23, 25.5
+ */
+export function expandWithAddons(base: number[], addons: number[]): number[] {
+  const extras = subsetSums(addons)
+  if (extras.length <= 1) return [...base].sort((x, y) => x - y)
+  const out = new Set<number>()
+  for (const b of base) {
+    for (const e of extras) out.add(round1(b + e))
+  }
+  return [...out].sort((x, y) => x - y)
+}
