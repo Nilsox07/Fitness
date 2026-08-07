@@ -14,8 +14,14 @@ import { parseLadder, snapToLadder } from '../lib/weights'
 import { progressionSuggestion, summarizeSessions } from '../lib/analytics'
 import { type Exercise, type SetType, type SetWithDate } from '../types'
 
+// Trainings-Tag: der Tag wechselt nicht um Mitternacht, sondern erst um DAY_CUTOFF_H
+// Uhr morgens. So bleibt eine Session, die vor 0 Uhr startet und danach weiterläuft,
+// als ein Training zusammen (statt beim Datumswechsel zu zerreißen).
+const DAY_CUTOFF_H = 4
+
 function todayLocal(): string {
   const d = new Date()
+  d.setHours(d.getHours() - DAY_CUTOFF_H)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
     d.getDate(),
   ).padStart(2, '0')}`
