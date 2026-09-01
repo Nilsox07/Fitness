@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import ResetPassword from './pages/ResetPassword'
 import Workout from './pages/Workout'
 import Exercises from './pages/Exercises'
+import Plans from './pages/Plans'
 import History from './pages/History'
 import Analytics from './pages/Analytics'
 import Nutrition from './pages/Nutrition'
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/" element={<Workout />} />
           <Route path="/nutrition" element={<Nutrition />} />
           <Route path="/exercises" element={<Exercises />} />
+          <Route path="/plans" element={<Plans />} />
           <Route path="/history" element={<History />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/profile" element={<Profile />} />

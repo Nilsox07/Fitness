@@ -90,6 +90,13 @@ export default function Exercises() {
         <h1 className="text-xl font-bold">Übungen</h1>
         <div className="flex gap-2">
           <button
+            className="btn-ghost text-sm"
+            onClick={() => navigate('/plans')}
+            aria-label="Trainingspläne"
+          >
+            🗂️ Pläne
+          </button>
+          <button
             className="btn-ghost text-base"
             onClick={() => navigate('/profile')}
             aria-label="Profil & Einstellungen"
