@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { TabBar } from './components/TabBar'
+import { SaveStatus } from './components/SaveStatus'
 import Login from './pages/Login'
 import ResetPassword from './pages/ResetPassword'
 import Workout from './pages/Workout'
@@ -30,6 +31,7 @@ export default function App() {
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col">
+      <SaveStatus />
       <main className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />

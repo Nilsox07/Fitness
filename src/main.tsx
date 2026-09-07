@@ -12,7 +12,16 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 30,
-      retry: 1,
+      retry: 2,
+    },
+    mutations: {
+      // Schreibvorgänge (Sätze anlegen/ändern) bei schwachem Netz mehrfach
+      // wiederholen, statt sie sofort zu verwerfen. networkMode 'online'
+      // pausiert sie zudem, solange offline, und setzt sie fort, sobald wieder
+      // Verbindung besteht — so gehen Sätze im Gym nicht mehr verloren.
+      retry: 5,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 20000),
+      networkMode: 'online',
     },
   },
 })
