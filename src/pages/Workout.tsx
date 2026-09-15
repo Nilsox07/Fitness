@@ -14,7 +14,18 @@ import { EditableSetRow } from '../components/EditableSetRow'
 import { Confetti } from '../components/Confetti'
 import { RestTimer, type RestTimerHandle } from '../components/RestTimer'
 import { parseLadder, snapToLadder } from '../lib/weights'
-import { estimate1RM, onlyWorking, progressionSuggestion, summarizeSessions } from '../lib/analytics'
+import {
+  estimate1RM,
+  frequencyStats,
+  onlyWorking,
+  progressionSuggestion,
+  summarizeSessions,
+  totalVolume,
+} from '../lib/analytics'
+import { mascotStage, rankForSessions } from '../lib/gamification'
+import { shareStatCard } from '../lib/statcard'
+import { hypeLine } from '../lib/ai'
+import { useAiStatus } from '../hooks/useAi'
 import { type Exercise, type PlanWithExercises, type SetType, type SetWithDate } from '../types'
 
 // Trainings-Tag: der Tag wechselt nicht um Mitternacht, sondern erst um DAY_CUTOFF_H
@@ -191,6 +202,50 @@ export default function Workout() {
   const restRef = useRef<RestTimerHandle>(null)
   const autoRest = () => {
     if (restRef.current?.autoEnabled()) restRef.current.start()
+  }
+  const { data: ai } = useAiStatus()
+  const [hype, setHype] = useState<string | null>(null)
+  const [hypeBusy, setHypeBusy] = useState(false)
+
+  async function shareToday() {
+    if (!workoutSets) return
+    const exCount = new Set(workoutSets.map((s) => s.exercise_id)).size
+    const sessions = frequencyStats([...new Set((allSets ?? []).map((s) => s.date))]).totalSessions
+    await shareStatCard({
+      title: 'Training abgeschlossen 💪',
+      dateLabel: new Date(today).toLocaleDateString('de-DE', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      }),
+      volume: Math.round(totalVolume(workoutSets)),
+      sets: workoutSets.length,
+      exercises: exCount,
+      highlight: prName ? `Rekord: ${prName}` : undefined,
+      rank: rankForSessions(sessions).title,
+      mascot: mascotStage(sessions).emoji,
+    })
+  }
+
+  async function makeHype() {
+    if (!workoutSets) return
+    setHypeBusy(true)
+    try {
+      const perEx = new Map<string, number>()
+      workoutSets.forEach((s) => perEx.set(s.exercise_id, (perEx.get(s.exercise_id) ?? 0) + 1))
+      setHype(
+        await hypeLine({
+          saetze: workoutSets.length,
+          uebungen: perEx.size,
+          volumen: Math.round(totalVolume(workoutSets)),
+          rekord: prName ?? null,
+        }),
+      )
+    } catch {
+      setHype('Stark durchgezogen! 💪')
+    } finally {
+      setHypeBusy(false)
+    }
   }
   useEffect(() => {
     if (!workoutSets || !allSets || !exercises) return
@@ -489,14 +544,32 @@ export default function Workout() {
               </li>
             ))}
           </ul>
+
+          {hype && (
+            <p className="mt-3 rounded-lg bg-ruby/10 p-2 text-center text-sm font-semibold text-ruby dark:text-rose-300">
+              {hype}
+            </p>
+          )}
+          {ai?.enabled && (
+            <button
+              className="btn-ghost mt-2 w-full text-sm"
+              onClick={makeHype}
+              disabled={hypeBusy}
+            >
+              {hypeBusy ? '…' : '🔥 Motivations-Spruch'}
+            </button>
+          )}
         </div>
       )}
 
       {/* Training abschließen */}
       {workoutSets && workoutSets.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-2">
           <button className="btn-primary w-full" onClick={() => navigate('/history')}>
             Training speichern
+          </button>
+          <button className="btn-ghost w-full" onClick={shareToday}>
+            📤 Als Bild teilen
           </button>
           <p className="text-center text-xs text-cocoa-muted">
             Deine Sätze sind automatisch gesichert — hier kommst du zum Verlauf.

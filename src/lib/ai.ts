@@ -69,6 +69,16 @@ export async function weeklyTrainingReview(summary: unknown): Promise<string> {
   return complete({ system: COACH_SYSTEM, prompt, temperature: 0.5 })
 }
 
+/** Kurzer, auf das heutige Training bezogener Motivations-/Hype-Spruch. */
+export async function hypeLine(context: unknown): Promise<string> {
+  const prompt =
+    `Heutiges Training (JSON):\n${JSON.stringify(context)}\n\n` +
+    'Schreib EINEN kurzen, lockeren Hype-/Motivationsspruch auf Deutsch (max. 12 Wörter), ' +
+    'der sich auf die heutige Leistung bezieht. Gym-Bro-Ton, gern mit Emoji. Nur den Spruch.'
+  const text = await complete({ system: COACH_SYSTEM, prompt, temperature: 0.9 })
+  return text.trim().replace(/^["']|["']$/g, '')
+}
+
 export interface ChatMsg {
   role: 'user' | 'assistant'
   content: string
