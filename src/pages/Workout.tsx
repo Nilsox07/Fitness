@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
 import { usePlans } from '../hooks/usePlans'
@@ -11,8 +11,9 @@ import {
   useWorkouts,
 } from '../hooks/useWorkouts'
 import { EditableSetRow } from '../components/EditableSetRow'
+import { Confetti } from '../components/Confetti'
 import { parseLadder, snapToLadder } from '../lib/weights'
-import { progressionSuggestion, summarizeSessions } from '../lib/analytics'
+import { estimate1RM, onlyWorking, progressionSuggestion, summarizeSessions } from '../lib/analytics'
 import { type Exercise, type PlanWithExercises, type SetType, type SetWithDate } from '../types'
 
 // Trainings-Tag: der Tag wechselt nicht um Mitternacht, sondern erst um DAY_CUTOFF_H
@@ -182,6 +183,33 @@ export default function Workout() {
   // Arbeitsgewicht als Basis für Vorschläge
   const workingBase = suggestion && suggestion.suggestedWeight > 0 ? suggestion.suggestedWeight : 20
 
+  // PR-Erkennung: neuer bester geschätzter 1RM einer Übung heute → Konfetti.
+  const [prName, setPrName] = useState<string | null>(null)
+  const [confetti, setConfetti] = useState(false)
+  const celebrated = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (!workoutSets || !allSets || !exercises) return
+    const best1RM = (s: { weight: number; reps: number; weight_right?: number | null; reps_right?: number | null }) =>
+      Math.max(estimate1RM(s.weight, s.reps), estimate1RM(s.weight_right ?? 0, s.reps_right ?? 0))
+    const prior = new Map<string, number>()
+    for (const s of onlyWorking(allSets)) {
+      if (s.date === today) continue
+      prior.set(s.exercise_id, Math.max(prior.get(s.exercise_id) ?? 0, best1RM(s)))
+    }
+    const todays = new Map<string, number>()
+    for (const s of onlyWorking(workoutSets)) {
+      todays.set(s.exercise_id, Math.max(todays.get(s.exercise_id) ?? 0, best1RM(s)))
+    }
+    for (const [exId, cur] of todays) {
+      const key = `${today}:${exId}`
+      if ((prior.get(exId) ?? 0) > 0 && cur > (prior.get(exId) ?? 0) + 0.01 && !celebrated.current.has(key)) {
+        celebrated.current.add(key)
+        setPrName(exercises.find((e) => e.id === exId)?.name ?? 'Übung')
+        setConfetti(true)
+      }
+    }
+  }, [workoutSets, allSets, exercises, today])
+
   // Bekommt die gewählte Übung einen Aufwärmsatz? (nur wenn ihre Muskelgruppe heute noch kalt ist)
   const willWarmup = selectedExercise
     ? needsWarmup(
@@ -284,6 +312,12 @@ export default function Workout() {
 
   return (
     <div className="space-y-4">
+      <Confetti show={confetti} onDone={() => setConfetti(false)} />
+      {prName && confetti && (
+        <div className="rounded-xl bg-gradient-to-r from-amber-500 to-ruby p-3 text-center font-bold text-white shadow-lg">
+          🎉 Neuer Rekord bei {prName}!
+        </div>
+      )}
       <header>
         <h1 className="text-xl font-bold">Training heute</h1>
         <p className="text-sm text-cocoa-light">

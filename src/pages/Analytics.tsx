@@ -16,6 +16,8 @@ import { useAllFoodEntries } from '../hooks/useNutrition'
 import { useTheme } from '../lib/theme'
 import { usePrefs } from '../lib/prefs'
 import { AiPanel } from '../components/AiPanel'
+import { GamePanel } from '../components/GamePanel'
+import { Heatmap } from '../components/Heatmap'
 import {
   balanceStats,
   frequencyStats,
@@ -175,7 +177,11 @@ export default function Analytics() {
 
       {hasData && (
         <>
+          <GamePanel sets={allSets ?? []} exercises={exercises ?? []} />
+
           <AiPanel sets={allSets ?? []} exercises={exercises ?? []} />
+
+          <Heatmap dates={(allSets ?? []).map((s) => s.date)} />
 
           {/* Trainingshäufigkeit */}
           <section className="grid grid-cols-3 gap-2">
