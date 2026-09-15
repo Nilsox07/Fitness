@@ -45,6 +45,8 @@ export interface Exercise {
   unilateral: boolean
   /** Optionale Liste real wählbarer Gewichte (Text, leer = gleichmäßige Schritte). */
   weight_steps: string | null
+  /** Zusätzlich beanspruchte Muskelgruppen (Sekundärmuskeln), z. B. Rudern → Schultern. */
+  secondary_muscles: MuscleGroup[]
   created_at: string
 }
 

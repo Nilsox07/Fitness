@@ -7,8 +7,10 @@ import {
   useUpdateExercise,
   type ExerciseInput,
 } from '../hooks/useExercises'
+import { useAiStatus } from '../hooks/useAi'
+import { suggestMuscles } from '../lib/ai'
 import { expandWithAddons, generateLadder } from '../lib/weights'
-import { MUSCLE_GROUPS, type Exercise } from '../types'
+import { MUSCLE_GROUPS, type Exercise, type MuscleGroup } from '../types'
 
 const empty: ExerciseInput = {
   name: '',
@@ -19,6 +21,7 @@ const empty: ExerciseInput = {
   increment: 2.5,
   unilateral: false,
   weight_steps: null,
+  secondary_muscles: [],
 }
 
 export default function Exercises() {
@@ -28,10 +31,40 @@ export default function Exercises() {
   const updateEx = useUpdateExercise()
   const deleteEx = useDeleteExercise()
 
+  const { data: ai } = useAiStatus()
   const [editing, setEditing] = useState<Exercise | null>(null)
   const [form, setForm] = useState<ExerciseInput>(empty)
   const [open, setOpen] = useState(false)
   const [gen, setGen] = useState({ start: '', pattern: '', max: '', addons: '' })
+  const [suggesting, setSuggesting] = useState(false)
+  const [suggestErr, setSuggestErr] = useState<string | null>(null)
+
+  function toggleSecondary(g: MuscleGroup) {
+    setForm((f) => ({
+      ...f,
+      secondary_muscles: f.secondary_muscles.includes(g)
+        ? f.secondary_muscles.filter((m) => m !== g)
+        : [...f.secondary_muscles, g],
+    }))
+  }
+
+  async function aiSuggestMuscles() {
+    if (!form.name.trim()) return
+    setSuggesting(true)
+    setSuggestErr(null)
+    try {
+      const s = await suggestMuscles(form.name.trim())
+      setForm((f) => ({
+        ...f,
+        muscle_group: s.primary,
+        secondary_muscles: s.secondary.filter((m) => m !== s.primary),
+      }))
+    } catch (err) {
+      setSuggestErr(err instanceof Error ? err.message : 'KI-Fehler')
+    } finally {
+      setSuggesting(false)
+    }
+  }
 
   function generateSteps() {
     const start = parseFloat(gen.start.replace(',', '.'))
@@ -65,7 +98,9 @@ export default function Exercises() {
       increment: ex.increment,
       unilateral: ex.unilateral,
       weight_steps: ex.weight_steps,
+      secondary_muscles: ex.secondary_muscles ?? [],
     })
+    setSuggestErr(null)
     setOpen(true)
   }
 
@@ -151,7 +186,19 @@ export default function Exercises() {
               />
             </div>
             <div>
-              <label className="label">Muskelgruppe</label>
+              <div className="flex items-center justify-between">
+                <label className="label">Muskelgruppe (primär)</label>
+                {ai?.enabled && (
+                  <button
+                    type="button"
+                    onClick={aiSuggestMuscles}
+                    disabled={suggesting || !form.name.trim()}
+                    className="text-xs font-semibold text-brand disabled:opacity-40"
+                  >
+                    {suggesting ? '… analysiere' : '🤖 Muskeln vorschlagen'}
+                  </button>
+                )}
+              </div>
               <select
                 className="input"
                 value={form.muscle_group}
@@ -165,6 +212,36 @@ export default function Exercises() {
                   </option>
                 ))}
               </select>
+              {suggestErr && (
+                <p className="mt-1 text-xs text-red-500 dark:text-red-400">⚠️ {suggestErr}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="label">Sekundärmuskeln (mit-beansprucht)</label>
+              <div className="flex flex-wrap gap-1.5">
+                {MUSCLE_GROUPS.filter((g) => g !== form.muscle_group).map((g) => {
+                  const on = form.secondary_muscles.includes(g)
+                  return (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => toggleSecondary(g)}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
+                        on
+                          ? 'bg-ruby text-white ring-ruby'
+                          : 'bg-sand-light text-cocoa-light ring-sand-dark'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="mt-1 text-xs text-cocoa-muted">
+                z. B. Rudern → auch Schultern &amp; Bizeps. Verbessert Aufwärm-Logik &amp;
+                Muskel-Balance.
+              </p>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>

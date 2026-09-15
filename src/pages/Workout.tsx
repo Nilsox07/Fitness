@@ -52,13 +52,16 @@ function needsWarmup(ex: Exercise, warmedGroups: Set<string>): boolean {
   return !warmedGroups.has(ex.muscle_group)
 }
 
-/** Muskelgruppen, die in den gegebenen Sätzen heute schon trainiert wurden. */
+/** Muskelgruppen, die in den gegebenen Sätzen heute schon trainiert wurden —
+ *  inkl. Sekundärmuskeln (z. B. wärmt Rudern auch die Schultern mit). */
 function warmedMuscleGroups(sets: { exercise_id: string }[], exercises: Exercise[]): Set<string> {
   const byId = new Map(exercises.map((e) => [e.id, e]))
   const groups = new Set<string>()
   for (const s of sets) {
     const ex = byId.get(s.exercise_id)
-    if (ex) groups.add(ex.muscle_group)
+    if (!ex) continue
+    groups.add(ex.muscle_group)
+    for (const m of ex.secondary_muscles ?? []) groups.add(m)
   }
   return groups
 }

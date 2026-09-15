@@ -27,6 +27,7 @@ export type ExerciseInput = Pick<
   | 'increment'
   | 'unilateral'
   | 'weight_steps'
+  | 'secondary_muscles'
 >
 
 export function useCreateExercise() {
