@@ -1,4 +1,4 @@
-import type { Exercise, SetType, SetWithDate, WorkoutSet } from '../types'
+import type { Exercise, MuscleGroup, SetType, SetWithDate, WorkoutSet } from '../types'
 
 /**
  * Nur die schweren Arbeitssätze — Basis für Kraft-Fortschritt, 1RM, PRs und den
@@ -142,6 +142,160 @@ export function weeklyVolume(sets: SetWithDate[]): WeeklyVolume[] {
   return [...byWeek.entries()]
     .map(([week, volume]) => ({ week, volume }))
     .sort((a, b) => a.week.localeCompare(b.week))
+}
+
+// ---------------------------------------------------------------------------
+// Muskel-Zuordnung (Primär + Sekundär)
+// ---------------------------------------------------------------------------
+
+/** Sekundärmuskeln zählen anteilig (halb) zu Volumen und Satzzahl. */
+export const SECONDARY_FACTOR = 0.5
+
+type ExerciseMuscles = Pick<Exercise, 'id' | 'muscle_group' | 'secondary_muscles'>
+
+/** Muskeln einer Übung mit Gewichtung: primär 1,0, sekundär 0,5. */
+function musclesOf(ex: ExerciseMuscles): { muscle: MuscleGroup; weight: number }[] {
+  const secondary = (ex.secondary_muscles ?? [])
+    .filter((m) => m !== ex.muscle_group)
+    .map((m) => ({ muscle: m, weight: SECONDARY_FACTOR }))
+  return [{ muscle: ex.muscle_group, weight: 1 }, ...secondary]
+}
+
+export interface MuscleMetric {
+  muscle: MuscleGroup
+  value: number
+}
+
+/** Trainingsvolumen (kg) pro Muskel — inkl. anteiliger Sekundärmuskeln. */
+export function muscleVolume(sets: SetWithDate[], exercises: ExerciseMuscles[]): MuscleMetric[] {
+  const byId = new Map(exercises.map((e) => [e.id, e]))
+  const acc = new Map<MuscleGroup, number>()
+  for (const s of sets) {
+    const ex = byId.get(s.exercise_id)
+    if (!ex) continue
+    const vol = setVolume(s)
+    for (const { muscle, weight } of musclesOf(ex)) {
+      acc.set(muscle, (acc.get(muscle) ?? 0) + vol * weight)
+    }
+  }
+  return [...acc.entries()]
+    .map(([muscle, value]) => ({ muscle, value: Math.round(value) }))
+    .sort((a, b) => b.value - a.value)
+}
+
+export type SetLoad = 'low' | 'ok' | 'high'
+
+export interface MuscleSets {
+  muscle: MuscleGroup
+  sets: number
+  status: SetLoad
+}
+
+/**
+ * Effektive Arbeitssätze pro Muskel in der aktuellen ISO-Woche (primär 1,0,
+ * sekundär 0,5). Ampel gegen gängige Richtwerte: <8 zu wenig, >22 sehr viel.
+ */
+export function weeklyMuscleSets(
+  sets: SetWithDate[],
+  exercises: ExerciseMuscles[],
+  today = new Date(),
+): MuscleSets[] {
+  const byId = new Map(exercises.map((e) => [e.id, e]))
+  const week = isoWeekKey(today.toISOString().slice(0, 10))
+  const acc = new Map<MuscleGroup, number>()
+  for (const s of onlyWorking(sets)) {
+    if (isoWeekKey(s.date) !== week) continue
+    const ex = byId.get(s.exercise_id)
+    if (!ex) continue
+    for (const { muscle, weight } of musclesOf(ex)) {
+      acc.set(muscle, (acc.get(muscle) ?? 0) + weight)
+    }
+  }
+  return [...acc.entries()]
+    .map(([muscle, raw]) => {
+      const sets = round1(raw)
+      const status: SetLoad = sets < 8 ? 'low' : sets > 22 ? 'high' : 'ok'
+      return { muscle, sets, status }
+    })
+    .sort((a, b) => b.sets - a.sets)
+}
+
+// ---------------------------------------------------------------------------
+// Balance (Drücken/Ziehen, Ober-/Unterkörper) & Regeneration
+// ---------------------------------------------------------------------------
+
+export type MovementCategory = 'push' | 'pull' | 'legs' | 'core' | 'other'
+
+export const MUSCLE_CATEGORY: Record<MuscleGroup, MovementCategory> = {
+  Brust: 'push',
+  Schultern: 'push',
+  Trizeps: 'push',
+  Rücken: 'pull',
+  Bizeps: 'pull',
+  Unterarme: 'pull',
+  Beine: 'legs',
+  Beinbeuger: 'legs',
+  Waden: 'legs',
+  Gesäß: 'legs',
+  Bauch: 'core',
+  Ganzkörper: 'other',
+  Sonstige: 'other',
+}
+
+const UPPER: MovementCategory[] = ['push', 'pull']
+
+export interface BalanceStats {
+  push: number
+  pull: number
+  legs: number
+  core: number
+  upper: number
+  lower: number
+}
+
+/** Volumen-Verteilung nach Bewegungsmuster (für Schieflagen-Check). */
+export function balanceStats(sets: SetWithDate[], exercises: ExerciseMuscles[]): BalanceStats {
+  const out: BalanceStats = { push: 0, pull: 0, legs: 0, core: 0, upper: 0, lower: 0 }
+  for (const { muscle, value } of muscleVolume(sets, exercises)) {
+    const cat = MUSCLE_CATEGORY[muscle] ?? 'other'
+    if (cat !== 'other') out[cat] += value
+    if (UPPER.includes(cat)) out.upper += value
+    else if (cat === 'legs') out.lower += value
+  }
+  return out
+}
+
+export interface MuscleRecovery {
+  muscle: MuscleGroup
+  lastDate: string
+  daysAgo: number
+}
+
+/** Wann wurde jeder Muskel zuletzt (primär oder sekundär) trainiert? */
+export function lastTrainedPerMuscle(
+  sets: SetWithDate[],
+  exercises: ExerciseMuscles[],
+  today = new Date(),
+): MuscleRecovery[] {
+  const byId = new Map(exercises.map((e) => [e.id, e]))
+  const last = new Map<MuscleGroup, string>()
+  for (const s of sets) {
+    const ex = byId.get(s.exercise_id)
+    if (!ex) continue
+    for (const { muscle } of musclesOf(ex)) {
+      const prev = last.get(muscle)
+      if (!prev || s.date > prev) last.set(muscle, s.date)
+    }
+  }
+  const todayStr = today.toISOString().slice(0, 10)
+  return [...last.entries()]
+    .map(([muscle, lastDate]) => {
+      const daysAgo = Math.round(
+        (Date.parse(todayStr) - Date.parse(lastDate)) / 86400000,
+      )
+      return { muscle, lastDate, daysAgo }
+    })
+    .sort((a, b) => b.daysAgo - a.daysAgo)
 }
 
 // ---------------------------------------------------------------------------

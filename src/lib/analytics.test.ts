@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import type { SetType, SetWithDate } from '../types'
 import {
+  balanceStats,
   estimate1RM,
   frequencyStats,
   isoWeekKey,
+  lastTrainedPerMuscle,
+  muscleVolume,
   onlyWorking,
   personalRecords,
   progressionSuggestion,
   summarizeSessions,
   totalVolume,
+  weeklyMuscleSets,
   weeklyVolume,
 } from './analytics'
+import type { Exercise } from '../types'
 
 let counter = 0
 function mkSet(
@@ -38,6 +43,70 @@ function mkSet(
     date,
   }
 }
+
+function mkEx(id: string, muscle_group: Exercise['muscle_group'], secondary: Exercise['muscle_group'][] = []): Pick<Exercise, 'id' | 'muscle_group' | 'secondary_muscles'> {
+  return { id, muscle_group, secondary_muscles: secondary }
+}
+function withEx(set: SetWithDate, exercise_id: string): SetWithDate {
+  return { ...set, exercise_id }
+}
+
+describe('muscleVolume (Sekundär-Anteil)', () => {
+  it('verteilt Volumen primär voll, sekundär halb', () => {
+    const exs = [mkEx('row', 'Rücken', ['Schultern', 'Bizeps'])]
+    const sets = [withEx(mkSet('2026-09-01', 10, 50), 'row')] // Volumen 500
+    const mv = muscleVolume(sets, exs)
+    const byMuscle = Object.fromEntries(mv.map((m) => [m.muscle, m.value]))
+    expect(byMuscle['Rücken']).toBe(500)
+    expect(byMuscle['Schultern']).toBe(250)
+    expect(byMuscle['Bizeps']).toBe(250)
+  })
+})
+
+describe('weeklyMuscleSets (Ampel)', () => {
+  it('zählt effektive Sätze und markiert zu wenig', () => {
+    const today = new Date('2026-09-03T12:00:00Z')
+    const exs = [mkEx('lat', 'Rücken', ['Bizeps'])]
+    const sets = [
+      withEx(mkSet('2026-09-01', 8, 50, 1), 'lat'),
+      withEx(mkSet('2026-09-02', 8, 50, 1), 'lat'),
+    ]
+    const res = weeklyMuscleSets(sets, exs, today)
+    const back = res.find((r) => r.muscle === 'Rücken')!
+    expect(back.sets).toBe(2) // 2 Arbeitssätze primär
+    expect(back.status).toBe('low')
+    const bi = res.find((r) => r.muscle === 'Bizeps')!
+    expect(bi.sets).toBe(1) // 2 × 0,5 sekundär
+  })
+})
+
+describe('balanceStats', () => {
+  it('summiert Volumen nach Bewegungsmuster', () => {
+    const exs = [mkEx('bench', 'Brust'), mkEx('row', 'Rücken')]
+    const sets = [
+      withEx(mkSet('2026-09-01', 10, 50), 'bench'), // push 500
+      withEx(mkSet('2026-09-01', 10, 40), 'row'), // pull 400
+    ]
+    const b = balanceStats(sets, exs)
+    expect(b.push).toBe(500)
+    expect(b.pull).toBe(400)
+    expect(b.upper).toBe(900)
+    expect(b.lower).toBe(0)
+  })
+})
+
+describe('lastTrainedPerMuscle', () => {
+  it('findet das jüngste Datum je Muskel und Tage-Abstand', () => {
+    const today = new Date('2026-09-10T12:00:00Z')
+    const exs = [mkEx('row', 'Rücken', ['Schultern'])]
+    const sets = [withEx(mkSet('2026-09-05', 10, 50), 'row')]
+    const rec = lastTrainedPerMuscle(sets, exs, today)
+    const back = rec.find((r) => r.muscle === 'Rücken')!
+    expect(back.lastDate).toBe('2026-09-05')
+    expect(back.daysAgo).toBe(5)
+    expect(rec.some((r) => r.muscle === 'Schultern')).toBe(true)
+  })
+})
 
 describe('estimate1RM (Epley)', () => {
   it('gibt das Gewicht bei 1 Wdh zurück', () => {
