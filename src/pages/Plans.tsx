@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
+import { useAiStatus } from '../hooks/useAi'
+import { generatePlan, type PlanSuggestion } from '../lib/ai'
 import {
   useAddPlanExercise,
   useCreatePlan,
@@ -16,8 +18,17 @@ export default function Plans() {
   const navigate = useNavigate()
   const { data: plans, isLoading } = usePlans()
   const { data: exercises } = useExercises()
+  const { data: ai } = useAiStatus()
   const createPlan = useCreatePlan()
+  const addPlanEx = useAddPlanExercise()
   const [newName, setNewName] = useState('')
+
+  // KI-Plangenerator
+  const [genOpen, setGenOpen] = useState(false)
+  const [wish, setWish] = useState('Push / Pull / Beine, 4× pro Woche')
+  const [genBusy, setGenBusy] = useState(false)
+  const [genErr, setGenErr] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<PlanSuggestion[] | null>(null)
 
   const exName = (id: string) => exercises?.find((e) => e.id === id)?.name ?? 'Übung'
 
@@ -26,6 +37,38 @@ export default function Plans() {
     if (!name) return
     await createPlan.mutateAsync({ name, position: plans?.length ?? 0 })
     setNewName('')
+  }
+
+  async function runGenerate() {
+    if (!exercises?.length) return
+    setGenBusy(true)
+    setGenErr(null)
+    try {
+      const res = await generatePlan(
+        exercises.map((e) => ({ name: e.name, muscle: e.muscle_group })),
+        wish,
+      )
+      if (res.length === 0) setGenErr('Kein Vorschlag möglich. Formulier den Wunsch anders.')
+      else setSuggestions(res)
+    } catch (e) {
+      setGenErr(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setGenBusy(false)
+    }
+  }
+
+  async function applySuggestions(list: PlanSuggestion[]) {
+    let pos = plans?.length ?? 0
+    for (const s of list) {
+      const plan = await createPlan.mutateAsync({ name: s.name, position: pos++ })
+      let exPos = 0
+      for (const name of s.exercises) {
+        const ex = exercises?.find((e) => e.name.toLowerCase() === name.toLowerCase())
+        if (ex) await addPlanEx.mutateAsync({ plan_id: plan.id, exercise_id: ex.id, position: exPos++ })
+      }
+    }
+    setSuggestions(null)
+    setGenOpen(false)
   }
 
   return (
@@ -64,6 +107,11 @@ export default function Plans() {
             + Anlegen
           </button>
         </div>
+        {ai?.enabled && (exercises?.length ?? 0) > 0 && (
+          <button className="btn-ghost w-full text-sm" onClick={() => setGenOpen(true)}>
+            🤖 Plan von KI vorschlagen lassen
+          </button>
+        )}
       </div>
 
       {isLoading && <p className="text-cocoa-light">Lädt…</p>}
@@ -76,6 +124,70 @@ export default function Plans() {
           <li className="text-cocoa-light">Noch keine Pläne. Lege oben deinen ersten an.</li>
         )}
       </ul>
+
+      {genOpen && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+            <h2 className="text-lg font-bold">🤖 KI-Plan</h2>
+            {!suggestions ? (
+              <>
+                <label className="label">Was für ein Plan?</label>
+                <input
+                  className="input"
+                  value={wish}
+                  onChange={(e) => setWish(e.target.value)}
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {['Push / Pull / Beine', 'Oberkörper / Unterkörper', 'Ganzkörper 3×', 'Push / Pull'].map(
+                    (p) => (
+                      <button
+                        key={p}
+                        onClick={() => setWish(p)}
+                        className="rounded-full bg-sand-light px-2.5 py-1 text-xs ring-1 ring-sand-dark"
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
+                </div>
+                {genErr && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {genErr}</p>}
+                <div className="flex gap-2 pt-1">
+                  <button className="btn-ghost flex-1" onClick={() => setGenOpen(false)}>
+                    Abbrechen
+                  </button>
+                  <button className="btn-primary flex-1" onClick={runGenerate} disabled={genBusy}>
+                    {genBusy ? 'Erstelle…' : 'Vorschlagen'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-cocoa-light">Vorschlag — beim Übernehmen werden die Pläne angelegt.</p>
+                <ul className="space-y-2">
+                  {suggestions.map((s, i) => (
+                    <li key={i} className="rounded-lg bg-sand/40 p-2 ring-1 ring-sand-dark/50">
+                      <div className="font-semibold">{s.name}</div>
+                      <div className="text-xs text-cocoa-light">{s.exercises.join(' · ')}</div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex gap-2 pt-1">
+                  <button className="btn-ghost flex-1" onClick={() => setSuggestions(null)}>
+                    Zurück
+                  </button>
+                  <button
+                    className="btn-primary flex-1"
+                    onClick={() => applySuggestions(suggestions)}
+                    disabled={createPlan.isPending || addPlanEx.isPending}
+                  >
+                    Übernehmen
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

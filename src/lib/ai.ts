@@ -97,6 +97,40 @@ export async function coachChat(history: ChatMsg[], context: unknown): Promise<s
 }
 
 // ---------------------------------------------------------------------------
+// Feature: Trainingsplan-Vorschlag aus vorhandenen Übungen
+// ---------------------------------------------------------------------------
+
+export interface PlanSuggestion {
+  name: string
+  exercises: string[]
+}
+
+export async function generatePlan(
+  exercises: { name: string; muscle: string }[],
+  wish: string,
+): Promise<PlanSuggestion[]> {
+  const list = exercises.map((e) => `${e.name} (${e.muscle})`).join(', ')
+  const system =
+    'Du bist ein Trainingsplaner. Erstelle sinnvolle Split-Pläne AUSSCHLIESSLICH aus den ' +
+    'vorhandenen Übungen des Nutzers. Antworte nur mit JSON.'
+  const prompt =
+    `Vorhandene Übungen: ${list}.\n` +
+    `Wunsch: "${wish}".\n` +
+    'Erzeuge 2–4 Pläne mit sinnvoller Übungsauswahl und -reihenfolge. ' +
+    'Nutze NUR exakt vorhandene Übungsnamen. ' +
+    'Format: {"plans":[{"name":"Push","exercises":["Übungsname", ...]}, ...]}.'
+  const text = await complete({ system, prompt, json: true, temperature: 0.4 })
+  const raw = parseJson<{ plans?: { name?: string; exercises?: string[] }[] }>(text)
+  const names = new Set(exercises.map((e) => e.name.toLowerCase()))
+  return (raw.plans ?? [])
+    .map((p) => ({
+      name: String(p.name ?? 'Plan'),
+      exercises: (p.exercises ?? []).filter((n) => names.has(String(n).toLowerCase())),
+    }))
+    .filter((p) => p.exercises.length > 0)
+}
+
+// ---------------------------------------------------------------------------
 // Feature: Nährwerte aus Foto oder Text schätzen
 // ---------------------------------------------------------------------------
 
