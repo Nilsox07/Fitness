@@ -17,7 +17,33 @@ import {
   sumEntries,
 } from '../lib/nutrition'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
+import { estimateFoodFromImage, estimateFoodFromText, type FoodEstimate } from '../lib/ai'
+import { useAiStatus } from '../hooks/useAi'
 import type { ActivityLevel, NutritionGoal, Sex } from '../types'
+
+/** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
+function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Bild konnte nicht gelesen werden'))
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return resolve(reader.result as string)
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', 0.8))
+      }
+      img.onerror = () => resolve(reader.result as string)
+      img.src = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
 
 function todayLocal(): string {
   const d = new Date()
@@ -61,7 +87,7 @@ export default function Nutrition() {
   // Modal-Status
   const [setupOpen, setSetupOpen] = useState(false)
   const [form, setForm] = useState<NutritionSettingsInput>(emptySettings)
-  const [addMode, setAddMode] = useState<null | 'menu' | 'manual' | 'search'>(null)
+  const [addMode, setAddMode] = useState<null | 'menu' | 'manual' | 'search' | 'aitext'>(null)
   const [scanning, setScanning] = useState(false)
 
   // gewähltes Produkt → Mengen-Bestätigung
@@ -77,6 +103,66 @@ export default function Nutrition() {
   const [manual, setManual] = useState({ name: '', amount_g: 0, kcal: 0, protein: 0, carbs: 0, fat: 0 })
 
   const [error, setError] = useState<string | null>(null)
+
+  // KI-Erfassung (Foto/Text)
+  const { data: ai } = useAiStatus()
+  const [aiResults, setAiResults] = useState<FoodEstimate[] | null>(null)
+  const [aiBusy, setAiBusy] = useState(false)
+  const [aiText, setAiText] = useState('')
+
+  async function handlePhoto(file: File | undefined) {
+    if (!file) return
+    setAiBusy(true)
+    setError(null)
+    try {
+      const dataUrl = await fileToDataUrl(file)
+      const items = await estimateFoodFromImage(dataUrl)
+      if (items.length === 0) setError('Kein Essen erkannt. Versuch ein klareres Foto.')
+      else {
+        setAiResults(items)
+        setAddMode(null)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'KI-Fehler beim Foto')
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  async function handleAiText() {
+    if (!aiText.trim()) return
+    setAiBusy(true)
+    setError(null)
+    try {
+      const items = await estimateFoodFromText(aiText.trim())
+      if (items.length === 0) setError('Nichts erkannt. Formulier es anders.')
+      else {
+        setAiResults(items)
+        setAddMode(null)
+        setAiText('')
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  async function addEstimates(items: FoodEstimate[]) {
+    for (const it of items) {
+      await addEntry.mutateAsync({
+        date: today,
+        name: it.name,
+        amount_g: it.amount_g,
+        kcal: it.kcal,
+        protein: it.protein,
+        carbs: it.carbs,
+        fat: it.fat,
+        barcode: null,
+      })
+    }
+    setAiResults(null)
+  }
 
   function openSetup() {
     setForm(settings ? { ...settings } : emptySettings)
@@ -339,8 +425,25 @@ export default function Nutrition() {
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
           <div className="card w-full max-w-md space-y-2">
             <h2 className="text-lg font-bold">Hinzufügen</h2>
+            {ai?.enabled && (
+              <>
+                <label className="btn-primary flex w-full cursor-pointer items-center justify-center">
+                  {aiBusy ? '… analysiere' : '📸 Foto (KI)'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => handlePhoto(e.target.files?.[0])}
+                  />
+                </label>
+                <button className="btn-ghost w-full" onClick={() => setAddMode('aitext')}>
+                  💬 Text beschreiben (KI)
+                </button>
+              </>
+            )}
             <button
-              className="btn-primary w-full"
+              className={ai?.enabled ? 'btn-ghost w-full' : 'btn-primary w-full'}
               onClick={() => {
                 setError(null)
                 setScanning(true)
@@ -480,6 +583,81 @@ export default function Nutrition() {
               </button>
               <button className="btn-primary flex-1" onClick={addManual} disabled={addEntry.isPending}>
                 Hinzufügen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----- KI: Text beschreiben ----- */}
+      {addMode === 'aitext' && (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="card w-full max-w-md space-y-3">
+            <h2 className="text-lg font-bold">💬 Mahlzeit beschreiben</h2>
+            <p className="text-xs text-cocoa-light">
+              Schreib einfach, was du gegessen hast — die KI schätzt die Nährwerte.
+            </p>
+            <input
+              className="input"
+              autoFocus
+              placeholder="z. B. 2 Eier, 80 g Haferflocken, 1 Banane"
+              value={aiText}
+              onChange={(e) => setAiText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAiText()}
+            />
+            <div className="flex gap-2 pt-1">
+              <button className="btn-ghost flex-1" onClick={() => setAddMode('menu')}>
+                Zurück
+              </button>
+              <button className="btn-primary flex-1" onClick={handleAiText} disabled={aiBusy}>
+                {aiBusy ? '…' : 'Schätzen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----- KI: Ergebnis prüfen & übernehmen ----- */}
+      {aiResults && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+            <h2 className="text-lg font-bold">KI-Schätzung</h2>
+            <p className="text-xs text-cocoa-light">
+              Schätzwerte — vor dem Übernehmen kurz prüfen. Zum Feinjustieren einzeln übernehmen und
+              danach bearbeiten.
+            </p>
+            <ul className="space-y-2">
+              {aiResults.map((it, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between rounded-lg bg-sand/40 px-3 py-2 ring-1 ring-sand-dark/50"
+                >
+                  <div>
+                    <div className="text-sm font-medium">{it.name}</div>
+                    <div className="text-xs text-cocoa-light">
+                      {it.amount_g ? `${it.amount_g} g · ` : ''}
+                      {it.kcal} kcal · E {it.protein} / K {it.carbs} / F {it.fat}
+                    </div>
+                  </div>
+                  <button
+                    className="ml-2 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white"
+                    onClick={() => addEstimates([it])}
+                  >
+                    +
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-2 pt-1">
+              <button className="btn-ghost flex-1" onClick={() => setAiResults(null)}>
+                Verwerfen
+              </button>
+              <button
+                className="btn-primary flex-1"
+                onClick={() => addEstimates(aiResults)}
+                disabled={addEntry.isPending}
+              >
+                Alle übernehmen
               </button>
             </div>
           </div>

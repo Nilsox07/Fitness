@@ -15,6 +15,7 @@ async function complete(opts: {
   prompt: string
   json?: boolean
   temperature?: number
+  image?: string
 }): Promise<string> {
   const res = await fetch('/api/ai', {
     method: 'POST',
@@ -93,6 +94,54 @@ export async function coachChat(history: ChatMsg[], context: unknown): Promise<s
     `Trainingsdaten (JSON):\n${JSON.stringify(context)}\n\n` +
     `Gespräch bisher:\n${convo}\n\nAntworte als Coach auf die letzte Nutzer-Nachricht.`
   return complete({ system: COACH_SYSTEM, prompt, temperature: 0.6 })
+}
+
+// ---------------------------------------------------------------------------
+// Feature: Nährwerte aus Foto oder Text schätzen
+// ---------------------------------------------------------------------------
+
+export interface FoodEstimate {
+  name: string
+  amount_g: number | null
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
+const NUTRITION_SYSTEM =
+  'Du bist Ernährungsberater. Schätze Lebensmittel und ihre Nährwerte für die ' +
+  'GEZEIGTE bzw. BESCHRIEBENE Portion (nicht pro 100 g). Antworte ausschließlich mit JSON.'
+
+const NUTRITION_FORMAT =
+  'Format: {"items":[{"name":"...","amount_g":<Zahl oder null>,"kcal":<Zahl>,' +
+  '"protein":<g>,"carbs":<g>,"fat":<g>}]}. Zahlen gerundet, realistische Schätzung. ' +
+  'Mehrere Bestandteile = mehrere items.'
+
+function toEstimates(text: string): FoodEstimate[] {
+  const raw = parseJson<{ items?: Partial<FoodEstimate>[] }>(text)
+  return (raw.items ?? []).map((i) => ({
+    name: String(i.name ?? 'Lebensmittel'),
+    amount_g: i.amount_g == null ? null : Number(i.amount_g),
+    kcal: Math.round(Number(i.kcal ?? 0)),
+    protein: Math.round(Number(i.protein ?? 0)),
+    carbs: Math.round(Number(i.carbs ?? 0)),
+    fat: Math.round(Number(i.fat ?? 0)),
+  }))
+}
+
+/** Nährwerte aus einem Foto schätzen (image = Data-URL). */
+export async function estimateFoodFromImage(image: string): Promise<FoodEstimate[]> {
+  const prompt =
+    'Erkenne das Essen auf dem Bild und schätze die Nährwerte der abgebildeten Portion. ' +
+    NUTRITION_FORMAT
+  return toEstimates(await complete({ system: NUTRITION_SYSTEM, prompt, image, json: true, temperature: 0.2 }))
+}
+
+/** Nährwerte aus freier Texteingabe schätzen, z. B. „2 Eier und 80 g Haferflocken". */
+export async function estimateFoodFromText(text: string): Promise<FoodEstimate[]> {
+  const prompt = `Beschreibung: "${text}".\n${NUTRITION_FORMAT}`
+  return toEstimates(await complete({ system: NUTRITION_SYSTEM, prompt, json: true, temperature: 0.2 }))
 }
 
 // ---------------------------------------------------------------------------

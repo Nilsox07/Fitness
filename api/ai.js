@@ -20,12 +20,22 @@ function activeModel() {
   return PROVIDER === 'groq' ? GROQ_MODEL : GEMINI_MODEL
 }
 
-async function callGemini({ system, prompt, json, temperature }) {
+function imagePart(image) {
+  // image: Data-URL ("data:image/jpeg;base64,....") oder reines Base64
+  const m = /^data:(.+?);base64,(.*)$/.exec(image)
+  const mimeType = m ? m[1] : 'image/jpeg'
+  const data = m ? m[2] : image
+  return { inlineData: { mimeType, data } }
+}
+
+async function callGemini({ system, prompt, json, temperature, image }) {
   const key = process.env.GEMINI_API_KEY
   const model = GEMINI_MODEL
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
+  const parts = [{ text: prompt }]
+  if (image) parts.push(imagePart(image))
   const body = {
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts }],
     generationConfig: {
       temperature: temperature ?? 0.4,
       ...(json ? { responseMimeType: 'application/json' } : {}),
@@ -78,15 +88,19 @@ export default async function handler(req, res) {
   }
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
-    const { system, prompt, json, temperature } = body
+    const { system, prompt, json, temperature, image } = body
     if (!prompt || typeof prompt !== 'string') {
       res.status(400).json({ error: 'prompt fehlt' })
+      return
+    }
+    if (image && PROVIDER === 'groq') {
+      res.status(400).json({ error: 'Bild-Analyse wird von diesem Provider nicht unterstützt (Gemini nutzen).' })
       return
     }
     const text =
       PROVIDER === 'groq'
         ? await callGroq({ system, prompt, json, temperature })
-        : await callGemini({ system, prompt, json, temperature })
+        : await callGemini({ system, prompt, json, temperature, image })
     res.status(200).json({ text })
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'KI-Fehler' })
