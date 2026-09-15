@@ -346,6 +346,71 @@ export function frequencyStats(workoutDates: string[], today = new Date()): Freq
 }
 
 // ---------------------------------------------------------------------------
+// Kompakte Trainings-Zusammenfassung (als KI-Kontext)
+// ---------------------------------------------------------------------------
+
+type ExerciseNamed = ExerciseMuscles & Pick<Exercise, 'name'>
+
+/**
+ * Verdichtet die Trainingsdaten zu einem kompakten Objekt für die KI
+ * (Wochenreview, Coach-Chat). Bewusst klein gehalten, um Tokens zu sparen.
+ */
+export function trainingSummary(
+  sets: SetWithDate[],
+  exercises: ExerciseNamed[],
+  today = new Date(),
+) {
+  const freq = frequencyStats([...new Set(sets.map((s) => s.date))], today)
+  const weeks = weeklyVolume(sets).slice(-6)
+  const perMuscleSets = weeklyMuscleSets(sets, exercises, today)
+  const balance = balanceStats(sets, exercises)
+  const recovery = lastTrainedPerMuscle(sets, exercises, today).map((r) => ({
+    muskel: r.muscle,
+    tageHer: r.daysAgo,
+  }))
+
+  const byId = new Map(exercises.map((e) => [e.id, e]))
+  const byExercise = new Map<string, SetWithDate[]>()
+  for (const s of sets) {
+    const list = byExercise.get(s.exercise_id) ?? []
+    list.push(s)
+    byExercise.set(s.exercise_id, list)
+  }
+  const exerciseStats = [...byExercise.entries()]
+    .map(([id, exSets]) => {
+      const ex = byId.get(id)
+      const sessions = summarizeSessions(onlyWorking(exSets))
+      const last = sessions[sessions.length - 1]
+      const prs = personalRecords(exSets)
+      return {
+        uebung: ex?.name ?? 'Übung',
+        letztesTopGewicht: last?.topWeight ?? 0,
+        bestes1RM: prs.maxEstimated1RM,
+        sessions: sessions.length,
+      }
+    })
+    .sort((a, b) => b.bestes1RM - a.bestes1RM)
+    .slice(0, 12)
+
+  return {
+    haeufigkeit: {
+      trainingsGesamt: freq.totalSessions,
+      wochenStreak: freq.weekStreak,
+      proWoche: freq.sessionsPerWeek,
+    },
+    wochenVolumenKg: weeks.map((w) => ({ woche: w.week, volumen: Math.round(w.volume) })),
+    saetzeProMuskelDieseWoche: perMuscleSets.map((m) => ({
+      muskel: m.muscle,
+      saetze: m.sets,
+      status: m.status,
+    })),
+    balance,
+    regeneration: recovery,
+    uebungen: exerciseStats,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Gewichts-Steigerungs-Tipp (Double Progression)
 // ---------------------------------------------------------------------------
 

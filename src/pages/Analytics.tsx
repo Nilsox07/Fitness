@@ -15,6 +15,7 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useAllFoodEntries } from '../hooks/useNutrition'
 import { useTheme } from '../lib/theme'
 import { usePrefs } from '../lib/prefs'
+import { AiPanel } from '../components/AiPanel'
 import {
   balanceStats,
   frequencyStats,
@@ -174,6 +175,8 @@ export default function Analytics() {
 
       {hasData && (
         <>
+          <AiPanel sets={allSets ?? []} exercises={exercises ?? []} />
+
           {/* Trainingshäufigkeit */}
           <section className="grid grid-cols-3 gap-2">
             <Stat label="Trainings" value={freq.totalSessions} />

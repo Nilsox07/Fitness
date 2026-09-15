@@ -50,6 +50,42 @@ function parseJson<T>(text: string): T {
 }
 
 // ---------------------------------------------------------------------------
+// Feature: KI-Wochenreview & Coach-Chat
+// ---------------------------------------------------------------------------
+
+const COACH_SYSTEM =
+  'Du bist ein erfahrener, motivierender Kraft- und Hypertrophie-Coach. ' +
+  'Antworte auf Deutsch, kompakt und konkret, sprich den Nutzer mit "du" an. ' +
+  'Stütze dich auf die mitgelieferten Trainingsdaten (JSON). Wenn etwas fehlt, ' +
+  'sag es ehrlich statt zu raten. Kein Fachjargon-Overkill.'
+
+/** Klartext-Wochenfazit aus der kompakten Trainings-Zusammenfassung. */
+export async function weeklyTrainingReview(summary: unknown): Promise<string> {
+  const prompt =
+    `Trainingsdaten (JSON):\n${JSON.stringify(summary)}\n\n` +
+    'Gib ein ehrliches, motivierendes Wochen-Fazit (max. ~120 Wörter): Was lief gut, ' +
+    'wo ist eine Schieflage oder zu wenig Volumen (nutze status "low"/"high"), und was ' +
+    'sollte diese oder nächste Woche priorisiert werden? 2–4 umsetzbare Empfehlungen.'
+  return complete({ system: COACH_SYSTEM, prompt, temperature: 0.5 })
+}
+
+export interface ChatMsg {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+/** Coach-Chat: beantwortet die letzte Nutzerfrage mit Datenkontext. */
+export async function coachChat(history: ChatMsg[], context: unknown): Promise<string> {
+  const convo = history
+    .map((m) => `${m.role === 'user' ? 'Nutzer' : 'Coach'}: ${m.content}`)
+    .join('\n')
+  const prompt =
+    `Trainingsdaten (JSON):\n${JSON.stringify(context)}\n\n` +
+    `Gespräch bisher:\n${convo}\n\nAntworte als Coach auf die letzte Nutzer-Nachricht.`
+  return complete({ system: COACH_SYSTEM, prompt, temperature: 0.6 })
+}
+
+// ---------------------------------------------------------------------------
 // Feature: Muskeln zu einer Übung vorschlagen (Primär + Sekundär)
 // ---------------------------------------------------------------------------
 
