@@ -130,6 +130,14 @@ export interface NutritionSettings {
   updated_at: string
 }
 
+export interface BodyWeight {
+  id: string
+  user_id: string
+  date: string
+  weight_kg: number
+  created_at: string
+}
+
 export interface FoodEntry {
   id: string
   user_id: string

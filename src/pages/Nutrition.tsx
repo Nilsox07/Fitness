@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Stepper } from '../components/Stepper'
 import { BarcodeScanner } from '../components/BarcodeScanner'
+import { BodyWeightCard } from '../components/BodyWeightCard'
 import {
   useAddFoodEntry,
+  useAllFoodEntries,
   useDeleteFoodEntry,
   useFoodEntries,
   useNutritionSettings,
@@ -19,7 +21,7 @@ import {
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
 import { estimateFoodFromImage, estimateFoodFromText, type FoodEstimate } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
-import type { ActivityLevel, NutritionGoal, Sex } from '../types'
+import type { ActivityLevel, FoodEntry, NutritionGoal, Sex } from '../types'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
 function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
@@ -78,7 +80,32 @@ export default function Nutrition() {
   const today = todayLocal()
   const { data: settings } = useNutritionSettings()
   const { data: entries } = useFoodEntries(today)
+  const { data: allEntries } = useAllFoodEntries()
   const upsertSettings = useUpsertNutritionSettings()
+
+  // „Zuletzt gegessen": eindeutige letzte Lebensmittel für 1-Tap-Wiederholung
+  const recent = useMemo(() => {
+    const seen = new Map<string, FoodEntry>()
+    for (const e of [...(allEntries ?? [])].reverse()) {
+      const key = e.name.toLowerCase()
+      if (!seen.has(key)) seen.set(key, e)
+      if (seen.size >= 8) break
+    }
+    return [...seen.values()]
+  }, [allEntries])
+
+  function quickAdd(e: FoodEntry) {
+    addEntry.mutate({
+      date: today,
+      name: e.name,
+      amount_g: e.amount_g,
+      kcal: e.kcal,
+      protein: e.protein,
+      carbs: e.carbs,
+      fat: e.fat,
+      barcode: e.barcode,
+    })
+  }
   const addEntry = useAddFoodEntry()
   const deleteEntry = useDeleteFoodEntry()
 
@@ -301,6 +328,25 @@ export default function Nutrition() {
         + Lebensmittel hinzufügen
       </button>
 
+      {/* Zuletzt gegessen — 1-Tap-Wiederholung */}
+      {recent.length > 0 && (
+        <div>
+          <p className="mb-1 text-xs font-medium text-cocoa-light">Zuletzt gegessen</p>
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            {recent.map((e) => (
+              <button
+                key={e.id}
+                onClick={() => quickAdd(e)}
+                className="shrink-0 rounded-full bg-sand-light px-3 py-1.5 text-sm ring-1 ring-sand-dark"
+              >
+                + {e.name}{' '}
+                <span className="text-cocoa-muted">{Math.round(e.kcal)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Heutige Einträge */}
       <div className="space-y-2">
         {entries?.map((e) => (
@@ -325,6 +371,8 @@ export default function Nutrition() {
           <p className="text-center text-sm text-cocoa-light">Heute noch nichts erfasst.</p>
         )}
       </div>
+
+      <BodyWeightCard />
 
       {/* ----- Ziel-Setup ----- */}
       {setupOpen && (
