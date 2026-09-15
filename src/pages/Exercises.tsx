@@ -305,6 +305,19 @@ export default function Exercises() {
               </span>
             </button>
 
+            <div>
+              <label className="label">Geräte-Einstellung / Notiz</label>
+              <input
+                className="input"
+                placeholder="z. B. Sitz 4, Lehne 2, Griff eng"
+                value={form.notes ?? ''}
+                onChange={(e) => setForm({ ...form, notes: e.target.value || null })}
+              />
+              <p className="mt-1 text-xs text-cocoa-muted">
+                Wird beim Training angezeigt — z. B. Sitzhöhe/Lehne der Maschine.
+              </p>
+            </div>
+
             <div className="rounded-xl bg-sand-light p-3 ring-1 ring-sand-dark">
               <label className="label">Gewichtsstufen (optional)</label>
               <input

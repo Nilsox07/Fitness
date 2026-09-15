@@ -12,6 +12,7 @@ import {
 } from '../hooks/useWorkouts'
 import { EditableSetRow } from '../components/EditableSetRow'
 import { Confetti } from '../components/Confetti'
+import { RestTimer, type RestTimerHandle } from '../components/RestTimer'
 import { parseLadder, snapToLadder } from '../lib/weights'
 import { estimate1RM, onlyWorking, progressionSuggestion, summarizeSessions } from '../lib/analytics'
 import { type Exercise, type PlanWithExercises, type SetType, type SetWithDate } from '../types'
@@ -187,6 +188,10 @@ export default function Workout() {
   const [prName, setPrName] = useState<string | null>(null)
   const [confetti, setConfetti] = useState(false)
   const celebrated = useRef<Set<string>>(new Set())
+  const restRef = useRef<RestTimerHandle>(null)
+  const autoRest = () => {
+    if (restRef.current?.autoEnabled()) restRef.current.start()
+  }
   useEffect(() => {
     if (!workoutSets || !allSets || !exercises) return
     const best1RM = (s: { weight: number; reps: number; weight_right?: number | null; reps_right?: number | null }) =>
@@ -289,6 +294,7 @@ export default function Workout() {
       set_type: type,
       to_failure: type !== 'warmup',
     })
+    autoRest()
   }
 
   if (!todaysWorkout) {
@@ -313,6 +319,7 @@ export default function Workout() {
   return (
     <div className="space-y-4">
       <Confetti show={confetti} onDone={() => setConfetti(false)} />
+      <RestTimer ref={restRef} />
       {prName && confetti && (
         <div className="rounded-xl bg-gradient-to-r from-amber-500 to-ruby p-3 text-center font-bold text-white shadow-lg">
           🎉 Neuer Rekord bei {prName}!
@@ -408,6 +415,11 @@ export default function Workout() {
 
         {selectedExercise && (
           <>
+            {selectedExercise.notes && (
+              <div className="rounded-xl bg-sky-500/10 p-2.5 text-sm text-cocoa ring-1 ring-sky-500/30">
+                🪑 {selectedExercise.notes}
+              </div>
+            )}
             {suggestion && (
               <div className="rounded-xl bg-sand/50 p-3 text-sm ring-1 ring-sand-dark">
                 <span className="font-semibold">💡 Tipp: </span>
