@@ -17,6 +17,7 @@ import { useTheme } from '../lib/theme'
 import { usePrefs } from '../lib/prefs'
 import { AiPanel } from '../components/AiPanel'
 import { GamePanel } from '../components/GamePanel'
+import { StreakCard } from '../components/StreakCard'
 import { SeasonCard } from '../components/SeasonCard'
 import { Heatmap } from '../components/Heatmap'
 import {
@@ -179,6 +180,8 @@ export default function Analytics() {
       {hasData && (
         <>
           <GamePanel sets={allSets ?? []} exercises={exercises ?? []} />
+
+          <StreakCard sets={allSets ?? []} />
 
           <SeasonCard sets={allSets ?? []} />
 

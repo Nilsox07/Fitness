@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { balanceStats, frequencyStats, isoWeekKey, onlyWorking, totalVolume } from '../lib/analytics'
+import { balanceStats, frequencyStats, onlyWorking, totalVolume } from '../lib/analytics'
 import { achievements, rankForSessions } from '../lib/gamification'
 import { mascotEmoji } from '../lib/cosmetics'
 import { computeXp, dailyQuests, levelInfo, weeklyQuests, type Quest } from '../lib/xp'
@@ -104,18 +104,9 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
     }
   }, [g.daily, today])
 
-  const dow = (new Date().getDay() + 6) % 7 // Mo=0
-  const trainedThisWeek = sets.some((s) => isoWeekKey(s.date) === isoWeekKey(today))
-  const streakDanger = sets.length > 0 && !trainedThisWeek && dow >= 3
-
   return (
     <section className="card space-y-3">
       <Confetti show={celebrate} onDone={() => setCelebrate(false)} />
-      {streakDanger && (
-        <div className="rounded-xl bg-amber-500/15 p-2.5 text-center text-sm font-semibold text-amber-600 ring-1 ring-amber-500/30 dark:text-amber-400">
-          🔥 Diese Woche noch kein Training — deine Serie ist in Gefahr!
-        </div>
-      )}
       {celebrate && (
         <div className="flex items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-ruby p-2.5 font-bold text-white">
           <span>⭐ Level {g.xp.level} erreicht!</span>
@@ -161,7 +152,7 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
       </div>
 
       <div className="text-xs text-cocoa-light">
-        {g.freq.totalSessions} Trainings · 🔥 {g.freq.weekStreak} Wochen · {g.tonnage.toLocaleString('de-DE')} kg bewegt
+        {g.freq.totalSessions} Trainings · {g.tonnage.toLocaleString('de-DE')} kg bewegt
       </div>
 
       {/* Quests */}
