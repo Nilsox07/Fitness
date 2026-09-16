@@ -422,11 +422,12 @@ export async function suggestOrder(
   wish: string,
 ): Promise<{ note: string; items: FoodEstimate[] }> {
   const system =
-    'Du bist Ernährungsberater. Empfiehl eine konkrete, real existierende Auswahl beim genannten ' +
-    'Anbieter, die möglichst nah an das Rest-Kalorienbudget kommt und viel Eiweiß liefert. ' +
-    'Nenne typische echte Produkte. Antworte ausschließlich mit JSON.'
+    'Du bist Ernährungsberater. Der Nutzer nennt einen Anbieter, eine Küche oder eine Restaurant-Art ' +
+    '(z. B. „Indisch", „Mexikanisch", „Asiatisch", „McDonald\'s", „Supermarkt"). Empfiehl eine konkrete, ' +
+    'typische Auswahl/Bestellung dieser Art, die möglichst nah an das Rest-Kalorienbudget kommt und ' +
+    'viel Eiweiß liefert. Nenne echte, gängige Gerichte/Produkte. Antworte ausschließlich mit JSON.'
   const prompt =
-    `Anbieter: "${place}". Rest-Budget heute: ~${remaining.kcal} kcal, Ziel Eiweiß offen: ~${remaining.protein} g. ` +
+    `Anbieter/Küche/Art: "${place}". Rest-Budget heute: ~${remaining.kcal} kcal, Ziel Eiweiß offen: ~${remaining.protein} g. ` +
     `Wunsch: "${wish || 'egal'}".\n` +
     `Gib die empfohlenen Artikel als items zurück. ${NUTRITION_FORMAT}\n` +
     'Zusätzlich ein Feld "note" mit einem kurzen Hinweis. ' +

@@ -928,8 +928,30 @@ export default function Nutrition() {
                 {Math.max(0, (settings?.protein_target ?? 0) - totals.protein)} g Eiweiß
               </p>
             )}
-            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1">
-              {["McDonald's", 'Burger King', 'KFC', 'Subway', 'Döner', 'Supermarkt'].map((p) => (
+            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+              {[
+                "McDonald's",
+                'Burger King',
+                'KFC',
+                'Subway',
+                'Döner',
+                'Italienisch',
+                'Indisch',
+                'Mexikanisch',
+                'Asiatisch',
+                'Chinesisch',
+                'Thai',
+                'Vietnamesisch',
+                'Sushi',
+                'Griechisch',
+                'Türkisch',
+                'Libanesisch',
+                'Burger',
+                'Pizza',
+                'Café',
+                'Bäckerei',
+                'Supermarkt',
+              ].map((p) => (
                 <button
                   key={p}
                   onClick={() => setPlace(p)}
@@ -944,7 +966,7 @@ export default function Nutrition() {
             <div className="flex gap-2">
               <input
                 className="input"
-                placeholder="Anbieter / Gericht, z. B. Big Mac Menü — oder leer lassen"
+                placeholder="Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis"
                 value={restItem}
                 onChange={(e) => setRestItem(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && estimateOrder()}
