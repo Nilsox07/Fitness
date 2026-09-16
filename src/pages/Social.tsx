@@ -14,18 +14,20 @@ import {
   useSetGymStatus,
   useSyncMyStats,
 } from '../hooks/useSocial'
-import { frequencyStats, isoWeekKey, totalVolume, weeklyVolume } from '../lib/analytics'
+import { frequencyStats, isoWeekKey, monthlyPrCount, totalVolume, weeklyVolume } from '../lib/analytics'
 import { rankForSessions } from '../lib/gamification'
 import { computeXp, levelInfo } from '../lib/xp'
 import { seasonId, seasonXp } from '../lib/season'
 
-type Metric = 'season_xp' | 'level' | 'weekly_volume' | 'total_sessions' | 'week_streak'
+// Reihenfolge = faire Kennzahlen zuerst; Volumen (kraftabhängig) zuletzt.
+type Metric = 'monthly_prs' | 'total_sessions' | 'week_streak' | 'season_xp' | 'level' | 'weekly_volume'
 const METRIC_LABEL: Record<Metric, string> = {
-  season_xp: 'Season',
-  level: 'Level',
-  weekly_volume: 'Volumen (Woche)',
+  monthly_prs: 'Fortschritt',
   total_sessions: 'Trainings',
   week_streak: 'Streak',
+  season_xp: 'Season',
+  level: 'Level',
+  weekly_volume: 'Volumen',
 }
 
 export default function Social() {
@@ -46,8 +48,8 @@ export default function Social() {
   const [gymTouched, setGymTouched] = useState(false)
 
   const [code, setCode] = useState('')
-  const [metric, setMetric] = useState<Metric>('weekly_volume')
-  const [chMetric, setChMetric] = useState<'weekly_volume' | 'weekly_sessions'>('weekly_volume')
+  const [metric, setMetric] = useState<Metric>('monthly_prs')
+  const [chMetric, setChMetric] = useState<'weekly_sessions' | 'weekly_volume'>('weekly_sessions')
   const [msg, setMsg] = useState<string | null>(null)
 
   const nameOf = (id: string) => board?.find((u) => u.user_id === id)?.display_name ?? 'Freund'
@@ -87,13 +89,14 @@ export default function Social() {
       weekly_sessions: weeklySessions,
       season_id: seasonId(),
       season_xp: seasonXp(sets),
+      monthly_prs: monthlyPrCount(sets),
     }
   }, [allSets, profile, user])
 
   useEffect(() => {
     if (allSets) syncStats.mutate(myStats)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions, myStats.season_xp])
+  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions, myStats.season_xp, myStats.monthly_prs])
 
   const kudosReceived = useMemo(() => {
     const map = new Map<string, number>()
@@ -214,7 +217,7 @@ export default function Social() {
             </span>
           </div>
           <div className="flex gap-2">
-            {(['weekly_volume', 'weekly_sessions'] as const).map((m) => (
+            {(['weekly_sessions', 'weekly_volume'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setChMetric(m)}
@@ -295,13 +298,19 @@ export default function Social() {
           </button>
         ))}
       </div>
+      <p className="-mt-2 px-1 text-xs text-cocoa-muted">
+        Fair vergleichen: <strong>Fortschritt</strong> (neue Bestleistungen/Monat) &amp;{' '}
+        <strong>Trainings</strong> zählen für alle gleich — Volumen hängt vom Kraftniveau ab.
+      </p>
 
       {/* Leaderboard */}
       <ol className="space-y-2">
         {ranked.map((u, i) => {
           const me = u.user_id === user?.id
           const value =
-            metric === 'season_xp'
+            metric === 'monthly_prs'
+              ? `${u.monthly_prs ?? 0} 🏆`
+              : metric === 'season_xp'
               ? `${u.season_id === seasonId() ? u.season_xp : 0} XP`
               : metric === 'level'
               ? `Lvl ${u.level ?? 1}`

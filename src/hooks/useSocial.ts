@@ -17,6 +17,7 @@ export interface UserStat {
   gym_status: string | null
   season_id: string | null
   season_xp: number
+  monthly_prs: number
 }
 
 export function useMyProfile() {

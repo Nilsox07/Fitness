@@ -114,6 +114,29 @@ export function personalRecords(allSets: SetWithDate[]): PersonalRecords {
   }
 }
 
+/**
+ * Faire Fortschritts-Kennzahl: Anzahl Übungen, bei denen diesen Monat ein neuer
+ * bester geschätzter 1RM aufgestellt wurde (unabhängig vom absoluten Kraftniveau).
+ * So zählt Verbesserung — nicht, wer absolut am stärksten ist.
+ */
+export function monthlyPrCount(sets: SetWithDate[], today = new Date()): number {
+  const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  const byEx = new Map<string, { before: number; cur: number }>()
+  for (const s of onlyWorking(sets)) {
+    const e1 = Math.max(
+      estimate1RM(s.weight, s.reps),
+      estimate1RM(s.weight_right ?? 0, s.reps_right ?? 0),
+    )
+    const rec = byEx.get(s.exercise_id) ?? { before: 0, cur: 0 }
+    if (s.date.startsWith(month)) rec.cur = Math.max(rec.cur, e1)
+    else rec.before = Math.max(rec.before, e1)
+    byEx.set(s.exercise_id, rec)
+  }
+  let n = 0
+  for (const r of byEx.values()) if (r.cur > r.before + 0.01 && r.cur > 0) n++
+  return n
+}
+
 // ---------------------------------------------------------------------------
 // Wochen-Volumen
 // ---------------------------------------------------------------------------
