@@ -138,6 +138,16 @@ export interface BodyWeight {
   created_at: string
 }
 
+export type Meal = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export const MEALS: Meal[] = ['breakfast', 'lunch', 'dinner', 'snack']
+export const MEAL_LABEL: Record<Meal, string> = {
+  breakfast: 'Frühstück',
+  lunch: 'Mittag',
+  dinner: 'Abend',
+  snack: 'Snack',
+}
+
 export interface FoodEntry {
   id: string
   user_id: string
@@ -149,5 +159,14 @@ export interface FoodEntry {
   carbs: number
   fat: number
   barcode: string | null
+  meal: Meal | null
+  created_at: string
+}
+
+export interface WaterIntake {
+  id: string
+  user_id: string
+  date: string
+  ml: number
   created_at: string
 }

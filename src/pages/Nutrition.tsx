@@ -2,6 +2,18 @@ import { useMemo, useState } from 'react'
 import { Stepper } from '../components/Stepper'
 import { BarcodeScanner } from '../components/BarcodeScanner'
 import { BodyWeightCard } from '../components/BodyWeightCard'
+import { WaterCard } from '../components/WaterCard'
+import { useAllSets } from '../hooks/useWorkouts'
+import { MEALS, MEAL_LABEL, type Meal } from '../types'
+
+/** Standard-Mahlzeit nach Uhrzeit. */
+function currentMeal(): Meal {
+  const h = new Date().getHours()
+  if (h < 11) return 'breakfast'
+  if (h < 15) return 'lunch'
+  if (h < 21) return 'dinner'
+  return 'snack'
+}
 import {
   useAddFoodEntry,
   useAllFoodEntries,
@@ -81,6 +93,8 @@ export default function Nutrition() {
   const { data: settings } = useNutritionSettings()
   const { data: entries } = useFoodEntries(today)
   const { data: allEntries } = useAllFoodEntries()
+  const { data: allSets } = useAllSets()
+  const trainedToday = (allSets ?? []).some((s) => s.date === today)
   const upsertSettings = useUpsertNutritionSettings()
 
   // „Zuletzt gegessen": eindeutige letzte Lebensmittel für 1-Tap-Wiederholung
@@ -104,6 +118,7 @@ export default function Nutrition() {
       carbs: e.carbs,
       fat: e.fat,
       barcode: e.barcode,
+      meal: e.meal ?? currentMeal(),
     })
   }
   const addEntry = useAddFoodEntry()
@@ -186,6 +201,7 @@ export default function Nutrition() {
         carbs: it.carbs,
         fat: it.fat,
         barcode: null,
+        meal: currentMeal(),
       })
     }
     setAiResults(null)
@@ -250,6 +266,7 @@ export default function Nutrition() {
       carbs: m.carbs,
       fat: m.fat,
       barcode: pending.barcode,
+      meal: currentMeal(),
     })
     setPending(null)
     setAddMode(null)
@@ -268,13 +285,17 @@ export default function Nutrition() {
       carbs: manual.carbs,
       fat: manual.fat,
       barcode: null,
+      meal: currentMeal(),
     })
     setManual({ name: '', amount_g: 0, kcal: 0, protein: 0, carbs: 0, fat: 0 })
     setAddMode(null)
   }
 
   const hasTarget = settings && settings.kcal_target > 0
-  const kcalLeft = hasTarget ? settings!.kcal_target - totals.kcal : 0
+  // An Trainingstagen etwas mehr Energie (v. a. Kohlenhydrate) einplanen.
+  const TRAINING_BONUS = 250
+  const kcalTarget = hasTarget ? settings!.kcal_target + (trainedToday ? TRAINING_BONUS : 0) : 0
+  const kcalLeft = hasTarget ? kcalTarget - totals.kcal : 0
 
   return (
     <div className="space-y-4">
@@ -294,13 +315,15 @@ export default function Nutrition() {
             <div className="flex items-end justify-between">
               <div>
                 <div className="text-2xl font-bold text-brand">{totals.kcal}</div>
-                <div className="text-xs text-cocoa-light">von {settings!.kcal_target} kcal</div>
+                <div className="text-xs text-cocoa-light">
+                  von {kcalTarget} kcal{trainedToday && ' · +Trainingstag'}
+                </div>
               </div>
               <div className="text-right text-sm text-cocoa-light">
                 {kcalLeft >= 0 ? `${kcalLeft} kcal übrig` : `${-kcalLeft} kcal drüber`}
               </div>
             </div>
-            <Bar value={totals.kcal} target={settings!.kcal_target} />
+            <Bar value={totals.kcal} target={kcalTarget} />
             <div className="grid grid-cols-3 gap-2 text-center text-xs">
               <div>
                 <div className="font-semibold text-cocoa">{totals.protein} g</div>
@@ -347,31 +370,47 @@ export default function Nutrition() {
         </div>
       )}
 
-      {/* Heutige Einträge */}
-      <div className="space-y-2">
-        {entries?.map((e) => (
-          <div key={e.id} className="card flex items-center justify-between">
-            <div>
-              <div className="font-medium">{e.name}</div>
-              <div className="text-xs text-cocoa-light">
-                {e.amount_g ? `${e.amount_g} g · ` : ''}
-                {Math.round(e.kcal)} kcal · E {e.protein} / K {e.carbs} / F {e.fat}
+      {/* Heutige Einträge, nach Mahlzeit gruppiert */}
+      <div className="space-y-3">
+        {MEALS.map((meal) => {
+          const group = (entries ?? []).filter((e) => (e.meal ?? 'snack') === meal)
+          if (group.length === 0) return null
+          const kcal = group.reduce((s, e) => s + e.kcal, 0)
+          return (
+            <div key={meal}>
+              <div className="mb-1 flex items-center justify-between px-1">
+                <span className="text-sm font-semibold">{MEAL_LABEL[meal as Meal]}</span>
+                <span className="text-xs text-cocoa-light">{Math.round(kcal)} kcal</span>
+              </div>
+              <div className="space-y-2">
+                {group.map((e) => (
+                  <div key={e.id} className="card flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{e.name}</div>
+                      <div className="text-xs text-cocoa-light">
+                        {e.amount_g ? `${e.amount_g} g · ` : ''}
+                        {Math.round(e.kcal)} kcal · E {e.protein} / K {e.carbs} / F {e.fat}
+                      </div>
+                    </div>
+                    <button
+                      className="ml-2 px-2 text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
+                      aria-label="Eintrag löschen"
+                      onClick={() => deleteEntry.mutate(e)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
-            <button
-              className="ml-2 px-2 text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
-              aria-label="Eintrag löschen"
-              onClick={() => deleteEntry.mutate(e)}
-            >
-              ✕
-            </button>
-          </div>
-        ))}
+          )
+        })}
         {entries?.length === 0 && (
           <p className="text-center text-sm text-cocoa-light">Heute noch nichts erfasst.</p>
         )}
       </div>
 
+      <WaterCard />
       <BodyWeightCard />
 
       {/* ----- Ziel-Setup ----- */}
