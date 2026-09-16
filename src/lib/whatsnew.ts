@@ -57,6 +57,7 @@ export const RELEASES: Release[] = [
         items: [
           'Freunde per Code, faires Leaderboard (Fortschritt statt nur Kilos), Wochen-Challenges.',
           'Aktivitäts-Feed mit 👏 und Kommentaren, „Wann Gym?" und Protein-Battle.',
+          'Cheat-Meal-Alarm: bei richtig Ungesundem sehen es die Freunde (die KI entscheidet).',
         ],
       },
       {

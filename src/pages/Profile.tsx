@@ -10,7 +10,7 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
-import { enablePush, pushSupported } from '../lib/push'
+import { enablePush, pushSupported, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
 import { computeXp, levelInfo } from '../lib/xp'
 import { setSoundEnabled, soundEnabled } from '../lib/sound'
 import { useFitbitStatus, useFitbitSync } from '../hooks/useFitbit'
@@ -66,6 +66,7 @@ export default function Profile() {
   const [accent, setAccent] = useState(getAccentId())
   const [skin, setSkin] = useState(getSkinId())
   const [sound, setSound] = useState(soundEnabled())
+  const [cheat, setCheat] = useState(shareCheatEnabled())
   const { data: fitbit } = useFitbitStatus()
   const fitbitSync = useFitbitSync()
   const [fitbitData, setFitbitData] = useState<FitbitSync | null>(null)
@@ -177,6 +178,22 @@ export default function Profile() {
           onChange={(v) => {
             setSound(v)
             setSoundEnabled(v)
+          }}
+        />
+      </div>
+
+      <div className="card flex items-center justify-between gap-3">
+        <div>
+          <div className="font-medium">Cheat-Meal-Alarm</div>
+          <div className="text-xs text-cocoa-light">
+            Freunde sehen, wenn du dir was richtig Ungesundes gönnst (die KI entscheidet).
+          </div>
+        </div>
+        <Toggle
+          checked={cheat}
+          onChange={(v) => {
+            setCheat(v)
+            setShareCheatEnabled(v)
           }}
         />
       </div>

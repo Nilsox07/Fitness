@@ -302,6 +302,36 @@ export async function coachChat(history: ChatMsg[], context: unknown): Promise<s
 }
 
 // ---------------------------------------------------------------------------
+// Feature: Cheat-Meal-Erkennung (für den Freunde-Alarm)
+// ---------------------------------------------------------------------------
+
+export async function judgeCheatMeal(entry: {
+  name: string
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+}): Promise<{ indulgent: boolean; quip: string }> {
+  const system =
+    'Du entscheidest, ob ein EINZELNES Lebensmittel ein ungesunder „Cheat" ist, über den man ' +
+    'Freunde freundschaftlich necken kann. Wichtig: berücksichtige die Makros — hohe Eiweißdichte ' +
+    'oder ausgewogen = KEIN Cheat, auch bei vielen Kalorien (z. B. High-Protein-Pizza, große ' +
+    'gesunde Mahlzeit). Junkfood/Süßigkeiten/viel Fett+Zucker mit wenig Eiweiß = Cheat. ' +
+    'Antworte ausschließlich mit JSON.'
+  const prompt =
+    `Lebensmittel: "${entry.name}", ${entry.kcal} kcal, Eiweiß ${entry.protein} g, ` +
+    `Kohlenhydrate ${entry.carbs} g, Fett ${entry.fat} g.\n` +
+    'Format: {"indulgent":true|false,"quip":"kurzer, lockerer Neck-Spruch auf Deutsch (nur wenn indulgent), sonst \\"\\""}'
+  try {
+    const text = await complete({ system, prompt, json: true, temperature: 0.7 })
+    const r = parseJson<{ indulgent?: boolean; quip?: string }>(text)
+    return { indulgent: Boolean(r.indulgent), quip: String(r.quip ?? '') }
+  } catch {
+    return { indulgent: false, quip: '' }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Feature: Trainingsplan-Vorschlag aus vorhandenen Übungen
 // ---------------------------------------------------------------------------
 
