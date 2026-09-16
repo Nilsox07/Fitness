@@ -32,7 +32,14 @@ import {
   sumEntries,
 } from '../lib/nutrition'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
-import { estimateFoodFromImage, estimateFoodFromText, nutritionReview, type FoodEstimate } from '../lib/ai'
+import {
+  estimateFoodFromImage,
+  estimateFoodFromText,
+  nutritionReview,
+  recipeFromFridge,
+  type FoodEstimate,
+  type Recipe,
+} from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
 import { useBodyWeights } from '../hooks/useBodyWeight'
 import type { ActivityLevel, FoodEntry, NutritionGoal, Sex } from '../types'
@@ -131,7 +138,9 @@ export default function Nutrition() {
   // Modal-Status
   const [setupOpen, setSetupOpen] = useState(false)
   const [form, setForm] = useState<NutritionSettingsInput>(emptySettings)
-  const [addMode, setAddMode] = useState<null | 'menu' | 'manual' | 'search' | 'aitext'>(null)
+  const [addMode, setAddMode] = useState<null | 'menu' | 'manual' | 'search' | 'aitext' | 'recipe'>(
+    null,
+  )
   const [scanning, setScanning] = useState(false)
 
   // gewähltes Produkt → Mengen-Bestätigung
@@ -233,6 +242,41 @@ export default function Nutrition() {
     } finally {
       setAiBusy(false)
     }
+  }
+
+  const [craving, setCraving] = useState('')
+  const [recipe, setRecipe] = useState<Recipe | null>(null)
+
+  async function handleFridge(file: File | undefined) {
+    if (!file) return
+    setAiBusy(true)
+    setError(null)
+    try {
+      const dataUrl = await fileToDataUrl(file)
+      const r = await recipeFromFridge(dataUrl, craving)
+      setRecipe(r)
+      setAddMode(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'KI-Fehler beim Rezept')
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  async function logRecipe(r: Recipe) {
+    await addEntry.mutateAsync({
+      date: today,
+      name: `🍳 ${r.title}`,
+      amount_g: null,
+      kcal: r.nutrition.kcal,
+      protein: r.nutrition.protein,
+      carbs: r.nutrition.carbs,
+      fat: r.nutrition.fat,
+      barcode: null,
+      meal: currentMeal(),
+    })
+    setRecipe(null)
+    setCraving('')
   }
 
   async function addEstimates(items: FoodEstimate[]) {
@@ -584,6 +628,9 @@ export default function Nutrition() {
                 <button className="btn-ghost w-full" onClick={() => setAddMode('aitext')}>
                   💬 Text beschreiben (KI)
                 </button>
+                <button className="btn-ghost w-full" onClick={() => setAddMode('recipe')}>
+                  🍳 Rezept aus Kühlschrank (KI)
+                </button>
               </>
             )}
             <button
@@ -805,6 +852,78 @@ export default function Nutrition() {
                 disabled={addEntry.isPending}
               >
                 Alle übernehmen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----- KI: Kühlschrank-Rezept ----- */}
+      {addMode === 'recipe' && (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="card w-full max-w-md space-y-3">
+            <h2 className="text-lg font-bold">🍳 Rezept aus Kühlschrank</h2>
+            <p className="text-xs text-cocoa-light">
+              Worauf hast du Lust? Dann den Kühlschrank/die Zutaten fotografieren — die KI macht dir
+              ein passendes Rezept.
+            </p>
+            <input
+              className="input"
+              placeholder="z. B. was Herzhaftes, proteinreich, schnell"
+              value={craving}
+              onChange={(e) => setCraving(e.target.value)}
+            />
+            <label className="btn-primary flex w-full cursor-pointer items-center justify-center">
+              {aiBusy ? '… koche' : '📸 Kühlschrank fotografieren'}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => handleFridge(e.target.files?.[0])}
+              />
+            </label>
+            <button
+              className="w-full text-center text-sm text-cocoa-light underline"
+              onClick={() => setAddMode('menu')}
+            >
+              Zurück
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ----- Rezept-Ergebnis ----- */}
+      {recipe && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+            <h2 className="text-lg font-bold">{recipe.title}</h2>
+            <p className="text-xs text-cocoa-light">
+              {recipe.servings} Portion(en) · pro Portion {recipe.nutrition.kcal} kcal · E{' '}
+              {recipe.nutrition.protein} / K {recipe.nutrition.carbs} / F {recipe.nutrition.fat}
+            </p>
+            <div>
+              <div className="mb-1 text-sm font-semibold">Zutaten</div>
+              <ul className="list-disc pl-5 text-sm text-cocoa">
+                {recipe.ingredients.map((it, i) => (
+                  <li key={i}>{it}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="mb-1 text-sm font-semibold">Zubereitung</div>
+              <ol className="list-decimal space-y-1 pl-5 text-sm text-cocoa">
+                {recipe.steps.map((st, i) => (
+                  <li key={i}>{st}</li>
+                ))}
+              </ol>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button className="btn-ghost flex-1" onClick={() => setRecipe(null)}>
+                Schließen
+              </button>
+              <button className="btn-primary flex-1" onClick={() => logRecipe(recipe)}>
+                Als Mahlzeit loggen
               </button>
             </div>
           </div>

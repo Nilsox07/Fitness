@@ -235,6 +235,45 @@ export async function estimateFoodFromText(text: string): Promise<FoodEstimate[]
 }
 
 // ---------------------------------------------------------------------------
+// Feature: Rezept aus Kühlschrank-Foto (+ Wunsch)
+// ---------------------------------------------------------------------------
+
+export interface Recipe {
+  title: string
+  servings: number
+  ingredients: string[]
+  steps: string[]
+  nutrition: { kcal: number; protein: number; carbs: number; fat: number }
+}
+
+export async function recipeFromFridge(image: string, craving: string): Promise<Recipe> {
+  const system =
+    'Du bist Koch und Ernährungsberater. Erkenne die Zutaten im Bild und schlage EIN ' +
+    'umsetzbares Rezept vor, das primär diese Zutaten nutzt (Grundzutaten wie Öl, Salz, ' +
+    'Gewürze darfst du annehmen). Antworte ausschließlich mit JSON.'
+  const prompt =
+    `Wunsch des Nutzers: "${craving || 'egal, Hauptsache lecker'}".\n` +
+    'Gib ein Rezept passend zum Wunsch aus den sichtbaren Zutaten. ' +
+    'Nährwerte pro Portion schätzen. ' +
+    'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."],' +
+    '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>}}. Auf Deutsch.'
+  const text = await complete({ system, prompt, image, json: true, temperature: 0.5 })
+  const r = parseJson<Partial<Recipe>>(text)
+  return {
+    title: String(r.title ?? 'Rezept'),
+    servings: Number(r.servings ?? 1) || 1,
+    ingredients: (r.ingredients ?? []).map(String),
+    steps: (r.steps ?? []).map(String),
+    nutrition: {
+      kcal: Math.round(Number(r.nutrition?.kcal ?? 0)),
+      protein: Math.round(Number(r.nutrition?.protein ?? 0)),
+      carbs: Math.round(Number(r.nutrition?.carbs ?? 0)),
+      fat: Math.round(Number(r.nutrition?.fat ?? 0)),
+    },
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Feature: Muskeln zu einer Übung vorschlagen (Primär + Sekundär)
 // ---------------------------------------------------------------------------
 
