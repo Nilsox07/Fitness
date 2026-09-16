@@ -141,6 +141,155 @@ export interface ChatMsg {
   content: string
 }
 
+// ---------------------------------------------------------------------------
+// App-Copilot: beantwortet Fragen UND führt Aktionen aus
+// ---------------------------------------------------------------------------
+
+export const ASSISTANT_ROUTES = [
+  '/',
+  '/nutrition',
+  '/analytics',
+  '/history',
+  '/exercises',
+  '/plans',
+  '/social',
+  '/recipes',
+  '/badges',
+  '/profile',
+] as const
+
+export type AssistantAction =
+  | { type: 'none' }
+  | { type: 'navigate'; to: string }
+  | { type: 'log_food'; items: FoodEstimate[] }
+  | { type: 'set_gym_status'; text: string }
+  | { type: 'add_exercise'; draft: ExerciseDraft }
+
+export interface AssistantReply {
+  reply: string
+  action: AssistantAction
+}
+
+export async function assistant(history: ChatMsg[], context: unknown): Promise<AssistantReply> {
+  const convo = history
+    .map((m) => `${m.role === 'user' ? 'Nutzer' : 'Assistent'}: ${m.content}`)
+    .join('\n')
+  const system =
+    'Du bist der In-App-Assistent einer Fitness-App. Du beantwortest Fragen kompakt auf ' +
+    'Deutsch UND kannst genau EINE Aktion auslösen. Antworte ausschließlich mit JSON ' +
+    '{"reply":"...","action":{...}}. action.type ist eines von: ' +
+    '"none" | "navigate" {to} | "log_food" {items:[{name,amount_g,kcal,protein,carbs,fat}]} | ' +
+    '"set_gym_status" {text} | "add_exercise" {draft:{name,muscle_group,secondary_muscles,unilateral,weight_steps,target_rep_min,target_rep_max,increment}}. ' +
+    `Erlaubte Routen für navigate: ${ASSISTANT_ROUTES.join(', ')}. ` +
+    `Erlaubte Muskelgruppen: ${MUSCLE_GROUPS.join(', ')}. ` +
+    'Wähle eine Aktion NUR, wenn der Nutzer sie klar will (z. B. "logg …", "leg Übung … an", ' +
+    '"bring mich zu …", "ich gehe … ins Gym"). Sonst action.type="none" und beantworte die Frage. ' +
+    'Bei log_food schätze realistische Nährwerte der genannten Menge.'
+  const prompt = `Kontext (JSON):\n${JSON.stringify(context)}\n\nGespräch:\n${convo}\n\nAntworte als JSON.`
+  const text = await complete({ system, prompt, json: true, temperature: 0.3 })
+  const raw = parseJson<{ reply?: string; action?: { type?: string; [k: string]: unknown } }>(text)
+  const reply = String(raw.reply ?? '…')
+  const a = raw.action || { type: 'none' }
+  let action: AssistantAction = { type: 'none' }
+  if (a.type === 'navigate' && typeof a.to === 'string' && (ASSISTANT_ROUTES as readonly string[]).includes(a.to)) {
+    action = { type: 'navigate', to: a.to }
+  } else if (a.type === 'set_gym_status' && typeof a.text === 'string') {
+    action = { type: 'set_gym_status', text: a.text }
+  } else if (a.type === 'log_food' && Array.isArray(a.items)) {
+    const items = (a.items as Partial<FoodEstimate>[]).map((i) => ({
+      name: String(i.name ?? 'Lebensmittel'),
+      amount_g: i.amount_g == null ? null : Number(i.amount_g),
+      kcal: Math.round(Number(i.kcal ?? 0)),
+      protein: Math.round(Number(i.protein ?? 0)),
+      carbs: Math.round(Number(i.carbs ?? 0)),
+      fat: Math.round(Number(i.fat ?? 0)),
+    }))
+    if (items.length) action = { type: 'log_food', items }
+  } else if (a.type === 'add_exercise' && a.draft) {
+    const d = a.draft as Partial<ExerciseDraft>
+    const valid = (g: string): g is MuscleGroup => (MUSCLE_GROUPS as readonly string[]).includes(g)
+    const primary = d.muscle_group && valid(d.muscle_group) ? d.muscle_group : 'Sonstige'
+    action = {
+      type: 'add_exercise',
+      draft: {
+        name: String(d.name ?? 'Übung').slice(0, 60),
+        muscle_group: primary,
+        secondary_muscles: (d.secondary_muscles ?? []).filter(valid).filter((g) => g !== primary).slice(0, 3),
+        unilateral: Boolean(d.unilateral),
+        weight_steps: typeof d.weight_steps === 'string' && d.weight_steps.trim() ? d.weight_steps.trim() : null,
+        target_rep_min: Math.max(1, Math.round(Number(d.target_rep_min ?? 8)) || 8),
+        target_rep_max: Math.max(1, Math.round(Number(d.target_rep_max ?? 12)) || 12),
+        increment: Number(d.increment) > 0 ? Number(d.increment) : 2.5,
+      },
+    }
+  }
+  return { reply, action }
+}
+
+// ---------------------------------------------------------------------------
+// Essensplan-Generator & Text-Rezept
+// ---------------------------------------------------------------------------
+
+export interface MealPlanItem {
+  meal: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  name: string
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
+export async function mealPlanForDay(
+  targets: { kcal: number; protein: number },
+  wish: string,
+): Promise<{ note: string; items: MealPlanItem[] }> {
+  const system =
+    'Du bist Ernährungsberater. Erstelle einen realistischen Tages-Essensplan, der die Ziele ' +
+    'möglichst trifft. Antworte ausschließlich mit JSON.'
+  const prompt =
+    `Tagesziel: ~${targets.kcal} kcal, ~${targets.protein} g Eiweiß. Wunsch: "${wish || 'ausgewogen'}".\n` +
+    'Format: {"note":"kurzer Hinweis","items":[{"meal":"breakfast|lunch|dinner|snack",' +
+    '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>}]}. 4–6 Einträge, deutsch.'
+  const text = await complete({ system, prompt, json: true, temperature: 0.5 })
+  const raw = parseJson<{ note?: string; items?: Partial<MealPlanItem>[] }>(text)
+  const meals = ['breakfast', 'lunch', 'dinner', 'snack']
+  return {
+    note: String(raw.note ?? ''),
+    items: (raw.items ?? []).map((i) => ({
+      meal: (meals.includes(String(i.meal)) ? i.meal : 'snack') as MealPlanItem['meal'],
+      name: String(i.name ?? 'Mahlzeit'),
+      kcal: Math.round(Number(i.kcal ?? 0)),
+      protein: Math.round(Number(i.protein ?? 0)),
+      carbs: Math.round(Number(i.carbs ?? 0)),
+      fat: Math.round(Number(i.fat ?? 0)),
+    })),
+  }
+}
+
+export async function recipeFromText(request: string): Promise<Recipe> {
+  const system =
+    'Du bist Koch und Ernährungsberater. Erstelle EIN Rezept passend zur Anfrage. ' +
+    'Antworte ausschließlich mit JSON.'
+  const prompt =
+    `Anfrage: "${request}".\n` +
+    'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."],' +
+    '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>}}. Nährwerte pro Portion. Deutsch.'
+  const text = await complete({ system, prompt, json: true, temperature: 0.6 })
+  const r = parseJson<Partial<Recipe>>(text)
+  return {
+    title: String(r.title ?? 'Rezept'),
+    servings: Number(r.servings ?? 1) || 1,
+    ingredients: (r.ingredients ?? []).map(String),
+    steps: (r.steps ?? []).map(String),
+    nutrition: {
+      kcal: Math.round(Number(r.nutrition?.kcal ?? 0)),
+      protein: Math.round(Number(r.nutrition?.protein ?? 0)),
+      carbs: Math.round(Number(r.nutrition?.carbs ?? 0)),
+      fat: Math.round(Number(r.nutrition?.fat ?? 0)),
+    },
+  }
+}
+
 /** Coach-Chat: beantwortet die letzte Nutzerfrage mit Datenkontext. */
 export async function coachChat(history: ChatMsg[], context: unknown): Promise<string> {
   const convo = history

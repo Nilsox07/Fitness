@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { TabBar } from './components/TabBar'
 import { SaveStatus } from './components/SaveStatus'
+import { Assistant } from './components/Assistant'
 import Login from './pages/Login'
 import ResetPassword from './pages/ResetPassword'
 import Workout from './pages/Workout'
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <Assistant />
       <TabBar />
     </div>
   )

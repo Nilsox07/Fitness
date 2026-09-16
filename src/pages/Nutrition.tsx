@@ -38,9 +38,12 @@ import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/
 import {
   estimateFoodFromImage,
   estimateFoodFromText,
+  mealPlanForDay,
   nutritionReview,
   recipeFromFridge,
+  recipeFromText,
   type FoodEstimate,
+  type MealPlanItem,
   type Recipe,
 } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
@@ -144,9 +147,9 @@ export default function Nutrition() {
   // Modal-Status
   const [setupOpen, setSetupOpen] = useState(false)
   const [form, setForm] = useState<NutritionSettingsInput>(emptySettings)
-  const [addMode, setAddMode] = useState<null | 'menu' | 'manual' | 'search' | 'aitext' | 'recipe'>(
-    null,
-  )
+  const [addMode, setAddMode] = useState<
+    null | 'menu' | 'manual' | 'search' | 'aitext' | 'recipe' | 'plan'
+  >(null)
   const [scanning, setScanning] = useState(false)
 
   // gewähltes Produkt → Mengen-Bestätigung
@@ -252,6 +255,60 @@ export default function Nutrition() {
 
   const [craving, setCraving] = useState('')
   const [recipe, setRecipe] = useState<Recipe | null>(null)
+  const [recipeText, setRecipeText] = useState('')
+  const [planWish, setPlanWish] = useState('')
+  const [planItems, setPlanItems] = useState<MealPlanItem[] | null>(null)
+  const [planNote, setPlanNote] = useState('')
+
+  async function genPlan() {
+    setAiBusy(true)
+    setError(null)
+    try {
+      const res = await mealPlanForDay(
+        { kcal: settings?.kcal_target ?? 2000, protein: settings?.protein_target ?? 130 },
+        planWish,
+      )
+      setPlanItems(res.items)
+      setPlanNote(res.note)
+      setAddMode(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  async function logPlan(items: MealPlanItem[]) {
+    for (const it of items) {
+      await addEntry.mutateAsync({
+        date: today,
+        name: it.name,
+        amount_g: null,
+        kcal: it.kcal,
+        protein: it.protein,
+        carbs: it.carbs,
+        fat: it.fat,
+        barcode: null,
+        meal: it.meal,
+      })
+    }
+    setPlanItems(null)
+  }
+
+  async function genRecipeText() {
+    if (!recipeText.trim()) return
+    setAiBusy(true)
+    setError(null)
+    try {
+      setRecipe(await recipeFromText(recipeText.trim()))
+      setRecipeText('')
+      setAddMode(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setAiBusy(false)
+    }
+  }
 
   async function handleFridge(file: File | undefined) {
     if (!file) return
@@ -657,7 +714,10 @@ export default function Nutrition() {
                   💬 Text beschreiben (KI)
                 </button>
                 <button className="btn-ghost w-full" onClick={() => setAddMode('recipe')}>
-                  🍳 Rezept aus Kühlschrank (KI)
+                  🍳 Rezept (Foto/Text, KI)
+                </button>
+                <button className="btn-ghost w-full" onClick={() => setAddMode('plan')}>
+                  📋 Essensplan für heute (KI)
                 </button>
               </>
             )}
@@ -911,6 +971,23 @@ export default function Nutrition() {
                 onChange={(e) => handleFridge(e.target.files?.[0])}
               />
             </label>
+            <div className="flex items-center gap-2 text-xs text-cocoa-muted">
+              <span className="h-px flex-1 bg-sand-dark" /> oder ohne Foto{' '}
+              <span className="h-px flex-1 bg-sand-dark" />
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="input"
+                placeholder="z. B. veganes Frühstück, 40 g Eiweiß"
+                value={recipeText}
+                onChange={(e) => setRecipeText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && genRecipeText()}
+              />
+              <MicButton onResult={(t) => setRecipeText((v) => (v ? v + ' ' + t : t))} />
+              <button className="btn-ghost shrink-0" onClick={genRecipeText} disabled={aiBusy}>
+                Los
+              </button>
+            </div>
             <button
               className="w-full text-center text-sm text-cocoa-light underline"
               onClick={() => setAddMode('menu')}
@@ -958,6 +1035,73 @@ export default function Nutrition() {
               </button>
               <button className="btn-primary" onClick={() => logRecipe(recipe)}>
                 Loggen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----- KI: Essensplan Eingabe ----- */}
+      {addMode === 'plan' && (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="card w-full max-w-md space-y-3">
+            <h2 className="text-lg font-bold">📋 Essensplan für heute</h2>
+            <p className="text-xs text-cocoa-light">
+              Ziel: ~{settings?.kcal_target ?? 2000} kcal · {settings?.protein_target ?? 130} g Eiweiß.
+              Wünsche?
+            </p>
+            <div className="flex gap-2">
+              <input
+                className="input"
+                placeholder="z. B. high protein, kein Schwein, schnell"
+                value={planWish}
+                onChange={(e) => setPlanWish(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && genPlan()}
+              />
+              <MicButton onResult={(t) => setPlanWish((v) => (v ? v + ' ' + t : t))} />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button className="btn-ghost flex-1" onClick={() => setAddMode('menu')}>
+                Zurück
+              </button>
+              <button className="btn-primary flex-1" onClick={genPlan} disabled={aiBusy}>
+                {aiBusy ? 'Erstelle…' : 'Plan erstellen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----- Essensplan Ergebnis ----- */}
+      {planItems && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+            <h2 className="text-lg font-bold">Essensplan</h2>
+            {planNote && <p className="text-xs text-cocoa-light">{planNote}</p>}
+            <ul className="space-y-1.5">
+              {planItems.map((it, i) => (
+                <li key={i} className="rounded-lg bg-sand/40 px-3 py-2 ring-1 ring-sand-dark/50">
+                  <div className="text-sm font-medium">{it.name}</div>
+                  <div className="text-xs text-cocoa-light">
+                    {MEAL_LABEL[it.meal]} · {it.kcal} kcal · E {it.protein} / K {it.carbs} / F {it.fat}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="text-xs text-cocoa-muted">
+              Summe: {planItems.reduce((s, i) => s + i.kcal, 0)} kcal ·{' '}
+              {planItems.reduce((s, i) => s + i.protein, 0)} g Eiweiß
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button className="btn-ghost flex-1" onClick={() => setPlanItems(null)}>
+                Verwerfen
+              </button>
+              <button
+                className="btn-primary flex-1"
+                onClick={() => logPlan(planItems)}
+                disabled={addEntry.isPending}
+              >
+                Alle loggen
               </button>
             </div>
           </div>
