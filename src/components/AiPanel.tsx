@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAiStatus } from '../hooks/useAi'
-import { coachChat, weeklyTrainingReview, type ChatMsg } from '../lib/ai'
+import { coachChat, weeklyTrainingReview, wrappedRecap, type ChatMsg } from '../lib/ai'
+import { MicButton } from './MicButton'
 import { trainingSummary } from '../lib/analytics'
 import type { Exercise, SetWithDate } from '../types'
 
@@ -28,6 +29,18 @@ export function AiPanel({ sets, exercises }: { sets: SetWithDate[]; exercises: E
     }
   }
 
+  async function makeWrapped() {
+    setLoading(true)
+    setErr(null)
+    try {
+      setReview(await wrappedRecap(summary))
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <section className="card space-y-3">
       <div className="flex items-center justify-between">
@@ -46,9 +59,14 @@ export function AiPanel({ sets, exercises }: { sets: SetWithDate[]; exercises: E
       )}
       {err && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {err}</p>}
 
-      <button className="btn-primary w-full" onClick={makeReview} disabled={loading}>
-        {loading ? 'Analysiere…' : review ? 'Neu erstellen' : 'Wochen-Review erstellen'}
-      </button>
+      <div className="flex gap-2">
+        <button className="btn-primary flex-1" onClick={makeReview} disabled={loading}>
+          {loading ? 'Analysiere…' : review ? 'Neu erstellen' : 'Wochen-Review'}
+        </button>
+        <button className="btn-ghost shrink-0" onClick={makeWrapped} disabled={loading}>
+          🎬 Rückblick
+        </button>
+      </div>
 
       {chatOpen && <CoachChatModal context={summary} onClose={() => setChatOpen(false)} />}
     </section>
@@ -122,6 +140,7 @@ function CoachChatModal({ context, onClose }: { context: unknown; onClose: () =>
               if (e.key === 'Enter') send()
             }}
           />
+          <MicButton onResult={(t) => setInput((v) => (v ? v + ' ' + t : t))} />
           <button className="btn-primary shrink-0" onClick={send} disabled={busy}>
             Senden
           </button>

@@ -116,6 +116,16 @@ export async function hypeLine(context: unknown): Promise<string> {
   return text.trim().replace(/^["']|["']$/g, '')
 }
 
+/** Persönlicher „Wrapped"-Rückblick über die gesamte Trainingshistorie. */
+export async function wrappedRecap(summary: unknown): Promise<string> {
+  const prompt =
+    `Trainingsdaten (JSON):\n${JSON.stringify(summary)}\n\n` +
+    'Schreib einen kurzen, unterhaltsamen "Wrapped"-Rückblick (max. ~140 Wörter) über die ' +
+    'bisherige Trainingsreise: Highlights, Lieblingsübung, größte Fortschritte, eine witzige ' +
+    'Zahl. Feiere den Nutzer. Nutze ein paar Emojis und kurze Absätze.'
+  return complete({ system: coachSystem(), prompt, temperature: 0.8 })
+}
+
 export interface ChatMsg {
   role: 'user' | 'assistant'
   content: string

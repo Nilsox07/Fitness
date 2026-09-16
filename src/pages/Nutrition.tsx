@@ -3,6 +3,7 @@ import { Stepper } from '../components/Stepper'
 import { BarcodeScanner } from '../components/BarcodeScanner'
 import { BodyWeightCard } from '../components/BodyWeightCard'
 import { WaterCard } from '../components/WaterCard'
+import { MicButton } from '../components/MicButton'
 import { useAllSets } from '../hooks/useWorkouts'
 import { MEALS, MEAL_LABEL, type Meal } from '../types'
 
@@ -684,14 +685,17 @@ export default function Nutrition() {
             <p className="text-xs text-cocoa-light">
               Schreib einfach, was du gegessen hast — die KI schätzt die Nährwerte.
             </p>
-            <input
-              className="input"
-              autoFocus
-              placeholder="z. B. 2 Eier, 80 g Haferflocken, 1 Banane"
-              value={aiText}
-              onChange={(e) => setAiText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAiText()}
-            />
+            <div className="flex gap-2">
+              <input
+                className="input"
+                autoFocus
+                placeholder="z. B. 2 Eier, 80 g Haferflocken, 1 Banane"
+                value={aiText}
+                onChange={(e) => setAiText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAiText()}
+              />
+              <MicButton onResult={(t) => setAiText((v) => (v ? v + ' ' + t : t))} />
+            </div>
             <div className="flex gap-2 pt-1">
               <button className="btn-ghost flex-1" onClick={() => setAddMode('menu')}>
                 Zurück
