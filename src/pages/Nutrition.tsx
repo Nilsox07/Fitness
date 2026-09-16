@@ -148,7 +148,7 @@ export default function Nutrition() {
   const [setupOpen, setSetupOpen] = useState(false)
   const [form, setForm] = useState<NutritionSettingsInput>(emptySettings)
   const [addMode, setAddMode] = useState<
-    null | 'menu' | 'manual' | 'search' | 'aitext' | 'recipe' | 'plan'
+    null | 'menu' | 'manual' | 'search' | 'aitext' | 'recipe' | 'plan' | 'photo'
   >(null)
   const [scanning, setScanning] = useState(false)
 
@@ -171,6 +171,7 @@ export default function Nutrition() {
   const [aiResults, setAiResults] = useState<FoodEstimate[] | null>(null)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiText, setAiText] = useState('')
+  const [photoHint, setPhotoHint] = useState('')
   const { data: weights } = useBodyWeights()
   const [nutriReview, setNutriReview] = useState<string | null>(null)
   const [nutriBusy, setNutriBusy] = useState(false)
@@ -221,11 +222,12 @@ export default function Nutrition() {
     setError(null)
     try {
       const dataUrl = await fileToDataUrl(file)
-      const items = await estimateFoodFromImage(dataUrl)
+      const items = await estimateFoodFromImage(dataUrl, photoHint.trim() || undefined)
       if (items.length === 0) setError('Kein Essen erkannt. Versuch ein klareres Foto.')
       else {
         setAiResults(items)
         setAddMode(null)
+        setPhotoHint('')
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'KI-Fehler beim Foto')
@@ -700,16 +702,9 @@ export default function Nutrition() {
             <h2 className="text-lg font-bold">Hinzufügen</h2>
             {ai?.enabled && (
               <>
-                <label className="btn-primary flex w-full cursor-pointer items-center justify-center">
-                  {aiBusy ? '… analysiere' : '📸 Foto (KI)'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => handlePhoto(e.target.files?.[0])}
-                  />
-                </label>
+                <button className="btn-primary w-full" onClick={() => setAddMode('photo')}>
+                  📸 Foto (KI)
+                </button>
                 <button className="btn-ghost w-full" onClick={() => setAddMode('aitext')}>
                   💬 Text beschreiben (KI)
                 </button>
@@ -864,6 +859,44 @@ export default function Nutrition() {
                 Hinzufügen
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----- KI: Foto + optionale Notiz ----- */}
+      {addMode === 'photo' && (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="card w-full max-w-md space-y-3">
+            <h2 className="text-lg font-bold">📸 Essen fotografieren</h2>
+            <p className="text-xs text-cocoa-light">
+              Optional dazu schreiben oder diktieren, was drin ist oder wie viel — macht die
+              Schätzung genauer.
+            </p>
+            <div className="flex gap-2">
+              <input
+                className="input"
+                placeholder="z. B. mit extra Käse, ca. 300 g, dazu Reis"
+                value={photoHint}
+                onChange={(e) => setPhotoHint(e.target.value)}
+              />
+              <MicButton onResult={(t) => setPhotoHint((v) => (v ? v + ' ' + t : t))} />
+            </div>
+            <label className="btn-primary flex w-full cursor-pointer items-center justify-center">
+              {aiBusy ? '… analysiere' : '📷 Foto aufnehmen'}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => handlePhoto(e.target.files?.[0])}
+              />
+            </label>
+            <button
+              className="w-full text-center text-sm text-cocoa-light underline"
+              onClick={() => setAddMode('menu')}
+            >
+              Zurück
+            </button>
           </div>
         </div>
       )}

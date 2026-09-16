@@ -399,10 +399,11 @@ function toEstimates(text: string): FoodEstimate[] {
   }))
 }
 
-/** Nährwerte aus einem Foto schätzen (image = Data-URL). */
-export async function estimateFoodFromImage(image: string): Promise<FoodEstimate[]> {
+/** Nährwerte aus einem Foto schätzen (image = Data-URL), optional mit Zusatzinfo. */
+export async function estimateFoodFromImage(image: string, hint?: string): Promise<FoodEstimate[]> {
   const prompt =
     'Erkenne das Essen auf dem Bild und schätze die Nährwerte der abgebildeten Portion. ' +
+    (hint ? `Zusatzinfo vom Nutzer (Zutaten/Mengen unbedingt berücksichtigen): "${hint}". ` : '') +
     NUTRITION_FORMAT
   return toEstimates(await complete({ system: NUTRITION_SYSTEM, prompt, image, json: true, temperature: 0.2 }))
 }
