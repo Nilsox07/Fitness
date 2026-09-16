@@ -10,6 +10,7 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
+import { enablePush, pushSupported } from '../lib/push'
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -47,8 +48,24 @@ export default function Profile() {
   const { data: exercises } = useExercises()
   const { data: foodEntries } = useAllFoodEntries()
   const [tone, setTone] = useState<CoachTone>(getCoachTone())
+  const [pushMsg, setPushMsg] = useState<string | null>(null)
+  const [pushBusy, setPushBusy] = useState(false)
 
   const tones: CoachTone[] = ['coach', 'sergeant', 'bro']
+
+  async function activatePush() {
+    if (!user) return
+    setPushBusy(true)
+    setPushMsg(null)
+    try {
+      await enablePush(user.id)
+      setPushMsg('Erinnerungen aktiviert ✅')
+    } catch (e) {
+      setPushMsg(e instanceof Error ? e.message : 'Fehler')
+    } finally {
+      setPushBusy(false)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -123,6 +140,23 @@ export default function Profile() {
       >
         👥 Freunde & Leaderboard
       </button>
+
+      {pushSupported && (
+        <div className="card space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="font-medium">Trainings-Erinnerungen</div>
+              <div className="text-xs text-cocoa-light">
+                Push, wenn du ein paar Tage nicht im Gym warst.
+              </div>
+            </div>
+            <button className="btn-primary text-sm" onClick={activatePush} disabled={pushBusy}>
+              {pushBusy ? '…' : '🔔 Aktivieren'}
+            </button>
+          </div>
+          {pushMsg && <p className="text-sm text-brand">{pushMsg}</p>}
+        </div>
+      )}
 
       <div className="card space-y-2">
         <div className="label">Daten exportieren (CSV)</div>

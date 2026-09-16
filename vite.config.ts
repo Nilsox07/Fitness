@@ -9,6 +9,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+      },
       includeAssets: ['favicon.svg', 'icon.svg'],
       manifest: {
         name: 'Fitness Tracker',
