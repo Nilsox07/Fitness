@@ -9,7 +9,11 @@ import { AuthProvider } from './lib/auth'
 import { ThemeProvider } from './lib/theme'
 import { PrefsProvider } from './lib/prefs'
 import { registerMutationDefaults } from './lib/mutationDefaults'
+import { applyAccent, getAccentId } from './lib/cosmetics'
 import './index.css'
+
+// Freigeschaltete Akzentfarbe anwenden, bevor die App rendert.
+applyAccent(getAccentId())
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { balanceStats, frequencyStats, isoWeekKey, onlyWorking, totalVolume } from '../lib/analytics'
-import { achievements, mascotStage, rankForSessions } from '../lib/gamification'
+import { achievements, rankForSessions } from '../lib/gamification'
+import { mascotEmoji } from '../lib/cosmetics'
 import { computeXp, dailyQuests, levelInfo, weeklyQuests, type Quest } from '../lib/xp'
 import { Confetti } from './Confetti'
 import type { Exercise, SetWithDate } from '../types'
@@ -42,7 +43,7 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
       freq,
       tonnage,
       rank: rankForSessions(freq.totalSessions),
-      mascot: mascotStage(freq.totalSessions),
+      mascot: mascotEmoji(freq.totalSessions),
       xp: levelInfo(computeXp(sets)),
       daily: dailyQuests(sets, today),
       weekly: weeklyQuests(sets),
@@ -92,7 +93,7 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
 
       {/* Level + Maskottchen + Rang */}
       <div className="flex items-center gap-3">
-        <div className="text-4xl">{g.mascot.emoji}</div>
+        <div className="text-4xl">{g.mascot}</div>
         <div className="flex-1">
           <div className="flex items-baseline justify-between">
             <span className="font-bold">Level {g.xp.level}</span>

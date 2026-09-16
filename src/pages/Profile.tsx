@@ -11,6 +11,16 @@ import { useExercises } from '../hooks/useExercises'
 import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
 import { enablePush, pushSupported } from '../lib/push'
+import { computeXp, levelInfo } from '../lib/xp'
+import {
+  ACCENTS,
+  SKINS,
+  applyAccent,
+  getAccentId,
+  getSkinId,
+  setAccentId,
+  setSkinId,
+} from '../lib/cosmetics'
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -50,6 +60,21 @@ export default function Profile() {
   const [tone, setTone] = useState<CoachTone>(getCoachTone())
   const [pushMsg, setPushMsg] = useState<string | null>(null)
   const [pushBusy, setPushBusy] = useState(false)
+  const [accent, setAccent] = useState(getAccentId())
+  const [skin, setSkin] = useState(getSkinId())
+  const level = levelInfo(computeXp(allSets ?? [])).level
+
+  function chooseAccent(id: string, min: number) {
+    if (level < min) return
+    setAccent(id)
+    setAccentId(id)
+    applyAccent(id)
+  }
+  function chooseSkin(id: string, min: number) {
+    if (level < min) return
+    setSkin(id)
+    setSkinId(id)
+  }
 
   const tones: CoachTone[] = ['coach', 'sergeant', 'bro']
 
@@ -109,6 +134,53 @@ export default function Profile() {
           </div>
         </div>
         <Toggle checked={showNutrition} onChange={setShowNutrition} />
+      </div>
+
+      <div className="card space-y-3">
+        <div className="label">Freischaltbares (Level {level})</div>
+        <div>
+          <div className="mb-1 text-xs text-cocoa-light">Akzentfarbe</div>
+          <div className="flex flex-wrap gap-2">
+            {ACCENTS.map((a) => {
+              const locked = level < a.minLevel
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => chooseAccent(a.id, a.minLevel)}
+                  disabled={locked}
+                  title={locked ? `Ab Level ${a.minLevel}` : a.label}
+                  className={`relative h-9 w-9 rounded-full ring-2 ${
+                    accent === a.id ? 'ring-cocoa' : 'ring-transparent'
+                  } ${locked ? 'opacity-40' : ''}`}
+                  style={{ background: a.swatch }}
+                >
+                  {locked && <span className="absolute inset-0 grid place-items-center text-xs">🔒</span>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div>
+          <div className="mb-1 text-xs text-cocoa-light">Maskottchen-Skin</div>
+          <div className="flex flex-wrap gap-2">
+            {SKINS.map((s) => {
+              const locked = level < s.minLevel
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => chooseSkin(s.id, s.minLevel)}
+                  disabled={locked}
+                  title={locked ? `Ab Level ${s.minLevel}` : s.label}
+                  className={`rounded-xl px-3 py-1.5 text-lg ring-1 ${
+                    skin === s.id ? 'bg-sand-light ring-cocoa' : 'ring-sand-dark'
+                  } ${locked ? 'opacity-40' : ''}`}
+                >
+                  {s.stages[3]} {locked && '🔒'}
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {ai?.enabled && (
