@@ -478,6 +478,61 @@ export async function parseNewExercise(text: string): Promise<ExerciseDraft> {
   }
 }
 
+function normalizeDraft(d: Partial<ExerciseDraft>): ExerciseDraft {
+  const valid = (g: string): g is MuscleGroup => (MUSCLE_GROUPS as readonly string[]).includes(g)
+  const primary = d.muscle_group && valid(d.muscle_group) ? d.muscle_group : 'Sonstige'
+  const min = Math.max(1, Math.round(Number(d.target_rep_min ?? 8)) || 8)
+  const max = Math.max(min, Math.round(Number(d.target_rep_max ?? 12)) || min)
+  const steps = typeof d.weight_steps === 'string' ? d.weight_steps.trim() : ''
+  return {
+    name: String(d.name ?? 'Übung').slice(0, 60),
+    muscle_group: primary,
+    secondary_muscles: (d.secondary_muscles ?? []).filter(valid).filter((g) => g !== primary).slice(0, 3),
+    unilateral: Boolean(d.unilateral),
+    weight_steps: steps || null,
+    target_rep_min: min,
+    target_rep_max: max,
+    increment: Number(d.increment) > 0 ? Number(d.increment) : 2.5,
+  }
+}
+
+/** Ganze Geräteliste (Text oder Foto) → mehrere Übungs-Entwürfe. */
+export async function parseEquipmentList(text: string, image?: string): Promise<ExerciseDraft[]> {
+  const groups = MUSCLE_GROUPS.join(', ')
+  const system =
+    'Du bist ein Trainings-Assistent. Aus einer Liste bzw. einem Foto von Fitnessgeräten/Maschinen ' +
+    'erstellst du je Gerät einen Übungs-Entwurf. Antworte ausschließlich mit JSON.'
+  const prompt =
+    (text ? `Geräte: "${text}".\n` : 'Erkenne die Geräte im Bild.\n') +
+    `Erlaubte Muskelgruppen (exakt): ${groups}.\n` +
+    'Format: {"exercises":[{"name":"...","muscle_group":"...","secondary_muscles":["..."],' +
+    '"unilateral":false,"weight_steps":"","target_rep_min":8,"target_rep_max":12,"increment":2.5}]}. ' +
+    'weight_steps leer lassen (kann der Nutzer später ergänzen).'
+  const t = await complete({ system, prompt, image, json: true, temperature: 0.2 })
+  const raw = parseJson<{ exercises?: Partial<ExerciseDraft>[] }>(t)
+  return (raw.exercises ?? []).map(normalizeDraft).filter((d) => d.name)
+}
+
+/** Beste Ersatzübung aus den VERFÜGBAREN Übungen (Gerät besetzt). */
+export async function alternativeExercise(
+  target: { name: string; muscle: string; secondary: string[] },
+  available: { name: string; muscle: string }[],
+): Promise<{ name: string | null; reason: string }> {
+  const list = available.map((e) => `${e.name} (${e.muscle})`).join(', ')
+  const system =
+    'Du hilfst, wenn ein Gerät besetzt ist. Wähle die beste Ersatzübung, die AUSSCHLIESSLICH aus ' +
+    'der Liste der verfügbaren Übungen stammt und dieselben Muskeln trifft. Antworte nur mit JSON.'
+  const prompt =
+    `Besetzt: "${target.name}" (primär ${target.muscle}, sekundär ${target.secondary.join(', ') || '—'}).\n` +
+    `Verfügbare Übungen: ${list}.\n` +
+    'Wähle EINEN exakten Namen aus der Liste als Alternative. ' +
+    'Format: {"name":"<exakter Name oder null>","reason":"kurze Begründung"}.'
+  const t = await complete({ system, prompt, json: true, temperature: 0.3 })
+  const r = parseJson<{ name?: string | null; reason?: string }>(t)
+  const match = available.find((e) => e.name.toLowerCase() === String(r.name ?? '').toLowerCase())
+  return { name: match ? match.name : null, reason: String(r.reason ?? '') }
+}
+
 export async function suggestMuscles(exerciseName: string): Promise<MuscleSuggestion> {
   const groups = MUSCLE_GROUPS.join(', ')
   const system =

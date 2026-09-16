@@ -8,8 +8,31 @@ import {
   type ExerciseInput,
 } from '../hooks/useExercises'
 import { useAiStatus } from '../hooks/useAi'
-import { parseNewExercise, suggestMuscles } from '../lib/ai'
+import { parseEquipmentList, parseNewExercise, suggestMuscles, type ExerciseDraft } from '../lib/ai'
 import { MicButton } from '../components/MicButton'
+
+function fileToDataUrl(file: File, maxDim = 1280): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Bild konnte nicht gelesen werden'))
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return resolve(reader.result as string)
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', 0.8))
+      }
+      img.onerror = () => resolve(reader.result as string)
+      img.src = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
 import { expandWithAddons, generateLadder } from '../lib/weights'
 import { MUSCLE_GROUPS, type Exercise, type MuscleGroup } from '../types'
 
@@ -43,6 +66,57 @@ export default function Exercises() {
   const [assistText, setAssistText] = useState('')
   const [assistBusy, setAssistBusy] = useState(false)
   const [assistErr, setAssistErr] = useState<string | null>(null)
+  const [equipOpen, setEquipOpen] = useState(false)
+  const [equipText, setEquipText] = useState('')
+  const [equipBusy, setEquipBusy] = useState(false)
+  const [equipErr, setEquipErr] = useState<string | null>(null)
+  const [equipDrafts, setEquipDrafts] = useState<ExerciseDraft[] | null>(null)
+
+  async function genEquip(image?: string) {
+    if (!equipText.trim() && !image) return
+    setEquipBusy(true)
+    setEquipErr(null)
+    try {
+      const drafts = await parseEquipmentList(equipText.trim(), image)
+      if (drafts.length === 0) setEquipErr('Keine Geräte erkannt.')
+      else setEquipDrafts(drafts)
+    } catch (e) {
+      setEquipErr(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setEquipBusy(false)
+    }
+  }
+
+  async function genEquipPhoto(file: File | undefined) {
+    if (!file) return
+    setEquipBusy(true)
+    setEquipErr(null)
+    try {
+      await genEquip(await fileToDataUrl(file))
+    } catch (e) {
+      setEquipErr(e instanceof Error ? e.message : 'KI-Fehler')
+      setEquipBusy(false)
+    }
+  }
+
+  async function createAllDrafts(drafts: ExerciseDraft[]) {
+    for (const d of drafts) {
+      await createEx.mutateAsync({
+        name: d.name,
+        muscle_group: d.muscle_group,
+        notes: null,
+        target_rep_min: d.target_rep_min,
+        target_rep_max: d.target_rep_max,
+        increment: d.increment,
+        unilateral: d.unilateral,
+        weight_steps: d.weight_steps,
+        secondary_muscles: d.secondary_muscles,
+      })
+    }
+    setEquipDrafts(null)
+    setEquipOpen(false)
+    setEquipText('')
+  }
 
   async function runAssistant() {
     if (!assistText.trim()) return
@@ -163,6 +237,11 @@ export default function Exercises() {
             ⚙️
           </button>
           {ai?.enabled && (
+            <button className="btn-ghost text-sm" onClick={() => setEquipOpen(true)} aria-label="Geräte importieren">
+              🏋️ Geräte
+            </button>
+          )}
+          {ai?.enabled && (
             <button className="btn-ghost text-sm" onClick={() => setAssistOpen(true)} aria-label="Übung per Sprache anlegen">
               🎤 KI
             </button>
@@ -172,6 +251,82 @@ export default function Exercises() {
           </button>
         </div>
       </header>
+
+      {equipOpen && !equipDrafts && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="card w-full max-w-md space-y-3">
+            <h2 className="text-lg font-bold">🏋️ Geräte deines Studios importieren</h2>
+            <p className="text-xs text-cocoa-light">
+              Zähl deine Geräte/Maschinen auf (Text/Sprache) oder fotografiere die Geräteschilder —
+              die KI legt daraus Übungen mit Muskeln an.
+            </p>
+            <div className="flex gap-2">
+              <input
+                className="input"
+                placeholder="z. B. Latzug, Beinpresse, Brustpresse, Rudermaschine, Beinbeuger…"
+                value={equipText}
+                onChange={(e) => setEquipText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && genEquip()}
+              />
+              <MicButton onResult={(t) => setEquipText((v) => (v ? v + ', ' + t : t))} />
+            </div>
+            <label className="btn-ghost flex w-full cursor-pointer items-center justify-center">
+              {equipBusy ? '… erkenne' : '📸 Geräte fotografieren'}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => genEquipPhoto(e.target.files?.[0])}
+              />
+            </label>
+            {equipErr && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {equipErr}</p>}
+            <div className="flex gap-2 pt-1">
+              <button className="btn-ghost flex-1" onClick={() => setEquipOpen(false)}>
+                Abbrechen
+              </button>
+              <button className="btn-primary flex-1" onClick={() => genEquip()} disabled={equipBusy}>
+                {equipBusy ? 'Erkenne…' : 'Erkennen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {equipDrafts && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+            <h2 className="text-lg font-bold">{equipDrafts.length} Übungen erkannt</h2>
+            <p className="text-xs text-cocoa-light">
+              Prüfen und anlegen — Gewichtsstufen kannst du später je Übung ergänzen.
+            </p>
+            <ul className="space-y-1.5">
+              {equipDrafts.map((d, i) => (
+                <li key={i} className="rounded-lg bg-sand/40 px-3 py-2 text-sm ring-1 ring-sand-dark/50">
+                  <div className="font-medium">{d.name}</div>
+                  <div className="text-xs text-cocoa-light">
+                    {d.muscle_group}
+                    {d.secondary_muscles.length ? ` · +${d.secondary_muscles.join(', ')}` : ''}
+                    {d.unilateral ? ' · einseitig' : ''}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-2 pt-1">
+              <button className="btn-ghost flex-1" onClick={() => setEquipDrafts(null)}>
+                Zurück
+              </button>
+              <button
+                className="btn-primary flex-1"
+                onClick={() => createAllDrafts(equipDrafts)}
+                disabled={createEx.isPending}
+              >
+                Alle anlegen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {assistOpen && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">

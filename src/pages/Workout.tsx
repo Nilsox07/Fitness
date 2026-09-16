@@ -24,7 +24,7 @@ import {
 } from '../lib/analytics'
 import { mascotStage, rankForSessions } from '../lib/gamification'
 import { shareStatCard } from '../lib/statcard'
-import { hypeLine } from '../lib/ai'
+import { alternativeExercise, hypeLine } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
 import { challengeOfDay, randomExcuse } from '../lib/challenges'
 import { usePostActivity } from '../hooks/useFeed'
@@ -214,6 +214,33 @@ export default function Workout() {
   const [hypeBusy, setHypeBusy] = useState(false)
   const [showAlts, setShowAlts] = useState(false)
   const [excuse, setExcuse] = useState<string | null>(null)
+  const [altAi, setAltAi] = useState<{ name: string | null; reason: string } | null>(null)
+  const [altBusy, setAltBusy] = useState(false)
+
+  async function findAltAi() {
+    if (!selectedExercise || !exercises) return
+    setAltBusy(true)
+    setAltAi(null)
+    try {
+      const available = exercises
+        .filter((e) => e.id !== selectedExercise.id)
+        .map((e) => ({ name: e.name, muscle: e.muscle_group }))
+      setAltAi(
+        await alternativeExercise(
+          {
+            name: selectedExercise.name,
+            muscle: selectedExercise.muscle_group,
+            secondary: selectedExercise.secondary_muscles ?? [],
+          },
+          available,
+        ),
+      )
+    } catch {
+      setAltAi({ name: null, reason: 'KI-Fehler' })
+    } finally {
+      setAltBusy(false)
+    }
+  }
 
   // Übungs-Alternativen: eigene Übungen mit gleicher Primär-Muskelgruppe
   const alternatives = useMemo(() => {
@@ -538,16 +565,29 @@ export default function Workout() {
               </div>
             )}
 
-            {alternatives.length > 0 && (
-              <div>
-                <button
-                  className="text-xs font-medium text-brand"
-                  onClick={() => setShowAlts((s) => !s)}
-                >
-                  🔄 Gerät besetzt? Alternative ({alternatives.length})
-                </button>
-                {showAlts && (
-                  <div className="mt-1 flex flex-wrap gap-1.5">
+            {(alternatives.length > 0 || ai?.enabled) && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  {alternatives.length > 0 && (
+                    <button
+                      className="text-xs font-medium text-brand"
+                      onClick={() => setShowAlts((s) => !s)}
+                    >
+                      🔄 Gerät besetzt? Alternative ({alternatives.length})
+                    </button>
+                  )}
+                  {ai?.enabled && (
+                    <button
+                      className="text-xs font-medium text-brand disabled:opacity-40"
+                      onClick={findAltAi}
+                      disabled={altBusy}
+                    >
+                      {altBusy ? '… suche' : '🤖 Beste Alternative'}
+                    </button>
+                  )}
+                </div>
+                {showAlts && alternatives.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
                     {alternatives.map((a) => (
                       <button
                         key={a.id}
@@ -560,6 +600,27 @@ export default function Workout() {
                         {a.name}
                       </button>
                     ))}
+                  </div>
+                )}
+                {altAi && (
+                  <div className="rounded-lg bg-sand p-2 text-xs ring-1 ring-sand-dark">
+                    {altAi.name ? (
+                      <>
+                        <button
+                          className="font-semibold text-brand"
+                          onClick={() => {
+                            const ex = exercises?.find((e) => e.name === altAi.name)
+                            if (ex) selectExercise(ex.id)
+                            setAltAi(null)
+                          }}
+                        >
+                          → {altAi.name} wählen
+                        </button>
+                        <div className="mt-0.5 text-cocoa-light">{altAi.reason}</div>
+                      </>
+                    ) : (
+                      <span className="text-cocoa-light">{altAi.reason || 'Keine passende Alternative gefunden.'}</span>
+                    )}
                   </div>
                 )}
               </div>
