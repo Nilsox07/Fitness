@@ -14,6 +14,7 @@ export interface UserStat {
   level: number
   xp: number
   weekly_sessions: number
+  gym_status: string | null
 }
 
 export function useMyProfile() {
@@ -60,7 +61,7 @@ export function useAddFriend() {
 export function useSyncMyStats() {
   const { user } = useAuth()
   return useMutation({
-    mutationFn: async (stats: Omit<UserStat, 'user_id'>) => {
+    mutationFn: async (stats: Omit<UserStat, 'user_id' | 'gym_status'>) => {
       const { error } = await supabase
         .from('user_stats')
         .upsert({ user_id: user!.id, ...stats, updated_at: new Date().toISOString() })
@@ -91,5 +92,60 @@ export function useGiveKudos() {
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['kudos'] }),
+  })
+}
+
+export function useSetGymStatus() {
+  const qc = useQueryClient()
+  const { user } = useAuth()
+  return useMutation({
+    mutationFn: async (status: string) => {
+      const { error } = await supabase
+        .from('user_stats')
+        .upsert({ user_id: user!.id, gym_status: status, updated_at: new Date().toISOString() })
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['leaderboard'] }),
+  })
+}
+
+/** Eingehende Anstupser (an mich). */
+export function usePokes() {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['pokes', user?.id],
+    enabled: Boolean(user),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pokes')
+        .select('id, from_user, created_at')
+        .eq('to_user', user!.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as { id: string; from_user: string; created_at: string }[]
+    },
+  })
+}
+
+export function useSendPoke() {
+  const qc = useQueryClient()
+  const { user } = useAuth()
+  return useMutation({
+    mutationFn: async (toUser: string) => {
+      const { error } = await supabase.from('pokes').insert({ from_user: user!.id, to_user: toUser })
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['pokes'] }),
+  })
+}
+
+export function useDismissPoke() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('pokes').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['pokes'] }),
   })
 }

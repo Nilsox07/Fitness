@@ -4,10 +4,14 @@ import { useAuth } from '../lib/auth'
 import { useAllSets } from '../hooks/useWorkouts'
 import {
   useAddFriend,
+  useDismissPoke,
   useGiveKudos,
   useKudos,
   useLeaderboard,
   useMyProfile,
+  usePokes,
+  useSendPoke,
+  useSetGymStatus,
   useSyncMyStats,
 } from '../hooks/useSocial'
 import { frequencyStats, isoWeekKey, totalVolume, weeklyVolume } from '../lib/analytics'
@@ -32,11 +36,24 @@ export default function Social() {
   const addFriend = useAddFriend()
   const giveKudos = useGiveKudos()
   const syncStats = useSyncMyStats()
+  const setGymStatus = useSetGymStatus()
+  const sendPoke = useSendPoke()
+  const dismissPoke = useDismissPoke()
+  const { data: pokes } = usePokes()
+  const [gymInput, setGymInput] = useState('')
+  const [gymTouched, setGymTouched] = useState(false)
 
   const [code, setCode] = useState('')
   const [metric, setMetric] = useState<Metric>('weekly_volume')
   const [chMetric, setChMetric] = useState<'weekly_volume' | 'weekly_sessions'>('weekly_volume')
   const [msg, setMsg] = useState<string | null>(null)
+
+  const nameOf = (id: string) => board?.find((u) => u.user_id === id)?.display_name ?? 'Freund'
+  const myRow = board?.find((u) => u.user_id === user?.id)
+  const friends = (board ?? []).filter((u) => u.user_id !== user?.id)
+  useEffect(() => {
+    if (!gymTouched && myRow?.gym_status) setGymInput(myRow.gym_status)
+  }, [myRow, gymTouched])
 
   const daysLeft = 6 - ((new Date().getDay() + 6) % 7)
   const podium = useMemo(
@@ -115,6 +132,70 @@ export default function Social() {
         </button>
         <h1 className="text-xl font-bold">Freunde</h1>
       </header>
+
+      {/* Eingehende Anstupser */}
+      {(pokes?.length ?? 0) > 0 && (
+        <div className="space-y-2">
+          {pokes!.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center gap-2 rounded-xl bg-brand/10 p-2.5 text-sm ring-1 ring-brand/25"
+            >
+              <span className="flex-1">
+                👊 <strong>{nameOf(p.from_user)}</strong> fragt: wann gehst du wieder ins Gym?
+              </span>
+              <button
+                className="rounded-full bg-sand-light px-2 py-1 text-xs ring-1 ring-sand-dark"
+                onClick={() => dismissPoke.mutate(p.id)}
+              >
+                OK
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Wann Gym? */}
+      <div className="card space-y-3">
+        <h2 className="font-semibold">Wann Gym?</h2>
+        <div className="flex gap-2">
+          <input
+            className="input"
+            placeholder="Dein Plan, z. B. heute 18 Uhr"
+            value={gymInput}
+            onChange={(e) => {
+              setGymInput(e.target.value)
+              setGymTouched(true)
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && setGymStatus.mutate(gymInput.trim())}
+          />
+          <button
+            className="btn-primary shrink-0"
+            onClick={() => setGymStatus.mutate(gymInput.trim())}
+            disabled={setGymStatus.isPending}
+          >
+            Setzen
+          </button>
+        </div>
+        {friends.length > 0 && (
+          <ul className="space-y-1.5">
+            {friends.map((u) => (
+              <li key={u.user_id} className="flex items-center gap-2 text-sm">
+                <span className="flex-1">
+                  <span className="font-medium">{u.display_name ?? 'Freund'}</span>{' '}
+                  <span className="text-cocoa-light">{u.gym_status || '– kein Plan –'}</span>
+                </span>
+                <button
+                  className="rounded-full bg-sand-light px-2.5 py-1 text-xs ring-1 ring-sand-dark"
+                  onClick={() => sendPoke.mutate(u.user_id)}
+                >
+                  👊 Fragen
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* Wochen-Challenge */}
       {(board?.length ?? 0) > 1 && (
