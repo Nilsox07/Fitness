@@ -27,6 +27,8 @@ import { shareStatCard } from '../lib/statcard'
 import { hypeLine } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
 import { challengeOfDay, randomExcuse } from '../lib/challenges'
+import { usePostActivity } from '../hooks/useFeed'
+import { useMyProfile } from '../hooks/useSocial'
 import { type Exercise, type PlanWithExercises, type SetType, type SetWithDate } from '../types'
 
 // Trainings-Tag: der Tag wechselt nicht um Mitternacht, sondern erst um DAY_CUTOFF_H
@@ -205,6 +207,9 @@ export default function Workout() {
     if (restRef.current?.autoEnabled()) restRef.current.start()
   }
   const { data: ai } = useAiStatus()
+  const postActivity = usePostActivity()
+  const { data: myProfile } = useMyProfile()
+  const authorName = myProfile?.display_name ?? undefined
   const [hype, setHype] = useState<string | null>(null)
   const [hypeBusy, setHypeBusy] = useState(false)
   const [showAlts, setShowAlts] = useState(false)
@@ -236,6 +241,33 @@ export default function Workout() {
       rank: rankForSessions(sessions).title,
       mascot: mascotStage(sessions).emoji,
     })
+  }
+
+  function finishWorkout() {
+    if (workoutSets && workoutSets.length) {
+      const key = `feed_workout_${today}`
+      let posted = false
+      try {
+        posted = localStorage.getItem(key) === '1'
+      } catch {
+        /* ignore */
+      }
+      if (!posted) {
+        const exCount = new Set(workoutSets.map((s) => s.exercise_id)).size
+        postActivity.mutate({
+          kind: 'workout',
+          title: 'Training abgeschlossen 💪',
+          detail: `${workoutSets.length} Sätze · ${exCount} Übungen · ${Math.round(totalVolume(workoutSets))} kg`,
+          author_name: authorName,
+        })
+        try {
+          localStorage.setItem(key, '1')
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    navigate('/history')
   }
 
   async function makeHype() {
@@ -275,8 +307,15 @@ export default function Workout() {
       const key = `${today}:${exId}`
       if ((prior.get(exId) ?? 0) > 0 && cur > (prior.get(exId) ?? 0) + 0.01 && !celebrated.current.has(key)) {
         celebrated.current.add(key)
-        setPrName(exercises.find((e) => e.id === exId)?.name ?? 'Übung')
+        const exName = exercises.find((e) => e.id === exId)?.name ?? 'Übung'
+        setPrName(exName)
         setConfetti(true)
+        postActivity.mutate({
+          kind: 'pr',
+          title: `🏆 Neuer Rekord: ${exName}`,
+          detail: `~${Math.round(cur)} kg geschätztes 1RM`,
+          author_name: authorName,
+        })
       }
     }
   }, [workoutSets, allSets, exercises, today])
@@ -615,7 +654,7 @@ export default function Workout() {
       {/* Training abschließen */}
       {workoutSets && workoutSets.length > 0 && (
         <div className="space-y-2">
-          <button className="btn-primary w-full" onClick={() => navigate('/history')}>
+          <button className="btn-primary w-full" onClick={finishWorkout}>
             Training speichern
           </button>
           <button className="btn-ghost w-full" onClick={shareToday}>
