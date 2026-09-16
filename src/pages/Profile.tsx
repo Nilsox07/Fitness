@@ -117,6 +117,13 @@ export default function Profile() {
         </div>
       )}
 
+      <button
+        className="btn w-full bg-sand-light text-cocoa ring-1 ring-sand-dark"
+        onClick={() => navigate('/social')}
+      >
+        👥 Freunde & Leaderboard
+      </button>
+
       <div className="card space-y-2">
         <div className="label">Daten exportieren (CSV)</div>
         <div className="grid grid-cols-2 gap-2">
