@@ -17,9 +17,11 @@ import {
 import { frequencyStats, isoWeekKey, totalVolume, weeklyVolume } from '../lib/analytics'
 import { rankForSessions } from '../lib/gamification'
 import { computeXp, levelInfo } from '../lib/xp'
+import { seasonId, seasonXp } from '../lib/season'
 
-type Metric = 'level' | 'weekly_volume' | 'total_sessions' | 'week_streak'
+type Metric = 'season_xp' | 'level' | 'weekly_volume' | 'total_sessions' | 'week_streak'
 const METRIC_LABEL: Record<Metric, string> = {
+  season_xp: 'Season',
   level: 'Level',
   weekly_volume: 'Volumen (Woche)',
   total_sessions: 'Trainings',
@@ -83,13 +85,15 @@ export default function Social() {
       level: lvl.level,
       xp: lvl.xp,
       weekly_sessions: weeklySessions,
+      season_id: seasonId(),
+      season_xp: seasonXp(sets),
     }
   }, [allSets, profile, user])
 
   useEffect(() => {
     if (allSets) syncStats.mutate(myStats)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions])
+  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions, myStats.season_xp])
 
   const kudosReceived = useMemo(() => {
     const map = new Map<string, number>()
@@ -294,7 +298,9 @@ export default function Social() {
         {ranked.map((u, i) => {
           const me = u.user_id === user?.id
           const value =
-            metric === 'level'
+            metric === 'season_xp'
+              ? `${u.season_id === seasonId() ? u.season_xp : 0} XP`
+              : metric === 'level'
               ? `Lvl ${u.level ?? 1}`
               : metric === 'weekly_volume'
                 ? `${u.weekly_volume.toLocaleString('de-DE')} kg`

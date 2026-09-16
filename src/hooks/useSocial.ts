@@ -15,6 +15,8 @@ export interface UserStat {
   xp: number
   weekly_sessions: number
   gym_status: string | null
+  season_id: string | null
+  season_xp: number
 }
 
 export function useMyProfile() {
