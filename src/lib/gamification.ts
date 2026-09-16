@@ -59,12 +59,17 @@ export function achievements(i: AchievementInput): Achievement[] {
   return [
     { id: 'first', icon: '🎉', label: 'Erstes Training', done: i.sessions >= 1 },
     { id: 's10', icon: '🔟', label: '10 Trainings', done: i.sessions >= 10 },
+    { id: 's25', icon: '🎖️', label: '25 Trainings', done: i.sessions >= 25 },
     { id: 's50', icon: '🏅', label: '50 Trainings', done: i.sessions >= 50 },
     { id: 's100', icon: '💯', label: '100 Trainings', done: i.sessions >= 100 },
+    { id: 's250', icon: '👑', label: '250 Trainings', done: i.sessions >= 250 },
     { id: 'streak4', icon: '🔥', label: '4 Wochen am Stück', done: i.weekStreak >= 4 },
+    { id: 'streak8', icon: '⚡', label: '8 Wochen am Stück', done: i.weekStreak >= 8 },
     { id: 'streak12', icon: '🌋', label: '12 Wochen am Stück', done: i.weekStreak >= 12 },
+    { id: 'w60', icon: '💪', label: '60 kg auf einer Übung', done: i.maxWeight >= 60 },
     { id: 'w100', icon: '🏋️', label: '100 kg auf einer Übung', done: i.maxWeight >= 100 },
     { id: 'ton10', icon: '🐘', label: '10 Tonnen bewegt', done: i.tonnage >= 10000 },
+    { id: 'ton50', icon: '🦏', label: '50 Tonnen bewegt', done: i.tonnage >= 50000 },
     { id: 'ton100', icon: '🚚', label: '100 Tonnen bewegt', done: i.tonnage >= 100000 },
     { id: 'allround', icon: '🧩', label: 'Ganzkörper (4 Bereiche)', done: i.muscleCategoriesTrained >= 4 },
   ]
