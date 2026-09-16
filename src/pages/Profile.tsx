@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
@@ -13,6 +13,8 @@ import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
 import { enablePush, pushSupported } from '../lib/push'
 import { computeXp, levelInfo } from '../lib/xp'
 import { setSoundEnabled, soundEnabled } from '../lib/sound'
+import { useFitbitStatus, useFitbitSync } from '../hooks/useFitbit'
+import { connectFitbit, type FitbitSync } from '../lib/fitbit'
 import {
   ACCENTS,
   SKINS,
@@ -64,6 +66,33 @@ export default function Profile() {
   const [accent, setAccent] = useState(getAccentId())
   const [skin, setSkin] = useState(getSkinId())
   const [sound, setSound] = useState(soundEnabled())
+  const { data: fitbit } = useFitbitStatus()
+  const fitbitSync = useFitbitSync()
+  const [fitbitData, setFitbitData] = useState<FitbitSync | null>(null)
+  const [fitbitMsg, setFitbitMsg] = useState<string | null>(null)
+
+  async function syncFitbit() {
+    setFitbitMsg(null)
+    try {
+      setFitbitData(await fitbitSync.mutateAsync())
+    } catch (e) {
+      setFitbitMsg(e instanceof Error ? e.message : 'Fehler')
+    }
+  }
+
+  // Rückkehr vom Fitbit-OAuth: einmal synchronisieren
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('fitbit')
+    if (p === 'connected') {
+      setFitbitMsg('Fitbit verbunden ✅')
+      syncFitbit()
+      window.history.replaceState({}, '', '/profile')
+    } else if (p === 'error') {
+      setFitbitMsg('Fitbit-Verbindung fehlgeschlagen.')
+      window.history.replaceState({}, '', '/profile')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const level = levelInfo(computeXp(allSets ?? [])).level
 
   function chooseAccent(id: string, min: number) {
@@ -265,6 +294,47 @@ export default function Profile() {
           </button>
         </div>
       </div>
+
+      {fitbit?.configured && (
+        <div className="card space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="font-medium">Fitbit</div>
+              <div className="text-xs text-cocoa-light">
+                Gewicht, Schritte & Ruhepuls importieren.
+              </div>
+            </div>
+            {fitbit.connected ? (
+              <button className="btn-primary text-sm" onClick={syncFitbit} disabled={fitbitSync.isPending}>
+                {fitbitSync.isPending ? '…' : 'Sync'}
+              </button>
+            ) : (
+              <button className="btn-primary text-sm" onClick={() => connectFitbit()}>
+                Verbinden
+              </button>
+            )}
+          </div>
+          {fitbitData && (
+            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <div>
+                <div className="font-semibold text-cocoa">{fitbitData.steps ?? '–'}</div>
+                <div className="text-cocoa-light">Schritte</div>
+              </div>
+              <div>
+                <div className="font-semibold text-cocoa">{fitbitData.restingHr ?? '–'}</div>
+                <div className="text-cocoa-light">Ruhepuls</div>
+              </div>
+              <div>
+                <div className="font-semibold text-cocoa">
+                  {fitbitData.weight != null ? `${fitbitData.weight} kg` : '–'}
+                </div>
+                <div className="text-cocoa-light">Gewicht</div>
+              </div>
+            </div>
+          )}
+          {fitbitMsg && <p className="text-sm text-brand">{fitbitMsg}</p>}
+        </div>
+      )}
 
       <button className="btn-ghost w-full" onClick={() => supabase.auth.signOut()}>
         Abmelden
