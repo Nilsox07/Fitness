@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useAllSets } from '../hooks/useWorkouts'
+import { useAllFoodEntries } from '../hooks/useNutrition'
+import { usePrefs } from '../lib/prefs'
 import {
   useAddFriend,
   useDismissPoke,
@@ -35,6 +37,8 @@ export default function Social() {
   const { user } = useAuth()
   const { data: profile } = useMyProfile()
   const { data: allSets } = useAllSets()
+  const { data: food } = useAllFoodEntries()
+  const { showNutrition } = usePrefs()
   const { data: board } = useLeaderboard()
   const { data: kudos } = useKudos()
   const addFriend = useAddFriend()
@@ -66,8 +70,26 @@ export default function Social() {
   )
 
   // Eigene Aggregat-Statistik beim Öffnen teilen
+  const todayStr = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })()
+
   const myStats = useMemo(() => {
     const sets = allSets ?? []
+    const fe = food ?? []
+    const proteinToday = Math.round(
+      fe.filter((e) => e.date === todayStr).reduce((s, e) => s + e.protein, 0),
+    )
+    const kcalToday = Math.round(
+      fe.filter((e) => e.date === todayStr).reduce((s, e) => s + e.kcal, 0),
+    )
+    const byDay = new Map<string, number>()
+    fe.forEach((e) => byDay.set(e.date, (byDay.get(e.date) ?? 0) + e.protein))
+    const last7 = [...byDay.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7)
+    const proteinWeek = last7.length
+      ? Math.round(last7.reduce((s, [, v]) => s + v, 0) / last7.length)
+      : 0
     const freq = frequencyStats([...new Set(sets.map((s) => s.date))])
     const thisWeek = isoWeekKey(new Date().toISOString().slice(0, 10))
     const wv = weeklyVolume(sets).find((w) => w.week === thisWeek)?.volume ?? 0
@@ -90,13 +112,16 @@ export default function Social() {
       season_id: seasonId(),
       season_xp: seasonXp(sets),
       monthly_prs: monthlyPrCount(sets),
+      protein_today: proteinToday,
+      kcal_today: kcalToday,
+      protein_week: proteinWeek,
     }
-  }, [allSets, profile, user])
+  }, [allSets, food, profile, user, todayStr])
 
   useEffect(() => {
     if (allSets) syncStats.mutate(myStats)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions, myStats.season_xp, myStats.monthly_prs])
+  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions, myStats.season_xp, myStats.monthly_prs, myStats.protein_today, myStats.protein_week])
 
   const kudosReceived = useMemo(() => {
     const map = new Map<string, number>()
@@ -152,7 +177,15 @@ export default function Social() {
               className="flex items-center gap-2 rounded-xl bg-brand/10 p-2.5 text-sm ring-1 ring-brand/25"
             >
               <span className="flex-1">
-                👊 <strong>{nameOf(p.from_user)}</strong> fragt: wann gehst du wieder ins Gym?
+                {p.text ? (
+                  <>
+                    <strong>{nameOf(p.from_user)}</strong>: {p.text}
+                  </>
+                ) : (
+                  <>
+                    👊 <strong>{nameOf(p.from_user)}</strong> fragt: wann gehst du wieder ins Gym?
+                  </>
+                )}
               </span>
               <button
                 className="rounded-full bg-sand-light px-2 py-1 text-xs ring-1 ring-sand-dark"
@@ -197,7 +230,7 @@ export default function Social() {
                 </span>
                 <button
                   className="rounded-full bg-sand-light px-2.5 py-1 text-xs ring-1 ring-sand-dark"
-                  onClick={() => sendPoke.mutate(u.user_id)}
+                  onClick={() => sendPoke.mutate({ toUser: u.user_id })}
                 >
                   👊 Fragen
                 </button>
@@ -251,6 +284,48 @@ export default function Social() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Ernährungs-Battle (Protein) */}
+      {showNutrition && (board?.length ?? 0) > 1 && (
+        <div className="card space-y-2">
+          <h2 className="font-semibold">🍗 Protein-Battle (heute)</h2>
+          <ul className="space-y-1.5">
+            {[...(board ?? [])]
+              .sort((a, b) => (b.protein_today ?? 0) - (a.protein_today ?? 0))
+              .map((u, i) => {
+                const me = u.user_id === user?.id
+                return (
+                  <li key={u.user_id} className="flex items-center gap-2 text-sm">
+                    <span className="w-5 text-center text-cocoa-light">{i + 1}</span>
+                    <span className="flex-1">
+                      <span className="font-medium">{me ? 'Du' : u.display_name ?? 'Freund'}</span>{' '}
+                      <span className="text-cocoa-light">
+                        {u.protein_today ?? 0} g · {u.kcal_today ?? 0} kcal
+                      </span>
+                    </span>
+                    {!me && (
+                      <button
+                        className="rounded-full bg-sand-light px-2 py-1 text-xs ring-1 ring-sand-dark"
+                        title="Auslachen"
+                        onClick={() =>
+                          sendPoke.mutate({
+                            toUser: u.user_id,
+                            text: `😂 Nur ${u.protein_today ?? 0} g Protein heute? Schwach!`,
+                          })
+                        }
+                      >
+                        😂
+                      </button>
+                    )}
+                  </li>
+                )
+              })}
+          </ul>
+          <p className="text-xs text-cocoa-muted">
+            Zeigt nur Summen (Protein/kcal) — keine einzelnen Lebensmittel. 😉
+          </p>
         </div>
       )}
 

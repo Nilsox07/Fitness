@@ -18,6 +18,9 @@ export interface UserStat {
   season_id: string | null
   season_xp: number
   monthly_prs: number
+  protein_today: number
+  kcal_today: number
+  protein_week: number
 }
 
 export function useMyProfile() {
@@ -121,11 +124,11 @@ export function usePokes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pokes')
-        .select('id, from_user, created_at')
+        .select('id, from_user, text, created_at')
         .eq('to_user', user!.id)
         .order('created_at', { ascending: false })
       if (error) throw error
-      return data as { id: string; from_user: string; created_at: string }[]
+      return data as { id: string; from_user: string; text: string | null; created_at: string }[]
     },
   })
 }
@@ -134,8 +137,10 @@ export function useSendPoke() {
   const qc = useQueryClient()
   const { user } = useAuth()
   return useMutation({
-    mutationFn: async (toUser: string) => {
-      const { error } = await supabase.from('pokes').insert({ from_user: user!.id, to_user: toUser })
+    mutationFn: async (input: { toUser: string; text?: string }) => {
+      const { error } = await supabase
+        .from('pokes')
+        .insert({ from_user: user!.id, to_user: input.toUser, text: input.text ?? null })
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['pokes'] }),
