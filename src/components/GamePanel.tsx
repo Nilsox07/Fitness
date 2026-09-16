@@ -4,6 +4,7 @@ import { achievements, rankForSessions } from '../lib/gamification'
 import { mascotEmoji } from '../lib/cosmetics'
 import { computeXp, dailyQuests, levelInfo, weeklyQuests, type Quest } from '../lib/xp'
 import { Confetti } from './Confetti'
+import { playChime, playLevelUp } from '../lib/sound'
 import type { Exercise, SetWithDate } from '../types'
 
 function todayLocal(): string {
@@ -64,6 +65,7 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
       const seen = Number(localStorage.getItem('seen_level') || '1')
       if (g.xp.level > seen) {
         setCelebrate(true)
+        playLevelUp()
         localStorage.setItem('seen_level', String(g.xp.level))
       } else if (g.xp.level < seen) {
         localStorage.setItem('seen_level', String(g.xp.level))
@@ -72,6 +74,23 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
       /* ignore */
     }
   }, [g.xp.level])
+
+  // Quest-Abschluss-Sound: nur wenn eine Quest während der Session neu fertig wird
+  useEffect(() => {
+    try {
+      const key = `quests_done_${today}`
+      const stored = localStorage.getItem(key)
+      const seen = new Set<string>(stored ? JSON.parse(stored) : [])
+      const doneNow = g.daily.filter((q) => q.done).map((q) => q.id)
+      const fresh = doneNow.filter((id) => !seen.has(id))
+      if (fresh.length) {
+        if (stored !== null) playChime() // Baseline schon gesetzt → echter Neuabschluss
+        localStorage.setItem(key, JSON.stringify(doneNow))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [g.daily, today])
 
   const dow = (new Date().getDay() + 6) % 7 // Mo=0
   const trainedThisWeek = sets.some((s) => isoWeekKey(s.date) === isoWeekKey(today))

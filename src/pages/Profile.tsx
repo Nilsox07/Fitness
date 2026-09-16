@@ -12,6 +12,7 @@ import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
 import { enablePush, pushSupported } from '../lib/push'
 import { computeXp, levelInfo } from '../lib/xp'
+import { setSoundEnabled, soundEnabled } from '../lib/sound'
 import {
   ACCENTS,
   SKINS,
@@ -62,6 +63,7 @@ export default function Profile() {
   const [pushBusy, setPushBusy] = useState(false)
   const [accent, setAccent] = useState(getAccentId())
   const [skin, setSkin] = useState(getSkinId())
+  const [sound, setSound] = useState(soundEnabled())
   const level = levelInfo(computeXp(allSets ?? [])).level
 
   function chooseAccent(id: string, min: number) {
@@ -134,6 +136,20 @@ export default function Profile() {
           </div>
         </div>
         <Toggle checked={showNutrition} onChange={setShowNutrition} />
+      </div>
+
+      <div className="card flex items-center justify-between gap-3">
+        <div>
+          <div className="font-medium">Sound-Effekte</div>
+          <div className="text-xs text-cocoa-light">Töne bei Level-up und Quests.</div>
+        </div>
+        <Toggle
+          checked={sound}
+          onChange={(v) => {
+            setSound(v)
+            setSoundEnabled(v)
+          }}
+        />
       </div>
 
       <div className="card space-y-3">

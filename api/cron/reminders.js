@@ -15,6 +15,15 @@ function daysBetween(a, b) {
   return Math.floor((a.getTime() - b.getTime()) / 86400000)
 }
 
+/** ISO-Wochennummer (grob, für Streak-Vergleich). */
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+  const day = t.getUTCDay() || 7
+  t.setUTCDate(t.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1))
+  return `${t.getUTCFullYear()}-${Math.ceil(((t - yearStart) / 86400000 + 1) / 7)}`
+}
+
 export default async function handler(req, res) {
   const secret = process.env.CRON_SECRET
   if (secret && req.headers.authorization !== `Bearer ${secret}`) {
@@ -53,18 +62,30 @@ export default async function handler(req, res) {
 
     const lastDate = last?.date ? new Date(last.date) : null
     const daysSince = lastDate ? daysBetween(today, lastDate) : 999
-    if (daysSince < DAYS_THRESHOLD) continue
+
+    // Streak in Gefahr: letztes Training in der Vorwoche, diese Woche noch nichts,
+    // und es ist schon Do–So.
+    const dow = today.getUTCDay() // So=0
+    const lateWeek = dow === 0 || dow >= 4
+    const streakDanger =
+      lastDate && isoWeek(lastDate) !== isoWeek(today) && daysSince <= 9 && lateWeek
+
+    if (daysSince < DAYS_THRESHOLD && !streakDanger) continue
 
     // Nicht öfter als alle 2 Tage erinnern
     if (sub.last_reminded && daysBetween(today, new Date(sub.last_reminded)) < 2) continue
 
-    const payload = JSON.stringify({
-      title: 'Zeit fürs Gym 💪',
-      body:
-        daysSince > 900
-          ? 'Starte heute dein erstes Training!'
-          : `Du warst ${daysSince} Tage nicht im Gym. Auf geht's!`,
-    })
+    const payload = JSON.stringify(
+      streakDanger
+        ? { title: '🔥 Serie in Gefahr!', body: 'Trainiere heute, damit deine Wochen-Serie nicht reißt.' }
+        : {
+            title: 'Zeit fürs Gym 💪',
+            body:
+              daysSince > 900
+                ? 'Starte heute dein erstes Training!'
+                : `Du warst ${daysSince} Tage nicht im Gym. Auf geht's!`,
+          },
+    )
 
     try {
       await webpush.sendNotification(
