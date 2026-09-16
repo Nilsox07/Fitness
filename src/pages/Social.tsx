@@ -35,7 +35,14 @@ export default function Social() {
 
   const [code, setCode] = useState('')
   const [metric, setMetric] = useState<Metric>('weekly_volume')
+  const [chMetric, setChMetric] = useState<'weekly_volume' | 'weekly_sessions'>('weekly_volume')
   const [msg, setMsg] = useState<string | null>(null)
+
+  const daysLeft = 6 - ((new Date().getDay() + 6) % 7)
+  const podium = useMemo(
+    () => [...(board ?? [])].sort((a, b) => (b[chMetric] as number) - (a[chMetric] as number)).slice(0, 3),
+    [board, chMetric],
+  )
 
   // Eigene Aggregat-Statistik beim Öffnen teilen
   const myStats = useMemo(() => {
@@ -43,6 +50,9 @@ export default function Social() {
     const freq = frequencyStats([...new Set(sets.map((s) => s.date))])
     const thisWeek = isoWeekKey(new Date().toISOString().slice(0, 10))
     const wv = weeklyVolume(sets).find((w) => w.week === thisWeek)?.volume ?? 0
+    const weeklySessions = new Set(
+      sets.filter((s) => isoWeekKey(s.date) === thisWeek).map((s) => s.date),
+    ).size
     const dates = sets.map((s) => s.date).sort()
     const lvl = levelInfo(computeXp(sets))
     return {
@@ -55,13 +65,14 @@ export default function Social() {
       rank_title: rankForSessions(freq.totalSessions).title,
       level: lvl.level,
       xp: lvl.xp,
+      weekly_sessions: weeklySessions,
     }
   }, [allSets, profile, user])
 
   useEffect(() => {
     if (allSets) syncStats.mutate(myStats)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level])
+  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions])
 
   const kudosReceived = useMemo(() => {
     const map = new Map<string, number>()
@@ -104,6 +115,53 @@ export default function Social() {
         </button>
         <h1 className="text-xl font-bold">Freunde</h1>
       </header>
+
+      {/* Wochen-Challenge */}
+      {(board?.length ?? 0) > 1 && (
+        <div className="card space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">🏆 Wochen-Challenge</h2>
+            <span className="text-xs text-cocoa-light">
+              {daysLeft === 0 ? 'letzter Tag!' : `noch ${daysLeft} Tage`}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            {(['weekly_volume', 'weekly_sessions'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setChMetric(m)}
+                className={`rounded-full px-3 py-1 text-xs ring-1 ${
+                  chMetric === m ? 'bg-ruby text-white ring-ruby' : 'bg-sand-light text-cocoa ring-sand-dark'
+                }`}
+              >
+                {m === 'weekly_volume' ? 'Volumen' : 'Trainings'}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-end justify-center gap-3 pt-1">
+            {[1, 0, 2].map((rank) => {
+              const u = podium[rank]
+              if (!u) return <div key={rank} className="flex-1" />
+              const val =
+                chMetric === 'weekly_volume'
+                  ? `${u.weekly_volume.toLocaleString('de-DE')} kg`
+                  : `${u.weekly_sessions}×`
+              const h = rank === 0 ? 'h-20' : rank === 1 ? 'h-16' : 'h-12'
+              const medal = rank === 0 ? '🥇' : rank === 1 ? '🥈' : '🥉'
+              return (
+                <div key={rank} className="flex flex-1 flex-col items-center">
+                  <div className="text-2xl">{medal}</div>
+                  <div className="max-w-full truncate text-xs font-medium">
+                    {u.user_id === user?.id ? 'Du' : u.display_name ?? 'Athlet'}
+                  </div>
+                  <div className="text-[11px] text-cocoa-light">{val}</div>
+                  <div className={`mt-1 w-full rounded-t-lg bg-brand/70 ${h}`} />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Mein Code + Freund hinzufügen */}
       <div className="card space-y-3">

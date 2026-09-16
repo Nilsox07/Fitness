@@ -13,6 +13,7 @@ export interface UserStat {
   rank_title: string | null
   level: number
   xp: number
+  weekly_sessions: number
 }
 
 export function useMyProfile() {
