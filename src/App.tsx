@@ -12,6 +12,7 @@ import Plans from './pages/Plans'
 import Social from './pages/Social'
 import Badges from './pages/Badges'
 import Recipes from './pages/Recipes'
+import Shopping from './pages/Shopping'
 import Feed from './pages/Feed'
 import History from './pages/History'
 import Analytics from './pages/Analytics'
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/social" element={<Social />} />
           <Route path="/badges" element={<Badges />} />
           <Route path="/recipes" element={<Recipes />} />
+          <Route path="/shopping" element={<Shopping />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/history" element={<History />} />
           <Route path="/analytics" element={<Analytics />} />

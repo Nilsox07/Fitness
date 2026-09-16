@@ -414,6 +414,71 @@ export async function estimateFoodFromText(text: string): Promise<FoodEstimate[]
   return toEstimates(await complete({ system: NUTRITION_SYSTEM, prompt, json: true, temperature: 0.2 }))
 }
 
+/** Empfiehlt eine konkrete Bestellung/Auswahl (Restaurant, Kette oder Supermarkt),
+ *  die zum Rest-Kalorienbudget passt und viel Eiweiß liefert. */
+export async function suggestOrder(
+  place: string,
+  remaining: { kcal: number; protein: number },
+  wish: string,
+): Promise<{ note: string; items: FoodEstimate[] }> {
+  const system =
+    'Du bist Ernährungsberater. Empfiehl eine konkrete, real existierende Auswahl beim genannten ' +
+    'Anbieter, die möglichst nah an das Rest-Kalorienbudget kommt und viel Eiweiß liefert. ' +
+    'Nenne typische echte Produkte. Antworte ausschließlich mit JSON.'
+  const prompt =
+    `Anbieter: "${place}". Rest-Budget heute: ~${remaining.kcal} kcal, Ziel Eiweiß offen: ~${remaining.protein} g. ` +
+    `Wunsch: "${wish || 'egal'}".\n` +
+    `Gib die empfohlenen Artikel als items zurück. ${NUTRITION_FORMAT}\n` +
+    'Zusätzlich ein Feld "note" mit einem kurzen Hinweis. ' +
+    'Format: {"note":"...","items":[{"name":"...","amount_g":null,"kcal":...,"protein":...,"carbs":...,"fat":...}]}'
+  const text = await complete({ system, prompt, json: true, temperature: 0.4 })
+  const raw = parseJson<{ note?: string; items?: Partial<FoodEstimate>[] }>(text)
+  return {
+    note: String(raw.note ?? ''),
+    items: (raw.items ?? []).map((i) => ({
+      name: String(i.name ?? 'Artikel'),
+      amount_g: i.amount_g == null ? null : Number(i.amount_g),
+      kcal: Math.round(Number(i.kcal ?? 0)),
+      protein: Math.round(Number(i.protein ?? 0)),
+      carbs: Math.round(Number(i.carbs ?? 0)),
+      fat: Math.round(Number(i.fat ?? 0)),
+    })),
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Feature: Einkaufsassistent (Wochen-Einkaufsliste)
+// ---------------------------------------------------------------------------
+
+export interface ShoppingCategory {
+  category: string
+  items: string[]
+}
+
+export async function shoppingList(
+  days: number,
+  targets: { kcal: number; protein: number },
+  wish: string,
+): Promise<{ note: string; categories: ShoppingCategory[] }> {
+  const system =
+    'Du bist Ernährungsberater. Erstelle eine praktische Einkaufsliste für den genannten Zeitraum, ' +
+    'passend zu den Tageszielen. Gruppiere nach Kategorie und gib grobe Mengen an. ' +
+    'Antworte ausschließlich mit JSON.'
+  const prompt =
+    `Zeitraum: ${days} Tage. Tagesziel: ~${targets.kcal} kcal, ~${targets.protein} g Eiweiß. ` +
+    `Wunsch/Präferenzen: "${wish || 'ausgewogen, proteinreich'}".\n` +
+    'Format: {"note":"kurzer Hinweis","categories":[{"category":"z. B. Obst & Gemüse","items":["500 g Hähnchen", "..."]}]}. ' +
+    'Realistische Mengen für den Zeitraum, deutsch.'
+  const text = await complete({ system, prompt, json: true, temperature: 0.5 })
+  const raw = parseJson<{ note?: string; categories?: Partial<ShoppingCategory>[] }>(text)
+  return {
+    note: String(raw.note ?? ''),
+    categories: (raw.categories ?? [])
+      .map((c) => ({ category: String(c.category ?? 'Sonstiges'), items: (c.items ?? []).map(String) }))
+      .filter((c) => c.items.length),
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Feature: Rezept aus Kühlschrank-Foto (+ Wunsch)
 // ---------------------------------------------------------------------------

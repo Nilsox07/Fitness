@@ -42,6 +42,7 @@ import {
   nutritionReview,
   recipeFromFridge,
   recipeFromText,
+  suggestOrder,
   type FoodEstimate,
   type MealPlanItem,
   type Recipe,
@@ -148,8 +149,10 @@ export default function Nutrition() {
   const [setupOpen, setSetupOpen] = useState(false)
   const [form, setForm] = useState<NutritionSettingsInput>(emptySettings)
   const [addMode, setAddMode] = useState<
-    null | 'menu' | 'manual' | 'search' | 'aitext' | 'recipe' | 'plan' | 'photo'
+    null | 'menu' | 'manual' | 'search' | 'aitext' | 'recipe' | 'plan' | 'photo' | 'restaurant'
   >(null)
+  const [place, setPlace] = useState('')
+  const [restItem, setRestItem] = useState('')
   const [scanning, setScanning] = useState(false)
 
   // gewähltes Produkt → Mengen-Bestätigung
@@ -295,6 +298,49 @@ export default function Nutrition() {
       })
     }
     setPlanItems(null)
+  }
+
+  async function estimateOrder() {
+    if (!place && !restItem.trim()) return
+    setAiBusy(true)
+    setError(null)
+    try {
+      const items = await estimateFoodFromText(`${place ? place + ': ' : ''}${restItem.trim()}`)
+      if (items.length === 0) setError('Nichts erkannt.')
+      else {
+        setAiResults(items)
+        setAddMode(null)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  async function suggestForBudget() {
+    if (!place) {
+      setError('Wähl zuerst einen Anbieter.')
+      return
+    }
+    setAiBusy(true)
+    setError(null)
+    try {
+      const remaining = {
+        kcal: Math.max(0, kcalTarget - totals.kcal),
+        protein: Math.max(0, (settings?.protein_target ?? 0) - totals.protein),
+      }
+      const res = await suggestOrder(place, remaining, restItem.trim())
+      if (res.items.length === 0) setError('Kein Vorschlag möglich.')
+      else {
+        setAiResults(res.items)
+        setAddMode(null)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setAiBusy(false)
+    }
   }
 
   async function genRecipeText() {
@@ -473,8 +519,13 @@ export default function Nutrition() {
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Ernährung</h1>
         <div className="flex gap-2">
-          <button className="btn-ghost text-sm" onClick={() => navigate('/recipes')}>
-            📖 Rezepte
+          {ai?.enabled && (
+            <button className="btn-ghost text-sm" onClick={() => navigate('/shopping')} aria-label="Einkaufsassistent">
+              🛒
+            </button>
+          )}
+          <button className="btn-ghost text-sm" onClick={() => navigate('/recipes')} aria-label="Rezepte">
+            📖
           </button>
           <button className="btn-ghost text-sm" onClick={openSetup}>
             {hasTarget ? 'Ziel' : 'Ziel einstellen'}
@@ -714,6 +765,9 @@ export default function Nutrition() {
                 <button className="btn-ghost w-full" onClick={() => setAddMode('plan')}>
                   📋 Essensplan für heute (KI)
                 </button>
+                <button className="btn-ghost w-full" onClick={() => setAddMode('restaurant')}>
+                  🍔 Restaurant / unterwegs (KI)
+                </button>
               </>
             )}
             <button
@@ -859,6 +913,59 @@ export default function Nutrition() {
                 Hinzufügen
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----- KI: Restaurant / unterwegs ----- */}
+      {addMode === 'restaurant' && (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="card w-full max-w-md space-y-3">
+            <h2 className="text-lg font-bold">🍔 Restaurant / unterwegs</h2>
+            {hasTarget && (
+              <p className="text-xs text-cocoa-light">
+                Noch offen heute: {Math.max(0, kcalTarget - totals.kcal)} kcal ·{' '}
+                {Math.max(0, (settings?.protein_target ?? 0) - totals.protein)} g Eiweiß
+              </p>
+            )}
+            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1">
+              {["McDonald's", 'Burger King', 'KFC', 'Subway', 'Döner', 'Supermarkt'].map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPlace(p)}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm ring-1 ${
+                    place === p ? 'bg-ruby text-white ring-ruby' : 'bg-sand-light text-cocoa ring-sand-dark'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="input"
+                placeholder="Anbieter / Gericht, z. B. Big Mac Menü — oder leer lassen"
+                value={restItem}
+                onChange={(e) => setRestItem(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && estimateOrder()}
+              />
+              <MicButton onResult={(t) => setRestItem((v) => (v ? v + ' ' + t : t))} />
+            </div>
+            {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button className="btn-primary" onClick={estimateOrder} disabled={aiBusy}>
+                {aiBusy ? '…' : 'Bestellung schätzen'}
+              </button>
+              <button className="btn-ghost" onClick={suggestForBudget} disabled={aiBusy}>
+                🤖 Passt zum Budget
+              </button>
+            </div>
+            <button
+              className="w-full text-center text-sm text-cocoa-light underline"
+              onClick={() => setAddMode('menu')}
+            >
+              Zurück
+            </button>
           </div>
         </div>
       )}
