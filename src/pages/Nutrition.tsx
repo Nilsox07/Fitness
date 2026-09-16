@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
+import { useAddRecipe } from '../hooks/useRecipes'
 import { Stepper } from '../components/Stepper'
 import { BarcodeScanner } from '../components/BarcodeScanner'
 import { BodyWeightCard } from '../components/BodyWeightCard'
@@ -98,6 +101,9 @@ function Bar({ value, target }: { value: number; target: number }) {
 }
 
 export default function Nutrition() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const addRecipe = useAddRecipe()
   const today = todayLocal()
   const { data: settings } = useNutritionSettings()
   const { data: entries } = useFoodEntries(today)
@@ -263,6 +269,23 @@ export default function Nutrition() {
     }
   }
 
+  async function saveRecipe(r: Recipe, shared: boolean) {
+    await addRecipe.mutateAsync({
+      title: r.title,
+      servings: r.servings,
+      ingredients: r.ingredients,
+      steps: r.steps,
+      kcal: r.nutrition.kcal,
+      protein: r.nutrition.protein,
+      carbs: r.nutrition.carbs,
+      fat: r.nutrition.fat,
+      shared,
+      author_name: user?.email?.split('@')[0] ?? null,
+    })
+    setRecipe(null)
+    setCraving('')
+  }
+
   async function logRecipe(r: Recipe) {
     await addEntry.mutateAsync({
       date: today,
@@ -390,9 +413,14 @@ export default function Nutrition() {
     <div className="space-y-4">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Ernährung</h1>
-        <button className="btn-ghost text-sm" onClick={openSetup}>
-          {hasTarget ? 'Ziel ändern' : 'Ziel einstellen'}
-        </button>
+        <div className="flex gap-2">
+          <button className="btn-ghost text-sm" onClick={() => navigate('/recipes')}>
+            📖 Rezepte
+          </button>
+          <button className="btn-ghost text-sm" onClick={openSetup}>
+            {hasTarget ? 'Ziel' : 'Ziel einstellen'}
+          </button>
+        </div>
       </header>
 
       {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
@@ -918,12 +946,18 @@ export default function Nutrition() {
                 ))}
               </ol>
             </div>
-            <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => setRecipe(null)}>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button className="btn-ghost" onClick={() => saveRecipe(recipe, false)}>
+                💾 Speichern
+              </button>
+              <button className="btn-ghost" onClick={() => saveRecipe(recipe, true)}>
+                📤 Speichern & teilen
+              </button>
+              <button className="btn-ghost" onClick={() => setRecipe(null)}>
                 Schließen
               </button>
-              <button className="btn-primary flex-1" onClick={() => logRecipe(recipe)}>
-                Als Mahlzeit loggen
+              <button className="btn-primary" onClick={() => logRecipe(recipe)}>
+                Loggen
               </button>
             </div>
           </div>

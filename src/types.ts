@@ -163,6 +163,22 @@ export interface FoodEntry {
   created_at: string
 }
 
+export interface SavedRecipe {
+  id: string
+  user_id: string
+  author_name: string | null
+  title: string
+  servings: number
+  ingredients: string[]
+  steps: string[]
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+  shared: boolean
+  created_at: string
+}
+
 export interface WaterIntake {
   id: string
   user_id: string
