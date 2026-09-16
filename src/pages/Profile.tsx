@@ -1,8 +1,15 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useTheme, type ThemeMode } from '../lib/theme'
 import { usePrefs } from '../lib/prefs'
+import { useAiStatus } from '../hooks/useAi'
+import { COACH_TONE_LABEL, getCoachTone, setCoachTone, type CoachTone } from '../lib/ai'
+import { useAllSets } from '../hooks/useWorkouts'
+import { useExercises } from '../hooks/useExercises'
+import { useAllFoodEntries } from '../hooks/useNutrition'
+import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -35,6 +42,13 @@ export default function Profile() {
   const { user } = useAuth()
   const { mode, setMode } = useTheme()
   const { showNutrition, setShowNutrition } = usePrefs()
+  const { data: ai } = useAiStatus()
+  const { data: allSets } = useAllSets()
+  const { data: exercises } = useExercises()
+  const { data: foodEntries } = useAllFoodEntries()
+  const [tone, setTone] = useState<CoachTone>(getCoachTone())
+
+  const tones: CoachTone[] = ['coach', 'sergeant', 'bro']
 
   return (
     <div className="space-y-4">
@@ -78,6 +92,49 @@ export default function Profile() {
           </div>
         </div>
         <Toggle checked={showNutrition} onChange={setShowNutrition} />
+      </div>
+
+      {ai?.enabled && (
+        <div className="card space-y-2">
+          <div className="label">KI-Coach-Ton</div>
+          <div className="grid grid-cols-3 gap-2">
+            {tones.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  setTone(t)
+                  setCoachTone(t)
+                }}
+                className={`btn text-xs ${
+                  tone === t ? 'bg-ruby text-white' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+                }`}
+              >
+                {COACH_TONE_LABEL[t]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="card space-y-2">
+        <div className="label">Daten exportieren (CSV)</div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
+            onClick={() => exportSetsCsv(allSets ?? [], exercises ?? [])}
+            disabled={!allSets?.length}
+          >
+            🏋️ Training
+          </button>
+          <button
+            className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
+            onClick={() => exportNutritionCsv(foodEntries ?? [])}
+            disabled={!foodEntries?.length}
+          >
+            🍎 Ernährung
+          </button>
+        </div>
       </div>
 
       <button className="btn-ghost w-full" onClick={() => supabase.auth.signOut()}>

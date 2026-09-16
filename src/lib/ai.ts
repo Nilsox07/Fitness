@@ -54,11 +54,47 @@ function parseJson<T>(text: string): T {
 // Feature: KI-Wochenreview & Coach-Chat
 // ---------------------------------------------------------------------------
 
-const COACH_SYSTEM =
-  'Du bist ein erfahrener, motivierender Kraft- und Hypertrophie-Coach. ' +
-  'Antworte auf Deutsch, kompakt und konkret, sprich den Nutzer mit "du" an. ' +
-  'Stütze dich auf die mitgelieferten Trainingsdaten (JSON). Wenn etwas fehlt, ' +
-  'sag es ehrlich statt zu raten. Kein Fachjargon-Overkill.'
+export type CoachTone = 'coach' | 'sergeant' | 'bro'
+
+export const COACH_TONE_LABEL: Record<CoachTone, string> = {
+  coach: 'Motivierender Coach',
+  sergeant: 'Harter Sergeant',
+  bro: 'Lockerer Gym-Bro',
+}
+
+const TONE_INSTRUCTION: Record<CoachTone, string> = {
+  coach: 'Ton: motivierend, sachlich, ermutigend.',
+  sergeant: 'Ton: harter Drill-Sergeant — fordernd, laut, kurze Kommandos, kein Mitleid.',
+  bro: 'Ton: lockerer Gym-Bro — humorvoll, salopp, viele Emojis.',
+}
+
+export function getCoachTone(): CoachTone {
+  try {
+    const t = localStorage.getItem('coach_tone')
+    if (t === 'sergeant' || t === 'bro' || t === 'coach') return t
+  } catch {
+    /* ignore */
+  }
+  return 'coach'
+}
+
+export function setCoachTone(t: CoachTone) {
+  try {
+    localStorage.setItem('coach_tone', t)
+  } catch {
+    /* ignore */
+  }
+}
+
+function coachSystem(): string {
+  return (
+    'Du bist ein erfahrener Kraft- und Hypertrophie-Coach. ' +
+    'Antworte auf Deutsch, kompakt und konkret, sprich den Nutzer mit "du" an. ' +
+    'Stütze dich auf die mitgelieferten Trainingsdaten (JSON). Wenn etwas fehlt, ' +
+    'sag es ehrlich statt zu raten. Kein Fachjargon-Overkill. ' +
+    TONE_INSTRUCTION[getCoachTone()]
+  )
+}
 
 /** Klartext-Wochenfazit aus der kompakten Trainings-Zusammenfassung. */
 export async function weeklyTrainingReview(summary: unknown): Promise<string> {
@@ -67,7 +103,7 @@ export async function weeklyTrainingReview(summary: unknown): Promise<string> {
     'Gib ein ehrliches, motivierendes Wochen-Fazit (max. ~120 Wörter): Was lief gut, ' +
     'wo ist eine Schieflage oder zu wenig Volumen (nutze status "low"/"high"), und was ' +
     'sollte diese oder nächste Woche priorisiert werden? 2–4 umsetzbare Empfehlungen.'
-  return complete({ system: COACH_SYSTEM, prompt, temperature: 0.5 })
+  return complete({ system: coachSystem(), prompt, temperature: 0.5 })
 }
 
 /** Kurzer, auf das heutige Training bezogener Motivations-/Hype-Spruch. */
@@ -76,7 +112,7 @@ export async function hypeLine(context: unknown): Promise<string> {
     `Heutiges Training (JSON):\n${JSON.stringify(context)}\n\n` +
     'Schreib EINEN kurzen, lockeren Hype-/Motivationsspruch auf Deutsch (max. 12 Wörter), ' +
     'der sich auf die heutige Leistung bezieht. Gym-Bro-Ton, gern mit Emoji. Nur den Spruch.'
-  const text = await complete({ system: COACH_SYSTEM, prompt, temperature: 0.9 })
+  const text = await complete({ system: coachSystem(), prompt, temperature: 0.9 })
   return text.trim().replace(/^["']|["']$/g, '')
 }
 
@@ -93,7 +129,7 @@ export async function coachChat(history: ChatMsg[], context: unknown): Promise<s
   const prompt =
     `Trainingsdaten (JSON):\n${JSON.stringify(context)}\n\n` +
     `Gespräch bisher:\n${convo}\n\nAntworte als Coach auf die letzte Nutzer-Nachricht.`
-  return complete({ system: COACH_SYSTEM, prompt, temperature: 0.6 })
+  return complete({ system: coachSystem(), prompt, temperature: 0.6 })
 }
 
 // ---------------------------------------------------------------------------

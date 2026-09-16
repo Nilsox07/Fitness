@@ -26,6 +26,7 @@ import { mascotStage, rankForSessions } from '../lib/gamification'
 import { shareStatCard } from '../lib/statcard'
 import { hypeLine } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
+import { challengeOfDay, randomExcuse } from '../lib/challenges'
 import { type Exercise, type PlanWithExercises, type SetType, type SetWithDate } from '../types'
 
 // Trainings-Tag: der Tag wechselt nicht um Mitternacht, sondern erst um DAY_CUTOFF_H
@@ -206,6 +207,16 @@ export default function Workout() {
   const { data: ai } = useAiStatus()
   const [hype, setHype] = useState<string | null>(null)
   const [hypeBusy, setHypeBusy] = useState(false)
+  const [showAlts, setShowAlts] = useState(false)
+  const [excuse, setExcuse] = useState<string | null>(null)
+
+  // Übungs-Alternativen: eigene Übungen mit gleicher Primär-Muskelgruppe
+  const alternatives = useMemo(() => {
+    if (!selectedExercise || !exercises) return []
+    return exercises.filter(
+      (e) => e.id !== selectedExercise.id && e.muscle_group === selectedExercise.muscle_group,
+    )
+  }, [selectedExercise, exercises])
 
   async function shareToday() {
     if (!workoutSets) return
@@ -366,6 +377,13 @@ export default function Workout() {
             Training starten
           </button>
           {saveError && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {saveError.message}</p>}
+          <button
+            className="w-full text-center text-xs text-cocoa-muted underline"
+            onClick={() => setExcuse(randomExcuse())}
+          >
+            Keine Lust? Ausrede generieren 😅
+          </button>
+          {excuse && <p className="text-sm italic text-cocoa-light">„{excuse}"</p>}
         </div>
       </div>
     )
@@ -390,6 +408,11 @@ export default function Workout() {
           })}
         </p>
       </header>
+
+      <div className="rounded-xl bg-brand/10 p-2.5 text-sm text-cocoa ring-1 ring-brand/25">
+        <span className="font-semibold">Challenge des Tages: </span>
+        {challengeOfDay()}
+      </div>
 
       {saveError && (
         <div className="card border border-red-400 text-sm text-red-500 dark:text-red-400">
@@ -473,6 +496,33 @@ export default function Workout() {
             {selectedExercise.notes && (
               <div className="rounded-xl bg-sky-500/10 p-2.5 text-sm text-cocoa ring-1 ring-sky-500/30">
                 🪑 {selectedExercise.notes}
+              </div>
+            )}
+
+            {alternatives.length > 0 && (
+              <div>
+                <button
+                  className="text-xs font-medium text-brand"
+                  onClick={() => setShowAlts((s) => !s)}
+                >
+                  🔄 Gerät besetzt? Alternative ({alternatives.length})
+                </button>
+                {showAlts && (
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {alternatives.map((a) => (
+                      <button
+                        key={a.id}
+                        onClick={() => {
+                          selectExercise(a.id)
+                          setShowAlts(false)
+                        }}
+                        className="rounded-full bg-sand-light px-2.5 py-1 text-xs ring-1 ring-sand-dark"
+                      >
+                        {a.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             {suggestion && (
