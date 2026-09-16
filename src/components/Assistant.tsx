@@ -73,6 +73,10 @@ export function Assistant() {
             protein: it.protein,
             carbs: it.carbs,
             fat: it.fat,
+            fiber: it.fiber,
+            sugar: it.sugar,
+            sat_fat: it.sat_fat,
+            salt: it.salt,
             barcode: null,
             meal: currentMeal(),
           })

@@ -6,7 +6,16 @@ export interface FoodProduct {
   name: string
   brand: string | null
   /** Nährwerte pro 100 g */
-  per100: { kcal: number; protein: number; carbs: number; fat: number }
+  per100: {
+    kcal: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sat_fat: number
+    salt: number
+  }
 }
 
 interface OffNutriments {
@@ -14,6 +23,10 @@ interface OffNutriments {
   proteins_100g?: number
   carbohydrates_100g?: number
   fat_100g?: number
+  fiber_100g?: number
+  sugars_100g?: number
+  ['saturated-fat_100g']?: number
+  salt_100g?: number
 }
 
 interface OffProduct {
@@ -35,6 +48,10 @@ function normalize(p: OffProduct): FoodProduct {
       protein: Math.round((n.proteins_100g ?? 0) * 10) / 10,
       carbs: Math.round((n.carbohydrates_100g ?? 0) * 10) / 10,
       fat: Math.round((n.fat_100g ?? 0) * 10) / 10,
+      fiber: Math.round((n.fiber_100g ?? 0) * 10) / 10,
+      sugar: Math.round((n.sugars_100g ?? 0) * 10) / 10,
+      sat_fat: Math.round((n['saturated-fat_100g'] ?? 0) * 10) / 10,
+      salt: Math.round((n.salt_100g ?? 0) * 100) / 100,
     },
   }
 }

@@ -203,6 +203,7 @@ export async function assistant(history: ChatMsg[], context: unknown): Promise<A
       protein: Math.round(Number(i.protein ?? 0)),
       carbs: Math.round(Number(i.carbs ?? 0)),
       fat: Math.round(Number(i.fat ?? 0)),
+      ...micros(i),
     }))
     if (items.length) action = { type: 'log_food', items }
   } else if (a.type === 'add_exercise' && a.draft) {
@@ -237,6 +238,10 @@ export interface MealPlanItem {
   protein: number
   carbs: number
   fat: number
+  fiber: number
+  sugar: number
+  sat_fat: number
+  salt: number
 }
 
 export async function mealPlanForDay(
@@ -249,7 +254,8 @@ export async function mealPlanForDay(
   const prompt =
     `Tagesziel: ~${targets.kcal} kcal, ~${targets.protein} g Eiweiß. Wunsch: "${wish || 'ausgewogen'}".\n` +
     'Format: {"note":"kurzer Hinweis","items":[{"meal":"breakfast|lunch|dinner|snack",' +
-    '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>}]}. 4–6 Einträge, deutsch.'
+    '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,' +
+    '"sat_fat":<g>,"salt":<g>}]}. 4–6 Einträge, deutsch.'
   const text = await complete({ system, prompt, json: true, temperature: 0.5 })
   const raw = parseJson<{ note?: string; items?: Partial<MealPlanItem>[] }>(text)
   const meals = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -262,6 +268,7 @@ export async function mealPlanForDay(
       protein: Math.round(Number(i.protein ?? 0)),
       carbs: Math.round(Number(i.carbs ?? 0)),
       fat: Math.round(Number(i.fat ?? 0)),
+      ...micros(i),
     })),
   }
 }
@@ -272,8 +279,8 @@ export async function recipeFromText(request: string): Promise<Recipe> {
     'Antworte ausschließlich mit JSON.'
   const prompt =
     `Anfrage: "${request}".\n` +
-    'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."],' +
-    '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>}}. Nährwerte pro Portion. Deutsch.'
+    '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,"sat_fat":<g>,"salt":<g>}}. ' +
+    'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."], ...}. Nährwerte pro Portion. Deutsch.'
   const text = await complete({ system, prompt, json: true, temperature: 0.6 })
   const r = parseJson<Partial<Recipe>>(text)
   return {
@@ -281,12 +288,7 @@ export async function recipeFromText(request: string): Promise<Recipe> {
     servings: Number(r.servings ?? 1) || 1,
     ingredients: (r.ingredients ?? []).map(String),
     steps: (r.steps ?? []).map(String),
-    nutrition: {
-      kcal: Math.round(Number(r.nutrition?.kcal ?? 0)),
-      protein: Math.round(Number(r.nutrition?.protein ?? 0)),
-      carbs: Math.round(Number(r.nutrition?.carbs ?? 0)),
-      fat: Math.round(Number(r.nutrition?.fat ?? 0)),
-    },
+    nutrition: recipeNutrition(r.nutrition),
   }
 }
 
@@ -376,6 +378,10 @@ export interface FoodEstimate {
   protein: number
   carbs: number
   fat: number
+  fiber: number
+  sugar: number
+  sat_fat: number
+  salt: number
 }
 
 const NUTRITION_SYSTEM =
@@ -384,8 +390,19 @@ const NUTRITION_SYSTEM =
 
 const NUTRITION_FORMAT =
   'Format: {"items":[{"name":"...","amount_g":<Zahl oder null>,"kcal":<Zahl>,' +
-  '"protein":<g>,"carbs":<g>,"fat":<g>}]}. Zahlen gerundet, realistische Schätzung. ' +
-  'Mehrere Bestandteile = mehrere items.'
+  '"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g Ballaststoffe>,"sugar":<g Zucker>,' +
+  '"sat_fat":<g gesättigte Fettsäuren>,"salt":<g Salz>}]}. Zahlen gerundet, realistische ' +
+  'Schätzung. Mehrere Bestandteile = mehrere items.'
+
+/** Extra-Nährwerte robust aus einem beliebigen Objekt lesen. */
+function micros(i: Partial<FoodEstimate>) {
+  return {
+    fiber: Math.round(Number(i.fiber ?? 0) * 10) / 10,
+    sugar: Math.round(Number(i.sugar ?? 0) * 10) / 10,
+    sat_fat: Math.round(Number(i.sat_fat ?? 0) * 10) / 10,
+    salt: Math.round(Number(i.salt ?? 0) * 100) / 100,
+  }
+}
 
 function toEstimates(text: string): FoodEstimate[] {
   const raw = parseJson<{ items?: Partial<FoodEstimate>[] }>(text)
@@ -396,6 +413,7 @@ function toEstimates(text: string): FoodEstimate[] {
     protein: Math.round(Number(i.protein ?? 0)),
     carbs: Math.round(Number(i.carbs ?? 0)),
     fat: Math.round(Number(i.fat ?? 0)),
+    ...micros(i),
   }))
 }
 
@@ -443,6 +461,7 @@ export async function suggestOrder(
       protein: Math.round(Number(i.protein ?? 0)),
       carbs: Math.round(Number(i.carbs ?? 0)),
       fat: Math.round(Number(i.fat ?? 0)),
+      ...micros(i),
     })),
   }
 }
@@ -489,7 +508,29 @@ export interface Recipe {
   servings: number
   ingredients: string[]
   steps: string[]
-  nutrition: { kcal: number; protein: number; carbs: number; fat: number }
+  nutrition: {
+    kcal: number
+    protein: number
+    carbs: number
+    fat: number
+    fiber: number
+    sugar: number
+    sat_fat: number
+    salt: number
+  }
+}
+
+function recipeNutrition(n: Partial<Recipe['nutrition']> | undefined): Recipe['nutrition'] {
+  return {
+    kcal: Math.round(Number(n?.kcal ?? 0)),
+    protein: Math.round(Number(n?.protein ?? 0)),
+    carbs: Math.round(Number(n?.carbs ?? 0)),
+    fat: Math.round(Number(n?.fat ?? 0)),
+    fiber: Math.round(Number(n?.fiber ?? 0) * 10) / 10,
+    sugar: Math.round(Number(n?.sugar ?? 0) * 10) / 10,
+    sat_fat: Math.round(Number(n?.sat_fat ?? 0) * 10) / 10,
+    salt: Math.round(Number(n?.salt ?? 0) * 100) / 100,
+  }
 }
 
 export async function recipeFromFridge(image: string, craving: string): Promise<Recipe> {
@@ -500,9 +541,9 @@ export async function recipeFromFridge(image: string, craving: string): Promise<
   const prompt =
     `Wunsch des Nutzers: "${craving || 'egal, Hauptsache lecker'}".\n` +
     'Gib ein Rezept passend zum Wunsch aus den sichtbaren Zutaten. ' +
-    'Nährwerte pro Portion schätzen. ' +
+    'Nährwerte pro Portion schätzen (inkl. Ballaststoffe, Zucker, gesättigte Fette, Salz). ' +
     'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."],' +
-    '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>}}. Auf Deutsch.'
+    '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,"sat_fat":<g>,"salt":<g>}}. Auf Deutsch.'
   const text = await complete({ system, prompt, image, json: true, temperature: 0.5 })
   const r = parseJson<Partial<Recipe>>(text)
   return {
@@ -510,12 +551,7 @@ export async function recipeFromFridge(image: string, craving: string): Promise<
     servings: Number(r.servings ?? 1) || 1,
     ingredients: (r.ingredients ?? []).map(String),
     steps: (r.steps ?? []).map(String),
-    nutrition: {
-      kcal: Math.round(Number(r.nutrition?.kcal ?? 0)),
-      protein: Math.round(Number(r.nutrition?.protein ?? 0)),
-      carbs: Math.round(Number(r.nutrition?.carbs ?? 0)),
-      fat: Math.round(Number(r.nutrition?.fat ?? 0)),
-    },
+    nutrition: recipeNutrition(r.nutrition),
   }
 }
 

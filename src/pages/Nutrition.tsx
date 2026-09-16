@@ -18,6 +18,14 @@ function currentMeal(): Meal {
   if (h < 21) return 'dinner'
   return 'snack'
 }
+
+/** Mikronährwerte (Ballaststoffe/Zucker/gesätt. Fett/Salz) mit Fallback 0. */
+const micro = (x: { fiber?: number; sugar?: number; sat_fat?: number; salt?: number }) => ({
+  fiber: x.fiber ?? 0,
+  sugar: x.sugar ?? 0,
+  sat_fat: x.sat_fat ?? 0,
+  salt: x.salt ?? 0,
+})
 import {
   useAddFoodEntry,
   useAllFoodEntries,
@@ -136,6 +144,7 @@ export default function Nutrition() {
       protein: e.protein,
       carbs: e.carbs,
       fat: e.fat,
+      ...micro(e),
       barcode: e.barcode,
       meal: e.meal ?? currentMeal(),
     })
@@ -165,7 +174,18 @@ export default function Nutrition() {
   const [searching, setSearching] = useState(false)
 
   // manuelle Eingabe
-  const [manual, setManual] = useState({ name: '', amount_g: 0, kcal: 0, protein: 0, carbs: 0, fat: 0 })
+  const [manual, setManual] = useState({
+    name: '',
+    amount_g: 0,
+    kcal: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    fiber: 0,
+    sugar: 0,
+    sat_fat: 0,
+    salt: 0,
+  })
 
   const [error, setError] = useState<string | null>(null)
 
@@ -293,6 +313,7 @@ export default function Nutrition() {
         protein: it.protein,
         carbs: it.carbs,
         fat: it.fat,
+        ...micro(it),
         barcode: null,
         meal: it.meal,
       })
@@ -384,6 +405,7 @@ export default function Nutrition() {
       protein: r.nutrition.protein,
       carbs: r.nutrition.carbs,
       fat: r.nutrition.fat,
+      ...micro(r.nutrition),
       shared,
       author_name: user?.email?.split('@')[0] ?? null,
     })
@@ -400,6 +422,7 @@ export default function Nutrition() {
       protein: r.nutrition.protein,
       carbs: r.nutrition.carbs,
       fat: r.nutrition.fat,
+      ...micro(r.nutrition),
       barcode: null,
       meal: currentMeal(),
     })
@@ -417,6 +440,7 @@ export default function Nutrition() {
         protein: it.protein,
         carbs: it.carbs,
         fat: it.fat,
+        ...micro(it),
         barcode: null,
         meal: currentMeal(),
       })
@@ -482,6 +506,7 @@ export default function Nutrition() {
       protein: m.protein,
       carbs: m.carbs,
       fat: m.fat,
+      ...micro(m),
       barcode: pending.barcode,
       meal: currentMeal(),
     })
@@ -501,10 +526,11 @@ export default function Nutrition() {
       protein: manual.protein,
       carbs: manual.carbs,
       fat: manual.fat,
+      ...micro(manual),
       barcode: null,
       meal: currentMeal(),
     })
-    setManual({ name: '', amount_g: 0, kcal: 0, protein: 0, carbs: 0, fat: 0 })
+    setManual({ name: '', amount_g: 0, kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sat_fat: 0, salt: 0 })
     setAddMode(null)
   }
 
@@ -563,6 +589,24 @@ export default function Nutrition() {
               <div>
                 <div className="font-semibold text-cocoa">{totals.fat} g</div>
                 <div className="text-cocoa-light">Fett / {settings!.fat_target} g</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2 border-t border-sand-dark pt-2 text-center text-[11px] text-cocoa-light">
+              <div>
+                <div className="font-semibold text-cocoa">{totals.fiber} g</div>
+                Ballaststoffe
+              </div>
+              <div>
+                <div className="font-semibold text-cocoa">{totals.sugar} g</div>
+                Zucker
+              </div>
+              <div>
+                <div className="font-semibold text-cocoa">{totals.sat_fat} g</div>
+                ges. Fett
+              </div>
+              <div>
+                <div className="font-semibold text-cocoa">{totals.salt} g</div>
+                Salz
               </div>
             </div>
           </>
@@ -890,6 +934,10 @@ export default function Nutrition() {
                   ['protein', 'Eiweiß (g)'],
                   ['carbs', 'Kohlenhydrate (g)'],
                   ['fat', 'Fett (g)'],
+                  ['fiber', 'Ballaststoffe (g)'],
+                  ['sugar', 'Zucker (g)'],
+                  ['sat_fat', 'ges. Fett (g)'],
+                  ['salt', 'Salz (g)'],
                 ] as const
               ).map(([key, lbl]) => (
                 <div key={key}>

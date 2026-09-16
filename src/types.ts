@@ -158,6 +158,10 @@ export interface FoodEntry {
   protein: number
   carbs: number
   fat: number
+  fiber: number
+  sugar: number
+  sat_fat: number
+  salt: number
   barcode: string | null
   meal: Meal | null
   created_at: string
@@ -175,6 +179,10 @@ export interface SavedRecipe {
   protein: number
   carbs: number
   fat: number
+  fiber: number
+  sugar: number
+  sat_fat: number
+  salt: number
   shared: boolean
   created_at: string
 }

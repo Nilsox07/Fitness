@@ -92,7 +92,19 @@ export function useAllFoodEntries() {
 
 export type FoodEntryInput = Pick<
   FoodEntry,
-  'date' | 'name' | 'amount_g' | 'kcal' | 'protein' | 'carbs' | 'fat' | 'barcode' | 'meal'
+  | 'date'
+  | 'name'
+  | 'amount_g'
+  | 'kcal'
+  | 'protein'
+  | 'carbs'
+  | 'fat'
+  | 'fiber'
+  | 'sugar'
+  | 'sat_fat'
+  | 'salt'
+  | 'barcode'
+  | 'meal'
 >
 
 export function useAddFoodEntry() {

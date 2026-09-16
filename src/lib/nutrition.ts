@@ -56,37 +56,59 @@ export function computeTargets(input: TargetInput): MacroTargets {
   return { kcal, protein, carbs, fat }
 }
 
-/** Summiert die Tageswerte mehrerer Einträge (gerundet). */
-export function sumEntries(
-  entries: { kcal: number; protein: number; carbs: number; fat: number }[],
-): MacroTargets {
-  const t = entries.reduce(
-    (acc, e) => ({
-      kcal: acc.kcal + e.kcal,
-      protein: acc.protein + e.protein,
-      carbs: acc.carbs + e.carbs,
-      fat: acc.fat + e.fat,
+export interface Nutrients {
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+  fiber: number
+  sugar: number
+  sat_fat: number
+  salt: number
+}
+
+const EMPTY: Nutrients = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sat_fat: 0, salt: 0 }
+
+type PartialNutrients = { kcal: number; protein: number; carbs: number; fat: number } & Partial<Nutrients>
+
+/** Summiert die Tageswerte mehrerer Einträge (gerundet), inkl. Ballaststoffe usw. */
+export function sumEntries(entries: PartialNutrients[]): Nutrients {
+  const t = entries.reduce<Nutrients>(
+    (a, e) => ({
+      kcal: a.kcal + e.kcal,
+      protein: a.protein + e.protein,
+      carbs: a.carbs + e.carbs,
+      fat: a.fat + e.fat,
+      fiber: a.fiber + (e.fiber ?? 0),
+      sugar: a.sugar + (e.sugar ?? 0),
+      sat_fat: a.sat_fat + (e.sat_fat ?? 0),
+      salt: a.salt + (e.salt ?? 0),
     }),
-    { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+    { ...EMPTY },
   )
   return {
     kcal: Math.round(t.kcal),
     protein: Math.round(t.protein),
     carbs: Math.round(t.carbs),
     fat: Math.round(t.fat),
+    fiber: Math.round(t.fiber * 10) / 10,
+    sugar: Math.round(t.sugar * 10) / 10,
+    sat_fat: Math.round(t.sat_fat * 10) / 10,
+    salt: Math.round(t.salt * 100) / 100,
   }
 }
 
 /** Skaliert Nährwerte pro 100 g auf eine Menge in Gramm. */
-export function scalePer100(
-  per100: { kcal: number; protein: number; carbs: number; fat: number },
-  grams: number,
-): MacroTargets {
+export function scalePer100(per100: PartialNutrients, grams: number): Nutrients {
   const f = grams / 100
   return {
     kcal: Math.round(per100.kcal * f),
     protein: Math.round(per100.protein * f * 10) / 10,
     carbs: Math.round(per100.carbs * f * 10) / 10,
     fat: Math.round(per100.fat * f * 10) / 10,
+    fiber: Math.round((per100.fiber ?? 0) * f * 10) / 10,
+    sugar: Math.round((per100.sugar ?? 0) * f * 10) / 10,
+    sat_fat: Math.round((per100.sat_fat ?? 0) * f * 10) / 10,
+    salt: Math.round((per100.salt ?? 0) * f * 100) / 100,
   }
 }

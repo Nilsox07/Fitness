@@ -34,6 +34,10 @@ function RecipeCard({ r, mine }: { r: SavedRecipe; mine: boolean }) {
       protein: r.protein,
       carbs: r.carbs,
       fat: r.fat,
+      fiber: r.fiber ?? 0,
+      sugar: r.sugar ?? 0,
+      sat_fat: r.sat_fat ?? 0,
+      salt: r.salt ?? 0,
       barcode: null,
       meal: currentMeal(),
     })

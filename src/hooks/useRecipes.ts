@@ -20,7 +20,19 @@ export function useRecipes() {
 
 export type RecipeInput = Pick<
   SavedRecipe,
-  'title' | 'servings' | 'ingredients' | 'steps' | 'kcal' | 'protein' | 'carbs' | 'fat' | 'shared'
+  | 'title'
+  | 'servings'
+  | 'ingredients'
+  | 'steps'
+  | 'kcal'
+  | 'protein'
+  | 'carbs'
+  | 'fat'
+  | 'fiber'
+  | 'sugar'
+  | 'sat_fat'
+  | 'salt'
+  | 'shared'
 > & { author_name?: string | null }
 
 export function useAddRecipe() {
