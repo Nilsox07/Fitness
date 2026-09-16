@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { balanceStats, frequencyStats, isoWeekKey, onlyWorking, totalVolume } from '../lib/analytics'
 import { achievements, rankForSessions } from '../lib/gamification'
 import { mascotEmoji } from '../lib/cosmetics'
 import { computeXp, dailyQuests, levelInfo, weeklyQuests, type Quest } from '../lib/xp'
 import { Confetti } from './Confetti'
 import { playChime, playLevelUp } from '../lib/sound'
+import { shareStatCard } from '../lib/statcard'
 import type { Exercise, SetWithDate } from '../types'
 
 function todayLocal(): string {
@@ -32,6 +34,7 @@ function QuestRow({ q }: { q: Quest }) {
 }
 
 export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises: Exercise[] }) {
+  const navigate = useNavigate()
   const today = todayLocal()
   const g = useMemo(() => {
     const freq = frequencyStats([...new Set(sets.map((s) => s.date))])
@@ -105,8 +108,29 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
         </div>
       )}
       {celebrate && (
-        <div className="rounded-xl bg-gradient-to-r from-amber-500 to-ruby p-2.5 text-center font-bold text-white">
-          ⭐ Level {g.xp.level} erreicht!
+        <div className="flex items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-ruby p-2.5 font-bold text-white">
+          <span>⭐ Level {g.xp.level} erreicht!</span>
+          <button
+            className="rounded-full bg-white/25 px-3 py-1 text-sm"
+            onClick={() =>
+              shareStatCard({
+                title: `Level ${g.xp.level} erreicht! ⭐`,
+                dateLabel: new Date().toLocaleDateString('de-DE'),
+                volume: g.tonnage,
+                sets: 0,
+                exercises: 0,
+                mascot: g.mascot,
+                rank: g.rank.title,
+                stats: [
+                  [`${g.xp.level}`, 'Level'],
+                  [`${g.freq.totalSessions}`, 'Trainings'],
+                  [`${g.tonnage.toLocaleString('de-DE')} kg`, 'bewegt'],
+                ],
+              })
+            }
+          >
+            Teilen
+          </button>
         </div>
       )}
 
@@ -144,8 +168,14 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
       </div>
 
       {/* Achievements */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold">Badges</span>
+        <button className="text-xs font-semibold text-brand" onClick={() => navigate('/badges')}>
+          Alle ansehen →
+        </button>
+      </div>
       <div className="grid grid-cols-5 gap-2">
-        {g.list.map((a) => (
+        {g.list.slice(0, 10).map((a) => (
           <div
             key={a.id}
             title={a.label}

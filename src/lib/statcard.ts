@@ -10,6 +10,8 @@ export interface StatCardData {
   highlight?: string
   rank?: string
   mascot?: string
+  /** Überschreibt die drei Standard-Kennzahlen: [Wert, Label]. */
+  stats?: [string, string][]
 }
 
 export async function shareStatCard(data: StatCardData): Promise<void> {
@@ -44,7 +46,7 @@ export async function shareStatCard(data: StatCardData): Promise<void> {
   ctx.fillText(data.dateLabel, W / 2, 440)
 
   // Kennzahlen
-  const stats: [string, string][] = [
+  const stats: [string, string][] = data.stats ?? [
     [`${data.volume.toLocaleString('de-DE')} kg`, 'Volumen'],
     [`${data.sets}`, 'Sätze'],
     [`${data.exercises}`, 'Übungen'],
