@@ -3,6 +3,7 @@ import { useAuth } from './lib/auth'
 import { TabBar } from './components/TabBar'
 import { SaveStatus } from './components/SaveStatus'
 import { Assistant } from './components/Assistant'
+import { WhatsNew } from './components/WhatsNew'
 import Login from './pages/Login'
 import ResetPassword from './pages/ResetPassword'
 import Workout from './pages/Workout'
@@ -54,6 +55,7 @@ export default function App() {
         </Routes>
       </main>
       <Assistant />
+      <WhatsNew />
       <TabBar />
     </div>
   )
