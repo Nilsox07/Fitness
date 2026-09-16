@@ -11,6 +11,8 @@ export interface UserStat {
   weekly_volume: number
   last_workout: string | null
   rank_title: string | null
+  level: number
+  xp: number
 }
 
 export function useMyProfile() {

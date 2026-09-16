@@ -12,9 +12,11 @@ import {
 } from '../hooks/useSocial'
 import { frequencyStats, isoWeekKey, totalVolume, weeklyVolume } from '../lib/analytics'
 import { rankForSessions } from '../lib/gamification'
+import { computeXp, levelInfo } from '../lib/xp'
 
-type Metric = 'weekly_volume' | 'total_sessions' | 'week_streak'
+type Metric = 'level' | 'weekly_volume' | 'total_sessions' | 'week_streak'
 const METRIC_LABEL: Record<Metric, string> = {
+  level: 'Level',
   weekly_volume: 'Volumen (Woche)',
   total_sessions: 'Trainings',
   week_streak: 'Streak',
@@ -42,6 +44,7 @@ export default function Social() {
     const thisWeek = isoWeekKey(new Date().toISOString().slice(0, 10))
     const wv = weeklyVolume(sets).find((w) => w.week === thisWeek)?.volume ?? 0
     const dates = sets.map((s) => s.date).sort()
+    const lvl = levelInfo(computeXp(sets))
     return {
       display_name: profile?.display_name ?? user?.email?.split('@')[0] ?? 'Ich',
       total_sessions: freq.totalSessions,
@@ -50,13 +53,15 @@ export default function Social() {
       weekly_volume: Math.round(wv),
       last_workout: dates[dates.length - 1] ?? null,
       rank_title: rankForSessions(freq.totalSessions).title,
+      level: lvl.level,
+      xp: lvl.xp,
     }
   }, [allSets, profile, user])
 
   useEffect(() => {
     if (allSets) syncStats.mutate(myStats)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myStats.total_sessions, myStats.weekly_volume])
+  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level])
 
   const kudosReceived = useMemo(() => {
     const map = new Map<string, number>()
@@ -150,11 +155,13 @@ export default function Social() {
         {ranked.map((u, i) => {
           const me = u.user_id === user?.id
           const value =
-            metric === 'weekly_volume'
-              ? `${u.weekly_volume.toLocaleString('de-DE')} kg`
-              : metric === 'total_sessions'
-                ? `${u.total_sessions}`
-                : `🔥 ${u.week_streak}`
+            metric === 'level'
+              ? `Lvl ${u.level ?? 1}`
+              : metric === 'weekly_volume'
+                ? `${u.weekly_volume.toLocaleString('de-DE')} kg`
+                : metric === 'total_sessions'
+                  ? `${u.total_sessions}`
+                  : `🔥 ${u.week_streak}`
           return (
             <li
               key={u.user_id}
