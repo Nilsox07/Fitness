@@ -282,6 +282,53 @@ export interface MuscleSuggestion {
   secondary: MuscleGroup[]
 }
 
+export interface ExerciseDraft {
+  name: string
+  muscle_group: MuscleGroup
+  secondary_muscles: MuscleGroup[]
+  unilateral: boolean
+  weight_steps: string | null
+  target_rep_min: number
+  target_rep_max: number
+  increment: number
+}
+
+/** Freitext/Sprache → fertiger Übungs-Entwurf (Muskeln + Gewichtsstufen). */
+export async function parseNewExercise(text: string): Promise<ExerciseDraft> {
+  const groups = MUSCLE_GROUPS.join(', ')
+  const system =
+    'Du bist ein Trainings-Assistent. Aus der Beschreibung einer neuen Fitnessübung ' +
+    '(evtl. mit Gewichtsstufen der Maschine) erstellst du einen strukturierten Entwurf. ' +
+    'Antworte ausschließlich mit JSON.'
+  const prompt =
+    `Beschreibung: "${text}".\n` +
+    `Erlaubte Muskelgruppen (exakt so): ${groups}.\n` +
+    'Bestimme: name, muscle_group (primärer Mover), secondary_muscles (0–3, ohne primär), ' +
+    'unilateral (true, wenn einseitig/links-rechts getrennt), weight_steps ' +
+    '(Leerzeichen-getrennte reale Gewichte, aus der Beschreibung BERECHNET — z. B. ' +
+    '"5er Schritte von 20 bis 40" → "20 25 30 35 40"; inkl. genannter Zusatzgewichte; ' +
+    'leer/"" wenn keine genannt), target_rep_min, target_rep_max, increment (kg-Schritt). ' +
+    'Format: {"name":"...","muscle_group":"...","secondary_muscles":["..."],' +
+    '"unilateral":false,"weight_steps":"...","target_rep_min":8,"target_rep_max":12,"increment":2.5}.'
+  const t = await complete({ system, prompt, json: true, temperature: 0.2 })
+  const r = parseJson<Partial<ExerciseDraft>>(t)
+  const valid = (g: string): g is MuscleGroup => (MUSCLE_GROUPS as readonly string[]).includes(g)
+  const primary = r.muscle_group && valid(r.muscle_group) ? r.muscle_group : 'Sonstige'
+  const min = Math.max(1, Math.round(Number(r.target_rep_min ?? 8)) || 8)
+  const max = Math.max(min, Math.round(Number(r.target_rep_max ?? 12)) || min)
+  const steps = typeof r.weight_steps === 'string' ? r.weight_steps.trim() : ''
+  return {
+    name: String(r.name ?? text).slice(0, 60),
+    muscle_group: primary,
+    secondary_muscles: (r.secondary_muscles ?? []).filter(valid).filter((g) => g !== primary).slice(0, 3),
+    unilateral: Boolean(r.unilateral),
+    weight_steps: steps || null,
+    target_rep_min: min,
+    target_rep_max: max,
+    increment: Number(r.increment) > 0 ? Number(r.increment) : 2.5,
+  }
+}
+
 export async function suggestMuscles(exerciseName: string): Promise<MuscleSuggestion> {
   const groups = MUSCLE_GROUPS.join(', ')
   const system =

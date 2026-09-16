@@ -8,7 +8,8 @@ import {
   type ExerciseInput,
 } from '../hooks/useExercises'
 import { useAiStatus } from '../hooks/useAi'
-import { suggestMuscles } from '../lib/ai'
+import { parseNewExercise, suggestMuscles } from '../lib/ai'
+import { MicButton } from '../components/MicButton'
 import { expandWithAddons, generateLadder } from '../lib/weights'
 import { MUSCLE_GROUPS, type Exercise, type MuscleGroup } from '../types'
 
@@ -38,6 +39,29 @@ export default function Exercises() {
   const [gen, setGen] = useState({ start: '', pattern: '', max: '', addons: '' })
   const [suggesting, setSuggesting] = useState(false)
   const [suggestErr, setSuggestErr] = useState<string | null>(null)
+  const [assistOpen, setAssistOpen] = useState(false)
+  const [assistText, setAssistText] = useState('')
+  const [assistBusy, setAssistBusy] = useState(false)
+  const [assistErr, setAssistErr] = useState<string | null>(null)
+
+  async function runAssistant() {
+    if (!assistText.trim()) return
+    setAssistBusy(true)
+    setAssistErr(null)
+    try {
+      const draft = await parseNewExercise(assistText.trim())
+      setEditing(null)
+      setForm({ ...empty, ...draft })
+      setSuggestErr(null)
+      setAssistOpen(false)
+      setAssistText('')
+      setOpen(true)
+    } catch (e) {
+      setAssistErr(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setAssistBusy(false)
+    }
+  }
 
   function toggleSecondary(g: MuscleGroup) {
     setForm((f) => ({
@@ -138,11 +162,48 @@ export default function Exercises() {
           >
             ⚙️
           </button>
+          {ai?.enabled && (
+            <button className="btn-ghost text-sm" onClick={() => setAssistOpen(true)} aria-label="Übung per Sprache anlegen">
+              🎤 KI
+            </button>
+          )}
           <button className="btn-primary text-sm" onClick={startNew}>
             + Neu
           </button>
         </div>
       </header>
+
+      {assistOpen && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="card w-full max-w-md space-y-3">
+            <h2 className="text-lg font-bold">🎤 Übung per Sprache anlegen</h2>
+            <p className="text-xs text-cocoa-light">
+              Beschreib die Übung — Name und, wenn du magst, die Gewichtsstufen der Maschine. Die KI
+              erkennt Muskeln & Leiter automatisch.
+            </p>
+            <div className="flex gap-2">
+              <input
+                className="input"
+                autoFocus
+                placeholder="z. B. Kniebeugen, 5er-Schritte von 20 bis 120"
+                value={assistText}
+                onChange={(e) => setAssistText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && runAssistant()}
+              />
+              <MicButton onResult={(t) => setAssistText((v) => (v ? v + ' ' + t : t))} />
+            </div>
+            {assistErr && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {assistErr}</p>}
+            <div className="flex gap-2 pt-1">
+              <button className="btn-ghost flex-1" onClick={() => setAssistOpen(false)}>
+                Abbrechen
+              </button>
+              <button className="btn-primary flex-1" onClick={runAssistant} disabled={assistBusy}>
+                {assistBusy ? 'Erstelle…' : 'Entwurf erstellen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isLoading && <p className="text-cocoa-light">Lädt…</p>}
 
