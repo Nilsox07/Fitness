@@ -126,6 +126,16 @@ export async function wrappedRecap(summary: unknown): Promise<string> {
   return complete({ system: coachSystem(), prompt, temperature: 0.8 })
 }
 
+/** Kurzes Ernährungs-Wochenfazit aus den letzten Tagen. */
+export async function nutritionReview(summary: unknown): Promise<string> {
+  const prompt =
+    `Ernährungsdaten (JSON):\n${JSON.stringify(summary)}\n\n` +
+    'Gib ein kurzes, konkretes Wochenfazit zur Ernährung (max. ~100 Wörter): Kalorien- und ' +
+    'Eiweißtreue, Auffälligkeiten, 2–3 konkrete Tipps. Bezieh die Gewichtsentwicklung mit ein, ' +
+    'falls vorhanden.'
+  return complete({ system: coachSystem(), prompt, temperature: 0.5 })
+}
+
 export interface ChatMsg {
   role: 'user' | 'assistant'
   content: string

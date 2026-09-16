@@ -32,8 +32,9 @@ import {
   sumEntries,
 } from '../lib/nutrition'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
-import { estimateFoodFromImage, estimateFoodFromText, type FoodEstimate } from '../lib/ai'
+import { estimateFoodFromImage, estimateFoodFromText, nutritionReview, type FoodEstimate } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
+import { useBodyWeights } from '../hooks/useBodyWeight'
 import type { ActivityLevel, FoodEntry, NutritionGoal, Sex } from '../types'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
@@ -152,6 +153,49 @@ export default function Nutrition() {
   const [aiResults, setAiResults] = useState<FoodEstimate[] | null>(null)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiText, setAiText] = useState('')
+  const { data: weights } = useBodyWeights()
+  const [nutriReview, setNutriReview] = useState<string | null>(null)
+  const [nutriBusy, setNutriBusy] = useState(false)
+
+  async function makeNutriReview() {
+    setNutriBusy(true)
+    try {
+      const byDay = new Map<string, { kcal: number; protein: number; carbs: number; fat: number }>()
+      for (const e of allEntries ?? []) {
+        const d = byDay.get(e.date) ?? { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+        d.kcal += e.kcal
+        d.protein += e.protein
+        d.carbs += e.carbs
+        d.fat += e.fat
+        byDay.set(e.date, d)
+      }
+      const days = [...byDay.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-7)
+      const avg = (sel: (v: { kcal: number; protein: number; carbs: number; fat: number }) => number) =>
+        days.length ? Math.round(days.reduce((s, [, v]) => s + sel(v), 0) / days.length) : 0
+      const w = weights ?? []
+      setNutriReview(
+        await nutritionReview({
+          tageErfasst: days.length,
+          durchschnitt: {
+            kcal: avg((v) => v.kcal),
+            eiweiss: avg((v) => v.protein),
+            kohlenhydrate: avg((v) => v.carbs),
+            fett: avg((v) => v.fat),
+          },
+          ziel: settings
+            ? { kcal: settings.kcal_target, eiweiss: settings.protein_target }
+            : null,
+          gewicht: w.length
+            ? { start: Number(w[0].weight_kg), aktuell: Number(w[w.length - 1].weight_kg) }
+            : null,
+        }),
+      )
+    } catch (e) {
+      setNutriReview(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setNutriBusy(false)
+    }
+  }
 
   async function handlePhoto(file: File | undefined) {
     if (!file) return
@@ -413,6 +457,18 @@ export default function Nutrition() {
 
       <WaterCard />
       <BodyWeightCard />
+
+      {ai?.enabled && (allEntries?.length ?? 0) > 0 && (
+        <div className="card space-y-2">
+          <h2 className="font-semibold">🤖 Ernährungs-Fazit</h2>
+          {nutriReview && (
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{nutriReview}</p>
+          )}
+          <button className="btn-primary w-full" onClick={makeNutriReview} disabled={nutriBusy}>
+            {nutriBusy ? 'Analysiere…' : nutriReview ? 'Neu erstellen' : 'Wochenfazit erstellen'}
+          </button>
+        </div>
+      )}
 
       {/* ----- Ziel-Setup ----- */}
       {setupOpen && (
