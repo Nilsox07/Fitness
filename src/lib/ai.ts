@@ -509,6 +509,35 @@ export async function parseNewExercise(text: string): Promise<ExerciseDraft> {
   }
 }
 
+/** KI-Empfehlung, ob für die aktuelle Übung ein Aufwärmsatz sinnvoll ist. */
+export async function warmupAdvice(input: {
+  exercise: string
+  primary: string
+  secondary: string[]
+  muscleAlreadyWarm: boolean
+  firstOfSession: boolean
+  base: number
+}): Promise<{ warmup: boolean; reason: string }> {
+  const system =
+    'Du bist ein Kraft-Coach. Entscheide, ob für den nächsten Arbeitssatz ein Aufwärmsatz sinnvoll ' +
+    'ist. Faustregeln: erste Übung einer Muskelgruppe bzw. erste schwere Bewegung der Einheit → ' +
+    'Aufwärmsatz; wenn der Muskel schon warm ist (vorher trainiert) oder es eine leichte ' +
+    'Isolationsübung ist → weglassen. Antworte ausschließlich mit JSON.'
+  const prompt =
+    `Übung: "${input.exercise}" (primär ${input.primary}` +
+    (input.secondary.length ? `, sekundär ${input.secondary.join(', ')}` : '') +
+    `). Muskel heute schon trainiert: ${input.muscleAlreadyWarm ? 'ja' : 'nein'}. ` +
+    `Erste Übung der Einheit: ${input.firstOfSession ? 'ja' : 'nein'}. Arbeitsgewicht ~${input.base} kg.\n` +
+    'Format: {"warmup":true|false,"reason":"kurze Begründung auf Deutsch"}.'
+  try {
+    const text = await complete({ system, prompt, json: true, temperature: 0.2 })
+    const r = parseJson<{ warmup?: boolean; reason?: string }>(text)
+    return { warmup: Boolean(r.warmup), reason: String(r.reason ?? '') }
+  } catch (e) {
+    throw e instanceof Error ? e : new Error('KI-Fehler')
+  }
+}
+
 function normalizeDraft(d: Partial<ExerciseDraft>): ExerciseDraft {
   const valid = (g: string): g is MuscleGroup => (MUSCLE_GROUPS as readonly string[]).includes(g)
   const primary = d.muscle_group && valid(d.muscle_group) ? d.muscle_group : 'Sonstige'

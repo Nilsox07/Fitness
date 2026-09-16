@@ -7,6 +7,7 @@ import {
   useAddSets,
   useAllSets,
   useCreateWorkout,
+  useDeleteSet,
   useWorkoutSets,
   useWorkouts,
 } from '../hooks/useWorkouts'
@@ -24,7 +25,7 @@ import {
 } from '../lib/analytics'
 import { mascotStage, rankForSessions } from '../lib/gamification'
 import { shareStatCard } from '../lib/statcard'
-import { alternativeExercise, hypeLine } from '../lib/ai'
+import { alternativeExercise, hypeLine, warmupAdvice } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
 import { challengeOfDay, randomExcuse } from '../lib/challenges'
 import { usePostActivity } from '../hooks/useFeed'
@@ -148,6 +149,7 @@ export default function Workout() {
   const createWorkout = useCreateWorkout()
   const addSet = useAddSet()
   const addSets = useAddSets()
+  const deleteSet = useDeleteSet()
 
   const todaysWorkout = workouts?.find((w) => w.date === today)
   const { data: workoutSets } = useWorkoutSets(todaysWorkout?.id)
@@ -216,6 +218,8 @@ export default function Workout() {
   const [excuse, setExcuse] = useState<string | null>(null)
   const [altAi, setAltAi] = useState<{ name: string | null; reason: string } | null>(null)
   const [altBusy, setAltBusy] = useState(false)
+  const [warmAdv, setWarmAdv] = useState<{ warmup: boolean; reason: string } | null>(null)
+  const [warmBusy, setWarmBusy] = useState(false)
 
   async function findAltAi() {
     if (!selectedExercise || !exercises) return
@@ -357,6 +361,53 @@ export default function Workout() {
         ),
       )
     : true
+
+  async function checkWarmupAi() {
+    if (!selectedExercise) return
+    setWarmBusy(true)
+    setWarmAdv(null)
+    try {
+      const otherSets = (workoutSets ?? []).filter((s) => s.exercise_id !== selectedExercise.id)
+      setWarmAdv(
+        await warmupAdvice({
+          exercise: selectedExercise.name,
+          primary: selectedExercise.muscle_group,
+          secondary: selectedExercise.secondary_muscles ?? [],
+          muscleAlreadyWarm: !willWarmup,
+          firstOfSession: otherSets.length === 0,
+          base: workingBase,
+        }),
+      )
+    } catch {
+      setWarmAdv({ warmup: willWarmup, reason: 'KI nicht erreichbar — nutze Standardregel.' })
+    } finally {
+      setWarmBusy(false)
+    }
+  }
+
+  async function addWarmupSet() {
+    if (!todaysWorkout || !selectedExercise) return
+    const d = deriveSet('warmup', workingBase)
+    const weight = snapWeight(selectedExercise, d.weight)
+    await addSet.mutateAsync({
+      workout_id: todaysWorkout.id,
+      exercise_id: selectedExercise.id,
+      set_number: nextSetNumber,
+      reps: d.reps,
+      weight,
+      reps_right: selectedExercise.unilateral ? d.reps : null,
+      weight_right: selectedExercise.unilateral ? weight : null,
+      set_type: 'warmup',
+      to_failure: false,
+    })
+    setWarmAdv(null)
+  }
+
+  async function removeWarmupSet() {
+    const w = setsForExercise.find((s) => s.set_type === 'warmup')
+    if (w) await deleteSet.mutateAsync(w)
+    setWarmAdv(null)
+  }
 
   // Übung auswählen → bei leerem Stand automatisch die Standard-Sätze anlegen
   function selectExercise(id: string) {
@@ -645,6 +696,37 @@ export default function Workout() {
                 {setsForExercise.map((s) => (
                   <EditableSetRow key={s.id} set={s} exercise={selectedExercise} />
                 ))}
+              </div>
+            )}
+
+            {/* KI: Aufwärmsatz prüfen */}
+            {ai?.enabled && setsForExercise.length > 0 && (
+              <div>
+                <button
+                  className="text-xs font-medium text-brand disabled:opacity-40"
+                  onClick={checkWarmupAi}
+                  disabled={warmBusy}
+                >
+                  {warmBusy ? '… prüfe' : '🤖 Aufwärmsatz prüfen'}
+                </button>
+                {warmAdv && (
+                  <div className="mt-1 rounded-lg bg-sand p-2 text-xs ring-1 ring-sand-dark">
+                    <span className="font-semibold">
+                      {warmAdv.warmup ? '🔥 Aufwärmsatz empfohlen' : '⏭️ Aufwärmsatz weglassen'}:
+                    </span>{' '}
+                    <span className="text-cocoa-light">{warmAdv.reason}</span>
+                    {warmAdv.warmup && !setsForExercise.some((s) => s.set_type === 'warmup') && (
+                      <button className="btn-primary mt-2 w-full text-sm" onClick={addWarmupSet}>
+                        + Aufwärmsatz hinzufügen
+                      </button>
+                    )}
+                    {!warmAdv.warmup && setsForExercise.some((s) => s.set_type === 'warmup') && (
+                      <button className="btn-ghost mt-2 w-full text-sm" onClick={removeWarmupSet}>
+                        Aufwärmsatz entfernen
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
