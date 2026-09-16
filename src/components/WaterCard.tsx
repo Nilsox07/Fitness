@@ -29,7 +29,7 @@ export function WaterCard() {
         </span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-sand-dark/40">
-        <div className="h-full bg-sky-500" style={{ width: `${pct}%` }} />
+        <div className="h-full bg-brand" style={{ width: `${pct}%` }} />
       </div>
       <div className="flex items-center gap-2">
         <div className="flex-1 text-2xl">{'🥛'.repeat(Math.min(glasses, 10))}</div>
@@ -41,7 +41,7 @@ export function WaterCard() {
           −
         </button>
         <button
-          className="h-10 rounded-full bg-sky-500 px-4 font-semibold text-white"
+          className="h-10 rounded-full bg-brand px-4 font-semibold text-white"
           onClick={() => change(STEP)}
         >
           +250 ml

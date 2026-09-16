@@ -44,7 +44,7 @@ export function BodyWeightCard() {
           <span className="text-sm text-cocoa-light">
             zuletzt <strong className="text-cocoa">{Number(latest.weight_kg)} kg</strong>
             {trend !== 0 && (
-              <span className={trend < 0 ? 'text-emerald-500' : 'text-amber-500'}>
+              <span className="text-cocoa-muted">
                 {' '}
                 ({trend > 0 ? '+' : ''}
                 {trend} kg)

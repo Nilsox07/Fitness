@@ -216,31 +216,23 @@ export default function Analytics() {
               </p>
               <ul className="space-y-1.5">
                 {weekSets.map((m) => {
-                  const color =
-                    m.status === 'low'
-                      ? 'bg-amber-500'
-                      : m.status === 'high'
-                        ? 'bg-red-500'
-                        : 'bg-brand'
                   const pct = Math.min(100, (m.sets / 20) * 100)
+                  const tag = m.status === 'low' ? 'zu wenig' : m.status === 'high' ? 'viel' : ''
                   return (
                     <li key={m.muscle} className="flex items-center gap-2">
                       <span className="w-24 shrink-0 text-sm">{m.muscle}</span>
                       <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-sand-dark/40">
-                        <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
+                        <div
+                          className={`h-full bg-brand ${m.status === 'low' ? 'opacity-40' : ''}`}
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
-                      <span className="w-8 shrink-0 text-right text-sm font-semibold">
-                        {m.sets}
-                      </span>
+                      {tag && <span className="w-14 shrink-0 text-right text-[11px] text-cocoa-muted">{tag}</span>}
+                      <span className="w-7 shrink-0 text-right text-sm font-semibold">{m.sets}</span>
                     </li>
                   )
                 })}
               </ul>
-              <div className="mt-2 flex gap-3 text-xs text-cocoa-muted">
-                <span><span className="text-amber-500">●</span> zu wenig</span>
-                <span><span className="text-brand">●</span> optimal</span>
-                <span><span className="text-red-500">●</span> sehr viel</span>
-              </div>
             </section>
           )}
 
@@ -266,7 +258,7 @@ export default function Analytics() {
                 {recovery.slice(0, 6).map((r) => (
                   <li key={r.muscle} className="flex justify-between">
                     <span>{r.muscle}</span>
-                    <span className={r.daysAgo >= 5 ? 'text-amber-500' : 'text-cocoa-light'}>
+                    <span className={r.daysAgo >= 5 ? 'font-semibold text-cocoa' : 'text-cocoa-light'}>
                       {r.daysAgo === 0 ? 'heute' : `vor ${r.daysAgo} Tag${r.daysAgo === 1 ? '' : 'en'}`}
                     </span>
                   </li>
@@ -341,7 +333,7 @@ export default function Analytics() {
                       type="monotone"
                       dataKey="est1RM"
                       name="gesch. 1RM"
-                      stroke="#f59e0b"
+                      stroke={chart.axis}
                       strokeWidth={2}
                       strokeDasharray="4 2"
                       dot={{ r: 2 }}
@@ -353,7 +345,7 @@ export default function Analytics() {
                     <span className="text-brand">●</span> Top-Gewicht
                   </span>
                   <span>
-                    <span className="text-amber-500">●</span> geschätztes 1RM
+                    <span className="text-cocoa-muted">●</span> geschätztes 1RM
                   </span>
                 </div>
               </>

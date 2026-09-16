@@ -19,14 +19,23 @@ function todayLocal(): string {
 function QuestRow({ q }: { q: Quest }) {
   return (
     <div className="flex items-center gap-2">
-      <span className={`text-base ${q.done ? '' : 'opacity-30'}`}>{q.done ? '✅' : '⬜'}</span>
+      <span
+        className={`grid h-4 w-4 place-items-center rounded-full text-[10px] ${
+          q.done ? 'bg-brand text-white' : 'ring-1 ring-sand-dark text-transparent'
+        }`}
+      >
+        ✓
+      </span>
       <div className="flex-1">
         <div className="flex justify-between text-xs">
           <span className={q.done ? 'text-cocoa-light line-through' : 'text-cocoa'}>{q.label}</span>
           <span className="text-cocoa-muted">+{q.xp} XP</span>
         </div>
         <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-sand-dark/40">
-          <div className={`h-full ${q.done ? 'bg-emerald-500' : 'bg-brand'}`} style={{ width: `${q.progress}%` }} />
+          <div
+            className={`h-full bg-brand ${q.done ? '' : 'opacity-60'}`}
+            style={{ width: `${q.progress}%` }}
+          />
         </div>
       </div>
     </div>

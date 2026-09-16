@@ -494,8 +494,8 @@ export default function Workout() {
         {selectedExercise && (
           <>
             {selectedExercise.notes && (
-              <div className="rounded-xl bg-sky-500/10 p-2.5 text-sm text-cocoa ring-1 ring-sky-500/30">
-                🪑 {selectedExercise.notes}
+              <div className="rounded-xl bg-sand p-2.5 text-sm text-cocoa ring-1 ring-sand-dark">
+                {selectedExercise.notes}
               </div>
             )}
 
