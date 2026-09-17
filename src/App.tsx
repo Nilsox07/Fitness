@@ -1,7 +1,9 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { usePrefs } from './lib/prefs'
 import { TabBar } from './components/TabBar'
+import { TopBar } from './components/TopBar'
 import { SaveStatus } from './components/SaveStatus'
 import { Assistant } from './components/Assistant'
 import { WhatsNew } from './components/WhatsNew'
@@ -20,14 +22,24 @@ import Analytics from './pages/Analytics'
 import Nutrition from './pages/Nutrition'
 import Profile from './pages/Profile'
 
+// Welche Route zu welcher Welt gehört (geteilte Seiten lassen die Welt, wie sie ist).
+const FOOD_ROUTES = ['/nutrition', '/recipes', '/shopping']
+const FITNESS_ROUTES = ['/', '/plans', '/exercises']
+
 export default function App() {
   const { session, loading, recovery } = useAuth()
-  const { isNew } = usePrefs()
+  const { isNew, world, setWorld } = usePrefs()
+  const { pathname } = useLocation()
+
+  // Top-Umschalter mit der aktuellen Seite synchron halten.
+  useEffect(() => {
+    if (!isNew) return
+    if (FOOD_ROUTES.includes(pathname) && world !== 'food') setWorld('food')
+    else if (FITNESS_ROUTES.includes(pathname) && world !== 'fitness') setWorld('fitness')
+  }, [pathname, isNew, world, setWorld])
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center text-cocoa-light">Lädt…</div>
-    )
+    return <div className="flex h-full items-center justify-center text-cocoa-light">Lädt…</div>
   }
 
   if (recovery) {
@@ -41,6 +53,7 @@ export default function App() {
   return (
     <div className="mx-auto flex h-full max-w-md flex-col">
       <SaveStatus />
+      {isNew && <TopBar />}
       <main className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />
