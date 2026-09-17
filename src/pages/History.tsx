@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { usePrefs } from '../lib/prefs'
 import { useExercises } from '../hooks/useExercises'
 import { useAddSet, useAllSets, useDeleteWorkout, useWorkouts } from '../hooks/useWorkouts'
 import { EditableSetRow } from '../components/EditableSetRow'
@@ -6,6 +8,8 @@ import { totalVolume } from '../lib/analytics'
 import type { Exercise, SetWithDate } from '../types'
 
 export default function History() {
+  const navigate = useNavigate()
+  const { isNew } = usePrefs()
   const { data: workouts, isLoading } = useWorkouts()
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
@@ -51,7 +55,14 @@ export default function History() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Verlauf</h1>
+      <header className="flex items-center gap-2">
+        {isNew && (
+          <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
+            ←
+          </button>
+        )}
+        <h1 className="text-xl font-bold">Verlauf</h1>
+      </header>
       {isLoading && <p className="text-cocoa-light">Lädt…</p>}
 
       <ul className="space-y-2">

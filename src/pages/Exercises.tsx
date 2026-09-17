@@ -225,20 +225,24 @@ export default function Exercises() {
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Übungen</h1>
         <div className="flex gap-2">
-          <button
-            className="btn-ghost text-sm"
-            onClick={() => navigate('/plans')}
-            aria-label="Trainingspläne"
-          >
-            🗂️ Pläne
-          </button>
-          <button
-            className="btn-ghost text-base"
-            onClick={() => navigate('/profile')}
-            aria-label="Profil & Einstellungen"
-          >
-            ⚙️
-          </button>
+          {!isNew && (
+            <button
+              className="btn-ghost text-sm"
+              onClick={() => navigate('/plans')}
+              aria-label="Trainingspläne"
+            >
+              🗂️ Pläne
+            </button>
+          )}
+          {!isNew && (
+            <button
+              className="btn-ghost text-base"
+              onClick={() => navigate('/profile')}
+              aria-label="Profil & Einstellungen"
+            >
+              ⚙️
+            </button>
+          )}
           {aiOn && (
             <button className="btn-ghost text-sm" onClick={() => setEquipOpen(true)} aria-label="Geräte importieren">
               🏋️ Geräte

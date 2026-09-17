@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
+import { usePrefs } from '../lib/prefs'
 import { useAiStatus } from '../hooks/useAi'
 import { generatePlan, type PlanSuggestion } from '../lib/ai'
 import {
@@ -16,6 +17,7 @@ import type { PlanWithExercises } from '../types'
 
 export default function Plans() {
   const navigate = useNavigate()
+  const { isNew } = usePrefs()
   const { data: plans, isLoading } = usePlans()
   const { data: exercises } = useExercises()
   const { data: ai } = useAiStatus()
@@ -73,8 +75,8 @@ export default function Plans() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <header className="flex items-center gap-2">
+        {!isNew && (
           <button
             className="btn-ghost text-base"
             onClick={() => navigate('/exercises')}
@@ -82,8 +84,8 @@ export default function Plans() {
           >
             ←
           </button>
-          <h1 className="text-xl font-bold">Trainingspläne</h1>
-        </div>
+        )}
+        <h1 className="text-xl font-bold">Trainingspläne</h1>
       </header>
 
       <p className="text-sm text-cocoa-light">
