@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './lib/auth'
+import { usePrefs } from './lib/prefs'
 import { TabBar } from './components/TabBar'
 import { SaveStatus } from './components/SaveStatus'
 import { Assistant } from './components/Assistant'
@@ -21,6 +22,7 @@ import Profile from './pages/Profile'
 
 export default function App() {
   const { session, loading, recovery } = useAuth()
+  const { isNew } = usePrefs()
 
   if (loading) {
     return (
@@ -56,8 +58,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <Assistant />
-      <WhatsNew />
+      {isNew && <Assistant />}
+      {isNew && <WhatsNew />}
       <TabBar />
     </div>
   )

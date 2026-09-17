@@ -58,6 +58,7 @@ import {
   type Recipe,
 } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
+import { usePrefs } from '../lib/prefs'
 import { useBodyWeights } from '../hooks/useBodyWeight'
 import type { ActivityLevel, FoodEntry, NutritionGoal, Sex } from '../types'
 
@@ -194,6 +195,8 @@ export default function Nutrition() {
 
   // KI-Erfassung (Foto/Text)
   const { data: ai } = useAiStatus()
+  const { isNew } = usePrefs()
+  const aiOn = isNew && ai?.enabled
   const [aiResults, setAiResults] = useState<FoodEstimate[] | null>(null)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiText, setAiText] = useState('')
@@ -550,14 +553,16 @@ export default function Nutrition() {
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Ernährung</h1>
         <div className="flex gap-2">
-          {ai?.enabled && (
+          {aiOn && (
             <button className="btn-ghost text-sm" onClick={() => navigate('/shopping')} aria-label="Einkaufsassistent">
               🛒
             </button>
           )}
-          <button className="btn-ghost text-sm" onClick={() => navigate('/recipes')} aria-label="Rezepte">
-            📖
-          </button>
+          {isNew && (
+            <button className="btn-ghost text-sm" onClick={() => navigate('/recipes')} aria-label="Rezepte">
+              📖
+            </button>
+          )}
           <button className="btn-ghost text-sm" onClick={openSetup}>
             {hasTarget ? 'Ziel' : 'Ziel einstellen'}
           </button>
@@ -686,10 +691,10 @@ export default function Nutrition() {
         )}
       </div>
 
-      <WaterCard />
-      <BodyWeightCard />
+      {isNew && <WaterCard />}
+      {isNew && <BodyWeightCard />}
 
-      {ai?.enabled && (allEntries?.length ?? 0) > 0 && (
+      {aiOn && (allEntries?.length ?? 0) > 0 && (
         <div className="card space-y-2">
           <h2 className="font-semibold">🤖 Ernährungs-Fazit</h2>
           {nutriReview && (
@@ -814,7 +819,7 @@ export default function Nutrition() {
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
           <div className="card w-full max-w-md space-y-2">
             <h2 className="text-lg font-bold">Hinzufügen</h2>
-            {ai?.enabled && (
+            {aiOn && (
               <>
                 <button className="btn-primary w-full" onClick={() => setAddMode('photo')}>
                   📸 Foto (KI)
@@ -834,7 +839,7 @@ export default function Nutrition() {
               </>
             )}
             <button
-              className={ai?.enabled ? 'btn-ghost w-full' : 'btn-primary w-full'}
+              className={aiOn ? 'btn-ghost w-full' : 'btn-primary w-full'}
               onClick={() => {
                 setError(null)
                 setScanning(true)

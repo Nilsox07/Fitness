@@ -141,7 +141,7 @@ export default function Analytics() {
   const prs = useMemo(() => personalRecords(exerciseSets), [exerciseSets])
 
   // Ernährung (nur wenn aktiviert)
-  const { showNutrition } = usePrefs()
+  const { showNutrition, isNew } = usePrefs()
   const { data: foodEntries } = useAllFoodEntries()
   const dailyKcal = useMemo(() => {
     const map = new Map<string, { kcal: number; protein: number }>()
@@ -179,13 +179,13 @@ export default function Analytics() {
 
       {hasData && (
         <>
-          <GamePanel sets={allSets ?? []} exercises={exercises ?? []} />
+          {isNew && <GamePanel sets={allSets ?? []} exercises={exercises ?? []} />}
 
-          <StreakCard sets={allSets ?? []} />
+          {isNew && <StreakCard sets={allSets ?? []} />}
 
-          <SeasonCard sets={allSets ?? []} />
+          {isNew && <SeasonCard sets={allSets ?? []} />}
 
-          <AiPanel sets={allSets ?? []} exercises={exercises ?? []} />
+          {isNew && <AiPanel sets={allSets ?? []} exercises={exercises ?? []} />}
 
           <Heatmap dates={(allSets ?? []).map((s) => s.date)} />
 

@@ -55,7 +55,7 @@ export default function Profile() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { mode, setMode } = useTheme()
-  const { showNutrition, setShowNutrition } = usePrefs()
+  const { showNutrition, setShowNutrition, appMode, setAppMode, isNew } = usePrefs()
   const { data: ai } = useAiStatus()
   const { data: allSets } = useAllSets()
   const { data: exercises } = useExercises()
@@ -139,6 +139,43 @@ export default function Profile() {
       </div>
 
       <div className="card space-y-2">
+        <div className="label">App-Version</div>
+        <p className="text-xs text-cocoa-light">
+          Wechsle jederzeit zwischen der schlanken, gewohnten Basis und der neuen Version mit
+          allen Features. Deine Daten bleiben in beiden gleich.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setAppMode('classic')}
+            className={`btn ${
+              appMode === 'classic'
+                ? 'bg-ruby text-white'
+                : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+            }`}
+          >
+            Klassisch
+          </button>
+          <button
+            type="button"
+            onClick={() => setAppMode('new')}
+            className={`btn ${
+              appMode === 'new'
+                ? 'bg-ruby text-white'
+                : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+            }`}
+          >
+            Neu (alle Features)
+          </button>
+        </div>
+        <p className="text-xs text-cocoa-light">
+          {isNew
+            ? 'Neu: KI-Assistent, Gamification, Social, KI-Ernährung, automatische Aufwärmsätze …'
+            : 'Klassisch: nur Training, Essen, Verlauf, Auswertung & Übungen – ohne Extras.'}
+        </p>
+      </div>
+
+      <div className="card space-y-2">
         <div className="label">Darstellung</div>
         <div className="grid grid-cols-3 gap-2">
           {MODES.map((m) => (
@@ -168,36 +205,41 @@ export default function Profile() {
         <Toggle checked={showNutrition} onChange={setShowNutrition} />
       </div>
 
-      <div className="card flex items-center justify-between gap-3">
-        <div>
-          <div className="font-medium">Sound-Effekte</div>
-          <div className="text-xs text-cocoa-light">Töne bei Level-up und Quests.</div>
-        </div>
-        <Toggle
-          checked={sound}
-          onChange={(v) => {
-            setSound(v)
-            setSoundEnabled(v)
-          }}
-        />
-      </div>
-
-      <div className="card flex items-center justify-between gap-3">
-        <div>
-          <div className="font-medium">Cheat-Meal-Alarm</div>
-          <div className="text-xs text-cocoa-light">
-            Freunde sehen, wenn du dir was richtig Ungesundes gönnst (die KI entscheidet).
+      {isNew && (
+        <div className="card flex items-center justify-between gap-3">
+          <div>
+            <div className="font-medium">Sound-Effekte</div>
+            <div className="text-xs text-cocoa-light">Töne bei Level-up und Quests.</div>
           </div>
+          <Toggle
+            checked={sound}
+            onChange={(v) => {
+              setSound(v)
+              setSoundEnabled(v)
+            }}
+          />
         </div>
-        <Toggle
-          checked={cheat}
-          onChange={(v) => {
-            setCheat(v)
-            setShareCheatEnabled(v)
-          }}
-        />
-      </div>
+      )}
 
+      {isNew && (
+        <div className="card flex items-center justify-between gap-3">
+          <div>
+            <div className="font-medium">Cheat-Meal-Alarm</div>
+            <div className="text-xs text-cocoa-light">
+              Freunde sehen, wenn du dir was richtig Ungesundes gönnst (die KI entscheidet).
+            </div>
+          </div>
+          <Toggle
+            checked={cheat}
+            onChange={(v) => {
+              setCheat(v)
+              setShareCheatEnabled(v)
+            }}
+          />
+        </div>
+      )}
+
+      {isNew && (
       <div className="card space-y-3">
         <div className="label">Freischaltbares (Level {level})</div>
         <div>
@@ -244,8 +286,9 @@ export default function Profile() {
           </div>
         </div>
       </div>
+      )}
 
-      {ai?.enabled && (
+      {isNew && ai?.enabled && (
         <div className="card space-y-2">
           <div className="label">KI-Coach-Ton</div>
           <div className="grid grid-cols-3 gap-2">
@@ -268,12 +311,14 @@ export default function Profile() {
         </div>
       )}
 
-      <button
-        className="btn w-full bg-sand-light text-cocoa ring-1 ring-sand-dark"
-        onClick={() => navigate('/social')}
-      >
-        👥 Freunde & Leaderboard
-      </button>
+      {isNew && (
+        <button
+          className="btn w-full bg-sand-light text-cocoa ring-1 ring-sand-dark"
+          onClick={() => navigate('/social')}
+        >
+          👥 Freunde & Leaderboard
+        </button>
+      )}
 
       {pushSupported && (
         <div className="card space-y-2">
@@ -312,7 +357,7 @@ export default function Profile() {
         </div>
       </div>
 
-      {fitbit?.configured && (
+      {isNew && fitbit?.configured && (
         <div className="card space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div>

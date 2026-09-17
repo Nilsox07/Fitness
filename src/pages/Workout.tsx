@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
 import { usePlans } from '../hooks/usePlans'
+import { usePrefs } from '../lib/prefs'
 import {
   useAddSet,
   useAddSets,
@@ -209,6 +210,7 @@ export default function Workout() {
     if (restRef.current?.autoEnabled()) restRef.current.start()
   }
   const { data: ai } = useAiStatus()
+  const { isNew } = usePrefs()
   const postActivity = usePostActivity()
   const { data: myProfile } = useMyProfile()
   const authorName = myProfile?.display_name ?? undefined
@@ -385,7 +387,7 @@ export default function Workout() {
 
   // KI entscheidet im Hintergrund über den Aufwärmsatz und passt ihn still an.
   useEffect(() => {
-    if (!ai?.enabled || !selectedExercise || setsForExercise.length === 0) return
+    if (!isNew || !ai?.enabled || !selectedExercise || setsForExercise.length === 0) return
     const key = `${today}:${selectedExercise.id}`
     if (warmupChecked.current.has(key)) return
     warmupChecked.current.add(key)
@@ -409,7 +411,7 @@ export default function Workout() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ai?.enabled, selectedExercise?.id, setsForExercise.length, today])
+  }, [isNew, ai?.enabled, selectedExercise?.id, setsForExercise.length, today])
 
   // Übung auswählen → bei leerem Stand automatisch die Standard-Sätze anlegen
   function selectExercise(id: string) {
@@ -510,9 +512,9 @@ export default function Workout() {
 
   return (
     <div className="space-y-4">
-      <Confetti show={confetti} onDone={() => setConfetti(false)} />
+      {isNew && <Confetti show={confetti} onDone={() => setConfetti(false)} />}
       <RestTimer ref={restRef} />
-      {prName && confetti && (
+      {isNew && prName && confetti && (
         <div className="rounded-xl bg-gradient-to-r from-amber-500 to-ruby p-3 text-center font-bold text-white shadow-lg">
           🎉 Neuer Rekord bei {prName}!
         </div>
@@ -528,10 +530,12 @@ export default function Workout() {
         </p>
       </header>
 
-      <div className="rounded-xl bg-brand/10 p-2.5 text-sm text-cocoa ring-1 ring-brand/25">
-        <span className="font-semibold">Challenge des Tages: </span>
-        {challengeOfDay()}
-      </div>
+      {isNew && (
+        <div className="rounded-xl bg-brand/10 p-2.5 text-sm text-cocoa ring-1 ring-brand/25">
+          <span className="font-semibold">Challenge des Tages: </span>
+          {challengeOfDay()}
+        </div>
+      )}
 
       {saveError && (
         <div className="card border border-red-400 text-sm text-red-500 dark:text-red-400">
