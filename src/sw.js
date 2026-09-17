@@ -1,9 +1,15 @@
 /* Custom Service Worker (vite-plugin-pwa injectManifest).
    Behält Precaching/Auto-Update und ergänzt Push-Benachrichtigungen. */
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
+import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching'
+import { registerRoute, NavigationRoute } from 'workbox-routing'
 
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
+
+// Seitenaufrufe IMMER aus der vorgeladenen index.html der GLEICHEN Version
+// bedienen. So passen HTML, CSS und JS garantiert zusammen — kein halb
+// aktualisierter Zustand mehr (unstyled/„nur HTML"). /api bleibt außen vor.
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/api\//] }))
 
 self.skipWaiting()
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))

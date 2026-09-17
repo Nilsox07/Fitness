@@ -15,6 +15,18 @@ import './index.css'
 // Freigeschaltete Akzentfarbe anwenden, bevor die App rendert.
 applyAccent(getAccentId())
 
+// Wenn ein neuer Service Worker die Kontrolle übernimmt (nach einem Update),
+// die Seite EINMAL neu laden. So landet man nie in einem halb aktualisierten
+// Zustand (neues HTML, aber altes/fehlendes CSS → „nur HTML").
+if ('serviceWorker' in navigator) {
+  let reloaded = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return
+    reloaded = true
+    window.location.reload()
+  })
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
