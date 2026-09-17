@@ -32,24 +32,13 @@ import {
   useDeleteFoodEntry,
   useFoodEntries,
   useNutritionSettings,
-  useUpsertNutritionSettings,
-  type NutritionSettingsInput,
 } from '../hooks/useNutrition'
-import {
-  ACTIVITY_LABEL,
-  GOAL_LABEL,
-  computeTargets,
-  scalePer100,
-  sumEntries,
-} from '../lib/nutrition'
+import { scalePer100, sumEntries } from '../lib/nutrition'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
 import {
   estimateFoodFromImage,
   estimateFoodFromText,
-  getDietAvoid,
-  setDietAvoid,
   mealPlanForDay,
-  nutritionReview,
   recipeFromFridge,
   recipeFromText,
   suggestOrder,
@@ -59,8 +48,8 @@ import {
 } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
 import { usePrefs } from '../lib/prefs'
-import { useBodyWeights } from '../hooks/useBodyWeight'
-import type { ActivityLevel, FoodEntry, NutritionGoal, Sex } from '../types'
+import { GoalEditor } from '../components/GoalEditor'
+import type { FoodEntry } from '../types'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
 function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
@@ -93,19 +82,6 @@ function todayLocal(): string {
   ).padStart(2, '0')}`
 }
 
-const emptySettings: NutritionSettingsInput = {
-  sex: 'm',
-  age: 30,
-  height_cm: 175,
-  weight_kg: 75,
-  activity: 'moderate',
-  goal: 'maintain',
-  kcal_target: 0,
-  protein_target: 0,
-  carbs_target: 0,
-  fat_target: 0,
-}
-
 function Bar({ value, target }: { value: number; target: number }) {
   const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0
   return (
@@ -125,7 +101,6 @@ export default function Nutrition() {
   const { data: allEntries } = useAllFoodEntries()
   const { data: allSets } = useAllSets()
   const trainedToday = (allSets ?? []).some((s) => s.date === today)
-  const upsertSettings = useUpsertNutritionSettings()
 
   // „Zuletzt gegessen": eindeutige letzte Lebensmittel für 1-Tap-Wiederholung
   const recent = useMemo(() => {
@@ -159,8 +134,6 @@ export default function Nutrition() {
 
   // Modal-Status
   const [setupOpen, setSetupOpen] = useState(false)
-  const [form, setForm] = useState<NutritionSettingsInput>(emptySettings)
-  const [avoid, setAvoid] = useState('')
   const [addMode, setAddMode] = useState<
     null | 'menu' | 'manual' | 'search' | 'aitext' | 'recipe' | 'plan' | 'photo' | 'restaurant'
   >(null)
@@ -201,50 +174,6 @@ export default function Nutrition() {
   const [aiBusy, setAiBusy] = useState(false)
   const [aiText, setAiText] = useState('')
   const [photoHint, setPhotoHint] = useState('')
-  const { data: weights } = useBodyWeights()
-  const [nutriReview, setNutriReview] = useState<string | null>(null)
-  const [nutriBusy, setNutriBusy] = useState(false)
-
-  async function makeNutriReview() {
-    setNutriBusy(true)
-    try {
-      const byDay = new Map<string, { kcal: number; protein: number; carbs: number; fat: number }>()
-      for (const e of allEntries ?? []) {
-        const d = byDay.get(e.date) ?? { kcal: 0, protein: 0, carbs: 0, fat: 0 }
-        d.kcal += e.kcal
-        d.protein += e.protein
-        d.carbs += e.carbs
-        d.fat += e.fat
-        byDay.set(e.date, d)
-      }
-      const days = [...byDay.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-7)
-      const avg = (sel: (v: { kcal: number; protein: number; carbs: number; fat: number }) => number) =>
-        days.length ? Math.round(days.reduce((s, [, v]) => s + sel(v), 0) / days.length) : 0
-      const w = weights ?? []
-      setNutriReview(
-        await nutritionReview({
-          tageErfasst: days.length,
-          durchschnitt: {
-            kcal: avg((v) => v.kcal),
-            eiweiss: avg((v) => v.protein),
-            kohlenhydrate: avg((v) => v.carbs),
-            fett: avg((v) => v.fat),
-          },
-          ziel: settings
-            ? { kcal: settings.kcal_target, eiweiss: settings.protein_target }
-            : null,
-          gewicht: w.length
-            ? { start: Number(w[0].weight_kg), aktuell: Number(w[w.length - 1].weight_kg) }
-            : null,
-        }),
-      )
-    } catch (e) {
-      setNutriReview(e instanceof Error ? e.message : 'KI-Fehler')
-    } finally {
-      setNutriBusy(false)
-    }
-  }
-
   async function handlePhoto(file: File | undefined) {
     if (!file) return
     setAiBusy(true)
@@ -455,22 +384,7 @@ export default function Nutrition() {
   }
 
   function openSetup() {
-    setForm(settings ? { ...settings } : emptySettings)
-    setAvoid(getDietAvoid())
     setSetupOpen(true)
-  }
-
-  async function saveSetup() {
-    const t = computeTargets(form)
-    setDietAvoid(avoid)
-    await upsertSettings.mutateAsync({
-      ...form,
-      kcal_target: t.kcal,
-      protein_target: t.protein,
-      carbs_target: t.carbs,
-      fat_target: t.fat,
-    })
-    setSetupOpen(false)
   }
 
   async function handleBarcode(code: string) {
@@ -694,122 +608,12 @@ export default function Nutrition() {
       {isNew && <WaterCard />}
       {isNew && <BodyWeightCard />}
 
-      {aiOn && (allEntries?.length ?? 0) > 0 && (
-        <div className="card space-y-2">
-          <h2 className="font-semibold">🤖 Ernährungs-Fazit</h2>
-          {nutriReview && (
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{nutriReview}</p>
-          )}
-          <button className="btn-primary w-full" onClick={makeNutriReview} disabled={nutriBusy}>
-            {nutriBusy ? 'Analysiere…' : nutriReview ? 'Neu erstellen' : 'Wochenfazit erstellen'}
-          </button>
-        </div>
-      )}
-
       {/* ----- Ziel-Setup ----- */}
       {setupOpen && (
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
           <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-            <h2 className="text-lg font-bold">Kalorienziel</h2>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="label">Geschlecht</label>
-                <select
-                  className="input"
-                  value={form.sex}
-                  onChange={(e) => setForm({ ...form, sex: e.target.value as Sex })}
-                >
-                  <option value="m">männlich</option>
-                  <option value="f">weiblich</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Alter</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  className="input"
-                  value={form.age}
-                  onFocus={(e) => e.currentTarget.select()}
-                  onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <label className="label">Größe (cm)</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  className="input"
-                  value={form.height_cm}
-                  onFocus={(e) => e.currentTarget.select()}
-                  onChange={(e) => setForm({ ...form, height_cm: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <label className="label">Gewicht (kg)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  className="input"
-                  value={form.weight_kg}
-                  onFocus={(e) => e.currentTarget.select()}
-                  onChange={(e) => setForm({ ...form, weight_kg: Number(e.target.value) })}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="label">Aktivität</label>
-              <select
-                className="input"
-                value={form.activity}
-                onChange={(e) => setForm({ ...form, activity: e.target.value as ActivityLevel })}
-              >
-                {Object.entries(ACTIVITY_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Ziel</label>
-              <select
-                className="input"
-                value={form.goal}
-                onChange={(e) => setForm({ ...form, goal: e.target.value as NutritionGoal })}
-              >
-                {Object.entries(GOAL_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Das esse ich nicht / Allergien</label>
-              <textarea
-                className="input"
-                rows={2}
-                placeholder="z. B. keine Pilze, Laktose, Erdnüsse, kein Schweinefleisch…"
-                value={avoid}
-                onChange={(e) => setAvoid(e.target.value)}
-              />
-              <p className="mt-1 text-xs text-cocoa-light">
-                Die KI meidet diese Zutaten bei Rezepten, Essensplan, Einkaufsliste &amp;
-                Restaurant-Vorschlägen.
-              </p>
-            </div>
-            <p className="text-xs text-cocoa-light">
-              Ergibt ~{computeTargets(form).kcal} kcal/Tag · Eiweiß {computeTargets(form).protein} g
-            </p>
-            <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => setSetupOpen(false)}>
-                Abbrechen
-              </button>
-              <button className="btn-primary flex-1" onClick={saveSetup}>
-                Speichern
-              </button>
-            </div>
+            <h2 className="text-lg font-bold">Ziel & Körperdaten</h2>
+            <GoalEditor onSaved={() => setSetupOpen(false)} onCancel={() => setSetupOpen(false)} />
           </div>
         </div>
       )}

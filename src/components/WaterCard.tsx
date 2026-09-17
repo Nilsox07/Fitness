@@ -1,6 +1,7 @@
 import { useWater, useSetWater } from '../hooks/useWater'
+import { useNutritionSettings } from '../hooks/useNutrition'
 
-const GOAL_ML = 2500
+const DEFAULT_GOAL_ML = 2500
 const STEP = 250
 
 function todayLocal(): string {
@@ -13,9 +14,11 @@ function todayLocal(): string {
 export function WaterCard() {
   const today = todayLocal()
   const { data: water } = useWater(today)
+  const { data: settings } = useNutritionSettings()
   const setWater = useSetWater()
+  const goalMl = settings?.water_target_ml || DEFAULT_GOAL_ML
   const ml = water?.ml ?? 0
-  const pct = Math.min(100, Math.round((ml / GOAL_ML) * 100))
+  const pct = Math.min(100, Math.round((ml / goalMl) * 100))
   const glasses = Math.round(ml / STEP)
 
   const change = (delta: number) => setWater.mutate({ date: today, ml: Math.max(0, ml + delta) })
@@ -25,7 +28,7 @@ export function WaterCard() {
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">💧 Wasser</h2>
         <span className="text-sm text-cocoa-light">
-          {(ml / 1000).toFixed(2).replace('.', ',')} / {GOAL_ML / 1000} l
+          {(ml / 1000).toFixed(2).replace('.', ',')} / {(goalMl / 1000).toString().replace('.', ',')} l
         </span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-sand-dark/40">

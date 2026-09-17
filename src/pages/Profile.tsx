@@ -24,6 +24,8 @@ import {
   setAccentId,
   setSkinId,
 } from '../lib/cosmetics'
+import { GoalEditor } from '../components/GoalEditor'
+import { getStoredReview } from '../lib/weeklyReview'
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -184,14 +186,6 @@ export default function Profile() {
           >
             🏋️ Übungen
           </button>
-          {showNutrition && (
-            <button
-              className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
-              onClick={() => navigate('/nutrition')}
-            >
-              🎯 Ernährungsziele
-            </button>
-          )}
           {isNew && (
             <button
               className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
@@ -210,6 +204,35 @@ export default function Profile() {
           )}
         </div>
       </div>
+
+      {isNew && (
+        <div className="card space-y-2">
+          <div className="label">Wochenfazit</div>
+          {(() => {
+            const r = getStoredReview()
+            return r ? (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{r.text}</p>
+            ) : (
+              <p className="text-xs text-cocoa-light">
+                Dein persönliches Gesamt-Fazit (Training + Ernährung) erscheint hier automatisch —
+                jeden Montag früh, sobald du die App öffnest.
+              </p>
+            )
+          })()}
+        </div>
+      )}
+
+      {showNutrition && (
+        <div className="card space-y-3">
+          <div>
+            <div className="label">Ziel & Körperdaten</div>
+            <p className="text-xs text-cocoa-light">
+              Passe deine Angaben und dein Ziel an — die Nährwerte werden automatisch berechnet.
+            </p>
+          </div>
+          <GoalEditor />
+        </div>
+      )}
 
       <div className="card space-y-2">
         <div className="label">Darstellung</div>

@@ -7,6 +7,7 @@ import { TopBar } from './components/TopBar'
 import { SaveStatus } from './components/SaveStatus'
 import { Assistant } from './components/Assistant'
 import { WhatsNew } from './components/WhatsNew'
+import { WeeklyReview } from './components/WeeklyReview'
 import Login from './pages/Login'
 import ResetPassword from './pages/ResetPassword'
 import Workout from './pages/Workout'
@@ -73,6 +74,7 @@ export default function App() {
       </main>
       {isNew && <Assistant />}
       {isNew && <WhatsNew />}
+      {isNew && <WeeklyReview />}
       <TabBar />
     </div>
   )

@@ -1,72 +1,29 @@
 import { useMemo, useState } from 'react'
 import { useAiStatus } from '../hooks/useAi'
-import { coachChat, weeklyTrainingReview, wrappedRecap, type ChatMsg } from '../lib/ai'
+import { coachChat, type ChatMsg } from '../lib/ai'
 import { MicButton } from './MicButton'
 import { trainingSummary } from '../lib/analytics'
 import type { Exercise, SetWithDate } from '../types'
 
-/** KI-Coach: Klartext-Wochenreview + Chat mit Datenkontext. */
+/** KI-Coach: Chat mit Datenkontext (das Wochenfazit kommt automatisch, siehe WeeklyReview). */
 export function AiPanel({ sets, exercises }: { sets: SetWithDate[]; exercises: Exercise[] }) {
   const { data: ai } = useAiStatus()
   const summary = useMemo(() => trainingSummary(sets, exercises), [sets, exercises])
-
-  const [review, setReview] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [err, setErr] = useState<string | null>(null)
   const [chatOpen, setChatOpen] = useState(false)
 
   if (!ai?.enabled) return null
 
-  async function makeReview() {
-    setLoading(true)
-    setErr(null)
-    try {
-      setReview(await weeklyTrainingReview(summary))
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'KI-Fehler')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function makeWrapped() {
-    setLoading(true)
-    setErr(null)
-    try {
-      setReview(await wrappedRecap(summary))
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'KI-Fehler')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
-    <section className="card space-y-3">
+    <section className="card space-y-2">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">🤖 KI-Coach</h2>
-        <button className="btn-ghost text-sm" onClick={() => setChatOpen(true)}>
+        <button className="btn-primary text-sm" onClick={() => setChatOpen(true)}>
           💬 Coach fragen
         </button>
       </div>
-
-      {review ? (
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{review}</p>
-      ) : (
-        <p className="text-sm text-cocoa-light">
-          Lass dir ein ehrliches Wochen-Fazit mit Empfehlungen aus deinen Daten schreiben.
-        </p>
-      )}
-      {err && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {err}</p>}
-
-      <div className="flex gap-2">
-        <button className="btn-primary flex-1" onClick={makeReview} disabled={loading}>
-          {loading ? 'Analysiere…' : review ? 'Neu erstellen' : 'Wochen-Review'}
-        </button>
-        <button className="btn-ghost shrink-0" onClick={makeWrapped} disabled={loading}>
-          🎬 Rückblick
-        </button>
-      </div>
+      <p className="text-sm text-cocoa-light">
+        Stell dem Coach Fragen zu deinem Training — z. B. „Warum stagniert mein Latzug?".
+      </p>
 
       {chatOpen && <CoachChatModal context={summary} onClose={() => setChatOpen(false)} />}
     </section>

@@ -113,7 +113,7 @@ export interface PlanWithExercises extends Plan {
 
 export type Sex = 'm' | 'f'
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
-export type NutritionGoal = 'lose' | 'maintain' | 'gain'
+export type NutritionGoal = 'lose' | 'maintain' | 'gain' | 'recomp'
 
 export interface NutritionSettings {
   user_id: string
@@ -127,6 +127,7 @@ export interface NutritionSettings {
   protein_target: number
   carbs_target: number
   fat_target: number
+  water_target_ml: number
   updated_at: string
 }
 

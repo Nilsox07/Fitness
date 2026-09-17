@@ -136,6 +136,33 @@ export async function nutritionReview(summary: unknown): Promise<string> {
   return complete({ system: coachSystem(), prompt, temperature: 0.5 })
 }
 
+/** Gesamt-Wochenfazit (Training + Ernährung zusammen) — läuft automatisch montags. */
+export interface WeeklyReviewInput {
+  weekLabel: string
+  goalLabel: string
+  training: { sessions: number; volumeKg: number; prs: number; topMuscles: string[] }
+  nutrition: {
+    daysLogged: number
+    avgKcal: number
+    avgProtein: number
+    target: { kcal: number; protein: number } | null
+  }
+  bodyweight: { start: number; current: number } | null
+}
+
+export async function combinedWeeklyReview(input: WeeklyReviewInput): Promise<string> {
+  const prompt =
+    `Wochendaten (JSON) für ${input.weekLabel}:\n${JSON.stringify(input)}\n\n` +
+    'Schreib EIN gemeinsames Wochenfazit über Training UND Ernährung (max. ~150 Wörter), ' +
+    'abgestimmt auf das Ziel des Nutzers (goalLabel — z. B. Abnehmen, Aufbauen, Body ' +
+    'Recomposition). Struktur mit kurzen Absätzen:\n' +
+    '1) 🏋️ Training: Sessions, Volumen, Auffälligkeiten.\n' +
+    '2) 🍎 Ernährung: Kalorien-/Eiweißtreue zum Ziel, Gewichtstrend.\n' +
+    '3) 🎯 Fokus nächste Woche: 2–3 konkrete, umsetzbare Empfehlungen.\n' +
+    'Ehrlich aber motivierend, per „du". Nutze ein paar Emojis.'
+  return complete({ system: coachSystem(), prompt, temperature: 0.5 })
+}
+
 export interface ChatMsg {
   role: 'user' | 'assistant'
   content: string

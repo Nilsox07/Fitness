@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeTargets, scalePer100, sumEntries } from './nutrition'
+import { computeTargets, defaultWaterTarget, scalePer100, sumEntries } from './nutrition'
 
 describe('computeTargets', () => {
   it('berechnet kcal & Makros (Mann, Halten)', () => {
@@ -32,6 +32,23 @@ describe('computeTargets', () => {
       sex: 'f', age: 60, height_cm: 150, weight_kg: 45, activity: 'sedentary', goal: 'lose',
     })
     expect(t.kcal).toBeGreaterThanOrEqual(1200)
+  })
+
+  it('Body Recomposition: leichtes Defizit (~200) + mehr Eiweiß (2,2 g/kg)', () => {
+    const base = {
+      sex: 'm' as const, age: 30, height_cm: 180, weight_kg: 80, activity: 'moderate' as const,
+    }
+    const maintain = computeTargets({ ...base, goal: 'maintain' })
+    const recomp = computeTargets({ ...base, goal: 'recomp' })
+    expect(maintain.kcal - recomp.kcal).toBe(200)
+    expect(recomp.protein).toBe(176) // 2.2 × 80
+  })
+})
+
+describe('defaultWaterTarget', () => {
+  it('~35 ml/kg auf 250 ml gerundet, Untergrenze 1500', () => {
+    expect(defaultWaterTarget(80)).toBe(2750) // 2800 → 2750
+    expect(defaultWaterTarget(30)).toBe(1500) // Untergrenze
   })
 })
 

@@ -20,6 +20,20 @@ export const GOAL_LABEL: Record<NutritionGoal, string> = {
   lose: 'Abnehmen',
   maintain: 'Halten',
   gain: 'Aufbauen',
+  recomp: 'Body Recomposition',
+}
+
+/** Kurzbeschreibung je Ziel — erklärt die Nährwert-Strategie. */
+export const GOAL_HINT: Record<NutritionGoal, string> = {
+  lose: 'Kaloriendefizit (~500 kcal), viel Eiweiß, um Muskeln zu halten.',
+  maintain: 'Kalorien auf Erhaltungsniveau, ausgewogene Makros.',
+  gain: 'Kalorienüberschuss (~300 kcal) für Muskelaufbau.',
+  recomp: 'Leichtes Defizit (~200 kcal) + sehr viel Eiweiß: Fett runter, Muskeln rauf.',
+}
+
+/** Empfohlenes Trinkziel in ml (~35 ml pro kg, auf 250 ml gerundet). */
+export function defaultWaterTarget(weight_kg: number): number {
+  return Math.max(1500, Math.round((35 * weight_kg) / 250) * 250)
 }
 
 export interface TargetInput {
@@ -46,11 +60,16 @@ export function computeTargets(input: TargetInput): MacroTargets {
   const { sex, age, height_cm, weight_kg, activity, goal } = input
   const bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age + (sex === 'm' ? 5 : -161)
   const tdee = bmr * ACTIVITY_FACTORS[activity]
-  const adjust = goal === 'lose' ? -500 : goal === 'gain' ? 300 : 0
+
+  // Kalorien-Anpassung je Ziel (recomp = leichtes Defizit).
+  const adjust = goal === 'lose' ? -500 : goal === 'gain' ? 300 : goal === 'recomp' ? -200 : 0
   const kcal = Math.max(1200, Math.round(tdee + adjust)) // Sicherheits-Untergrenze
 
-  const protein = Math.round(1.8 * weight_kg) // g
-  const fat = Math.round(0.8 * weight_kg) // g
+  // Eiweiß je nach Ziel: im Defizit/Recomp mehr, um Muskeln zu schützen.
+  const proteinPerKg = goal === 'lose' || goal === 'recomp' ? 2.2 : goal === 'gain' ? 2.0 : 1.8
+  const fatPerKg = goal === 'gain' ? 0.9 : 0.8
+  const protein = Math.round(proteinPerKg * weight_kg) // g
+  const fat = Math.round(fatPerKg * weight_kg) // g
   const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4)) // Rest
 
   return { kcal, protein, carbs, fat }
