@@ -499,13 +499,15 @@ export default function Workout() {
             Training starten
           </button>
           {saveError && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {saveError.message}</p>}
-          <button
-            className="w-full text-center text-xs text-cocoa-muted underline"
-            onClick={() => setExcuse(randomExcuse())}
-          >
-            Keine Lust? Ausrede generieren 😅
-          </button>
-          {excuse && <p className="text-sm italic text-cocoa-light">„{excuse}"</p>}
+          {isNew && (
+            <button
+              className="w-full text-center text-xs text-cocoa-muted underline"
+              onClick={() => setExcuse(randomExcuse())}
+            >
+              Keine Lust? Ausrede generieren 😅
+            </button>
+          )}
+          {isNew && excuse && <p className="text-sm italic text-cocoa-light">„{excuse}"</p>}
         </div>
       </div>
     )
@@ -520,15 +522,35 @@ export default function Workout() {
           🎉 Neuer Rekord bei {prName}!
         </div>
       )}
-      <header>
-        <h1 className="text-xl font-bold">Training heute</h1>
-        <p className="text-sm text-cocoa-light">
-          {new Date(today).toLocaleDateString('de-DE', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-          })}
-        </p>
+      <header className="space-y-3">
+        <div>
+          <h1 className="text-xl font-bold">Heute</h1>
+          <p className="text-sm text-cocoa-light">
+            {new Date(today).toLocaleDateString('de-DE', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+            })}
+          </p>
+        </div>
+        {workoutSets && workoutSets.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            <div className="card py-2 text-center">
+              <div className="text-lg font-bold text-cocoa">{workoutSets.length}</div>
+              <div className="text-[11px] text-cocoa-light">Sätze</div>
+            </div>
+            <div className="card py-2 text-center">
+              <div className="text-lg font-bold text-cocoa">
+                {new Set(workoutSets.map((s) => s.exercise_id)).size}
+              </div>
+              <div className="text-[11px] text-cocoa-light">Übungen</div>
+            </div>
+            <div className="card py-2 text-center">
+              <div className="text-lg font-bold text-cocoa">{Math.round(totalVolume(workoutSets))}</div>
+              <div className="text-[11px] text-cocoa-light">kg Volumen</div>
+            </div>
+          </div>
+        )}
       </header>
 
       {isNew && (
@@ -542,7 +564,8 @@ export default function Workout() {
         <div className="card border border-red-400 text-sm text-red-500 dark:text-red-400">
           ⚠️ Konnte nicht speichern: {saveError.message}
           <div className="mt-1 text-xs text-cocoa-light">
-            Tipp: Sind die Datenbank-Updates (Migrationen 0002 & 0003) in Supabase ausgeführt?
+            Deine Eingaben sind zwischengespeichert und werden automatisch erneut gesendet, sobald
+            wieder Verbindung besteht.
           </div>
         </div>
       )}
@@ -610,7 +633,7 @@ export default function Workout() {
           )}
           {activePlan && visibleExercises.length === 0 && (
             <p className="mt-1 text-sm text-cocoa-muted">
-              Dieser Plan hat noch keine Übungen. Füge sie unter „Übungen → 🗂️ Pläne" hinzu.
+              Dieser Plan hat noch keine Übungen. Füge sie im Tab „Pläne" hinzu.
             </p>
           )}
         </div>
@@ -788,10 +811,12 @@ export default function Workout() {
         </div>
       )}
 
-      {/* Kleine Erklärung */}
-      <div className="rounded-xl bg-sand/40 p-3 text-xs leading-relaxed text-cocoa-muted">
-        <p className="mb-1 font-semibold text-cocoa-light">So erfasst du am besten</p>
-        <ul className="list-disc space-y-1 pl-4">
+      {/* Kleine Erklärung (einklappbar) */}
+      <details className="rounded-xl bg-sand/40 p-3 text-xs leading-relaxed text-cocoa-muted">
+        <summary className="cursor-pointer font-semibold text-cocoa-light">
+          So erfasst du am besten
+        </summary>
+        <ul className="mt-2 list-disc space-y-1 pl-4">
           <li>
             Trag nur <span className="text-cocoa">saubere Wdh</span> ein (volle Bewegung, eigene
             Kraft) — die letzte halbe/erzwungene Wdh lässt du weg.
@@ -810,7 +835,7 @@ export default function Workout() {
             einer Muskelgruppe — ist der Muskel schon warm, wird er weggelassen.
           </li>
         </ul>
-      </div>
+      </details>
     </div>
   )
 }

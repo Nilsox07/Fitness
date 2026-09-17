@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Bar,
   BarChart,
@@ -74,6 +75,7 @@ function Ratio({
 }
 
 export default function Analytics() {
+  const navigate = useNavigate()
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
   const [exerciseId, setExerciseId] = useState('')
@@ -176,7 +178,14 @@ export default function Analytics() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-bold">{title}</h1>
+      <header className="flex items-center justify-between gap-2">
+        <h1 className="text-xl font-bold">{title}</h1>
+        {isNew && world === 'fitness' && (
+          <button className="btn-ghost text-sm" onClick={() => navigate('/history')}>
+            📅 Verlauf
+          </button>
+        )}
+      </header>
 
       {!showTraining && !showFood && (
         <p className="text-cocoa-light">
