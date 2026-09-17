@@ -13,6 +13,7 @@ import {
   useWorkouts,
 } from '../hooks/useWorkouts'
 import { EditableSetRow } from '../components/EditableSetRow'
+import { DailyOverview } from '../components/DailyOverview'
 import { Confetti } from '../components/Confetti'
 import { RestTimer, type RestTimerHandle } from '../components/RestTimer'
 import { parseLadder, snapToLadder } from '../lib/weights'
@@ -489,6 +490,7 @@ export default function Workout() {
     return (
       <div className="space-y-4">
         <h1 className="text-xl font-bold">Training</h1>
+        {isNew && <DailyOverview />}
         <div className="card space-y-3 text-center">
           <p className="text-cocoa">Heute noch kein Training erfasst.</p>
           <button
@@ -552,6 +554,8 @@ export default function Workout() {
           </div>
         )}
       </header>
+
+      {isNew && <DailyOverview />}
 
       {isNew && (
         <div className="rounded-xl bg-brand/10 p-2.5 text-sm text-cocoa ring-1 ring-brand/25">

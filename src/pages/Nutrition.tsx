@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useAddRecipe } from '../hooks/useRecipes'
 import { Stepper } from '../components/Stepper'
@@ -49,6 +48,7 @@ import {
 import { useAiStatus } from '../hooks/useAi'
 import { usePrefs } from '../lib/prefs'
 import { GoalEditor } from '../components/GoalEditor'
+import { DailyOverview } from '../components/DailyOverview'
 import type { FoodEntry } from '../types'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
@@ -92,7 +92,6 @@ function Bar({ value, target }: { value: number; target: number }) {
 }
 
 export default function Nutrition() {
-  const navigate = useNavigate()
   const { user } = useAuth()
   const addRecipe = useAddRecipe()
   const today = todayLocal()
@@ -465,23 +464,18 @@ export default function Nutrition() {
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Ernährung</h1>
-        <div className="flex gap-2">
-          {aiOn && (
-            <button className="btn-ghost text-sm" onClick={() => navigate('/shopping')} aria-label="Einkaufsassistent">
-              🛒
-            </button>
-          )}
-          {isNew && (
-            <button className="btn-ghost text-sm" onClick={() => navigate('/recipes')} aria-label="Rezepte">
-              📖
-            </button>
-          )}
-          <button className="btn-ghost text-sm" onClick={openSetup}>
-            {hasTarget ? 'Ziel' : 'Ziel einstellen'}
-          </button>
+        <div>
+          <h1 className="text-xl font-bold">{isNew ? 'Heute' : 'Ernährung'}</h1>
+          <p className="text-sm text-cocoa-light">
+            {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
         </div>
+        <button className="btn-ghost text-sm" onClick={openSetup}>
+          {hasTarget ? 'Ziel' : 'Ziel einstellen'}
+        </button>
       </header>
+
+      {isNew && <DailyOverview />}
 
       {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
 
