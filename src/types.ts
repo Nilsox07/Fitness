@@ -149,6 +149,48 @@ export const MEAL_LABEL: Record<Meal, string> = {
   snack: 'Snack',
 }
 
+/** Feste, wiederkehrende Mahlzeit (z. B. täglicher Proteinshake). */
+export interface MealRoutine {
+  id: string
+  user_id: string
+  meal: Meal
+  title: string
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+  created_at: string
+}
+
+/** Gespeicherter Ernährungsplan inkl. Einkaufsliste. */
+export interface SavedMealPlan {
+  id: string
+  user_id: string
+  name: string
+  days: number
+  plan: PlanDay[]
+  shopping: ShoppingCat[]
+  created_at: string
+}
+
+export interface PlanMeal {
+  meal: Meal
+  name: string
+  kcal: number
+  protein: number
+  carbs: number
+  fat: number
+  routine?: boolean
+}
+export interface PlanDay {
+  label: string
+  meals: PlanMeal[]
+}
+export interface ShoppingCat {
+  category: string
+  items: string[]
+}
+
 export interface FoodEntry {
   id: string
   user_id: string

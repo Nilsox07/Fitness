@@ -98,7 +98,7 @@ const FITNESS_TABS: Tab[] = [
 const FOOD_TABS: Tab[] = [
   { to: '/nutrition', label: 'Heute', Icon: IconFood, end: true },
   { to: '/recipes', label: 'Rezepte', Icon: IconBook },
-  { to: '/shopping', label: 'Einkauf', Icon: IconCart },
+  { to: '/shopping', label: 'Plan', Icon: IconCart },
   { to: '/analytics', label: 'Fortschritt', Icon: IconChart },
   { to: '/social', label: 'Community', Icon: IconPeople },
 ]

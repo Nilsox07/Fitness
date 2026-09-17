@@ -2,7 +2,7 @@
 // Serverless-Funktion /api/ai (dort liegt der Key). Die Prompts sind nicht
 // geheim und leben deshalb hier — pro Feature ein typisierter Helfer.
 
-import { MUSCLE_GROUPS, type MuscleGroup } from '../types'
+import { MUSCLE_GROUPS, type MuscleGroup, type Meal, type PlanDay, type ShoppingCat } from '../types'
 
 export interface AiStatus {
   enabled: boolean
@@ -552,6 +552,72 @@ export async function shoppingList(
       .map((c) => ({ category: String(c.category ?? 'Sonstiges'), items: (c.items ?? []).map(String) }))
       .filter((c) => c.items.length),
   }
+}
+
+// ---------------------------------------------------------------------------
+// Feature: Ganzer Ernährungsplan (mehrtägig) inkl. Einkaufsliste
+// ---------------------------------------------------------------------------
+
+const MEAL_KEYS: Meal[] = ['breakfast', 'lunch', 'dinner', 'snack']
+
+export interface WeeklyPlan {
+  note: string
+  days: PlanDay[]
+  shopping: ShoppingCat[]
+}
+
+/**
+ * Erstellt einen mehrtägigen Essensplan, der die Tagesziele trifft und die
+ * festen Routinen (z. B. täglicher Proteinshake) JEDEN Tag mit einplant.
+ * Liefert zusätzlich eine daraus abgeleitete Einkaufsliste.
+ */
+export async function generateWeeklyPlan(input: {
+  days: number
+  targets: { kcal: number; protein: number }
+  routines: { meal: Meal; title: string; kcal: number; protein: number }[]
+  wish: string
+}): Promise<WeeklyPlan> {
+  const system =
+    'Du bist Ernährungsberater und Meal-Prep-Profi. Erstelle einen realistischen, ' +
+    'abwechslungsreichen Essensplan über mehrere Tage, der die Tagesziele möglichst trifft. ' +
+    'Feste Routinen MUSST du an JEDEM Tag exakt so einplanen (Feld routine=true). ' +
+    'Antworte ausschließlich mit JSON.'
+  const routineText = input.routines.length
+    ? input.routines
+        .map((r) => `- ${r.meal}: ${r.title} (~${r.kcal} kcal, ${r.protein} g Eiweiß)`)
+        .join('\n')
+    : '(keine)'
+  const prompt =
+    `Tage: ${input.days}. Tagesziel: ~${input.targets.kcal} kcal, ~${input.targets.protein} g Eiweiß.\n` +
+    `Feste Routinen (jeden Tag einplanen):\n${routineText}\n` +
+    `Wunsch/Präferenzen: "${input.wish || 'ausgewogen, proteinreich, alltagstauglich'}".\n` +
+    'Format: {"note":"kurzer Hinweis","days":[{"label":"Tag 1","meals":[{"meal":"breakfast|lunch|dinner|snack",' +
+    '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"routine":true|false}]}],' +
+    '"shopping":[{"category":"z. B. Obst & Gemüse","items":["500 g Hähnchen","..."]}]}. ' +
+    `Genau ${input.days} Tage. Die Einkaufsliste deckt ALLE Tage ab, mit groben Mengen, nach Kategorie. Deutsch.` +
+    avoidClause()
+  const text = await complete({ system, prompt, json: true, temperature: 0.6 })
+  const raw = parseJson<{
+    note?: string
+    days?: { label?: string; meals?: Record<string, unknown>[] }[]
+    shopping?: Partial<ShoppingCat>[]
+  }>(text)
+  const days: PlanDay[] = (raw.days ?? []).map((d, i) => ({
+    label: String(d.label ?? `Tag ${i + 1}`),
+    meals: (d.meals ?? []).map((m) => ({
+      meal: (MEAL_KEYS.includes(String(m.meal) as Meal) ? m.meal : 'snack') as Meal,
+      name: String(m.name ?? 'Mahlzeit'),
+      kcal: Math.round(Number(m.kcal ?? 0)),
+      protein: Math.round(Number(m.protein ?? 0)),
+      carbs: Math.round(Number(m.carbs ?? 0)),
+      fat: Math.round(Number(m.fat ?? 0)),
+      routine: Boolean(m.routine),
+    })),
+  }))
+  const shopping: ShoppingCat[] = (raw.shopping ?? [])
+    .map((c) => ({ category: String(c.category ?? 'Sonstiges'), items: (c.items ?? []).map(String) }))
+    .filter((c) => c.items.length)
+  return { note: String(raw.note ?? ''), days, shopping }
 }
 
 // ---------------------------------------------------------------------------
