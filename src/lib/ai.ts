@@ -255,7 +255,8 @@ export async function mealPlanForDay(
     `Tagesziel: ~${targets.kcal} kcal, ~${targets.protein} g Eiweiß. Wunsch: "${wish || 'ausgewogen'}".\n` +
     'Format: {"note":"kurzer Hinweis","items":[{"meal":"breakfast|lunch|dinner|snack",' +
     '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,' +
-    '"sat_fat":<g>,"salt":<g>}]}. 4–6 Einträge, deutsch.'
+    '"sat_fat":<g>,"salt":<g>}]}. 4–6 Einträge, deutsch.' +
+    avoidClause()
   const text = await complete({ system, prompt, json: true, temperature: 0.5 })
   const raw = parseJson<{ note?: string; items?: Partial<MealPlanItem>[] }>(text)
   const meals = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -280,7 +281,8 @@ export async function recipeFromText(request: string): Promise<Recipe> {
   const prompt =
     `Anfrage: "${request}".\n` +
     '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,"sat_fat":<g>,"salt":<g>}}. ' +
-    'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."], ...}. Nährwerte pro Portion. Deutsch.'
+    'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."], ...}. Nährwerte pro Portion. Deutsch.' +
+    avoidClause()
   const text = await complete({ system, prompt, json: true, temperature: 0.6 })
   const r = parseJson<Partial<Recipe>>(text)
   return {
@@ -371,6 +373,30 @@ export async function generatePlan(
 // Feature: Nährwerte aus Foto oder Text schätzen
 // ---------------------------------------------------------------------------
 
+// Ernährungs-Einschränkungen (nicht gegessen / Allergien / Abneigungen).
+export function getDietAvoid(): string {
+  try {
+    return localStorage.getItem('diet_avoid') || ''
+  } catch {
+    return ''
+  }
+}
+export function setDietAvoid(v: string) {
+  try {
+    localStorage.setItem('diet_avoid', v)
+  } catch {
+    /* ignore */
+  }
+}
+/** Prompt-Zusatz, den alle KI-Essens-Generatoren beachten. */
+function avoidClause(): string {
+  const a = getDietAvoid().trim()
+  return a
+    ? ` WICHTIG: Der Nutzer isst folgendes NICHT bzw. hat Allergien/Abneigungen: "${a}". ` +
+        'Vermeide diese Zutaten vollständig und schlage nichts damit vor.'
+    : ''
+}
+
 export interface FoodEstimate {
   name: string
   amount_g: number | null
@@ -449,7 +475,8 @@ export async function suggestOrder(
     `Wunsch: "${wish || 'egal'}".\n` +
     `Gib die empfohlenen Artikel als items zurück. ${NUTRITION_FORMAT}\n` +
     'Zusätzlich ein Feld "note" mit einem kurzen Hinweis. ' +
-    'Format: {"note":"...","items":[{"name":"...","amount_g":null,"kcal":...,"protein":...,"carbs":...,"fat":...}]}'
+    'Format: {"note":"...","items":[{"name":"...","amount_g":null,"kcal":...,"protein":...,"carbs":...,"fat":...}]}' +
+    avoidClause()
   const text = await complete({ system, prompt, json: true, temperature: 0.4 })
   const raw = parseJson<{ note?: string; items?: Partial<FoodEstimate>[] }>(text)
   return {
@@ -488,7 +515,8 @@ export async function shoppingList(
     `Zeitraum: ${days} Tage. Tagesziel: ~${targets.kcal} kcal, ~${targets.protein} g Eiweiß. ` +
     `Wunsch/Präferenzen: "${wish || 'ausgewogen, proteinreich'}".\n` +
     'Format: {"note":"kurzer Hinweis","categories":[{"category":"z. B. Obst & Gemüse","items":["500 g Hähnchen", "..."]}]}. ' +
-    'Realistische Mengen für den Zeitraum, deutsch.'
+    'Realistische Mengen für den Zeitraum, deutsch.' +
+    avoidClause()
   const text = await complete({ system, prompt, json: true, temperature: 0.5 })
   const raw = parseJson<{ note?: string; categories?: Partial<ShoppingCategory>[] }>(text)
   return {
@@ -543,7 +571,8 @@ export async function recipeFromFridge(image: string, craving: string): Promise<
     'Gib ein Rezept passend zum Wunsch aus den sichtbaren Zutaten. ' +
     'Nährwerte pro Portion schätzen (inkl. Ballaststoffe, Zucker, gesättigte Fette, Salz). ' +
     'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."],' +
-    '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,"sat_fat":<g>,"salt":<g>}}. Auf Deutsch.'
+    '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,"sat_fat":<g>,"salt":<g>}}. Auf Deutsch.' +
+    avoidClause()
   const text = await complete({ system, prompt, image, json: true, temperature: 0.5 })
   const r = parseJson<Partial<Recipe>>(text)
   return {

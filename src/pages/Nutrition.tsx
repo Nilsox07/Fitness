@@ -46,6 +46,8 @@ import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/
 import {
   estimateFoodFromImage,
   estimateFoodFromText,
+  getDietAvoid,
+  setDietAvoid,
   mealPlanForDay,
   nutritionReview,
   recipeFromFridge,
@@ -157,6 +159,7 @@ export default function Nutrition() {
   // Modal-Status
   const [setupOpen, setSetupOpen] = useState(false)
   const [form, setForm] = useState<NutritionSettingsInput>(emptySettings)
+  const [avoid, setAvoid] = useState('')
   const [addMode, setAddMode] = useState<
     null | 'menu' | 'manual' | 'search' | 'aitext' | 'recipe' | 'plan' | 'photo' | 'restaurant'
   >(null)
@@ -450,11 +453,13 @@ export default function Nutrition() {
 
   function openSetup() {
     setForm(settings ? { ...settings } : emptySettings)
+    setAvoid(getDietAvoid())
     setSetupOpen(true)
   }
 
   async function saveSetup() {
     const t = computeTargets(form)
+    setDietAvoid(avoid)
     await upsertSettings.mutateAsync({
       ...form,
       kcal_target: t.kcal,
@@ -774,6 +779,20 @@ export default function Nutrition() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="label">Das esse ich nicht / Allergien</label>
+              <textarea
+                className="input"
+                rows={2}
+                placeholder="z. B. keine Pilze, Laktose, Erdnüsse, kein Schweinefleisch…"
+                value={avoid}
+                onChange={(e) => setAvoid(e.target.value)}
+              />
+              <p className="mt-1 text-xs text-cocoa-light">
+                Die KI meidet diese Zutaten bei Rezepten, Essensplan, Einkaufsliste &amp;
+                Restaurant-Vorschlägen.
+              </p>
             </div>
             <p className="text-xs text-cocoa-light">
               Ergibt ~{computeTargets(form).kcal} kcal/Tag · Eiweiß {computeTargets(form).protein} g
