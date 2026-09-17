@@ -134,7 +134,8 @@ export default function Recipes() {
           ))}
           {mine.length === 0 && !isLoading && (
             <li className="text-sm text-cocoa-light">
-              Noch keine. Erstell eins über „Essen → 🍳 Rezept aus Kühlschrank" und speichere es.
+              Noch keine. Erstelle Rezepte im Tab „Plan" (🍳 pro Mahlzeit) oder über „Heute →
+              Hinzufügen → Rezept" und speichere sie.
             </li>
           )}
         </ul>

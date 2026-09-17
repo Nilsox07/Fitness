@@ -629,7 +629,7 @@ export default function Nutrition() {
                   🍳 Rezept (Foto/Text, KI)
                 </button>
                 <button className="btn-ghost w-full" onClick={() => setAddMode('plan')}>
-                  📋 Essensplan für heute (KI)
+                  📋 Tagesplan für heute (KI)
                 </button>
                 <button className="btn-ghost w-full" onClick={() => setAddMode('restaurant')}>
                   🍔 Restaurant / unterwegs (KI)
@@ -1077,7 +1077,7 @@ export default function Nutrition() {
       {addMode === 'plan' && (
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
           <div className="card w-full max-w-md space-y-3">
-            <h2 className="text-lg font-bold">📋 Essensplan für heute</h2>
+            <h2 className="text-lg font-bold">📋 Tagesplan für heute</h2>
             <p className="text-xs text-cocoa-light">
               Ziel: ~{settings?.kcal_target ?? 2000} kcal · {settings?.protein_target ?? 130} g Eiweiß.
               Wünsche?
