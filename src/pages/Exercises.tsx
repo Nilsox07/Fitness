@@ -8,6 +8,7 @@ import {
   type ExerciseInput,
 } from '../hooks/useExercises'
 import { useAiStatus } from '../hooks/useAi'
+import { usePrefs } from '../lib/prefs'
 import { parseEquipmentList, parseNewExercise, suggestMuscles, type ExerciseDraft } from '../lib/ai'
 import { MicButton } from '../components/MicButton'
 
@@ -56,6 +57,8 @@ export default function Exercises() {
   const deleteEx = useDeleteExercise()
 
   const { data: ai } = useAiStatus()
+  const { isNew } = usePrefs()
+  const aiOn = isNew && ai?.enabled
   const [editing, setEditing] = useState<Exercise | null>(null)
   const [form, setForm] = useState<ExerciseInput>(empty)
   const [open, setOpen] = useState(false)
@@ -236,12 +239,12 @@ export default function Exercises() {
           >
             ⚙️
           </button>
-          {ai?.enabled && (
+          {aiOn && (
             <button className="btn-ghost text-sm" onClick={() => setEquipOpen(true)} aria-label="Geräte importieren">
               🏋️ Geräte
             </button>
           )}
-          {ai?.enabled && (
+          {aiOn && (
             <button className="btn-ghost text-sm" onClick={() => setAssistOpen(true)} aria-label="Übung per Sprache anlegen">
               🎤 KI
             </button>
@@ -404,7 +407,7 @@ export default function Exercises() {
             <div>
               <div className="flex items-center justify-between">
                 <label className="label">Muskelgruppe (primär)</label>
-                {ai?.enabled && (
+                {aiOn && (
                   <button
                     type="button"
                     onClick={aiSuggestMuscles}

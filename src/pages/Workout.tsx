@@ -276,7 +276,7 @@ export default function Workout() {
   }
 
   function finishWorkout() {
-    if (workoutSets && workoutSets.length) {
+    if (isNew && workoutSets && workoutSets.length) {
       const key = `feed_workout_${today}`
       let posted = false
       try {
@@ -323,6 +323,7 @@ export default function Workout() {
     }
   }
   useEffect(() => {
+    if (!isNew) return // Rekord-Konfetti & Feed-Post nur im neuen Design
     if (!workoutSets || !allSets || !exercises) return
     const best1RM = (s: { weight: number; reps: number; weight_right?: number | null; reps_right?: number | null }) =>
       Math.max(estimate1RM(s.weight, s.reps), estimate1RM(s.weight_right ?? 0, s.reps_right ?? 0))
@@ -350,7 +351,7 @@ export default function Workout() {
         })
       }
     }
-  }, [workoutSets, allSets, exercises, today])
+  }, [isNew, workoutSets, allSets, exercises, today])
 
   // Bekommt die gewählte Übung einen Aufwärmsatz? (nur wenn ihre Muskelgruppe heute noch kalt ist)
   const willWarmup = selectedExercise
@@ -622,7 +623,7 @@ export default function Workout() {
               </div>
             )}
 
-            {(alternatives.length > 0 || ai?.enabled) && (
+            {isNew && (alternatives.length > 0 || ai?.enabled) && (
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
                   {alternatives.length > 0 && (
@@ -758,7 +759,7 @@ export default function Workout() {
               {hype}
             </p>
           )}
-          {ai?.enabled && (
+          {isNew && ai?.enabled && (
             <button
               className="btn-ghost mt-2 w-full text-sm"
               onClick={makeHype}
@@ -776,9 +777,11 @@ export default function Workout() {
           <button className="btn-primary w-full" onClick={finishWorkout}>
             Training speichern
           </button>
-          <button className="btn-ghost w-full" onClick={shareToday}>
-            📤 Als Bild teilen
-          </button>
+          {isNew && (
+            <button className="btn-ghost w-full" onClick={shareToday}>
+              📤 Als Bild teilen
+            </button>
+          )}
           <p className="text-center text-xs text-cocoa-muted">
             Deine Sätze sind automatisch gesichert — hier kommst du zum Verlauf.
           </p>
