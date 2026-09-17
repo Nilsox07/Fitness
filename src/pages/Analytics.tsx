@@ -141,7 +141,7 @@ export default function Analytics() {
   const prs = useMemo(() => personalRecords(exerciseSets), [exerciseSets])
 
   // Ernährung (nur wenn aktiviert)
-  const { showNutrition, isNew } = usePrefs()
+  const { showNutrition, isNew, world } = usePrefs()
   const { data: foodEntries } = useAllFoodEntries()
   const dailyKcal = useMemo(() => {
     const map = new Map<string, { kcal: number; protein: number }>()
@@ -169,15 +169,24 @@ export default function Analytics() {
 
   const hasData = (allSets?.length ?? 0) > 0
 
+  // In der neuen App zeigt „Fortschritt" nur die Auswertung der aktiven Welt.
+  const showTraining = (!isNew || world === 'fitness') && hasData
+  const showFood = (!isNew || world === 'food') && showNutritionSection
+  const title = !isNew ? 'Auswertung' : world === 'food' ? 'Ernährungs-Fortschritt' : 'Fortschritt'
+
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-bold">Auswertung</h1>
+      <h1 className="text-xl font-bold">{title}</h1>
 
-      {!hasData && !showNutritionSection && (
-        <p className="text-cocoa-light">Noch keine Daten — erfasse dein erstes Training.</p>
+      {!showTraining && !showFood && (
+        <p className="text-cocoa-light">
+          {isNew && world === 'food'
+            ? 'Noch keine Ernährungsdaten — logge dein erstes Essen.'
+            : 'Noch keine Daten — erfasse dein erstes Training.'}
+        </p>
       )}
 
-      {hasData && (
+      {showTraining && (
         <>
           {isNew && <GamePanel sets={allSets ?? []} exercises={exercises ?? []} />}
 
@@ -361,7 +370,7 @@ export default function Analytics() {
       )}
 
       {/* Ernährung – Tagesverlauf (nur wenn aktiviert & Daten vorhanden) */}
-      {showNutritionSection && (
+      {showFood && (
         <>
           <section className="grid grid-cols-2 gap-2">
             <Stat label="Ø kcal/Tag" value={avgKcal} />

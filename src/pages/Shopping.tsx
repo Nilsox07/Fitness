@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useNutritionSettings } from '../hooks/useNutrition'
 import { shoppingList, type ShoppingCategory } from '../lib/ai'
 import { MicButton } from '../components/MicButton'
@@ -20,7 +19,6 @@ function saveChecked(s: Set<string>) {
 }
 
 export default function Shopping() {
-  const navigate = useNavigate()
   const { data: settings } = useNutritionSettings()
   const [days, setDays] = useState(7)
   const [wish, setWish] = useState('')
@@ -60,9 +58,6 @@ export default function Shopping() {
   return (
     <div className="space-y-4">
       <header className="flex items-center gap-2">
-        <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
-          ←
-        </button>
         <h1 className="text-xl font-bold">Einkaufsassistent</h1>
       </header>
 

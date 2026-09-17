@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useRecipes, useToggleRecipeShared, useDeleteRecipe } from '../hooks/useRecipes'
 import { useAddFoodEntry } from '../hooks/useNutrition'
@@ -109,7 +108,6 @@ function RecipeCard({ r, mine }: { r: SavedRecipe; mine: boolean }) {
 }
 
 export default function Recipes() {
-  const navigate = useNavigate()
   const { user } = useAuth()
   const { data: recipes, isLoading } = useRecipes()
 
@@ -123,9 +121,6 @@ export default function Recipes() {
   return (
     <div className="space-y-4">
       <header className="flex items-center gap-2">
-        <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
-          ←
-        </button>
         <h1 className="text-xl font-bold">Rezepte</h1>
       </header>
 

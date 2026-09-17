@@ -159,10 +159,7 @@ export default function Social() {
   return (
     <div className="space-y-4">
       <header className="flex items-center gap-2">
-        <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
-          ←
-        </button>
-        <h1 className="flex-1 text-xl font-bold">Freunde</h1>
+        <h1 className="flex-1 text-xl font-bold">Community</h1>
         <button className="btn-ghost text-sm" onClick={() => navigate('/feed')}>
           📣 Feed
         </button>

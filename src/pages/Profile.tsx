@@ -176,6 +176,42 @@ export default function Profile() {
       </div>
 
       <div className="card space-y-2">
+        <div className="label">Schnellzugriff</div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
+            onClick={() => navigate('/exercises')}
+          >
+            🏋️ Übungen
+          </button>
+          {showNutrition && (
+            <button
+              className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
+              onClick={() => navigate('/nutrition')}
+            >
+              🎯 Ernährungsziele
+            </button>
+          )}
+          {isNew && (
+            <button
+              className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
+              onClick={() => navigate('/badges')}
+            >
+              🏅 Abzeichen · Lvl {level}
+            </button>
+          )}
+          {isNew && (
+            <button
+              className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
+              onClick={() => navigate('/social')}
+            >
+              👥 Community
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="card space-y-2">
         <div className="label">Darstellung</div>
         <div className="grid grid-cols-3 gap-2">
           {MODES.map((m) => (
@@ -311,14 +347,6 @@ export default function Profile() {
         </div>
       )}
 
-      {isNew && (
-        <button
-          className="btn w-full bg-sand-light text-cocoa ring-1 ring-sand-dark"
-          onClick={() => navigate('/social')}
-        >
-          👥 Freunde & Leaderboard
-        </button>
-      )}
 
       {pushSupported && (
         <div className="card space-y-2">
