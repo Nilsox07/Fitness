@@ -92,6 +92,23 @@ export function useAddMealPlan() {
   })
 }
 
+export function useUpdateMealPlan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: { id: string } & Partial<MealPlanInput>) => {
+      const { data, error } = await supabase
+        .from('meal_plans')
+        .update(patch)
+        .eq('id', id)
+        .select()
+        .single()
+      if (error) throw error
+      return data as SavedMealPlan
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['meal_plans'] }),
+  })
+}
+
 export function useDeleteMealPlan() {
   const qc = useQueryClient()
   return useMutation({

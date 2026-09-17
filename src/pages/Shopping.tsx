@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNutritionSettings } from '../hooks/useNutrition'
 import {
+  adjustWeeklyPlan,
   estimateFoodFromText,
   generateWeeklyPlan,
   recipeFromText,
@@ -14,6 +15,7 @@ import {
   useDeleteMealRoutine,
   useMealPlans,
   useMealRoutines,
+  useUpdateMealPlan,
 } from '../hooks/useMealPlan'
 import { useAddRecipe } from '../hooks/useRecipes'
 import { MicButton } from '../components/MicButton'
@@ -41,6 +43,7 @@ export default function Shopping() {
   const addRoutine = useAddMealRoutine()
   const delRoutine = useDeleteMealRoutine()
   const addPlan = useAddMealPlan()
+  const updatePlan = useUpdateMealPlan()
   const delPlan = useDeleteMealPlan()
   const addRecipe = useAddRecipe()
 
@@ -48,8 +51,15 @@ export default function Shopping() {
   const [wish, setWish] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [msg, setMsg] = useState<string | null>(null)
   const [plan, setPlan] = useState<WeeklyPlan | null>(null)
+  const [currentPlanId, setCurrentPlanId] = useState<string | null>(null)
   const [checked, setChecked] = useState<Set<string>>(loadChecked)
+
+  // Anpassen
+  const [adjustText, setAdjustText] = useState('')
+  const [adjustBusy, setAdjustBusy] = useState(false)
+  const [newItem, setNewItem] = useState<Record<number, string>>({})
 
   // Routine hinzufügen
   const [rMeal, setRMeal] = useState<Meal>('breakfast')
@@ -100,6 +110,7 @@ export default function Shopping() {
   async function generate() {
     setBusy(true)
     setErr(null)
+    setMsg(null)
     try {
       const res = await generateWeeklyPlan({
         days,
@@ -113,7 +124,10 @@ export default function Shopping() {
         wish,
       })
       if (res.days.length === 0) setErr('Kein Plan erzeugt. Versuch es nochmal.')
-      else setPlan(res)
+      else {
+        setPlan(res)
+        setCurrentPlanId(null) // neuer, ungespeicherter Plan
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'KI-Fehler')
     } finally {
@@ -121,10 +135,76 @@ export default function Shopping() {
     }
   }
 
+  async function adjust() {
+    if (!plan || !adjustText.trim()) return
+    setAdjustBusy(true)
+    setErr(null)
+    setMsg(null)
+    try {
+      const res = await adjustWeeklyPlan({ current: plan, instruction: adjustText.trim(), targets })
+      if (res.days.length) {
+        setPlan(res)
+        setAdjustText('')
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setAdjustBusy(false)
+    }
+  }
+
   async function save() {
     if (!plan) return
-    const name = `Plan ${new Date().toLocaleDateString('de-DE')}`
-    await addPlan.mutateAsync({ name, days, plan: plan.days, shopping: plan.shopping })
+    setErr(null)
+    setMsg(null)
+    try {
+      if (currentPlanId) {
+        await updatePlan.mutateAsync({ id: currentPlanId, days, plan: plan.days, shopping: plan.shopping })
+        setMsg('Plan aktualisiert ✅')
+      } else {
+        const name = `Plan ${new Date().toLocaleDateString('de-DE')}`
+        const saved = await addPlan.mutateAsync({ name, days, plan: plan.days, shopping: plan.shopping })
+        setCurrentPlanId(saved.id)
+        setMsg('Plan & Einkaufsliste gespeichert ✅')
+      }
+    } catch (e) {
+      setErr(
+        (e instanceof Error ? e.message : 'Speichern fehlgeschlagen') +
+          ' — sind die Datenbank-Updates (Migration 0026) in Supabase ausgeführt?',
+      )
+    }
+  }
+
+  // ---- Einkaufsliste von Hand bearbeiten ----
+  function editShopping(mut: (s: WeeklyPlan['shopping']) => WeeklyPlan['shopping']) {
+    setPlan((p) => (p ? { ...p, shopping: mut(p.shopping) } : p))
+    setMsg(null)
+  }
+  function removeItem(catIdx: number, item: string) {
+    editShopping((s) =>
+      s
+        .map((c, i) => (i === catIdx ? { ...c, items: c.items.filter((x) => x !== item) } : c))
+        .filter((c) => c.items.length),
+    )
+  }
+  function addItem(catIdx: number) {
+    const text = (newItem[catIdx] ?? '').trim()
+    if (!text) return
+    editShopping((s) => s.map((c, i) => (i === catIdx ? { ...c, items: [...c.items, text] } : c)))
+    setNewItem((n) => ({ ...n, [catIdx]: '' }))
+  }
+  function removeMeal(dayIdx: number, mealIdx: number) {
+    setPlan((p) =>
+      p
+        ? {
+            ...p,
+            days: p.days.map((d, i) =>
+              i === dayIdx ? { ...d, meals: d.meals.filter((_, j) => j !== mealIdx) } : d,
+            ),
+          }
+        : p,
+    )
+    setMsg(null)
   }
 
   async function makeRecipe(m: PlanMeal) {
@@ -180,6 +260,7 @@ export default function Shopping() {
       </header>
 
       {err && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {err}</p>}
+      {msg && <p className="text-sm text-brand">{msg}</p>}
 
       {/* 1) Routinen */}
       <div className="card space-y-2">
@@ -268,9 +349,33 @@ export default function Shopping() {
         <>
           {plan.note && <p className="px-1 text-sm text-cocoa-light">{plan.note}</p>}
 
-          <div className="flex gap-2">
-            <button className="btn-primary flex-1" onClick={save} disabled={addPlan.isPending}>
-              {addPlan.isPending ? 'Speichert…' : '💾 Plan speichern'}
+          <button
+            className="btn-primary w-full"
+            onClick={save}
+            disabled={addPlan.isPending || updatePlan.isPending}
+          >
+            {addPlan.isPending || updatePlan.isPending
+              ? 'Speichert…'
+              : currentPlanId
+                ? '💾 Änderungen speichern'
+                : '💾 Plan & Einkaufsliste speichern'}
+          </button>
+
+          {/* Per KI anpassen */}
+          <div className="card space-y-2">
+            <label className="label">Anpassen per KI</label>
+            <div className="flex gap-2">
+              <input
+                className="input"
+                placeholder="z. B. günstiger, mehr Eiweiß, Tag 2 vegetarisch, ohne Milch"
+                value={adjustText}
+                onChange={(e) => setAdjustText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && adjust()}
+              />
+              <MicButton onResult={(t) => setAdjustText((v) => (v ? v + ' ' + t : t))} />
+            </div>
+            <button className="btn-ghost w-full text-sm" onClick={adjust} disabled={adjustBusy}>
+              {adjustBusy ? 'Passe an…' : '✨ Plan anpassen'}
             </button>
           </div>
 
@@ -287,47 +392,78 @@ export default function Shopping() {
                       {m.kcal} kcal · E {m.protein} / K {m.carbs} / F {m.fat}
                     </div>
                   </div>
-                  <button
-                    className="shrink-0 text-xs font-semibold text-brand disabled:opacity-40"
-                    onClick={() => makeRecipe(m)}
-                    disabled={recipeBusy}
-                  >
-                    🍳 Rezept
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      className="text-xs font-semibold text-brand disabled:opacity-40"
+                      onClick={() => makeRecipe(m)}
+                      disabled={recipeBusy}
+                    >
+                      🍳 Rezept
+                    </button>
+                    <button
+                      className="px-1 text-cocoa-muted hover:text-red-500"
+                      aria-label="Mahlzeit entfernen"
+                      onClick={() => removeMeal(i, j)}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           ))}
 
-          {plan.shopping.length > 0 && (
-            <div className="space-y-2">
-              <h2 className="px-1 font-semibold">🛒 Einkaufsliste</h2>
-              {plan.shopping.map((c) => (
-                <div key={c.category} className="card">
-                  <h3 className="mb-2 font-semibold">{c.category}</h3>
-                  <ul className="space-y-1">
-                    {c.items.map((it) => {
-                      const done = checked.has(it)
-                      return (
-                        <li key={it}>
-                          <button className="flex w-full items-center gap-2 text-left text-sm" onClick={() => toggle(it)}>
-                            <span
-                              className={`grid h-4 w-4 shrink-0 place-items-center rounded text-[10px] ${
-                                done ? 'bg-brand text-white' : 'text-transparent ring-1 ring-sand-dark'
-                              }`}
-                            >
-                              ✓
-                            </span>
-                            <span className={done ? 'text-cocoa-muted line-through' : 'text-cocoa'}>{it}</span>
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
+          <div className="space-y-2">
+            <h2 className="px-1 font-semibold">🛒 Einkaufsliste</h2>
+            {plan.shopping.length === 0 && (
+              <p className="px-1 text-sm text-cocoa-light">
+                Noch keine Artikel — füge unten welche hinzu oder erstelle den Plan neu.
+              </p>
+            )}
+            {plan.shopping.map((c, ci) => (
+              <div key={c.category} className="card">
+                <h3 className="mb-2 font-semibold">{c.category}</h3>
+                <ul className="space-y-1">
+                  {c.items.map((it) => {
+                    const done = checked.has(it)
+                    return (
+                      <li key={it} className="flex items-center gap-2">
+                        <button className="flex flex-1 items-center gap-2 text-left text-sm" onClick={() => toggle(it)}>
+                          <span
+                            className={`grid h-4 w-4 shrink-0 place-items-center rounded text-[10px] ${
+                              done ? 'bg-brand text-white' : 'text-transparent ring-1 ring-sand-dark'
+                            }`}
+                          >
+                            ✓
+                          </span>
+                          <span className={done ? 'text-cocoa-muted line-through' : 'text-cocoa'}>{it}</span>
+                        </button>
+                        <button
+                          className="px-1 text-cocoa-muted hover:text-red-500"
+                          aria-label="Artikel entfernen"
+                          onClick={() => removeItem(ci, it)}
+                        >
+                          ✕
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    className="input text-sm"
+                    placeholder="Artikel hinzufügen…"
+                    value={newItem[ci] ?? ''}
+                    onChange={(e) => setNewItem((n) => ({ ...n, [ci]: e.target.value }))}
+                    onKeyDown={(e) => e.key === 'Enter' && addItem(ci)}
+                  />
+                  <button className="btn-ghost shrink-0 text-sm" onClick={() => addItem(ci)}>
+                    +
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
         </>
       )}
 
@@ -339,10 +475,17 @@ export default function Shopping() {
             <div key={p.id} className="flex items-center justify-between rounded-lg bg-sand-light px-3 py-2 ring-1 ring-sand-dark">
               <button
                 className="text-left text-sm"
-                onClick={() => setPlan({ note: '', days: p.plan, shopping: p.shopping })}
+                onClick={() => {
+                  setPlan({ note: '', days: p.plan, shopping: p.shopping })
+                  setCurrentPlanId(p.id)
+                  setDays(p.days)
+                  setMsg(`„${p.name}" geladen`)
+                }}
               >
                 <div className="font-medium">{p.name}</div>
-                <div className="text-xs text-cocoa-light">{p.days} Tage · {p.plan.length} geplant</div>
+                <div className="text-xs text-cocoa-light">
+                  {p.days} Tage · {p.shopping.length} Kategorien Einkauf
+                </div>
               </button>
               <button
                 className="px-2 text-cocoa-muted hover:text-red-500"

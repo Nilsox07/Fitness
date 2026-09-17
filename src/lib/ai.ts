@@ -620,6 +620,48 @@ export async function generateWeeklyPlan(input: {
   return { note: String(raw.note ?? ''), days, shopping }
 }
 
+/** Passt einen bestehenden Plan per Anweisung an (z. B. „günstiger", „mehr Eiweiß"). */
+export async function adjustWeeklyPlan(input: {
+  current: WeeklyPlan
+  instruction: string
+  targets: { kcal: number; protein: number }
+}): Promise<WeeklyPlan> {
+  const system =
+    'Du bist Ernährungsberater. Du bekommst einen bestehenden Essensplan (JSON) und eine ' +
+    'Änderungsanweisung. Gib den ANGEPASSTEN Plan im GLEICHEN JSON-Format zurück, inklusive ' +
+    'aktualisierter Einkaufsliste. Behalte gute Teile bei. Antworte ausschließlich mit JSON.'
+  const prompt =
+    `Bestehender Plan (JSON):\n${JSON.stringify({ days: input.current.days, shopping: input.current.shopping })}\n\n` +
+    `Änderungswunsch: "${input.instruction}".\n` +
+    `Tagesziel bleibt ~${input.targets.kcal} kcal, ~${input.targets.protein} g Eiweiß.\n` +
+    'Gleiches Format: {"note":"was du geändert hast","days":[{"label":"...","meals":[{"meal":"...",' +
+    '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"routine":true|false}]}],' +
+    '"shopping":[{"category":"...","items":["..."]}]}. Deutsch.' +
+    avoidClause()
+  const text = await complete({ system, prompt, json: true, temperature: 0.5 })
+  const raw = parseJson<{
+    note?: string
+    days?: { label?: string; meals?: Record<string, unknown>[] }[]
+    shopping?: Partial<ShoppingCat>[]
+  }>(text)
+  const days: PlanDay[] = (raw.days ?? []).map((d, i) => ({
+    label: String(d.label ?? `Tag ${i + 1}`),
+    meals: (d.meals ?? []).map((m) => ({
+      meal: (MEAL_KEYS.includes(String(m.meal) as Meal) ? m.meal : 'snack') as Meal,
+      name: String(m.name ?? 'Mahlzeit'),
+      kcal: Math.round(Number(m.kcal ?? 0)),
+      protein: Math.round(Number(m.protein ?? 0)),
+      carbs: Math.round(Number(m.carbs ?? 0)),
+      fat: Math.round(Number(m.fat ?? 0)),
+      routine: Boolean(m.routine),
+    })),
+  }))
+  const shopping: ShoppingCat[] = (raw.shopping ?? [])
+    .map((c) => ({ category: String(c.category ?? 'Sonstiges'), items: (c.items ?? []).map(String) }))
+    .filter((c) => c.items.length)
+  return { note: String(raw.note ?? ''), days, shopping }
+}
+
 // ---------------------------------------------------------------------------
 // Feature: Rezept aus Kühlschrank-Foto (+ Wunsch)
 // ---------------------------------------------------------------------------
