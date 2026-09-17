@@ -17,7 +17,7 @@ const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 // GEMINI_MODEL darf mehrere kommagetrennte Modelle enthalten.
 const GEMINI_MODELS = Array.from(
   new Set(
-    `${process.env.GEMINI_MODEL || 'gemini-flash-latest'},gemini-2.0-flash,gemini-2.5-flash`
+    `${process.env.GEMINI_MODEL || 'gemini-3.6-flash'},gemini-flash-latest`
       .split(',')
       .map((m) => m.trim())
       .filter(Boolean),
