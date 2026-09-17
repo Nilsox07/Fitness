@@ -10,8 +10,24 @@
 // POST /api/ai { system, prompt, json, temperature } -> { text }
 
 const PROVIDER = (process.env.AI_PROVIDER || 'gemini').toLowerCase()
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest'
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+
+// Modell-Liste: erst das (optional konfigurierte) Standardmodell, danach
+// Ausweichmodelle. Bei Ueberlastung (503) des einen wird das naechste probiert.
+// GEMINI_MODEL darf mehrere kommagetrennte Modelle enthalten.
+const GEMINI_MODELS = Array.from(
+  new Set(
+    `${process.env.GEMINI_MODEL || 'gemini-flash-latest'},gemini-2.0-flash,gemini-2.5-flash`
+      .split(',')
+      .map((m) => m.trim())
+      .filter(Boolean),
+  ),
+)
+const GEMINI_MODEL = GEMINI_MODELS[0]
+
+// Vorübergehende Fehler, bei denen sich ein erneuter Versuch lohnt.
+const TRANSIENT = new Set([429, 500, 502, 503, 504])
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 function activeKey() {
   return PROVIDER === 'groq' ? process.env.GROQ_API_KEY : process.env.GEMINI_API_KEY
@@ -28,10 +44,24 @@ function imagePart(image) {
   return { inlineData: { mimeType, data } }
 }
 
+async function geminiOnce({ model, key, body }) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const err = new Error(`Gemini ${res.status}: ${await res.text()}`)
+    err.status = res.status
+    throw err
+  }
+  const data = await res.json()
+  return data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? ''
+}
+
 async function callGemini({ system, prompt, json, temperature, image }) {
   const key = process.env.GEMINI_API_KEY
-  const model = GEMINI_MODEL
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
   const parts = [{ text: prompt }]
   if (image) parts.push(imagePart(image))
   const body = {
@@ -42,15 +72,26 @@ async function callGemini({ system, prompt, json, temperature, image }) {
     },
     ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
   }
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`)
-  const data = await res.json()
-  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? ''
-  return text
+
+  let lastErr
+  // Pro Modell mehrere Versuche mit wachsender Wartezeit; bei anhaltender
+  // Ueberlastung zum naechsten Modell wechseln.
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await geminiOnce({ model, key, body })
+      } catch (e) {
+        lastErr = e
+        const s = e.status
+        if (s === 400 || s === 401 || s === 403) throw e // echter Fehler (Key/Anfrage) -> sofort melden
+        if (s === 404) break // Modell gibt es nicht -> naechstes Modell probieren
+        if (!TRANSIENT.has(s)) throw e
+        if (attempt < 2) await sleep(500 * (attempt + 1)) // 0,5s / 1,0s
+      }
+    }
+    // dieses Modell blieb ueberlastet -> naechstes probieren
+  }
+  throw lastErr
 }
 
 async function callGroq({ system, prompt, json, temperature }) {
@@ -103,6 +144,14 @@ export default async function handler(req, res) {
         : await callGemini({ system, prompt, json, temperature, image })
     res.status(200).json({ text })
   } catch (err) {
-    res.status(500).json({ error: err instanceof Error ? err.message : 'KI-Fehler' })
+    const msg = err instanceof Error ? err.message : 'KI-Fehler'
+    // Ueberlastung freundlich melden statt roher API-Fehler.
+    if (err?.status === 503 || err?.status === 429 || /UNAVAILABLE|overloaded|high demand/i.test(msg)) {
+      res.status(503).json({
+        error: 'Die KI ist gerade stark ausgelastet. Bitte in ein paar Sekunden nochmal versuchen.',
+      })
+      return
+    }
+    res.status(500).json({ error: msg })
   }
 }
