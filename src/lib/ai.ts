@@ -3,6 +3,7 @@
 // geheim und leben deshalb hier — pro Feature ein typisierter Helfer.
 
 import { MUSCLE_GROUPS, type MuscleGroup, type Meal, type PlanDay, type ShoppingCat } from '../types'
+import { aiBegin, aiEnd } from './aiActivity'
 
 export interface AiStatus {
   enabled: boolean
@@ -10,24 +11,44 @@ export interface AiStatus {
   model: string
 }
 
+// Bricht Anfragen ab, die zu lange dauern — dann klare Meldung statt „hängt".
+const AI_TIMEOUT_MS = 70000
+
 async function complete(opts: {
   system?: string
   prompt: string
   json?: boolean
   temperature?: number
   image?: string
+  maxTokens?: number
 }): Promise<string> {
-  const res = await fetch('/api/ai', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(opts),
-  })
-  if (!res.ok) {
-    const msg = await res.json().catch(() => ({}))
-    throw new Error(msg.error || `KI-Fehler (${res.status})`)
+  aiBegin()
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS)
+  try {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      // Standard-Obergrenze für die Antwortlänge (spart Zeit); große Generatoren
+      // (mehrtägige Pläne) übergeben einen höheren Wert.
+      body: JSON.stringify({ maxTokens: 2048, ...opts }),
+      signal: ctrl.signal,
+    })
+    if (!res.ok) {
+      const msg = await res.json().catch(() => ({}))
+      throw new Error(msg.error || `KI-Fehler (${res.status})`)
+    }
+    const data = (await res.json()) as { text: string }
+    return data.text
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
+      throw new Error('Die KI hat zu lange gebraucht. Bitte nochmal versuchen.')
+    }
+    throw e
+  } finally {
+    clearTimeout(timer)
+    aiEnd()
   }
-  const data = (await res.json()) as { text: string }
-  return data.text
 }
 
 export async function getAiStatus(): Promise<AiStatus> {
@@ -596,7 +617,7 @@ export async function generateWeeklyPlan(input: {
     '"shopping":[{"category":"z. B. Obst & Gemüse","items":["500 g Hähnchen","..."]}]}. ' +
     `Genau ${input.days} Tage. Die Einkaufsliste deckt ALLE Tage ab, mit groben Mengen, nach Kategorie. Deutsch.` +
     avoidClause()
-  const text = await complete({ system, prompt, json: true, temperature: 0.6 })
+  const text = await complete({ system, prompt, json: true, temperature: 0.6, maxTokens: 4096 })
   const raw = parseJson<{
     note?: string
     days?: { label?: string; meals?: Record<string, unknown>[] }[]
@@ -638,7 +659,7 @@ export async function adjustWeeklyPlan(input: {
     '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"routine":true|false}]}],' +
     '"shopping":[{"category":"...","items":["..."]}]}. Deutsch.' +
     avoidClause()
-  const text = await complete({ system, prompt, json: true, temperature: 0.5 })
+  const text = await complete({ system, prompt, json: true, temperature: 0.5, maxTokens: 4096 })
   const raw = parseJson<{
     note?: string
     days?: { label?: string; meals?: Record<string, unknown>[] }[]

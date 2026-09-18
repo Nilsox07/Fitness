@@ -60,7 +60,7 @@ async function geminiOnce({ model, key, body }) {
   return data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? ''
 }
 
-async function callGemini({ system, prompt, json, temperature, image }) {
+async function callGemini({ system, prompt, json, temperature, image, maxTokens }) {
   const key = process.env.GEMINI_API_KEY
   const parts = [{ text: prompt }]
   if (image) parts.push(imagePart(image))
@@ -68,6 +68,7 @@ async function callGemini({ system, prompt, json, temperature, image }) {
     contents: [{ role: 'user', parts }],
     generationConfig: {
       temperature: temperature ?? 0.4,
+      ...(maxTokens ? { maxOutputTokens: maxTokens } : {}),
       ...(json ? { responseMimeType: 'application/json' } : {}),
     },
     ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
@@ -129,7 +130,7 @@ export default async function handler(req, res) {
   }
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
-    const { system, prompt, json, temperature, image } = body
+    const { system, prompt, json, temperature, image, maxTokens } = body
     if (!prompt || typeof prompt !== 'string') {
       res.status(400).json({ error: 'prompt fehlt' })
       return
@@ -141,7 +142,7 @@ export default async function handler(req, res) {
     const text =
       PROVIDER === 'groq'
         ? await callGroq({ system, prompt, json, temperature })
-        : await callGemini({ system, prompt, json, temperature, image })
+        : await callGemini({ system, prompt, json, temperature, image, maxTokens })
     res.status(200).json({ text })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'KI-Fehler'

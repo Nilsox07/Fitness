@@ -5,6 +5,7 @@ import { usePrefs } from './lib/prefs'
 import { TabBar } from './components/TabBar'
 import { TopBar } from './components/TopBar'
 import { SaveStatus } from './components/SaveStatus'
+import { AiActivityBar } from './components/AiActivityBar'
 import { Assistant } from './components/Assistant'
 import { WhatsNew } from './components/WhatsNew'
 import { WeeklyReview } from './components/WeeklyReview'
@@ -53,6 +54,7 @@ export default function App() {
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col">
+      <AiActivityBar />
       <SaveStatus />
       {isNew && <TopBar />}
       <main className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
