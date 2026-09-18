@@ -18,6 +18,21 @@ export function useWater(date: string) {
   })
 }
 
+/** Alle Wasser-Tage (für Auswertung/Gamification). */
+export function useAllWater() {
+  return useQuery({
+    queryKey: ['water', 'all'],
+    queryFn: async (): Promise<WaterIntake[]> => {
+      const { data, error } = await supabase
+        .from('water_intake')
+        .select('*')
+        .order('date', { ascending: true })
+      if (error) throw error
+      return data as WaterIntake[]
+    },
+  })
+}
+
 export function useSetWater() {
   const qc = useQueryClient()
   const { user } = useAuth()
@@ -31,6 +46,6 @@ export function useSetWater() {
       if (error) throw error
       return data as WaterIntake
     },
-    onSuccess: (w) => qc.invalidateQueries({ queryKey: ['water', w.date] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['water'] }),
   })
 }
