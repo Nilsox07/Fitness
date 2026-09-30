@@ -223,7 +223,26 @@ export default function Workout() {
   // PR-Erkennung: neuer bester geschätzter 1RM einer Übung heute → Konfetti.
   const [prName, setPrName] = useState<string | null>(null)
   const [confetti, setConfetti] = useState(false)
-  const celebrated = useRef<Set<string>>(new Set())
+  // Bereits gefeierte Rekorde dauerhaft merken — sonst gäbe es nach jedem
+  // App-Öffnen erneut Konfetti und einen doppelten Feed-Post.
+  const celebrated = useRef<Set<string>>(
+    (() => {
+      try {
+        return new Set<string>(JSON.parse(localStorage.getItem('pr_celebrated') || '[]'))
+      } catch {
+        return new Set<string>()
+      }
+    })(),
+  )
+  const rememberCelebrated = (key: string) => {
+    celebrated.current.add(key)
+    try {
+      // nur die letzten 200 Einträge behalten
+      localStorage.setItem('pr_celebrated', JSON.stringify([...celebrated.current].slice(-200)))
+    } catch {
+      /* ignore */
+    }
+  }
   const restRef = useRef<RestTimerHandle>(null)
   const autoRest = () => {
     if (restRef.current?.autoEnabled()) restRef.current.start()
@@ -358,7 +377,7 @@ export default function Workout() {
     for (const [exId, cur] of todays) {
       const key = `${today}:${exId}`
       if ((prior.get(exId) ?? 0) > 0 && cur > (prior.get(exId) ?? 0) + 0.01 && !celebrated.current.has(key)) {
-        celebrated.current.add(key)
+        rememberCelebrated(key)
         const exName = exercises.find((e) => e.id === exId)?.name ?? 'Übung'
         setPrName(exName)
         setConfetti(true)
