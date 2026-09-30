@@ -1,24 +1,36 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  CalendarClock,
+  ChevronRight,
   Drumstick,
-  Dumbbell,
   Flame,
   Hand,
   HandFist,
   Laugh,
   Medal,
   Megaphone,
-  Pencil,
+  MessageCircle,
   Share2,
   Trophy,
   UserPlus,
-  Users,
 } from 'lucide-react'
 import { Sheet } from '../components/workout/Sheet'
+import { ActivityList } from '../components/feed/ActivityCard'
+import { useAuthorLookup } from '../components/feed/useAuthorLookup'
+import { FriendsRow } from '../components/social/FriendsRow'
+import { DuelCard } from '../components/social/DuelCard'
+import { TeamGoalCard } from '../components/social/TeamGoalCard'
+import { GymMeetCard } from '../components/social/GymMeetCard'
+import { FriendSheet } from '../components/social/FriendSheet'
+import { LeaderboardSection } from '../components/social/LeaderboardSection'
+import type { Person } from '../components/social/format'
+import { useActivities } from '../hooks/useFeed'
+import { localDate } from '../lib/day'
+import { duelStandings, effectiveProteinDays, isThisWeek, teamGoal } from '../lib/duel'
 import { useAuth } from '../lib/auth'
 import { useAllSets } from '../hooks/useWorkouts'
-import { useAllFoodEntries } from '../hooks/useNutrition'
+import { useAllFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { usePrefs } from '../lib/prefs'
 import {
   useAddFriend,
@@ -54,6 +66,7 @@ export default function Social() {
   const { data: profile } = useMyProfile()
   const { data: allSets } = useAllSets()
   const { data: food } = useAllFoodEntries()
+  const { data: nutritionSettings } = useNutritionSettings()
   const { showNutrition, isNew } = usePrefs()
   const { data: board } = useLeaderboard()
   const { data: kudos } = useKudos()
@@ -66,7 +79,6 @@ export default function Social() {
   const { data: pokes } = usePokes()
   const [gymInput, setGymInput] = useState('')
   const [gymTouched, setGymTouched] = useState(false)
-  const [gymEditing, setGymEditing] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
 
   const [code, setCode] = useState('')
@@ -76,7 +88,7 @@ export default function Social() {
 
   const nameOf = (id: string) => board?.find((u) => u.user_id === id)?.display_name ?? 'Freund'
   const myRow = board?.find((u) => u.user_id === user?.id)
-  const friends = (board ?? []).filter((u) => u.user_id !== user?.id)
+  const friends = useMemo(() => (board ?? []).filter((u) => u.user_id !== user?.id), [board, user?.id])
   useEffect(() => {
     if (!gymTouched && myRow?.gym_status) setGymInput(myRow.gym_status)
   }, [myRow, gymTouched])
@@ -102,12 +114,14 @@ export default function Social() {
     const kcalToday = Math.round(
       fe.filter((e) => e.date === todayStr).reduce((s, e) => s + e.kcal, 0),
     )
+    // Tage dieser Woche (Mo–So) mit erreichtem Protein-Ziel (0–7) — fürs Wochen-Duell.
+    const proteinTarget = nutritionSettings?.protein_target ?? 0
     const byDay = new Map<string, number>()
-    fe.forEach((e) => byDay.set(e.date, (byDay.get(e.date) ?? 0) + e.protein))
-    const last7 = [...byDay.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7)
-    const proteinWeek = last7.length
-      ? Math.round(last7.reduce((s, [, v]) => s + v, 0) / last7.length)
-      : 0
+    fe.filter((e) => isThisWeek(e.date, todayStr)).forEach((e) =>
+      byDay.set(e.date, (byDay.get(e.date) ?? 0) + e.protein),
+    )
+    const proteinWeek =
+      proteinTarget > 0 ? [...byDay.values()].filter((v) => v >= proteinTarget).length : 0
     const freq = frequencyStats([...new Set(sets.map((s) => s.date))])
     const thisWeek = isoWeekKey(new Date().toISOString().slice(0, 10))
     const wv = weeklyVolume(sets).find((w) => w.week === thisWeek)?.volume ?? 0
@@ -134,7 +148,7 @@ export default function Social() {
       kcal_today: kcalToday,
       protein_week: proteinWeek,
     }
-  }, [allSets, food, profile, user, todayStr])
+  }, [allSets, food, profile, user, todayStr, nutritionSettings])
 
   useEffect(() => {
     if (allSets) syncStats.mutate(myStats)
@@ -492,29 +506,36 @@ export default function Social() {
       </ol>
     </>
   )
-  const friendsPlanList = (
-    <>
-        {friends.length > 0 && (
-          <ul className="space-y-1.5">
-            {friends.map((u) => (
-              <li key={u.user_id} className="flex items-center gap-2 text-sm">
-                <span className="flex-1">
-                  <span className="font-medium">{u.display_name ?? 'Freund'}</span>{' '}
-                  <span className="text-cocoa-light">{u.gym_status || '– kein Plan –'}</span>
-                </span>
-                <button
-                  className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-2.5 py-1 text-xs font-semibold"
-                  onClick={() => sendPoke.mutate({ toUser: u.user_id })}
-                >
-                  <HandFist size={14} className="text-cocoa-light" />
-                  Fragen
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-    </>
+  // ── Neues Design ──────────────────────────────────────────────
+  const today = localDate()
+  const [openId, setOpenId] = useState<string | null>(null)
+  const { data: activities } = useActivities()
+  const authorOf = useAuthorLookup()
+  const latest = useMemo(() => (activities ?? []).slice(0, 5), [activities])
+  const kudosGiven = useMemo(
+    () => new Set((kudos ?? []).filter((k) => k.from_user === user?.id).map((k) => k.to_user)),
+    [kudos, user?.id],
   )
+  // Eigene Zeile: lokale (frische) Zahlen + geteilter Gym-Status.
+  const mePerson = useMemo<Person>(
+    () => ({
+      ...(myRow as Person | undefined),
+      ...myStats,
+      user_id: user?.id ?? 'me',
+      gym_status: myRow?.gym_status ?? null,
+    }),
+    [myRow, myStats, user?.id],
+  )
+  const people = useMemo(() => [mePerson, ...(friends as Person[])], [mePerson, friends])
+  const includeProtein =
+    showNutrition &&
+    people.some((u) => effectiveProteinDays(u, today) > 0 || (u.protein_today ?? 0) > 0)
+  const standings = useMemo(
+    () => duelStandings(people, { includeProtein, today }),
+    [people, includeProtein, today],
+  )
+  const team = useMemo(() => teamGoal(people, today), [people, today])
+  const openPerson = openId ? people.find((u) => u.user_id === openId) ?? null : null
 
   if (!isNew) {
     return (
@@ -537,20 +558,10 @@ export default function Social() {
     )
   }
 
-  const myPlan = myRow?.gym_status ?? ''
-  const showGymEdit = gymEditing || !myPlan
-  function saveGym() {
-    setGymStatus.mutate(gymInput.trim(), { onSuccess: () => setGymEditing(false) })
-  }
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <header className="flex items-center gap-2">
         <h1 className="flex-1 text-xl font-bold">Community</h1>
-        <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={() => navigate('/feed')}>
-          <Megaphone size={16} className="text-cocoa-light" />
-          Feed
-        </button>
         <button
           className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa"
           onClick={() => setAddOpen(true)}
@@ -560,17 +571,37 @@ export default function Social() {
         </button>
       </header>
 
-      {friends.length === 0 && (
-        <div className="card space-y-3 text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-sand text-cocoa-light">
-            <Users size={22} />
-          </div>
-          <div>
+      <FriendsRow
+        me={mePerson}
+        friends={friends}
+        today={today}
+        onOpen={(u) => setOpenId(u.user_id)}
+        onInvite={() => setAddOpen(true)}
+      />
+
+      {friends.length === 0 ? (
+        <div className="card space-y-4">
+          <div className="space-y-1 text-center">
             <div className="font-semibold">Zusammen trainiert es sich besser</div>
-            <p className="text-sm text-cocoa-light">
-              Füge Freunde hinzu und vergleicht Trainings, Streaks und Bestleistungen.
-            </p>
+            <p className="text-sm text-cocoa-light">Lade Freunde ein — dann bekommt ihr:</p>
           </div>
+          <ul className="space-y-3">
+            {[
+              { Icon: Trophy, title: 'Wochen-Duell', text: 'Punkte für jedes Training, jeden Montag neu.' },
+              { Icon: CalendarClock, title: 'Gym-Treff', text: 'Sag, wann du gehst — und verabredet euch.' },
+              { Icon: MessageCircle, title: 'Aktivitäten', text: 'Rekorde & Trainings feiern, kommentieren.' },
+            ].map(({ Icon, title, text }) => (
+              <li key={title} className="flex items-start gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa-light">
+                  <Icon size={17} />
+                </span>
+                <span className="text-sm">
+                  <span className="block font-semibold">{title}</span>
+                  <span className="text-cocoa-light">{text}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
           <button
             className="btn-primary flex w-full items-center justify-center gap-1.5"
             onClick={() => setAddOpen(true)}
@@ -579,66 +610,107 @@ export default function Social() {
             Freund hinzufügen
           </button>
         </div>
+      ) : (
+        <>
+          <section className="space-y-2">
+            <SectionHead
+              title="Diese Woche"
+              right={daysLeft === 0 ? 'letzter Tag' : daysLeft === 1 ? 'noch 1 Tag' : `noch ${daysLeft} Tage`}
+            />
+            <DuelCard
+              people={people}
+              meId={mePerson.user_id}
+              standings={standings}
+              includeProtein={includeProtein}
+            />
+            <TeamGoalCard goal={team} people={people} meId={mePerson.user_id} />
+          </section>
+
+          <section className="space-y-2">
+            <SectionHead title="Gym-Treff" />
+            <GymMeetCard
+              me={mePerson}
+              friends={friends}
+              today={today}
+              onOpenFriend={(u) => setOpenId(u.user_id)}
+            />
+          </section>
+        </>
       )}
 
-      {/* Leaderboard zuerst */}
-      {metricBlock}
-      {leaderboardBlock}
-
-      {pokesBlock}
-
-      {/* Wann Gym? — kompakt */}
-      <div className="card space-y-2">
-        {showGymEdit ? (
-          <div className="flex items-center gap-2">
-            <input
-              className="input min-w-0 flex-1 py-2 text-sm"
-              placeholder="Wann gehst du heute?"
-              value={gymInput}
-              onChange={(e) => {
-                setGymInput(e.target.value)
-                setGymTouched(true)
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && saveGym()}
-              aria-label="Wann gehst du heute?"
-            />
-            <button
-              className="btn-primary shrink-0 px-3 py-2 text-sm"
-              onClick={saveGym}
-              disabled={setGymStatus.isPending}
-            >
-              Setzen
-            </button>
-          </div>
+      <section className="space-y-2">
+        <SectionHead
+          title="Aktivitäten"
+          right={
+            (activities?.length ?? 0) > 0 ? (
+              <button
+                className="flex items-center text-sm font-semibold text-brand"
+                onClick={() => navigate('/feed')}
+              >
+                Alle
+                <ChevronRight size={16} />
+              </button>
+            ) : undefined
+          }
+        />
+        {latest.length > 0 ? (
+          <>
+            <ActivityList activities={latest} authorOf={authorOf} />
+            {(activities?.length ?? 0) > latest.length && (
+              <button
+                className="card flex w-full items-center justify-between text-sm font-semibold"
+                onClick={() => navigate('/feed')}
+              >
+                Alle Aktivitäten
+                <ChevronRight size={18} className="text-cocoa-muted" />
+              </button>
+            )}
+          </>
         ) : (
-          <div className="flex items-center gap-2">
-            <Dumbbell size={18} className="shrink-0 text-cocoa-light" />
-            <div className="min-w-0 flex-1">
-              <div className="text-xs text-cocoa-light">Wann gehst du heute?</div>
-              <div className="truncate font-semibold">{myPlan}</div>
-            </div>
-            <button
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sand text-cocoa-light"
-              onClick={() => {
-                setGymInput(myPlan)
-                setGymEditing(true)
-              }}
-              aria-label="Plan bearbeiten"
-            >
-              <Pencil size={14} />
-            </button>
+          <div className="card text-center text-sm text-cocoa-light">
+            Noch nichts los. Schließ ein Training ab — es erscheint hier.
           </div>
         )}
-        {friendsPlanList}
-      </div>
+      </section>
 
-      {challengeBlock}
-      {proteinBlock}
+      {friends.length > 0 && (
+        <LeaderboardSection
+          board={board ?? []}
+          meId={mePerson.user_id}
+          kudosReceived={kudosReceived}
+          kudosGiven={kudosGiven}
+          onKudos={(id) => giveKudos.mutate(id)}
+        />
+      )}
+
+      {openPerson && (
+        <FriendSheet
+          person={openPerson}
+          me={mePerson}
+          today={today}
+          showNutrition={showNutrition}
+          kudosGiven={kudosGiven.has(openPerson.user_id)}
+          onClose={() => setOpenId(null)}
+        />
+      )}
 
       {addOpen && (
         <Sheet title="Freund hinzufügen" onClose={() => setAddOpen(false)}>
           {codeContent}
         </Sheet>
+      )}
+    </div>
+  )
+}
+
+function SectionHead({ title, right }: { title: string; right?: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-2 px-1">
+      <h2 className="text-sm font-semibold text-cocoa-light">{title}</h2>
+      {typeof right === 'string' ? (
+        <span className="tabular text-xs text-cocoa-muted">{right}</span>
+      ) : (
+        right
       )}
     </div>
   )

@@ -2,6 +2,10 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, Hand, MessageCircle, Send } from 'lucide-react'
 import { useAuth } from '../lib/auth'
+import { usePrefs } from '../lib/prefs'
+import { dayLabel, localDate } from '../lib/day'
+import { ActivityList } from '../components/feed/ActivityCard'
+import { useAuthorLookup } from '../components/feed/useAuthorLookup'
 import {
   useActivities,
   useAddComment,
@@ -101,6 +105,59 @@ function ActivityItem({ a, authorLabel }: { a: Activity; authorLabel: string }) 
 }
 
 export default function Feed() {
+  const { isNew } = usePrefs()
+  return isNew ? <FeedNew /> : <FeedClassic />
+}
+
+/** Neues Design: Aktivitäten nach Tagen gruppiert, gleiche Karten wie in der Community. */
+function FeedNew() {
+  const navigate = useNavigate()
+  const { data: activities, isLoading } = useActivities()
+  const authorOf = useAuthorLookup()
+
+  const groups = useMemo(() => {
+    const out: { day: string; items: Activity[] }[] = []
+    for (const a of activities ?? []) {
+      const day = localDate(new Date(a.created_at))
+      const last = out[out.length - 1]
+      if (last && last.day === day) last.items.push(a)
+      else out.push({ day, items: [a] })
+    }
+    return out
+  }, [activities])
+
+  return (
+    <div className="space-y-5">
+      <header className="flex items-center gap-2">
+        <button
+          className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
+          onClick={() => navigate(-1)}
+          aria-label="Zurück"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <h1 className="text-xl font-bold">Aktivitäten</h1>
+      </header>
+
+      {isLoading && <p className="text-sm text-cocoa-light">Lädt…</p>}
+
+      {groups.map((g) => (
+        <section key={g.day} className="space-y-2">
+          <h2 className="px-1 text-sm font-semibold text-cocoa-light">{dayLabel(g.day)}</h2>
+          <ActivityList activities={g.items} authorOf={authorOf} />
+        </section>
+      ))}
+
+      {activities?.length === 0 && !isLoading && (
+        <div className="card text-center text-sm text-cocoa-light">
+          Noch nichts los. Schließ ein Training ab oder füg Freunde hinzu.
+        </div>
+      )}
+    </div>
+  )
+}
+
+function FeedClassic() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { data: activities, isLoading } = useActivities()
