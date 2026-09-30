@@ -64,6 +64,8 @@ import {
   afterSetDone,
   appendOrder,
   getPairs,
+  getPlanQueue,
+  setPlanQueue,
   pairOf,
   setPairs,
   sortByOrder,
@@ -241,7 +243,26 @@ export default function Workout() {
   // PR-Erkennung: neuer bester geschätzter 1RM einer Übung heute → Konfetti.
   const [prName, setPrName] = useState<string | null>(null)
   const [confetti, setConfetti] = useState(false)
-  const celebrated = useRef<Set<string>>(new Set())
+  // Bereits gefeierte Rekorde dauerhaft merken — sonst gäbe es nach jedem
+  // App-Öffnen erneut Konfetti und einen doppelten Feed-Post.
+  const celebrated = useRef<Set<string>>(
+    (() => {
+      try {
+        return new Set<string>(JSON.parse(localStorage.getItem('pr_celebrated') || '[]'))
+      } catch {
+        return new Set<string>()
+      }
+    })(),
+  )
+  const rememberCelebrated = (key: string) => {
+    celebrated.current.add(key)
+    try {
+      // nur die letzten 200 Einträge behalten
+      localStorage.setItem('pr_celebrated', JSON.stringify([...celebrated.current].slice(-200)))
+    } catch {
+      /* ignore */
+    }
+  }
   const restRef = useRef<RestTimerHandle>(null)
   const autoRest = () => {
     if (restRef.current?.autoEnabled()) restRef.current.start()
@@ -376,7 +397,7 @@ export default function Workout() {
     for (const [exId, cur] of todays) {
       const key = `${today}:${exId}`
       if ((prior.get(exId) ?? 0) > 0 && cur > (prior.get(exId) ?? 0) + 0.01 && !celebrated.current.has(key)) {
-        celebrated.current.add(key)
+        rememberCelebrated(key)
         const exName = exercises.find((e) => e.id === exId)?.name ?? 'Übung'
         setPrName(exName)
         setConfetti(true)
@@ -640,10 +661,23 @@ export default function Workout() {
     bump()
   }
 
+  // Plan = Reihenfolge-Vorlage: nicht alles vorab anlegen, sondern Übung für
+  // Übung dazuholen. So bleibt die Leiste kurz und spontane Übungen passen rein.
+  const planQueue = useMemo(
+    () => (woId ? getPlanQueue(woId) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [woId, sessionVer],
+  )
+  const queuePlan = plans?.find((p) => p.id === planQueue?.planId)
+  const remainingPlanIds = (planQueue?.ids ?? []).filter(
+    (id) => !todayExIds.includes(id) && exById.has(id) && id !== exerciseId,
+  )
+
   function loadPlanOrdered(plan: PlanWithExercises) {
-    if (woId) appendOrder(woId, plan.exercise_ids)
-    loadPlan(plan)
-    if (!exerciseId && plan.exercise_ids[0]) setExerciseId(plan.exercise_ids[0])
+    if (!woId) return
+    setPlanQueue(woId, { planId: plan.id, ids: plan.exercise_ids })
+    const first = plan.exercise_ids.find((id) => !todayExIds.includes(id) && exById.has(id))
+    if (first) addExerciseToday(first)
     setSheet(null)
     bump()
   }
@@ -801,6 +835,14 @@ export default function Workout() {
         {/* Übungsleiste */}
         {hasSets && (
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+            <button
+              onClick={() => setSheet('picker')}
+              className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-dashed border-sand-dark px-3 text-cocoa-light"
+              aria-label="Übung hinzufügen"
+            >
+              <Plus size={16} />
+              <span className="text-[10px] font-semibold">Übung</span>
+            </button>
             {todayExIds.map((id) => {
               const ex = exById.get(id)
               const list = setsOf(id)
@@ -834,14 +876,21 @@ export default function Workout() {
                 </Fragment>
               )
             })}
-            <button
-              onClick={() => setSheet('picker')}
-              className="grid shrink-0 place-items-center rounded-xl border border-dashed border-sand-dark px-4 text-cocoa-light"
-              aria-label="Übung hinzufügen"
-            >
-              <Plus size={18} />
-            </button>
           </div>
+        )}
+
+        {/* Plan als Vorlage: was noch kommt, ohne die Leiste zu füllen */}
+        {hasSets && queuePlan && remainingPlanIds.length > 0 && (
+          <button
+            onClick={() => setSheet('picker')}
+            className="flex w-full items-center gap-1.5 truncate px-1 text-left text-xs text-cocoa-light"
+          >
+            <Play size={11} className="shrink-0 fill-cocoa-light" />
+            <span className="truncate">
+              <span className="font-semibold text-cocoa">{queuePlan.name}</span> · noch{' '}
+              {remainingPlanIds.map((id) => exById.get(id)?.name).join(', ')}
+            </span>
+          </button>
         )}
 
         {/* Leeres Training: Einstieg */}
@@ -957,10 +1006,12 @@ export default function Workout() {
                   >
                     <Plus size={16} /> Satz
                   </button>
-                  {nextExId ? (
+                  {nextExId || remainingPlanIds[0] ? (
                     <button
-                      className="btn-primary flex-1 gap-0.5 px-2 py-2 text-sm"
-                      onClick={() => setExerciseId(nextExId)}
+                      className="btn-primary min-w-0 flex-1 gap-0.5 px-2 py-2 text-sm"
+                      onClick={() =>
+                        nextExId ? setExerciseId(nextExId) : addExerciseToday(remainingPlanIds[0])
+                      }
                     >
                       Nächste <ChevronRight size={16} />
                     </button>
@@ -1040,22 +1091,41 @@ export default function Workout() {
                 onChange={(e) => setPickerQuery(e.target.value)}
               />
             </div>
-            {sheet === 'picker' && plans && plans.length > 0 && !q && (
+            {sheet === 'picker' && queuePlan && remainingPlanIds.length > 0 && !q && (
               <div>
-                <div className="label">Ganzen Plan laden</div>
+                <div className="label">Als Nächstes aus „{queuePlan.name}"</div>
                 <div className="flex flex-wrap gap-2">
-                  {plans.map((p) => (
+                  {remainingPlanIds.map((id) => (
                     <button
-                      key={p.id}
-                      className="flex items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa"
-                      onClick={() => loadPlanOrdered(p)}
+                      key={id}
+                      className="flex items-center gap-1.5 rounded-full bg-cocoa px-3 py-1.5 text-sm font-semibold text-cream"
+                      onClick={() => addExerciseToday(id)}
                     >
-                      <Play size={12} className="fill-brand text-brand" /> {p.name}
+                      <Plus size={13} /> {exById.get(id)?.name}
                     </button>
                   ))}
                 </div>
               </div>
             )}
+            {sheet === 'picker' && plans && plans.length > 0 && !q && (
+              <div>
+                <div className="label">{queuePlan ? 'Anderen Plan als Vorlage' : 'Plan als Vorlage'}</div>
+                <div className="flex flex-wrap gap-2">
+                  {plans
+                    .filter((p) => p.id !== queuePlan?.id)
+                    .map((p) => (
+                      <button
+                        key={p.id}
+                        className="flex items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa"
+                        onClick={() => loadPlanOrdered(p)}
+                      >
+                        <Play size={12} className="fill-brand text-brand" /> {p.name}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+            {!q && sheet === 'picker' && <div className="label -mb-2">Alle Übungen</div>}
             <ul className="divide-y divide-sand">
               {pickerList.map((e) => {
                 const inToday = todayExIds.includes(e.id)

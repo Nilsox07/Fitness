@@ -38,6 +38,21 @@ export function sortByOrder(workoutId: string, ids: string[]): string[] {
   return [...known, ...rest]
 }
 
+// ---- Aktiver Plan als Vorlage (Reihenfolge, nicht vorab angelegt) ----------
+
+export interface PlanQueue {
+  planId: string
+  ids: string[]
+}
+
+export function getPlanQueue(workoutId: string): PlanQueue | null {
+  return read<PlanQueue | null>(`wo_plan_${workoutId}`, null)
+}
+
+export function setPlanQueue(workoutId: string, q: PlanQueue | null) {
+  write(`wo_plan_${workoutId}`, q)
+}
+
 // ---- Supersätze ------------------------------------------------------------
 
 export type Pair = [string, string]
