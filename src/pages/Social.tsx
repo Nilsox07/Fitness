@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Drumstick, Flame, Hand, HandFist, Laugh, Medal, Megaphone, Share2, Trophy, UserPlus } from 'lucide-react'
+import {
+  Drumstick,
+  Dumbbell,
+  Flame,
+  Hand,
+  HandFist,
+  Laugh,
+  Medal,
+  Megaphone,
+  Pencil,
+  Share2,
+  Trophy,
+  UserPlus,
+  Users,
+} from 'lucide-react'
+import { Sheet } from '../components/workout/Sheet'
 import { useAuth } from '../lib/auth'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useAllFoodEntries } from '../hooks/useNutrition'
@@ -39,7 +54,7 @@ export default function Social() {
   const { data: profile } = useMyProfile()
   const { data: allSets } = useAllSets()
   const { data: food } = useAllFoodEntries()
-  const { showNutrition } = usePrefs()
+  const { showNutrition, isNew } = usePrefs()
   const { data: board } = useLeaderboard()
   const { data: kudos } = useKudos()
   const addFriend = useAddFriend()
@@ -51,6 +66,8 @@ export default function Social() {
   const { data: pokes } = usePokes()
   const [gymInput, setGymInput] = useState('')
   const [gymTouched, setGymTouched] = useState(false)
+  const [gymEditing, setGymEditing] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
 
   const [code, setCode] = useState('')
   const [metric, setMetric] = useState<Metric>('monthly_prs')
@@ -157,16 +174,8 @@ export default function Social() {
     }
   }
 
-  return (
-    <div className="space-y-4">
-      <header className="flex items-center gap-2">
-        <h1 className="flex-1 text-xl font-bold">Community</h1>
-        <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={() => navigate('/feed')}>
-          <Megaphone size={16} className="text-cocoa-light" />
-          Feed
-        </button>
-      </header>
-
+  const pokesBlock = (
+    <>
       {/* Eingehende Anstupser */}
       {(pokes?.length ?? 0) > 0 && (
         <div className="space-y-2">
@@ -197,7 +206,10 @@ export default function Social() {
           ))}
         </div>
       )}
-
+    </>
+  )
+  const gymBlock = (
+    <>
       {/* Wann Gym? */}
       <div className="card space-y-3">
         <h2 className="font-semibold">Wann Gym?</h2>
@@ -240,7 +252,10 @@ export default function Social() {
           </ul>
         )}
       </div>
-
+    </>
+  )
+  const challengeBlock = (
+    <>
       {/* Wochen-Challenge */}
       {(board?.length ?? 0) > 1 && (
         <div className="card space-y-3">
@@ -292,7 +307,10 @@ export default function Social() {
           </div>
         </div>
       )}
-
+    </>
+  )
+  const proteinBlock = (
+    <>
       {/* Ernährungs-Battle (Protein) */}
       {showNutrition && (board?.length ?? 0) > 1 && (
         <div className="card space-y-2">
@@ -338,9 +356,11 @@ export default function Social() {
           </p>
         </div>
       )}
+    </>
+  )
+  const codeContent = (
+    <>
 
-      {/* Mein Code + Freund hinzufügen */}
-      <div className="card space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <div className="label">Dein Freundescode</div>
@@ -373,8 +393,10 @@ export default function Social() {
           Freunde sehen nur deine Kennzahlen (Trainings, Volumen, Streak) — keine einzelnen Sätze
           oder Ernährung.
         </p>
-      </div>
-
+    </>
+  )
+  const metricBlock = (
+    <>
       {/* Metrik-Auswahl */}
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1">
         {(Object.keys(METRIC_LABEL) as Metric[]).map((m) => (
@@ -393,7 +415,10 @@ export default function Social() {
         Fair vergleichen: <strong>Fortschritt</strong> (neue Bestleistungen/Monat) &amp;{' '}
         <strong>Trainings</strong> zählen für alle gleich — Volumen hängt vom Kraftniveau ab.
       </p>
-
+    </>
+  )
+  const leaderboardBlock = (
+    <>
       {/* Leaderboard */}
       <ol className="space-y-2">
         {ranked.map((u, i) => {
@@ -423,7 +448,7 @@ export default function Social() {
           return (
             <li
               key={u.user_id}
-              className={`card flex items-center gap-3 ${me ? 'ring-2 ring-brand' : ''}`}
+              className={`card flex items-center gap-3 ${me ? (isNew ? 'ring-1 ring-brand' : 'ring-2 ring-brand') : ''}`}
             >
               <span className="tabular grid w-6 place-items-center text-lg font-bold text-cocoa-light">
                 {i < 3 ? (
@@ -459,12 +484,162 @@ export default function Social() {
             </li>
           )
         })}
-        {ranked.length <= 1 && (
+        {!isNew && ranked.length <= 1 && (
           <li className="text-sm text-cocoa-light">
             Noch keine Freunde. Teile deinen Code oder gib den Code eines Freundes ein.
           </li>
         )}
       </ol>
+    </>
+  )
+  const friendsPlanList = (
+    <>
+        {friends.length > 0 && (
+          <ul className="space-y-1.5">
+            {friends.map((u) => (
+              <li key={u.user_id} className="flex items-center gap-2 text-sm">
+                <span className="flex-1">
+                  <span className="font-medium">{u.display_name ?? 'Freund'}</span>{' '}
+                  <span className="text-cocoa-light">{u.gym_status || '– kein Plan –'}</span>
+                </span>
+                <button
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-2.5 py-1 text-xs font-semibold"
+                  onClick={() => sendPoke.mutate({ toUser: u.user_id })}
+                >
+                  <HandFist size={14} className="text-cocoa-light" />
+                  Fragen
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+    </>
+  )
+
+  if (!isNew) {
+    return (
+      <div className="space-y-4">
+        <header className="flex items-center gap-2">
+          <h1 className="flex-1 text-xl font-bold">Community</h1>
+          <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={() => navigate('/feed')}>
+            <Megaphone size={16} className="text-cocoa-light" />
+            Feed
+          </button>
+        </header>
+        {pokesBlock}
+        {gymBlock}
+        {challengeBlock}
+        {proteinBlock}
+        <div className="card space-y-3">{codeContent}</div>
+        {metricBlock}
+        {leaderboardBlock}
+      </div>
+    )
+  }
+
+  const myPlan = myRow?.gym_status ?? ''
+  const showGymEdit = gymEditing || !myPlan
+  function saveGym() {
+    setGymStatus.mutate(gymInput.trim(), { onSuccess: () => setGymEditing(false) })
+  }
+
+  return (
+    <div className="space-y-4">
+      <header className="flex items-center gap-2">
+        <h1 className="flex-1 text-xl font-bold">Community</h1>
+        <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={() => navigate('/feed')}>
+          <Megaphone size={16} className="text-cocoa-light" />
+          Feed
+        </button>
+        <button
+          className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa"
+          onClick={() => setAddOpen(true)}
+          aria-label="Freund hinzufügen"
+        >
+          <UserPlus size={18} />
+        </button>
+      </header>
+
+      {friends.length === 0 && (
+        <div className="card space-y-3 text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-sand text-cocoa-light">
+            <Users size={22} />
+          </div>
+          <div>
+            <div className="font-semibold">Zusammen trainiert es sich besser</div>
+            <p className="text-sm text-cocoa-light">
+              Füge Freunde hinzu und vergleicht Trainings, Streaks und Bestleistungen.
+            </p>
+          </div>
+          <button
+            className="btn-primary flex w-full items-center justify-center gap-1.5"
+            onClick={() => setAddOpen(true)}
+          >
+            <UserPlus size={18} />
+            Freund hinzufügen
+          </button>
+        </div>
+      )}
+
+      {/* Leaderboard zuerst */}
+      {metricBlock}
+      {leaderboardBlock}
+
+      {pokesBlock}
+
+      {/* Wann Gym? — kompakt */}
+      <div className="card space-y-2">
+        {showGymEdit ? (
+          <div className="flex items-center gap-2">
+            <input
+              className="input min-w-0 flex-1 py-2 text-sm"
+              placeholder="Wann gehst du heute?"
+              value={gymInput}
+              onChange={(e) => {
+                setGymInput(e.target.value)
+                setGymTouched(true)
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && saveGym()}
+              aria-label="Wann gehst du heute?"
+            />
+            <button
+              className="btn-primary shrink-0 px-3 py-2 text-sm"
+              onClick={saveGym}
+              disabled={setGymStatus.isPending}
+            >
+              Setzen
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Dumbbell size={18} className="shrink-0 text-cocoa-light" />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs text-cocoa-light">Wann gehst du heute?</div>
+              <div className="truncate font-semibold">{myPlan}</div>
+            </div>
+            <button
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sand text-cocoa-light"
+              onClick={() => {
+                setGymInput(myPlan)
+                setGymEditing(true)
+              }}
+              aria-label="Plan bearbeiten"
+            >
+              <Pencil size={14} />
+            </button>
+          </div>
+        )}
+        {friendsPlanList}
+      </div>
+
+      {challengeBlock}
+      {proteinBlock}
+
+      {addOpen && (
+        <Sheet title="Freund hinzufügen" onClose={() => setAddOpen(false)}>
+          {codeContent}
+        </Sheet>
+      )}
     </div>
   )
 }

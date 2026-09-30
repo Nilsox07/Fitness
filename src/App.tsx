@@ -13,6 +13,7 @@ import Login from './pages/Login'
 import ResetPassword from './pages/ResetPassword'
 import Workout from './pages/Workout'
 import Exercises from './pages/Exercises'
+import ExerciseDetail from './pages/ExerciseDetail'
 import Plans from './pages/Plans'
 import Social from './pages/Social'
 import Badges from './pages/Badges'
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/" element={<Workout />} />
           <Route path="/nutrition" element={<Nutrition />} />
           <Route path="/exercises" element={<Exercises />} />
+          <Route path="/exercises/:id" element={<ExerciseDetail />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/social" element={<Social />} />
           <Route path="/badges" element={<Badges />} />

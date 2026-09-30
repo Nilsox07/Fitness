@@ -39,7 +39,7 @@ export default function PlansNew() {
   const location = useLocation()
   const [params, setParams] = useSearchParams()
   const editId = params.get('edit')
-  const { data: plans, isLoading } = usePlans()
+  const { data: plans, isLoading, isFetching } = usePlans()
   const { data: exercises } = useExercises()
   const { data: workouts } = useWorkouts()
   const { data: ai } = useAiStatus()
@@ -93,8 +93,8 @@ export default function PlansNew() {
 
   // Editor-ID zeigt auf gelöschten/unbekannten Plan → Parameter still entfernen.
   useEffect(() => {
-    if (editId && plans && !editPlan) setParams({}, { replace: true })
-  }, [editId, plans, editPlan, setParams])
+    if (editId && plans && !isFetching && !editPlan) setParams({}, { replace: true })
+  }, [editId, plans, isFetching, editPlan, setParams])
 
   if (editId && editPlan) {
     return (
@@ -303,10 +303,12 @@ function PlanEditor({
     reorder.mutate({ plan_id: plan.id, exercise_ids: ids })
   }
 
-  async function removePlan() {
+  function removePlan() {
     if (!confirm(`Plan „${plan.name}" löschen? (Übungen bleiben erhalten)`)) return
-    await deletePlan.mutateAsync(plan.id)
+    // Erst Editor schließen, dann löschen — sonst konkurriert das Aufräumen des
+    // ?edit-Parameters mit dem Zurück-Navigieren.
     onBack()
+    deletePlan.mutate(plan.id)
   }
 
   return (

@@ -90,7 +90,6 @@ type Tab = { to: string; label: string; Icon: (p: IconProps) => ReactElement; en
 const FITNESS_TABS: Tab[] = [
   { to: '/', label: 'Heute', Icon: IconTrain, end: true },
   { to: '/plans', label: 'Pläne', Icon: IconPlan },
-  { to: '/exercises', label: 'Übungen', Icon: IconList },
   { to: '/analytics', label: 'Fortschritt', Icon: IconChart, also: ['/history'] },
   { to: '/social', label: 'Community', Icon: IconPeople },
 ]

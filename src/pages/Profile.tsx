@@ -164,7 +164,10 @@ export default function Profile() {
     fitbit: Boolean(fitbit?.configured),
   }
   const rawSub = params.get('s') as Sub | null
-  const sub: Sub | null = rawSub && Object.prototype.hasOwnProperty.call(SUB_TITLE, rawSub) && available[rawSub] ? rawSub : null
+  const sub: Sub | null =
+    rawSub && Object.prototype.hasOwnProperty.call(SUB_TITLE, rawSub) && available[rawSub]
+      ? rawSub
+      : null
 
   // Beim Wechsel zwischen Liste und Unterseite oben anfangen.
   useEffect(() => {

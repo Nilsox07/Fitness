@@ -49,18 +49,21 @@ export function GoalEditor({
   // Gespeicherte Körperdaten/Ziele einmalig übernehmen, sobald sie geladen sind.
   useEffect(() => {
     if (!settings || loaded) return
+    // Fehlende/leere Felder (null/undefined) auf die Standardwerte zurückfallen lassen,
+    // damit die berechneten Ziele nie NaN anzeigen.
+    const weight = settings.weight_kg ?? EMPTY.weight_kg
     setForm({
-      sex: settings.sex,
-      age: settings.age,
-      height_cm: settings.height_cm,
-      weight_kg: settings.weight_kg,
-      activity: settings.activity,
-      goal: settings.goal,
-      kcal_target: settings.kcal_target,
-      protein_target: settings.protein_target,
-      carbs_target: settings.carbs_target,
-      fat_target: settings.fat_target,
-      water_target_ml: settings.water_target_ml || defaultWaterTarget(settings.weight_kg),
+      sex: settings.sex ?? EMPTY.sex,
+      age: settings.age ?? EMPTY.age,
+      height_cm: settings.height_cm ?? EMPTY.height_cm,
+      weight_kg: weight,
+      activity: settings.activity ?? EMPTY.activity,
+      goal: settings.goal ?? EMPTY.goal,
+      kcal_target: settings.kcal_target ?? EMPTY.kcal_target,
+      protein_target: settings.protein_target ?? EMPTY.protein_target,
+      carbs_target: settings.carbs_target ?? EMPTY.carbs_target,
+      fat_target: settings.fat_target ?? EMPTY.fat_target,
+      water_target_ml: settings.water_target_ml || defaultWaterTarget(weight) || EMPTY.water_target_ml,
     })
     setLoaded(true)
   }, [settings, loaded])
