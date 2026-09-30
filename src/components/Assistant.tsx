@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAiStatus } from '../hooks/useAi'
 import { useAllSets } from '../hooks/useWorkouts'
@@ -38,6 +38,13 @@ export function Assistant() {
   const setGym = useSetGymStatus()
 
   const [open, setOpen] = useState(false)
+
+  // Geöffnet wird der Assistent über den ✨-Button in der oberen Leiste.
+  useEffect(() => {
+    const onOpen = () => setOpen(true)
+    window.addEventListener('open-assistant', onOpen)
+    return () => window.removeEventListener('open-assistant', onOpen)
+  }, [])
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
@@ -127,16 +134,6 @@ export function Assistant() {
 
   return (
     <>
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed bottom-[84px] right-4 z-20 grid h-14 w-14 place-items-center rounded-full bg-brand text-2xl text-white shadow-lg"
-          aria-label="KI-Assistent"
-        >
-          ✨
-        </button>
-      )}
-
       {open && (
         <div className="fixed inset-0 z-40 flex flex-col bg-black/60 p-4">
           <div className="card mx-auto flex h-full w-full max-w-md flex-col">

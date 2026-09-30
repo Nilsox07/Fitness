@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { usePrefs, type World } from '../lib/prefs'
+import { useAiStatus } from '../hooks/useAi'
 
 function IconDumbbell({ className = 'h-4 w-4' }: { className?: string }) {
   return (
@@ -30,6 +31,7 @@ const HOME: Record<World, string> = { fitness: '/', food: '/nutrition' }
 
 export function TopBar() {
   const { world, setWorld } = usePrefs()
+  const { data: ai } = useAiStatus()
   const navigate = useNavigate()
 
   function switchTo(w: World) {
@@ -69,6 +71,16 @@ export function TopBar() {
             Ernährung
           </button>
         </div>
+        {ai?.enabled && (
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event('open-assistant'))}
+            aria-label="KI-Assistent"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ruby text-lg text-white shadow"
+          >
+            ✨
+          </button>
+        )}
         <button
           type="button"
           onClick={() => navigate('/profile')}
