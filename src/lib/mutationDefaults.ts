@@ -101,6 +101,20 @@ export function registerMutationDefaults(qc: QueryClient) {
       if (error) throw error
       return data as WorkoutSet
     },
+    // Optimistisch: Änderung sofort in allen Satz-Listen zeigen (✓, Wdh, Gewicht),
+    // nicht erst nach der Server-Antwort. Bei Fehler wird neu geladen.
+    onMutate: async ({ id, ...patch }: SetPatch) => {
+      await qc.cancelQueries({ queryKey: ['sets'] })
+      for (const [key, list] of qc.getQueriesData<WorkoutSet[]>({ queryKey: ['sets'] })) {
+        if (Array.isArray(list)) {
+          qc.setQueryData(
+            key,
+            list.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+          )
+        }
+      }
+    },
+    onError: () => qc.invalidateQueries({ queryKey: ['sets'] }),
     onSuccess: (s) => invalidateSets((s as WorkoutSet).workout_id),
   })
 
