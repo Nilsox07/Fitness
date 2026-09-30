@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Flame, Pencil, Check, Plus, Trash2 } from 'lucide-react'
+import { CalendarPlus, Flame, Pencil, Check, Plus, Trash2 } from 'lucide-react'
 import { usePrefs } from '../lib/prefs'
 import { useExercises } from '../hooks/useExercises'
-import { useAddSet, useAllSets, useDeleteWorkout, useWorkouts } from '../hooks/useWorkouts'
+import { useAddSet, useAllSets, useCreateWorkout, useDeleteWorkout, useWorkouts } from '../hooks/useWorkouts'
+import { ProgressSwitch } from '../components/ProgressSwitch'
+import { FoodDays } from '../components/FoodDays'
+import { localDate } from '../lib/day'
 import { EditableSetRow } from '../components/EditableSetRow'
 import { totalVolume } from '../lib/analytics'
 import type { Exercise, SetWithDate } from '../types'
 
 export default function History() {
-  const navigate = useNavigate()
-  const { isNew } = usePrefs()
+  const { isNew, world } = usePrefs()
   const { data: workouts, isLoading } = useWorkouts()
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
@@ -18,6 +19,29 @@ export default function History() {
   const addSet = useAddSet()
   const [openId, setOpenId] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
+  const createWorkout = useCreateWorkout()
+  const [backfill, setBackfill] = useState(false)
+  const [backfillDate, setBackfillDate] = useState(() => localDate())
+
+  /** Vergessenes Training nachtragen (oder bestehendes an dem Tag öffnen). */
+  function startBackfill() {
+    const existing = workouts?.find((w) => w.date === backfillDate)
+    setBackfill(false)
+    if (existing) {
+      setOpenId(existing.id)
+      setEditId(existing.id)
+      return
+    }
+    createWorkout.mutate(
+      { date: backfillDate },
+      {
+        onSuccess: (w) => {
+          setOpenId(w.id)
+          setEditId(w.id)
+        },
+      },
+    )
+  }
 
   const exName = (id: string) => exercises?.find((e) => e.id === id)?.name ?? 'Übung'
 
@@ -54,16 +78,48 @@ export default function History() {
     })
   }
 
+  if (isNew && world === 'food') {
+    return (
+      <div className="space-y-4">
+        <ProgressSwitch />
+        <FoodDays />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      <header className="flex items-center gap-2">
-        {isNew && (
-          <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
-            <ChevronLeft size={20} />
-          </button>
-        )}
-        <h1 className="text-xl font-bold">Verlauf</h1>
-      </header>
+      {isNew ? (
+        <>
+          <ProgressSwitch />
+          {backfill ? (
+            <div className="card anim-fade flex items-end gap-2">
+              <div className="flex-1">
+                <label className="label">Training nachtragen am</label>
+                <input
+                  type="date"
+                  className="input"
+                  value={backfillDate}
+                  max={localDate()}
+                  onChange={(e) => setBackfillDate(e.target.value)}
+                />
+              </div>
+              <button className="btn-primary" onClick={startBackfill} disabled={!backfillDate}>
+                Los
+              </button>
+            </div>
+          ) : (
+            <button className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm" onClick={() => setBackfill(true)}>
+              <CalendarPlus size={16} className="text-cocoa-light" />
+              Training nachtragen
+            </button>
+          )}
+        </>
+      ) : (
+        <header className="flex items-center gap-2">
+          <h1 className="text-xl font-bold">Verlauf</h1>
+        </header>
+      )}
       {isLoading && <p className="text-cocoa-light">Lädt…</p>}
 
       <ul className="space-y-2">

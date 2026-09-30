@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { usePrefs } from '../lib/prefs'
 
@@ -85,13 +85,13 @@ function IconPeople({ className = S }: IconProps) {
   )
 }
 
-type Tab = { to: string; label: string; Icon: (p: IconProps) => ReactElement; end?: boolean }
+type Tab = { to: string; label: string; Icon: (p: IconProps) => ReactElement; end?: boolean; also?: string[] }
 
 const FITNESS_TABS: Tab[] = [
   { to: '/', label: 'Heute', Icon: IconTrain, end: true },
   { to: '/plans', label: 'Pläne', Icon: IconPlan },
   { to: '/exercises', label: 'Übungen', Icon: IconList },
-  { to: '/analytics', label: 'Fortschritt', Icon: IconChart },
+  { to: '/analytics', label: 'Fortschritt', Icon: IconChart, also: ['/history'] },
   { to: '/social', label: 'Community', Icon: IconPeople },
 ]
 
@@ -99,12 +99,13 @@ const FOOD_TABS: Tab[] = [
   { to: '/nutrition', label: 'Heute', Icon: IconFood, end: true },
   { to: '/recipes', label: 'Rezepte', Icon: IconBook },
   { to: '/shopping', label: 'Plan', Icon: IconCart },
-  { to: '/analytics', label: 'Fortschritt', Icon: IconChart },
+  { to: '/analytics', label: 'Fortschritt', Icon: IconChart, also: ['/history'] },
   { to: '/social', label: 'Community', Icon: IconPeople },
 ]
 
 export function TabBar() {
   const { showNutrition, isNew, world } = usePrefs()
+  const { pathname } = useLocation()
 
   // Klassisch = alte, schlanke App
   const classicTabs: Tab[] = [
@@ -130,7 +131,7 @@ export function TabBar() {
             end={t.end}
             className={({ isActive }) =>
               `flex flex-col items-center gap-1 py-2.5 text-[11px] ${
-                isActive ? 'text-brand' : 'text-cocoa-muted'
+                isActive || t.also?.includes(pathname) ? 'text-brand' : 'text-cocoa-muted'
               }`
             }
           >

@@ -138,3 +138,14 @@ export function useDeleteFoodEntry() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['food_entries'] }),
   })
 }
+
+export function useUpdateFoodEntry() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<FoodEntry> & { id: string }) => {
+      const { error } = await supabase.from('food_entries').update(patch).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['food_entries'] }),
+  })
+}

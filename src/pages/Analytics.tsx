@@ -1,6 +1,4 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Calendar } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -17,6 +15,7 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useAllFoodEntries } from '../hooks/useNutrition'
 import { useTheme } from '../lib/theme'
 import { usePrefs } from '../lib/prefs'
+import { ProgressSwitch } from '../components/ProgressSwitch'
 import { AiPanel } from '../components/AiPanel'
 import { GamePanel } from '../components/GamePanel'
 import { NutritionGamePanel } from '../components/NutritionGamePanel'
@@ -77,7 +76,6 @@ function Ratio({
 }
 
 export default function Analytics() {
-  const navigate = useNavigate()
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
   const [exerciseId, setExerciseId] = useState('')
@@ -180,15 +178,13 @@ export default function Analytics() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between gap-2">
-        <h1 className="text-xl font-bold">{title}</h1>
-        {isNew && world === 'fitness' && (
-          <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={() => navigate('/history')}>
-            <Calendar size={16} className="text-cocoa-light" />
-            Verlauf
-          </button>
-        )}
-      </header>
+      {isNew ? (
+        <ProgressSwitch />
+      ) : (
+        <header className="flex items-center justify-between gap-2">
+          <h1 className="text-xl font-bold">{title}</h1>
+        </header>
+      )}
 
       {!showTraining && !showFood && (
         <p className="text-cocoa-light">

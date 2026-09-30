@@ -12,8 +12,8 @@ function todayLocal(): string {
   ).padStart(2, '0')}`
 }
 
-export function WaterCard() {
-  const today = todayLocal()
+export function WaterCard({ date }: { date?: string } = {}) {
+  const today = date ?? todayLocal()
   const { data: water } = useWater(today)
   const { data: settings } = useNutritionSettings()
   const setWater = useSetWater()

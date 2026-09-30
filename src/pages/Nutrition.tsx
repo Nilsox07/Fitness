@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Bot,
   Camera,
@@ -13,8 +14,11 @@ import {
   Search,
   Share2,
   Store,
+  Trash2,
   X,
 } from 'lucide-react'
+import { DayNav } from '../components/DayNav'
+import { Sheet } from '../components/workout/Sheet'
 import { useAuth } from '../lib/auth'
 import { useAddRecipe } from '../hooks/useRecipes'
 import { Stepper } from '../components/Stepper'
@@ -45,6 +49,7 @@ import {
   useAddFoodEntry,
   useAllFoodEntries,
   useDeleteFoodEntry,
+  useUpdateFoodEntry,
   useFoodEntries,
   useNutritionSettings,
 } from '../hooks/useNutrition'
@@ -112,7 +117,14 @@ function Bar({ value, target }: { value: number; target: number }) {
 export default function Nutrition() {
   const { user } = useAuth()
   const addRecipe = useAddRecipe()
-  const today = todayLocal()
+  // Ausgewählter Tag (?date=YYYY-MM-DD) — so lassen sich vergangene Tage nachtragen/korrigieren.
+  const [params, setParams] = useSearchParams()
+  const realToday = todayLocal()
+  const paramDate = params.get('date')
+  const today = paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate < realToday ? paramDate : realToday
+  const isToday = today === realToday
+  const setDay = (d: string) => setParams(d >= realToday ? {} : { date: d }, { replace: true })
+  const [editEntry, setEditEntry] = useState<FoodEntry | null>(null)
   const { data: settings } = useNutritionSettings()
   const { data: entries } = useFoodEntries(today)
   const { data: allEntries } = useAllFoodEntries()
@@ -146,6 +158,7 @@ export default function Nutrition() {
   }
   const addEntry = useAddFoodEntry()
   const deleteEntry = useDeleteFoodEntry()
+  const updateEntry = useUpdateFoodEntry()
 
   const totals = sumEntries(entries ?? [])
 
@@ -481,19 +494,37 @@ export default function Nutrition() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">{isNew ? 'Heute' : 'Ernährung'}</h1>
-          <p className="text-sm text-cocoa-light">
-            {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
-        </div>
-        <button className="btn-ghost text-sm" onClick={openSetup}>
-          {hasTarget ? 'Ziel' : 'Ziel einstellen'}
-        </button>
-      </header>
+      {isNew ? (
+        <header className="flex items-center justify-between gap-2">
+          <DayNav date={today} onChange={setDay} />
+          <button className="btn-ghost text-sm" onClick={openSetup}>
+            {hasTarget ? 'Ziel' : 'Ziel einstellen'}
+          </button>
+        </header>
+      ) : (
+        <header className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Ernährung</h1>
+            <p className="text-sm text-cocoa-light">
+              {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+          </div>
+          <button className="btn-ghost text-sm" onClick={openSetup}>
+            {hasTarget ? 'Ziel' : 'Ziel einstellen'}
+          </button>
+        </header>
+      )}
 
-      {isNew && <DailyOverview />}
+      {isNew && !isToday && (
+        <p className="rounded-xl bg-sand px-3 py-2 text-sm text-cocoa-light">
+          Du bearbeitest einen vergangenen Tag — neue Einträge landen an diesem Datum.{' '}
+          <button className="font-semibold text-brand" onClick={() => setDay(realToday)}>
+            Zu heute
+          </button>
+        </p>
+      )}
+
+      {isNew && isToday && <DailyOverview />}
 
       {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
 
@@ -594,13 +625,17 @@ export default function Nutrition() {
               <div className="space-y-2">
                 {group.map((e) => (
                   <div key={e.id} className="card flex items-center justify-between">
-                    <div className="min-w-0">
+                    <button
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => isNew && setEditEntry(e)}
+                      disabled={!isNew}
+                    >
                       <div className="font-medium">{e.name}</div>
                       <div className="tabular text-xs text-cocoa-light">
                         {e.amount_g ? `${e.amount_g} g · ` : ''}
                         {Math.round(e.kcal)} kcal · E {e.protein} / K {e.carbs} / F {e.fat}
                       </div>
-                    </div>
+                    </button>
                     <button
                       className="ml-2 shrink-0 px-2 text-cocoa-muted transition-colors duration-200 hover:text-red-500 dark:hover:text-red-400"
                       aria-label="Eintrag löschen"
@@ -615,12 +650,29 @@ export default function Nutrition() {
           )
         })}
         {entries?.length === 0 && (
-          <p className="text-center text-sm text-cocoa-light">Heute noch nichts erfasst.</p>
+          <p className="text-center text-sm text-cocoa-light">
+            {isToday ? 'Heute noch nichts erfasst.' : 'An diesem Tag nichts erfasst.'}
+          </p>
         )}
       </div>
 
-      {isNew && <WaterCard />}
-      {isNew && <BodyWeightCard />}
+      {isNew && <WaterCard date={today} />}
+      {isNew && isToday && <BodyWeightCard />}
+
+      {editEntry && (
+        <EditEntrySheet
+          entry={editEntry}
+          onClose={() => setEditEntry(null)}
+          onSave={(patch) => {
+            updateEntry.mutate({ id: editEntry.id, ...patch })
+            setEditEntry(null)
+          }}
+          onDelete={() => {
+            deleteEntry.mutate(editEntry)
+            setEditEntry(null)
+          }}
+        />
+      )}
 
       {/* ----- Ziel-Setup ----- */}
       {setupOpen && (
@@ -1192,5 +1244,89 @@ export default function Nutrition() {
       {/* ----- Kamera-Scanner ----- */}
       {scanning && <BarcodeScanner onDetected={handleBarcode} onClose={() => setScanning(false)} />}
     </div>
+  )
+}
+
+type EntryPatch = Partial<Omit<FoodEntry, 'id' | 'user_id' | 'created_at'>>
+const NUTRIENTS = ['kcal', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sat_fat', 'salt'] as const
+
+/** Eintrag nachträglich ändern: Menge (Nährwerte skalieren mit), Mahlzeit, Name — oder löschen. */
+function EditEntrySheet({
+  entry,
+  onClose,
+  onSave,
+  onDelete,
+}: {
+  entry: FoodEntry
+  onClose: () => void
+  onSave: (patch: EntryPatch) => void
+  onDelete: () => void
+}) {
+  const hasGrams = !!entry.amount_g && entry.amount_g > 0
+  const [name, setName] = useState(entry.name)
+  const [amount, setAmount] = useState(hasGrams ? String(entry.amount_g) : '1')
+  const [meal, setMeal] = useState<Meal>((entry.meal ?? 'snack') as Meal)
+
+  const num = parseFloat(amount.replace(',', '.'))
+  const factor = Number.isFinite(num) && num > 0 ? (hasGrams ? num / entry.amount_g! : num) : 1
+  const r1 = (v: number) => Math.round(v * 10) / 10
+  const kcal = Math.round(entry.kcal * factor)
+
+  function save() {
+    const patch: EntryPatch = { name: name.trim() || entry.name, meal }
+    if (factor !== 1) {
+      for (const k of NUTRIENTS) patch[k] = k === 'kcal' ? kcal : r1(entry[k] * factor)
+      if (hasGrams) patch.amount_g = Math.round(num)
+    }
+    onSave(patch)
+  }
+
+  return (
+    <Sheet title="Eintrag bearbeiten" onClose={onClose}>
+      <div>
+        <label className="label">Name</label>
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div>
+        <label className="label">{hasGrams ? 'Menge (g)' : 'Portionen (×)'}</label>
+        <input
+          className="input tabular"
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        <p className="tabular mt-1 text-xs text-cocoa-light">
+          {kcal} kcal · E {r1(entry.protein * factor)} / K {r1(entry.carbs * factor)} / F {r1(entry.fat * factor)}
+        </p>
+      </div>
+      <div>
+        <label className="label">Mahlzeit</label>
+        <div className="flex flex-wrap gap-2">
+          {MEALS.map((m) => (
+            <button
+              key={m}
+              onClick={() => setMeal(m as Meal)}
+              className={`rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ${
+                meal === m ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
+              }`}
+            >
+              {MEAL_LABEL[m as Meal]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button
+          className="btn grid h-11 w-11 shrink-0 place-items-center bg-sand p-0 text-cocoa-light hover:text-red-500"
+          onClick={onDelete}
+          aria-label="Eintrag löschen"
+        >
+          <Trash2 size={18} />
+        </button>
+        <button className="btn-primary flex-1" onClick={save}>
+          Speichern
+        </button>
+      </div>
+    </Sheet>
   )
 }
