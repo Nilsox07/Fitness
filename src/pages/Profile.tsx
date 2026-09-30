@@ -194,7 +194,9 @@ export default function Profile() {
           {isNew && (
             <button className={TILE} onClick={() => navigate('/badges')}>
               <Award size={16} className="text-cocoa-light" />
-              Abzeichen · <span className="tabular">Lvl {level}</span>
+              <span className="whitespace-nowrap">
+                Abzeichen <span className="tabular text-sm font-medium text-cocoa-light">Lv {level}</span>
+              </span>
             </button>
           )}
           {isNew && (
