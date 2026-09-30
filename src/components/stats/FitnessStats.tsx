@@ -210,7 +210,7 @@ export function FitnessStats({ sets, exercises }: { sets: SetWithDate[]; exercis
             <XAxis dataKey="label" tick={chart.axisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={4} />
             <YAxis
               tick={chart.axisStyle}
-              width={36}
+              width={48}
               tickLine={false}
               axisLine={false}
               allowDecimals={false}

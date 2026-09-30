@@ -22,6 +22,8 @@ import { NutritionGamePanel } from '../components/NutritionGamePanel'
 import { StreakCard } from '../components/StreakCard'
 import { SeasonCard } from '../components/SeasonCard'
 import { Heatmap } from '../components/Heatmap'
+import { FitnessStats } from '../components/stats/FitnessStats'
+import { FoodStats } from '../components/stats/FoodStats'
 import {
   balanceStats,
   frequencyStats,
@@ -75,7 +77,8 @@ function Ratio({
   )
 }
 
-export default function Analytics() {
+/** Klassische Auswertung (alter App-Modus) — unverändert. */
+function ClassicAnalytics() {
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
   const [exerciseId, setExerciseId] = useState('')
@@ -404,4 +407,30 @@ export default function Analytics() {
       )}
     </div>
   )
+}
+
+/** Neue App: Statistik der aktiven Welt (Fitness oder Ernährung). */
+function NewAnalytics() {
+  const { world } = usePrefs()
+  const { data: exercises } = useExercises()
+  const { data: allSets } = useAllSets()
+  const sets = allSets ?? []
+
+  return (
+    <div className="space-y-5">
+      <ProgressSwitch />
+      {world === 'food' ? (
+        <FoodStats />
+      ) : sets.length > 0 ? (
+        <FitnessStats sets={sets} exercises={exercises ?? []} />
+      ) : (
+        <p className="text-cocoa-light">Noch keine Daten — erfasse dein erstes Training.</p>
+      )}
+    </div>
+  )
+}
+
+export default function Analytics() {
+  const { isNew } = usePrefs()
+  return isNew ? <NewAnalytics /> : <ClassicAnalytics />
 }
