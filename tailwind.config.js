@@ -22,6 +22,9 @@ export default {
           light: 'rgb(var(--c-text-muted) / <alpha-value>)',
           muted: 'rgb(var(--c-text-dim) / <alpha-value>)',
         },
+        bg: 'rgb(var(--c-bg) / <alpha-value>)',
+        success: 'rgb(var(--c-success) / <alpha-value>)',
+        gold: 'rgb(var(--c-gold) / <alpha-value>)',
         brand: {
           DEFAULT: 'rgb(var(--c-ruby) / <alpha-value>)',
           dark: 'rgb(var(--c-ruby-dark) / <alpha-value>)',

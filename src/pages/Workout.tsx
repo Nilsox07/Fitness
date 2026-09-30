@@ -43,6 +43,24 @@ import { CompactSetRow, SetTableHeader, isSetDone, type PrevSet } from '../compo
 import { RestControl, useRestTimer } from '../components/workout/RestControl'
 import { Sheet } from '../components/workout/Sheet'
 import {
+  AlertTriangle,
+  Check,
+  ChevronRight,
+  Flame,
+  Lightbulb,
+  Link2,
+  MoreHorizontal,
+  Play,
+  Plus,
+  RefreshCw,
+  Search,
+  Share2,
+  Sparkles,
+  Trash2,
+  Trophy,
+  Unlink,
+} from 'lucide-react'
+import {
   afterSetDone,
   appendOrder,
   getPairs,
@@ -686,7 +704,7 @@ export default function Workout() {
                       createWorkout.mutate({ date: today })
                     }}
                   >
-                    <span className="text-brand">▶</span>
+                    <Play size={14} className="shrink-0 fill-brand text-brand" />
                     <span className="truncate">{p.name}</span>
                   </button>
                 ))}
@@ -737,34 +755,46 @@ export default function Workout() {
         <Confetti show={confetti} onDone={() => setConfetti(false)} />
         {/* Rekord als schwebender Hinweis oben — verschiebt den Inhalt nicht */}
         {prName && confetti && (
-          <div className="pointer-events-none fixed inset-x-0 top-[76px] z-30 mx-auto max-w-md px-4">
-            <div className="animate-[pop_0.35s_ease-out] rounded-full bg-gradient-to-r from-amber-500 to-ruby px-4 py-2 text-center text-sm font-bold text-white shadow-lg">
-              🏆 Neuer Rekord: {prName}
+          <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+10px)] z-30 mx-auto max-w-md px-4">
+            <div className="flex animate-[pop_0.35s_ease-out] items-center justify-center gap-2 rounded-full bg-gold px-4 py-2 text-sm font-bold text-white shadow-lg">
+              <Trophy size={16} strokeWidth={2.5} />
+              Neuer Rekord: {prName}
             </div>
           </div>
         )}
 
-        <header className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold">Heute</h1>
-            <p className="truncate text-xs text-cocoa-light">
-              {hasSets
-                ? `${doneCount}/${workoutSets!.length} Sätze · ${Math.round(
-                    totalVolume(workoutSets!),
-                  ).toLocaleString('de-DE')} kg`
-                : dateLabel}
-            </p>
+        <header className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold">Heute</h1>
+              <p className="tabular truncate text-xs text-cocoa-light">
+                {hasSets
+                  ? `${doneCount}/${workoutSets!.length} Sätze · ${Math.round(
+                      totalVolume(workoutSets!),
+                    ).toLocaleString('de-DE')} kg`
+                  : dateLabel}
+              </p>
+            </div>
+            {hasSets && (
+              <button className="btn-primary shrink-0 px-4 py-2 text-sm" onClick={() => setSheet('finish')}>
+                Beenden
+              </button>
+            )}
           </div>
           {hasSets && (
-            <button className="btn-primary shrink-0 px-4 py-2 text-sm" onClick={() => setSheet('finish')}>
-              Beenden
-            </button>
+            <div className="h-1 overflow-hidden rounded-full bg-sand">
+              <div
+                className="h-full rounded-full bg-success transition-[width] duration-500 ease-out"
+                style={{ width: `${Math.round((doneCount / workoutSets!.length) * 100)}%` }}
+              />
+            </div>
           )}
         </header>
 
         {saveError && (
-          <div className="rounded-xl bg-red-500/10 p-2.5 text-xs text-red-500 ring-1 ring-red-400/60">
-            ⚠️ {saveError.message} — wird automatisch erneut gesendet, sobald wieder Verbindung besteht.
+          <div className="flex items-start gap-2 rounded-xl bg-red-500/10 p-2.5 text-xs text-red-500">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+            <span>{saveError.message} — wird automatisch erneut gesendet, sobald wieder Verbindung besteht.</span>
           </div>
         )}
 
@@ -780,22 +810,24 @@ export default function Workout() {
               const p = pairOf(pairs, id)
               return (
                 <Fragment key={id}>
-                  {p && p[1] === id && <span className="-mx-1 self-center text-xs text-brand">⛓</span>}
+                  {p && p[1] === id && (
+                    <Link2 size={14} className="-mx-1 shrink-0 self-center text-cocoa-muted" aria-label="Supersatz" />
+                  )}
                   <button
                     onClick={() => setExerciseId(id)}
-                    className={`flex shrink-0 flex-col items-start rounded-xl px-3 py-1.5 text-left ring-1 transition ${
+                    className={`flex shrink-0 flex-col items-start rounded-xl px-3 py-1.5 text-left transition-colors duration-200 ${
                       isActive
-                        ? 'bg-brand text-white ring-brand'
+                        ? 'bg-cocoa text-cream'
                         : complete
-                          ? 'bg-brand/10 text-cocoa ring-brand/30'
-                          : 'bg-sand-light text-cocoa ring-sand-dark'
+                          ? 'bg-success/10 text-cocoa'
+                          : 'bg-cream text-cocoa'
                     }`}
                   >
-                    <span className="max-w-[9rem] truncate text-sm font-semibold">
-                      {complete && !isActive ? '✓ ' : ''}
-                      {ex?.name ?? 'Übung'}
+                    <span className="flex max-w-[9rem] items-center gap-1 truncate text-sm font-semibold">
+                      {complete && <Check size={13} strokeWidth={3} className={isActive ? '' : 'text-success'} />}
+                      <span className="truncate">{ex?.name ?? 'Übung'}</span>
                     </span>
-                    <span className={`text-[10px] ${isActive ? 'text-white/80' : 'text-cocoa-muted'}`}>
+                    <span className={`tabular text-[10px] ${isActive ? 'opacity-70' : 'text-cocoa-muted'}`}>
                       {d}/{list.length} Sätze
                     </span>
                   </button>
@@ -804,10 +836,10 @@ export default function Workout() {
             })}
             <button
               onClick={() => setSheet('picker')}
-              className="grid shrink-0 place-items-center rounded-xl border border-dashed border-sand-dark px-4 text-lg text-cocoa-light"
+              className="grid shrink-0 place-items-center rounded-xl border border-dashed border-sand-dark px-4 text-cocoa-light"
               aria-label="Übung hinzufügen"
             >
-              ＋
+              <Plus size={18} />
             </button>
           </div>
         )}
@@ -827,7 +859,7 @@ export default function Workout() {
                       onClick={() => loadPlanOrdered(p)}
                       disabled={addSets.isPending}
                     >
-                      <span className="text-brand">▶</span>
+                      <Play size={14} className="shrink-0 fill-brand text-brand" />
                       <span className="truncate">{p.name}</span>
                     </button>
                   ))}
@@ -844,13 +876,13 @@ export default function Workout() {
         {active && (
           <div className="card space-y-2">
             {pair && (
-              <div className="grid grid-cols-2 gap-1 rounded-xl bg-sand-light p-1 ring-1 ring-sand-dark">
+              <div className="grid grid-cols-2 gap-1 rounded-xl bg-sand p-1">
                 {pair.map((id, i) => (
                   <button
                     key={id}
                     onClick={() => setExerciseId(id)}
-                    className={`truncate rounded-lg px-2 py-1 text-xs font-semibold ${
-                      id === exerciseId ? 'bg-brand text-white' : 'text-cocoa-light'
+                    className={`truncate rounded-lg px-2 py-1 text-xs font-semibold transition-colors duration-200 ${
+                      id === exerciseId ? 'bg-sand-light text-cocoa shadow-sm dark:bg-sand-dark' : 'text-cocoa-light'
                     }`}
                   >
                     A{i + 1} · {exById.get(id)?.name}
@@ -867,21 +899,22 @@ export default function Workout() {
                 </p>
               </div>
               <button
-                className="-mr-1 shrink-0 rounded-lg px-2 py-1 text-xl leading-none text-cocoa-muted"
+                className="-mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-cocoa-light active:bg-sand"
                 onClick={() => setSheet('menu')}
                 aria-label="Übungs-Optionen"
               >
-                ⋯
+                <MoreHorizontal size={20} />
               </button>
             </div>
             {suggestion && (
               <button
                 type="button"
                 onClick={() => setTipOpen((o) => !o)}
-                className="w-full rounded-lg bg-sand/60 px-2.5 py-1.5 text-left text-xs"
+                className="flex w-full items-start gap-1.5 rounded-lg bg-sand/70 px-2.5 py-1.5 text-left text-xs"
               >
+                <Lightbulb size={13} className="mt-px shrink-0 text-cocoa-light" />
                 <span className={`${tipStyles[suggestion.action]} ${tipOpen ? 'block' : 'line-clamp-2'}`}>
-                  💡 {suggestion.reason}
+                  {suggestion.reason}
                 </span>
               </button>
             )}
@@ -913,20 +946,27 @@ export default function Workout() {
             className="fixed inset-x-0 z-10 mx-auto max-w-md px-3"
             style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
           >
-            <div className="flex items-center gap-2 rounded-2xl bg-cream/95 p-2 shadow-lg ring-1 ring-sand-dark backdrop-blur">
+            <div className="flex items-center gap-2 rounded-2xl bg-cream/95 p-2 shadow-[0_4px_24px_rgb(0_0_0/0.12)] backdrop-blur">
               <RestControl timer={rest} />
               {rest.left == null && (
                 <>
-                  <button className="btn-ghost flex-1 px-2 py-2 text-sm" onClick={addOne} disabled={addSet.isPending}>
-                    + Satz
+                  <button
+                    className="btn flex-1 gap-1 bg-sand px-2 py-2 text-sm text-cocoa"
+                    onClick={addOne}
+                    disabled={addSet.isPending}
+                  >
+                    <Plus size={16} /> Satz
                   </button>
                   {nextExId ? (
-                    <button className="btn-primary flex-1 px-2 py-2 text-sm" onClick={() => setExerciseId(nextExId)}>
-                      Nächste →
+                    <button
+                      className="btn-primary flex-1 gap-0.5 px-2 py-2 text-sm"
+                      onClick={() => setExerciseId(nextExId)}
+                    >
+                      Nächste <ChevronRight size={16} />
                     </button>
                   ) : (
-                    <button className="btn-primary flex-1 px-2 py-2 text-sm" onClick={() => setSheet('finish')}>
-                      Fertig ✓
+                    <button className="btn-primary flex-1 gap-1 px-2 py-2 text-sm" onClick={() => setSheet('finish')}>
+                      <Check size={16} strokeWidth={3} /> Fertig
                     </button>
                   )}
                 </>
@@ -938,40 +978,36 @@ export default function Workout() {
         {/* ---- Sheets ---- */}
         {sheet === 'menu' && active && (
           <Sheet title={active.name} onClose={() => setSheet(null)}>
-            {active.notes && (
-              <p className="rounded-xl bg-sand p-2.5 text-sm text-cocoa ring-1 ring-sand-dark">{active.notes}</p>
-            )}
-            <div className="grid gap-2">
+            {active.notes && <p className="rounded-xl bg-sand p-2.5 text-sm text-cocoa">{active.notes}</p>}
+            <div className="overflow-hidden rounded-xl bg-sand-light [&>button]:flex [&>button]:w-full [&>button]:items-center [&>button]:gap-3 [&>button]:px-3 [&>button]:py-3 [&>button]:text-left [&>button]:font-medium [&>button:not(:last-child)]:border-b [&>button:not(:last-child)]:border-sand">
               {pair ? (
                 <button
-                  className="btn-ghost w-full justify-start"
                   onClick={() => {
                     unpair(active.id)
                     setSheet(null)
                   }}
                 >
-                  ⛓ Supersatz lösen
+                  <Unlink size={18} className="text-cocoa-light" /> Supersatz lösen
                 </button>
               ) : (
-                <button className="btn-ghost w-full justify-start" onClick={() => setSheet('pair')}>
-                  ⛓ Als Supersatz kombinieren …
+                <button onClick={() => setSheet('pair')}>
+                  <Link2 size={18} className="text-cocoa-light" /> Als Supersatz kombinieren …
                 </button>
               )}
-              <button className="btn-ghost w-full justify-start" onClick={() => setSheet('alts')}>
-                🔄 Gerät besetzt? Alternative
+              <button onClick={() => setSheet('alts')}>
+                <RefreshCw size={18} className="text-cocoa-light" /> Gerät besetzt? Alternative
               </button>
               <button
-                className="btn-ghost w-full justify-start"
                 onClick={() => {
                   addOne()
                   setSheet(null)
                 }}
               >
-                ＋ Satz hinzufügen
+                <Plus size={18} className="text-cocoa-light" /> Satz hinzufügen
               </button>
               {activeSets.length > 0 && (
                 <button
-                  className="btn-ghost w-full justify-start text-red-500"
+                  className="text-red-500"
                   onClick={() => {
                     if (!confirm(`„${active.name}" aus dem heutigen Training entfernen?`)) return
                     activeSets.forEach((s) => deleteSet.mutate(s))
@@ -980,7 +1016,7 @@ export default function Workout() {
                     setSheet(null)
                   }}
                 >
-                  🗑 Aus heutigem Training entfernen
+                  <Trash2 size={18} /> Aus heutigem Training entfernen
                 </button>
               )}
             </div>
@@ -995,12 +1031,15 @@ export default function Workout() {
               setPickerQuery('')
             }}
           >
-            <input
-              className="input"
-              placeholder="Suchen (Name oder Muskel) …"
-              value={pickerQuery}
-              onChange={(e) => setPickerQuery(e.target.value)}
-            />
+            <div className="relative">
+              <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cocoa-muted" />
+              <input
+                className="input pl-9"
+                placeholder="Suchen (Name oder Muskel) …"
+                value={pickerQuery}
+                onChange={(e) => setPickerQuery(e.target.value)}
+              />
+            </div>
             {sheet === 'picker' && plans && plans.length > 0 && !q && (
               <div>
                 <div className="label">Ganzen Plan laden</div>
@@ -1008,16 +1047,16 @@ export default function Workout() {
                   {plans.map((p) => (
                     <button
                       key={p.id}
-                      className="rounded-full bg-brand/10 px-3 py-1.5 text-sm font-semibold text-brand ring-1 ring-brand/30"
+                      className="flex items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa"
                       onClick={() => loadPlanOrdered(p)}
                     >
-                      ▶ {p.name}
+                      <Play size={12} className="fill-brand text-brand" /> {p.name}
                     </button>
                   ))}
                 </div>
               </div>
             )}
-            <ul className="divide-y divide-sand-dark/60">
+            <ul className="divide-y divide-sand">
               {pickerList.map((e) => {
                 const inToday = todayExIds.includes(e.id)
                 return (
@@ -1037,7 +1076,11 @@ export default function Workout() {
                         <span className="block truncate font-medium">{e.name}</span>
                         <span className="block text-xs text-cocoa-light">{e.muscle_group}</span>
                       </span>
-                      {inToday && <span className="shrink-0 text-xs text-brand">✓ heute</span>}
+                      {inToday && (
+                        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-success">
+                          <Check size={13} strokeWidth={3} /> heute
+                        </span>
+                      )}
                     </button>
                   </li>
                 )
@@ -1064,7 +1107,7 @@ export default function Workout() {
                 {alternatives.map((a) => (
                   <button
                     key={a.id}
-                    className="rounded-full bg-sand-light px-3 py-1.5 text-sm ring-1 ring-sand-dark"
+                    className="rounded-full bg-sand px-3 py-1.5 text-sm"
                     onClick={() => addExerciseToday(a.id)}
                   >
                     {a.name}
@@ -1075,21 +1118,24 @@ export default function Workout() {
               <p className="text-sm text-cocoa-light">Keine eigene Übung mit gleicher Muskelgruppe.</p>
             )}
             {ai?.enabled && (
-              <button className="btn-ghost w-full" onClick={findAltAi} disabled={altBusy}>
-                {altBusy ? 'Suche …' : '🤖 Beste Alternative finden'}
+              <button className="btn w-full gap-2 bg-sand text-cocoa" onClick={findAltAi} disabled={altBusy}>
+                <Sparkles size={16} className="text-brand" />
+                {altBusy ? 'Suche …' : 'Beste Alternative finden'}
               </button>
             )}
             {altAi &&
               (altAi.name ? (
                 <button
-                  className="w-full rounded-xl bg-brand/10 p-3 text-left text-sm ring-1 ring-brand/30"
+                  className="w-full rounded-xl bg-sand p-3 text-left text-sm"
                   onClick={() => {
                     const ex = exercises?.find((e) => e.name === altAi.name)
                     if (ex) addExerciseToday(ex.id)
                     setAltAi(null)
                   }}
                 >
-                  <span className="font-semibold text-brand">→ {altAi.name}</span>
+                  <span className="flex items-center gap-1 font-semibold text-cocoa">
+                    {altAi.name} <ChevronRight size={15} />
+                  </span>
                   <span className="mt-0.5 block text-cocoa-light">{altAi.reason}</span>
                 </button>
               ) : (
@@ -1101,24 +1147,20 @@ export default function Workout() {
         {sheet === 'finish' && (
           <Sheet title="Training beenden" onClose={() => setSheet(null)}>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl bg-sand-light p-2 ring-1 ring-sand-dark">
-                <div className="text-lg font-bold">{doneCount}</div>
-                <div className="text-[11px] text-cocoa-light">Sätze</div>
-              </div>
-              <div className="rounded-xl bg-sand-light p-2 ring-1 ring-sand-dark">
-                <div className="text-lg font-bold">
-                  {Math.round(totalVolume(workoutSets ?? [])).toLocaleString('de-DE')}
+              {[
+                [String(doneCount), 'Sätze'],
+                [Math.round(totalVolume(workoutSets ?? [])).toLocaleString('de-DE'), 'kg Volumen'],
+                [minutes > 0 && minutes < 300 ? String(minutes) : '–', 'Minuten'],
+              ].map(([value, label]) => (
+                <div key={label} className="rounded-xl bg-sand-light py-3">
+                  <div className="tabular text-2xl font-bold">{value}</div>
+                  <div className="text-[11px] text-cocoa-light">{label}</div>
                 </div>
-                <div className="text-[11px] text-cocoa-light">kg Volumen</div>
-              </div>
-              <div className="rounded-xl bg-sand-light p-2 ring-1 ring-sand-dark">
-                <div className="text-lg font-bold">{minutes > 0 && minutes < 300 ? minutes : '–'}</div>
-                <div className="text-[11px] text-cocoa-light">Minuten</div>
-              </div>
+              ))}
             </div>
             {prName && (
-              <p className="rounded-xl bg-amber-500/10 p-2.5 text-center text-sm font-semibold text-amber-600 dark:text-amber-400">
-                🏆 Neuer Rekord: {prName}
+              <p className="flex items-center justify-center gap-2 rounded-xl bg-gold/15 p-2.5 text-sm font-semibold text-gold">
+                <Trophy size={16} /> Neuer Rekord: {prName}
               </p>
             )}
             {openSets.length > 0 && (
@@ -1127,28 +1169,27 @@ export default function Workout() {
                 onClick={() => setDropOpenSets((v) => !v)}
               >
                 <span
-                  className={`grid h-5 w-5 shrink-0 place-items-center rounded text-xs ${
-                    dropOpenSets ? 'bg-brand text-white' : 'ring-1 ring-sand-dark'
+                  className={`grid h-5 w-5 shrink-0 place-items-center rounded-md ${
+                    dropOpenSets ? 'bg-cocoa text-cream' : 'bg-sand'
                   }`}
                 >
-                  {dropOpenSets ? '✓' : ''}
+                  {dropOpenSets && <Check size={13} strokeWidth={3} />}
                 </span>
                 {openSets.length} nicht abgehakte Sätze entfernen
               </button>
             )}
-            {hype && (
-              <p className="rounded-lg bg-ruby/10 p-2 text-center text-sm font-semibold text-ruby dark:text-rose-300">
-                {hype}
-              </p>
-            )}
+            {hype && <p className="rounded-lg bg-sand p-2.5 text-center text-sm font-semibold">{hype}</p>}
             <div className="grid grid-cols-2 gap-2">
               {ai?.enabled && (
-                <button className="btn-ghost text-sm" onClick={makeHype} disabled={hypeBusy}>
-                  {hypeBusy ? '…' : '🔥 Spruch'}
+                <button className="btn gap-1.5 bg-sand text-sm text-cocoa" onClick={makeHype} disabled={hypeBusy}>
+                  <Flame size={16} className="text-brand" /> {hypeBusy ? '…' : 'Spruch'}
                 </button>
               )}
-              <button className={`btn-ghost text-sm ${ai?.enabled ? '' : 'col-span-2'}`} onClick={shareToday}>
-                📤 Teilen
+              <button
+                className={`btn gap-1.5 bg-sand text-sm text-cocoa ${ai?.enabled ? '' : 'col-span-2'}`}
+                onClick={shareToday}
+              >
+                <Share2 size={16} /> Teilen
               </button>
             </div>
             <button className="btn-primary w-full" onClick={finishNew}>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Settings2, Timer, X } from 'lucide-react'
 import { Sheet } from './Sheet'
 import {
   getRestMode,
@@ -102,26 +103,34 @@ export function RestControl({ timer }: { timer: RestTimer }) {
   if (timer.left != null) {
     const pct = Math.max(0, Math.min(100, (timer.left / timer.total) * 100))
     return (
-      <div className="relative flex flex-1 items-center gap-1.5 overflow-hidden rounded-xl bg-cocoa px-2.5 py-1.5 text-cream dark:bg-sand-light dark:text-cocoa">
+      <div className="anim-fade relative flex flex-1 items-center gap-1.5 overflow-hidden rounded-xl bg-sand px-2.5 py-1.5 text-cocoa">
+        {/* Restzeit als dezent schrumpfender Balken */}
         <div
-          className="absolute inset-y-0 left-0 bg-brand/40 transition-[width] duration-300"
+          className="absolute inset-y-0 left-0 bg-brand/15 transition-[width] duration-300 ease-linear"
           style={{ width: `${pct}%` }}
         />
-        <span className="relative w-12 text-lg font-bold tabular-nums">
+        <Timer size={16} className="relative text-brand" />
+        <span className="tabular relative w-12 text-lg font-bold">
           {timer.left <= 0 ? 'Los!' : mmss(timer.left)}
         </span>
-        <button className="relative rounded-full bg-white/15 px-2 py-0.5 text-xs" onClick={() => timer.add(-15)}>
+        <button
+          className="tabular relative rounded-full bg-sand-light px-2 py-0.5 text-xs font-semibold"
+          onClick={() => timer.add(-15)}
+        >
           −15
         </button>
-        <button className="relative rounded-full bg-white/15 px-2 py-0.5 text-xs" onClick={() => timer.add(15)}>
+        <button
+          className="tabular relative rounded-full bg-sand-light px-2 py-0.5 text-xs font-semibold"
+          onClick={() => timer.add(15)}
+        >
           +15
         </button>
         <button
-          className="relative ml-auto rounded-full bg-white/25 px-2 py-0.5 text-xs font-semibold"
+          className="relative ml-auto grid h-7 w-7 place-items-center rounded-full bg-sand-light"
           onClick={timer.stop}
           aria-label="Pause beenden"
         >
-          ✕
+          <X size={14} strokeWidth={2.5} />
         </button>
       </div>
     )
@@ -129,20 +138,21 @@ export function RestControl({ timer }: { timer: RestTimer }) {
 
   return (
     <>
-      <div className="flex shrink-0 items-stretch overflow-hidden rounded-xl ring-1 ring-sand-dark">
+      <div className="flex shrink-0 items-stretch overflow-hidden rounded-xl bg-sand">
         <button
-          className="bg-sand-light px-3 py-2 text-sm font-semibold text-cocoa"
+          className="tabular flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-cocoa"
           onClick={() => timer.start()}
           aria-label="Pause starten"
         >
-          ⏱ {mmss(timer.total)}
+          <Timer size={16} className="text-cocoa-light" />
+          {mmss(timer.total)}
         </button>
         <button
-          className="border-l border-sand-dark bg-sand-light px-2 text-sm text-cocoa-light"
+          className="grid place-items-center border-l border-sand-dark/60 px-2 text-cocoa-light"
           onClick={() => setSettings(true)}
           aria-label="Timer-Einstellungen"
         >
-          ⚙
+          <Settings2 size={16} />
         </button>
       </div>
 

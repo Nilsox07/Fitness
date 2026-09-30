@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { usePrefs, type World } from '../lib/prefs'
 import { useAiStatus } from '../hooks/useAi'
+import { Sparkles } from 'lucide-react'
 
 function IconDumbbell({ className = 'h-4 w-4' }: { className?: string }) {
   return (
@@ -42,21 +43,22 @@ export function TopBar() {
   }
 
   const tabBase =
-    'flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-sm font-semibold transition'
+    'flex flex-1 items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-semibold transition-colors duration-200'
 
   return (
-    <header className="sticky top-0 z-20 border-b border-sand-dark bg-cream/95 px-4 pt-[env(safe-area-inset-top)] backdrop-blur">
+    <header className="sticky top-0 z-20 bg-bg/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="flex items-center gap-2 py-2.5">
-        <div className="flex flex-1 gap-1 rounded-full bg-sand-light p-1 ring-1 ring-sand-dark">
+        {/* Ruhiger Segment-Schalter: aktive Welt = helle Fläche, keine Signalfarbe */}
+        <div className="flex flex-1 gap-1 rounded-full bg-sand p-1">
           <button
             type="button"
             onClick={() => switchTo('fitness')}
             aria-pressed={world === 'fitness'}
             className={`${tabBase} ${
-              world === 'fitness' ? 'bg-ruby text-white shadow' : 'text-cocoa-light'
+              world === 'fitness' ? 'bg-sand-light text-cocoa shadow-sm dark:bg-sand-dark' : 'text-cocoa-light'
             }`}
           >
-            <IconDumbbell />
+            <IconDumbbell className={`h-4 w-4 ${world === 'fitness' ? 'text-brand' : ''}`} />
             Fitness
           </button>
           <button
@@ -64,10 +66,10 @@ export function TopBar() {
             onClick={() => switchTo('food')}
             aria-pressed={world === 'food'}
             className={`${tabBase} ${
-              world === 'food' ? 'bg-ruby text-white shadow' : 'text-cocoa-light'
+              world === 'food' ? 'bg-sand-light text-cocoa shadow-sm dark:bg-sand-dark' : 'text-cocoa-light'
             }`}
           >
-            <IconApple />
+            <IconApple className={`h-4 w-4 ${world === 'food' ? 'text-brand' : ''}`} />
             Ernährung
           </button>
         </div>
@@ -76,16 +78,16 @@ export function TopBar() {
             type="button"
             onClick={() => window.dispatchEvent(new Event('open-assistant'))}
             aria-label="KI-Assistent"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ruby text-lg text-white shadow"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-brand"
           >
-            ✨
+            <Sparkles size={18} />
           </button>
         )}
         <button
           type="button"
           onClick={() => navigate('/profile')}
           aria-label="Profil"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sand-light text-cocoa ring-1 ring-sand-dark"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa"
         >
           <IconUser />
         </button>

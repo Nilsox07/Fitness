@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Check, Minus, Plus, Trash2 } from 'lucide-react'
 import { useDeleteSet, useUpdateSet } from '../../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../../lib/weights'
 import { SET_TYPES, SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../../types'
@@ -52,19 +53,19 @@ function MiniStepper({
   }
 
   return (
-    <div className="flex min-w-0 items-stretch">
+    <div className="flex min-w-0 items-stretch overflow-hidden rounded-lg bg-sand">
       <button
         type="button"
-        className="w-7 shrink-0 rounded-l-lg bg-sand-dark/40 text-cocoa-light active:bg-sand-dark"
+        className="grid w-7 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
         onClick={() => adjust(-step)}
         aria-label={`${label} verringern`}
       >
-        −
+        <Minus size={14} strokeWidth={2.5} />
       </button>
       <input
         type="text"
         inputMode={Number.isInteger(step) ? 'numeric' : 'decimal'}
-        className={`w-full min-w-0 bg-sand-light py-1.5 text-center text-sm font-semibold outline-none ring-1 ring-inset ring-sand-dark focus:ring-2 focus:ring-brand ${
+        className={`tabular w-full min-w-0 bg-transparent py-1.5 text-center text-[15px] font-semibold outline-none focus:bg-sand-light focus:ring-2 focus:ring-inset focus:ring-brand ${
           dim ? 'text-cocoa-muted' : 'text-cocoa'
         }`}
         value={text}
@@ -75,11 +76,11 @@ function MiniStepper({
       />
       <button
         type="button"
-        className="w-7 shrink-0 rounded-r-lg bg-sand-dark/40 text-cocoa-light active:bg-sand-dark"
+        className="grid w-7 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
         onClick={() => adjust(step)}
         aria-label={`${label} erhöhen`}
       >
-        +
+        <Plus size={14} strokeWidth={2.5} />
       </button>
     </div>
   )
@@ -95,7 +96,9 @@ export function SetTableHeader() {
       <span>Vorher</span>
       <span className="text-center">kg</span>
       <span className="text-center">Wdh</span>
-      <span className="text-center">✓</span>
+      <span className="grid place-items-center">
+        <Check size={12} strokeWidth={3} />
+      </span>
     </div>
   )
 }
@@ -142,24 +145,15 @@ export function CompactSetRow({
     if (!wasDone && v > 0) onDone()
   }
 
-  const badgeColor =
-    s.set_type === 'warmup'
-      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-      : s.set_type === 'drop'
-        ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
-        : 'bg-sand-dark/50 text-cocoa'
-
   return (
-    <div
-      className={`rounded-xl p-1 transition-colors ${
-        done ? 'bg-brand/10 ring-1 ring-brand/25' : 'ring-1 ring-transparent'
-      }`}
-    >
+    <div className={`rounded-xl p-1 transition-colors duration-200 ${done ? 'bg-success/10' : ''}`}>
       <div className={GRID}>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className={`relative h-8 rounded-lg text-sm font-bold ${badgeColor}`}
+          className={`relative h-8 rounded-lg text-sm font-bold tabular ${
+            s.set_type === 'working' ? 'text-cocoa' : 'text-cocoa-light'
+          } ${open ? 'bg-sand-dark' : 'bg-sand'}`}
           aria-label="Satz-Optionen"
         >
           {badge}
@@ -167,7 +161,7 @@ export function CompactSetRow({
             <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-cocoa-muted" />
           )}
         </button>
-        <span className="truncate text-xs text-cocoa-muted">
+        <span className="tabular truncate text-xs text-cocoa-muted">
           {prev ? `${fmt(prev.weight)}×${prev.reps}` : '–'}
         </span>
         <MiniStepper
@@ -188,11 +182,11 @@ export function CompactSetRow({
           type="button"
           onClick={complete}
           aria-label={done ? 'Satz erledigt' : 'Satz abhaken'}
-          className={`grid h-8 w-9 place-items-center rounded-lg text-base font-bold transition active:scale-90 ${
-            done ? 'bg-brand text-white' : 'bg-sand-dark/40 text-cocoa-muted'
+          className={`grid h-8 w-9 place-items-center rounded-lg transition active:scale-90 ${
+            done ? 'anim-check bg-success text-white' : 'bg-sand text-cocoa-muted'
           }`}
         >
-          ✓
+          <Check size={18} strokeWidth={3} />
         </button>
       </div>
 
@@ -221,14 +215,14 @@ export function CompactSetRow({
       )}
 
       {open && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 border-t border-sand-dark/50 px-1 pt-1.5">
+        <div className="anim-fade mt-1.5 flex flex-wrap items-center gap-1.5 px-1 pt-1">
           {SET_TYPES.map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => update.mutate({ id: s.id, set_type: t })}
               className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                s.set_type === t ? 'bg-brand text-white' : 'bg-sand-dark/40 text-cocoa-light'
+                s.set_type === t ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
               }`}
             >
               {SET_TYPE_LABEL[t]}
@@ -238,17 +232,18 @@ export function CompactSetRow({
             type="button"
             onClick={() => update.mutate({ id: s.id, to_failure: !s.to_failure })}
             className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-              s.to_failure ? 'bg-orange-500 text-white' : 'bg-sand-dark/40 text-cocoa-light'
+              s.to_failure ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
             }`}
           >
-            {s.to_failure ? '🔥 bis Versagen' : 'nicht ans Limit'}
+            {s.to_failure ? 'Bis Versagen' : 'Nicht ans Limit'}
           </button>
           <button
             type="button"
             onClick={() => del.mutate(s)}
-            className="ml-auto rounded-full px-2.5 py-1 text-xs font-semibold text-red-500"
+            aria-label="Satz löschen"
+            className="ml-auto grid h-7 w-7 place-items-center rounded-full text-red-500"
           >
-            Löschen
+            <Trash2 size={15} />
           </button>
         </div>
       )}
