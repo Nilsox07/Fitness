@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, Hand, MessageCircle, Send } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import {
   useActivities,
@@ -54,18 +55,27 @@ function ActivityItem({ a, authorLabel }: { a: Activity; authorLabel: string }) 
       </div>
       <div className="flex items-center gap-3 text-sm">
         <button
-          className={iLiked ? 'font-semibold text-brand' : 'text-cocoa-light'}
+          className={`flex items-center gap-1.5 transition-colors duration-200 ${
+            iLiked ? 'font-semibold text-brand' : 'text-cocoa-light'
+          }`}
           onClick={() => toggleLike.mutate({ activity_id: a.id, liked: iLiked })}
+          aria-label="Applaus"
         >
-          👏 {likeCount || ''}
+          <Hand size={16} />
+          <span className="tabular">{likeCount || ''}</span>
         </button>
-        <button className="text-cocoa-light" onClick={() => setOpen((o) => !o)}>
-          💬 {comments?.length || ''}
+        <button
+          className="flex items-center gap-1.5 text-cocoa-light"
+          onClick={() => setOpen((o) => !o)}
+          aria-label="Kommentare"
+        >
+          <MessageCircle size={16} />
+          <span className="tabular">{comments?.length || ''}</span>
         </button>
       </div>
 
       {open && (
-        <div className="space-y-2 border-t border-sand-dark pt-2">
+        <div className="anim-fade space-y-2 rounded-xl bg-sand p-2.5">
           {comments?.map((c) => (
             <div key={c.id} className="text-sm">
               <span className="font-medium">{c.author_name ?? 'Freund'}:</span>{' '}
@@ -80,8 +90,8 @@ function ActivityItem({ a, authorLabel }: { a: Activity; authorLabel: string }) 
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && submit()}
             />
-            <button className="btn-primary shrink-0" onClick={submit}>
-              ➤
+            <button className="btn-primary shrink-0" onClick={submit} aria-label="Senden">
+              <Send size={16} />
             </button>
           </div>
         </div>
@@ -99,7 +109,7 @@ export default function Feed() {
     <div className="space-y-4">
       <header className="flex items-center gap-2">
         <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
-          ←
+          <ChevronLeft size={20} />
         </button>
         <h1 className="text-xl font-bold">Feed</h1>
       </header>

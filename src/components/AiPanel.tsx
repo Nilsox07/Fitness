@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAiStatus } from '../hooks/useAi'
 import { coachChat, type ChatMsg } from '../lib/ai'
+import { AlertTriangle, MessageCircle, Sparkles, X } from 'lucide-react'
 import { MicButton } from './MicButton'
 import { trainingSummary } from '../lib/analytics'
 import type { Exercise, SetWithDate } from '../types'
@@ -16,9 +17,13 @@ export function AiPanel({ sets, exercises }: { sets: SetWithDate[]; exercises: E
   return (
     <section className="card space-y-2">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">🤖 KI-Coach</h2>
-        <button className="btn-primary text-sm" onClick={() => setChatOpen(true)}>
-          💬 Coach fragen
+        <h2 className="flex items-center gap-1.5 font-semibold">
+          <Sparkles size={16} className="text-cocoa-light" />
+          KI-Coach
+        </h2>
+        <button className="btn-primary flex items-center gap-1.5 text-sm" onClick={() => setChatOpen(true)}>
+          <MessageCircle size={16} />
+          Coach fragen
         </button>
       </div>
       <p className="text-sm text-cocoa-light">
@@ -55,12 +60,19 @@ function CoachChatModal({ context, onClose }: { context: unknown; onClose: () =>
   }
 
   return (
-    <div className="fixed inset-0 z-30 flex flex-col bg-black/60 p-4">
+    <div className="anim-fade fixed inset-0 z-30 flex flex-col bg-black/60 p-4">
       <div className="card mx-auto flex h-full w-full max-w-md flex-col">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="font-bold">💬 Coach</h3>
-          <button className="px-2 text-cocoa-muted" onClick={onClose} aria-label="Schließen">
-            ✕
+          <h3 className="flex items-center gap-1.5 font-bold">
+            <MessageCircle size={18} className="text-cocoa-light" />
+            Coach
+          </h3>
+          <button
+            className="grid h-8 w-8 place-items-center rounded-full bg-sand text-cocoa-light"
+            onClick={onClose}
+            aria-label="Schließen"
+          >
+            <X size={16} strokeWidth={2.5} />
           </button>
         </div>
 
@@ -77,14 +89,17 @@ function CoachChatModal({ context, onClose }: { context: unknown; onClose: () =>
               className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                 m.role === 'user'
                   ? 'ml-auto bg-brand text-white'
-                  : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+                  : 'bg-sand text-cocoa'
               }`}
             >
               <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
             </div>
           ))}
           {busy && <p className="text-sm text-cocoa-muted">Coach denkt nach…</p>}
-          {err && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {err}</p>}
+          {err && <p className="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400">
+              <AlertTriangle size={16} className="shrink-0" />
+              {err}
+            </p>}
         </div>
 
         <div className="mt-2 flex gap-2">

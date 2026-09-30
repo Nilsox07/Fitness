@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Camera, ClipboardList, Dumbbell, Mic, Plus, Settings2, Sparkles, Trash2, TriangleAlert } from 'lucide-react'
 import {
   useCreateExercise,
   useDeleteExercise,
@@ -227,34 +228,42 @@ export default function Exercises() {
         <div className="flex gap-2">
           {!isNew && (
             <button
-              className="btn-ghost text-sm"
+              className="btn-ghost flex items-center gap-1.5 text-sm"
               onClick={() => navigate('/plans')}
               aria-label="Trainingspläne"
             >
-              🗂️ Pläne
+              <ClipboardList size={16} className="text-cocoa-light" /> Pläne
             </button>
           )}
           {!isNew && (
             <button
-              className="btn-ghost text-base"
+              className="btn-ghost flex items-center text-base"
               onClick={() => navigate('/profile')}
               aria-label="Profil & Einstellungen"
             >
-              ⚙️
+              <Settings2 size={18} className="text-cocoa-light" />
             </button>
           )}
           {aiOn && (
-            <button className="btn-ghost text-sm" onClick={() => setEquipOpen(true)} aria-label="Geräte importieren">
-              🏋️ Geräte
+            <button
+              className="btn-ghost flex items-center gap-1.5 text-sm"
+              onClick={() => setEquipOpen(true)}
+              aria-label="Geräte importieren"
+            >
+              <Dumbbell size={16} className="text-cocoa-light" /> Geräte
             </button>
           )}
           {aiOn && (
-            <button className="btn-ghost text-sm" onClick={() => setAssistOpen(true)} aria-label="Übung per Sprache anlegen">
-              🎤 KI
+            <button
+              className="btn-ghost flex items-center gap-1.5 text-sm"
+              onClick={() => setAssistOpen(true)}
+              aria-label="Übung per Sprache anlegen"
+            >
+              <Mic size={16} className="text-cocoa-light" /> KI
             </button>
           )}
-          <button className="btn-primary text-sm" onClick={startNew}>
-            + Neu
+          <button className="btn-primary flex items-center gap-1.5 text-sm" onClick={startNew}>
+            <Plus size={16} /> Neu
           </button>
         </div>
       </header>
@@ -262,7 +271,9 @@ export default function Exercises() {
       {equipOpen && !equipDrafts && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
           <div className="card w-full max-w-md space-y-3">
-            <h2 className="text-lg font-bold">🏋️ Geräte deines Studios importieren</h2>
+            <h2 className="flex items-center gap-1.5 text-lg font-bold">
+              <Dumbbell size={18} className="shrink-0 text-cocoa-light" /> Geräte deines Studios importieren
+            </h2>
             <p className="text-xs text-cocoa-light">
               Zähl deine Geräte/Maschinen auf (Text/Sprache) oder fotografiere die Geräteschilder —
               die KI legt daraus Übungen mit Muskeln an.
@@ -277,8 +288,14 @@ export default function Exercises() {
               />
               <MicButton onResult={(t) => setEquipText((v) => (v ? v + ', ' + t : t))} />
             </div>
-            <label className="btn-ghost flex w-full cursor-pointer items-center justify-center">
-              {equipBusy ? '… erkenne' : '📸 Geräte fotografieren'}
+            <label className="btn-ghost flex w-full cursor-pointer items-center justify-center gap-1.5">
+              {equipBusy ? (
+                '… erkenne'
+              ) : (
+                <>
+                  <Camera size={16} className="text-cocoa-light" /> Geräte fotografieren
+                </>
+              )}
               <input
                 type="file"
                 accept="image/*"
@@ -287,7 +304,11 @@ export default function Exercises() {
                 onChange={(e) => genEquipPhoto(e.target.files?.[0])}
               />
             </label>
-            {equipErr && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {equipErr}</p>}
+            {equipErr && (
+              <p className="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400">
+                <TriangleAlert size={16} className="shrink-0" /> {equipErr}
+              </p>
+            )}
             <div className="flex gap-2 pt-1">
               <button className="btn-ghost flex-1" onClick={() => setEquipOpen(false)}>
                 Abbrechen
@@ -309,7 +330,7 @@ export default function Exercises() {
             </p>
             <ul className="space-y-1.5">
               {equipDrafts.map((d, i) => (
-                <li key={i} className="rounded-lg bg-sand/40 px-3 py-2 text-sm ring-1 ring-sand-dark/50">
+                <li key={i} className="rounded-lg bg-sand-light px-3 py-2 text-sm">
                   <div className="font-medium">{d.name}</div>
                   <div className="text-xs text-cocoa-light">
                     {d.muscle_group}
@@ -338,7 +359,9 @@ export default function Exercises() {
       {assistOpen && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
           <div className="card w-full max-w-md space-y-3">
-            <h2 className="text-lg font-bold">🎤 Übung per Sprache anlegen</h2>
+            <h2 className="flex items-center gap-1.5 text-lg font-bold">
+              <Mic size={18} className="shrink-0 text-cocoa-light" /> Übung per Sprache anlegen
+            </h2>
             <p className="text-xs text-cocoa-light">
               Beschreib die Übung — Name und, wenn du magst, die Gewichtsstufen der Maschine. Die KI
               erkennt Muskeln & Leiter automatisch.
@@ -354,7 +377,11 @@ export default function Exercises() {
               />
               <MicButton onResult={(t) => setAssistText((v) => (v ? v + ' ' + t : t))} />
             </div>
-            {assistErr && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {assistErr}</p>}
+            {assistErr && (
+              <p className="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400">
+                <TriangleAlert size={16} className="shrink-0" /> {assistErr}
+              </p>
+            )}
             <div className="flex gap-2 pt-1">
               <button className="btn-ghost flex-1" onClick={() => setAssistOpen(false)}>
                 Abbrechen
@@ -374,19 +401,19 @@ export default function Exercises() {
           <li key={ex.id} className="card flex items-center justify-between">
             <button className="flex-1 text-left" onClick={() => startEdit(ex)}>
               <div className="font-semibold">{ex.name}</div>
-              <div className="text-sm text-cocoa-light">
+              <div className="tabular text-sm text-cocoa-light">
                 {ex.muscle_group} · Ziel {ex.target_rep_min}–{ex.target_rep_max} Wdh ·
                 +{ex.increment} kg
               </div>
             </button>
             <button
-              className="ml-2 px-2 text-cocoa-muted hover:text-red-500 dark:text-red-400"
+              className="ml-2 grid h-8 w-8 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
               aria-label="Übung löschen"
               onClick={() => {
                 if (confirm(`„${ex.name}" inkl. aller Sätze löschen?`)) deleteEx.mutate(ex.id)
               }}
             >
-              ✕
+              <Trash2 size={16} />
             </button>
           </li>
         ))}
@@ -416,9 +443,15 @@ export default function Exercises() {
                     type="button"
                     onClick={aiSuggestMuscles}
                     disabled={suggesting || !form.name.trim()}
-                    className="text-xs font-semibold text-brand disabled:opacity-40"
+                    className="flex items-center gap-1 text-xs font-semibold text-brand disabled:opacity-40"
                   >
-                    {suggesting ? '… analysiere' : '🤖 Muskeln vorschlagen'}
+                    {suggesting ? (
+                      '… analysiere'
+                    ) : (
+                      <>
+                        <Sparkles size={14} /> Muskeln vorschlagen
+                      </>
+                    )}
                   </button>
                 )}
               </div>
@@ -436,7 +469,9 @@ export default function Exercises() {
                 ))}
               </select>
               {suggestErr && (
-                <p className="mt-1 text-xs text-red-500 dark:text-red-400">⚠️ {suggestErr}</p>
+                <p className="mt-1 flex items-center gap-1 text-xs text-red-500 dark:text-red-400">
+                  <TriangleAlert size={14} className="shrink-0" /> {suggestErr}
+                </p>
               )}
             </div>
 
@@ -450,10 +485,8 @@ export default function Exercises() {
                       key={g}
                       type="button"
                       onClick={() => toggleSecondary(g)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
-                        on
-                          ? 'bg-ruby text-white ring-ruby'
-                          : 'bg-sand-light text-cocoa-light ring-sand-dark'
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors duration-200 ${
+                        on ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
                       }`}
                     >
                       {g}
@@ -512,7 +545,7 @@ export default function Exercises() {
             <button
               type="button"
               onClick={() => setForm({ ...form, unilateral: !form.unilateral })}
-              className="flex w-full items-center justify-between rounded-xl bg-sand-light px-3 py-2.5 ring-1 ring-sand-dark"
+              className="flex w-full items-center justify-between rounded-xl bg-sand-light px-3 py-2.5"
             >
               <span className="text-sm font-medium text-cocoa">Einseitig (links/rechts)</span>
               <span
@@ -541,7 +574,7 @@ export default function Exercises() {
               </p>
             </div>
 
-            <div className="rounded-xl bg-sand-light p-3 ring-1 ring-sand-dark">
+            <div className="rounded-xl bg-sand-light p-3">
               <label className="label">Gewichtsstufen (optional)</label>
               <input
                 className="input"

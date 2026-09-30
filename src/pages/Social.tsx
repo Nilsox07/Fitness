@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Drumstick, Flame, Hand, HandFist, Laugh, Medal, Megaphone, Share2, Trophy, UserPlus } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useAllFoodEntries } from '../hooks/useNutrition'
@@ -140,7 +141,7 @@ export default function Social() {
     try {
       await addFriend.mutateAsync(code)
       setCode('')
-      setMsg('Freund hinzugefügt! 🎉')
+      setMsg('Freund hinzugefügt!')
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Fehler')
     }
@@ -160,8 +161,9 @@ export default function Social() {
     <div className="space-y-4">
       <header className="flex items-center gap-2">
         <h1 className="flex-1 text-xl font-bold">Community</h1>
-        <button className="btn-ghost text-sm" onClick={() => navigate('/feed')}>
-          📣 Feed
+        <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={() => navigate('/feed')}>
+          <Megaphone size={16} className="text-cocoa-light" />
+          Feed
         </button>
       </header>
 
@@ -171,7 +173,7 @@ export default function Social() {
           {pokes!.map((p) => (
             <div
               key={p.id}
-              className="flex items-center gap-2 rounded-xl bg-brand/10 p-2.5 text-sm ring-1 ring-brand/25"
+              className="anim-fade flex items-center gap-2 rounded-xl bg-sand p-2.5 text-sm"
             >
               <span className="flex-1">
                 {p.text ? (
@@ -180,12 +182,13 @@ export default function Social() {
                   </>
                 ) : (
                   <>
-                    👊 <strong>{nameOf(p.from_user)}</strong> fragt: wann gehst du wieder ins Gym?
+                    <HandFist size={16} className="mr-1 inline-block align-[-3px] text-cocoa-light" />
+                    <strong>{nameOf(p.from_user)}</strong> fragt: wann gehst du wieder ins Gym?
                   </>
                 )}
               </span>
               <button
-                className="rounded-full bg-sand-light px-2 py-1 text-xs ring-1 ring-sand-dark"
+                className="rounded-full bg-sand-light px-2 py-1 text-xs font-semibold"
                 onClick={() => dismissPoke.mutate(p.id)}
               >
                 OK
@@ -226,10 +229,11 @@ export default function Social() {
                   <span className="text-cocoa-light">{u.gym_status || '– kein Plan –'}</span>
                 </span>
                 <button
-                  className="rounded-full bg-sand-light px-2.5 py-1 text-xs ring-1 ring-sand-dark"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-2.5 py-1 text-xs font-semibold"
                   onClick={() => sendPoke.mutate({ toUser: u.user_id })}
                 >
-                  👊 Fragen
+                  <HandFist size={14} className="text-cocoa-light" />
+                  Fragen
                 </button>
               </li>
             ))}
@@ -241,8 +245,11 @@ export default function Social() {
       {(board?.length ?? 0) > 1 && (
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold">🏆 Wochen-Challenge</h2>
-            <span className="text-xs text-cocoa-light">
+            <h2 className="flex items-center gap-1.5 font-semibold">
+              <Trophy size={18} className="text-cocoa-light" />
+              Wochen-Challenge
+            </h2>
+            <span className="tabular text-xs text-cocoa-light">
               {daysLeft === 0 ? 'letzter Tag!' : `noch ${daysLeft} Tage`}
             </span>
           </div>
@@ -251,8 +258,8 @@ export default function Social() {
               <button
                 key={m}
                 onClick={() => setChMetric(m)}
-                className={`rounded-full px-3 py-1 text-xs ring-1 ${
-                  chMetric === m ? 'bg-ruby text-white ring-ruby' : 'bg-sand-light text-cocoa ring-sand-dark'
+                className={`rounded-full px-3 py-1 text-xs transition-colors duration-200 ${
+                  chMetric === m ? 'bg-brand text-white' : 'bg-sand text-cocoa'
                 }`}
               >
                 {m === 'weekly_volume' ? 'Volumen' : 'Trainings'}
@@ -268,15 +275,17 @@ export default function Social() {
                   ? `${u.weekly_volume.toLocaleString('de-DE')} kg`
                   : `${u.weekly_sessions}×`
               const h = rank === 0 ? 'h-20' : rank === 1 ? 'h-16' : 'h-12'
-              const medal = rank === 0 ? '🥇' : rank === 1 ? '🥈' : '🥉'
               return (
                 <div key={rank} className="flex flex-1 flex-col items-center">
-                  <div className="text-2xl">{medal}</div>
+                  <div className="flex items-center gap-0.5 text-sm font-bold text-cocoa-light">
+                    <Medal size={20} className={rank === 0 ? 'text-gold' : 'text-cocoa-light'} />
+                    <span className="tabular">{rank + 1}</span>
+                  </div>
                   <div className="max-w-full truncate text-xs font-medium">
                     {u.user_id === user?.id ? 'Du' : u.display_name ?? 'Athlet'}
                   </div>
-                  <div className="text-[11px] text-cocoa-light">{val}</div>
-                  <div className={`mt-1 w-full rounded-t-lg bg-brand/70 ${h}`} />
+                  <div className="tabular text-[11px] text-cocoa-light">{val}</div>
+                  <div className={`mt-1 w-full rounded-t-lg ${rank === 0 ? 'bg-gold' : 'bg-sand'} ${h}`} />
                 </div>
               )
             })}
@@ -287,7 +296,10 @@ export default function Social() {
       {/* Ernährungs-Battle (Protein) */}
       {showNutrition && (board?.length ?? 0) > 1 && (
         <div className="card space-y-2">
-          <h2 className="font-semibold">🍗 Protein-Battle (heute)</h2>
+          <h2 className="flex items-center gap-1.5 font-semibold">
+            <Drumstick size={18} className="text-cocoa-light" />
+            Protein-Battle (heute)
+          </h2>
           <ul className="space-y-1.5">
             {[...(board ?? [])]
               .sort((a, b) => (b.protein_today ?? 0) - (a.protein_today ?? 0))
@@ -295,17 +307,18 @@ export default function Social() {
                 const me = u.user_id === user?.id
                 return (
                   <li key={u.user_id} className="flex items-center gap-2 text-sm">
-                    <span className="w-5 text-center text-cocoa-light">{i + 1}</span>
+                    <span className="tabular w-5 text-center text-cocoa-light">{i + 1}</span>
                     <span className="flex-1">
                       <span className="font-medium">{me ? 'Du' : u.display_name ?? 'Freund'}</span>{' '}
-                      <span className="text-cocoa-light">
+                      <span className="tabular text-cocoa-light">
                         {u.protein_today ?? 0} g · {u.kcal_today ?? 0} kcal
                       </span>
                     </span>
                     {!me && (
                       <button
-                        className="rounded-full bg-sand-light px-2 py-1 text-xs ring-1 ring-sand-dark"
+                        className="grid h-7 w-7 place-items-center rounded-full bg-sand text-cocoa-light"
                         title="Auslachen"
+                        aria-label="Auslachen"
                         onClick={() =>
                           sendPoke.mutate({
                             toUser: u.user_id,
@@ -313,7 +326,7 @@ export default function Social() {
                           })
                         }
                       >
-                        😂
+                        <Laugh size={16} />
                       </button>
                     )}
                   </li>
@@ -321,7 +334,7 @@ export default function Social() {
               })}
           </ul>
           <p className="text-xs text-cocoa-muted">
-            Zeigt nur Summen (Protein/kcal) — keine einzelnen Lebensmittel. 😉
+            Zeigt nur Summen (Protein/kcal) — keine einzelnen Lebensmittel.
           </p>
         </div>
       )}
@@ -331,9 +344,10 @@ export default function Social() {
         <div className="flex items-center justify-between">
           <div>
             <div className="label">Dein Freundescode</div>
-            <div className="text-xl font-bold tracking-widest">{profile?.friend_code ?? '…'}</div>
+            <div className="tabular text-xl font-bold tracking-widest">{profile?.friend_code ?? '…'}</div>
           </div>
-          <button className="btn-ghost text-sm" onClick={shareCode}>
+          <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={shareCode}>
+            <Share2 size={16} className="text-cocoa-light" />
             Teilen
           </button>
         </div>
@@ -345,8 +359,13 @@ export default function Social() {
             onChange={(e) => setCode(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submitCode()}
           />
-          <button className="btn-primary shrink-0" onClick={submitCode} disabled={addFriend.isPending}>
-            + Freund
+          <button
+            className="btn-primary flex shrink-0 items-center gap-1.5"
+            onClick={submitCode}
+            disabled={addFriend.isPending}
+          >
+            <UserPlus size={16} />
+            Freund
           </button>
         </div>
         {msg && <p className="text-sm text-brand">{msg}</p>}
@@ -362,8 +381,8 @@ export default function Social() {
           <button
             key={m}
             onClick={() => setMetric(m)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-sm ring-1 ${
-              metric === m ? 'bg-ruby text-white ring-ruby' : 'bg-sand-light text-cocoa ring-sand-dark'
+            className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ${
+              metric === m ? 'bg-brand text-white' : 'bg-sand text-cocoa'
             }`}
           >
             {METRIC_LABEL[m]}
@@ -381,7 +400,12 @@ export default function Social() {
           const me = u.user_id === user?.id
           const value =
             metric === 'monthly_prs'
-              ? `${u.monthly_prs ?? 0} 🏆`
+              ? (
+                  <span className="inline-flex items-center gap-1">
+                    {u.monthly_prs ?? 0}
+                    <Trophy size={14} className="text-cocoa-light" />
+                  </span>
+                )
               : metric === 'season_xp'
               ? `${u.season_id === seasonId() ? u.season_xp : 0} XP`
               : metric === 'level'
@@ -390,33 +414,46 @@ export default function Social() {
                 ? `${u.weekly_volume.toLocaleString('de-DE')} kg`
                 : metric === 'total_sessions'
                   ? `${u.total_sessions}`
-                  : `🔥 ${u.week_streak}`
+                  : (
+                      <span className="inline-flex items-center gap-1">
+                        <Flame size={14} className="text-cocoa-light" />
+                        {u.week_streak}
+                      </span>
+                    )
           return (
             <li
               key={u.user_id}
               className={`card flex items-center gap-3 ${me ? 'ring-2 ring-brand' : ''}`}
             >
-              <span className="w-6 text-center text-lg font-bold text-cocoa-light">
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+              <span className="tabular grid w-6 place-items-center text-lg font-bold text-cocoa-light">
+                {i < 3 ? (
+                  <Medal size={20} className={i === 0 ? 'text-gold' : 'text-cocoa-light'} aria-label={`Platz ${i + 1}`} />
+                ) : (
+                  i + 1
+                )}
               </span>
               <div className="flex-1">
                 <div className="font-semibold">
                   {u.display_name ?? 'Athlet'} {me && <span className="text-xs text-brand">(du)</span>}
                 </div>
-                <div className="text-xs text-cocoa-light">
+                <div className="tabular flex flex-wrap items-center gap-x-1 text-xs text-cocoa-light">
                   {u.rank_title ?? ''} · {u.total_sessions} Trainings
-                  {kudosReceived.get(u.user_id) ? ` · 👏 ${kudosReceived.get(u.user_id)}` : ''}
+                  {kudosReceived.get(u.user_id) ? (
+                    <span className="inline-flex items-center gap-1">
+                      · <Hand size={12} /> {kudosReceived.get(u.user_id)}
+                    </span>
+                  ) : null}
                 </div>
               </div>
-              <div className="text-right text-sm font-semibold">{value}</div>
+              <div className="tabular text-right text-sm font-semibold">{value}</div>
               {!me && (
                 <button
-                  className="rounded-full bg-sand-light px-2 py-1 text-sm ring-1 ring-sand-dark disabled:opacity-40"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-sand text-cocoa-light transition-colors duration-200 disabled:opacity-40"
                   onClick={() => giveKudos.mutate(u.user_id)}
                   disabled={gaveToday.has(u.user_id)}
                   aria-label="Kudos geben"
                 >
-                  👏
+                  <Hand size={16} />
                 </button>
               )}
             </li>

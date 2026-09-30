@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+import { Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { usePrefs, type World } from '../lib/prefs'
 import { useAllSets } from '../hooks/useWorkouts'
@@ -29,7 +31,7 @@ function Tile({
   onClick,
 }: {
   label: string
-  value: string
+  value: ReactNode
   sub?: string
   done?: boolean
   onClick: () => void
@@ -37,12 +39,18 @@ function Tile({
   return (
     <button
       onClick={onClick}
-      className={`rounded-xl p-2 text-center ring-1 transition ${
-        done ? 'bg-brand/10 ring-brand/30' : 'bg-sand-light ring-sand-dark'
+      className={`rounded-xl p-2 text-center transition-colors duration-200 ${
+        done ? 'bg-success/10' : 'bg-sand'
       }`}
     >
       <div className="text-[11px] text-cocoa-light">{label}</div>
-      <div className="text-base font-bold text-cocoa">{value}</div>
+      <div
+        className={`tabular flex h-6 items-center justify-center text-base font-bold ${
+          done ? 'text-success' : 'text-cocoa'
+        }`}
+      >
+        {value}
+      </div>
       {sub && <div className="text-[10px] text-cocoa-muted">{sub}</div>}
     </button>
   )
@@ -79,7 +87,7 @@ export function DailyOverview() {
       <div className="grid grid-cols-4 gap-2">
         <Tile
           label="Training"
-          value={trained ? '✓' : '–'}
+          value={trained ? <Check size={18} strokeWidth={2.5} /> : '–'}
           sub={trained ? `${tSets.length} Sätze` : 'offen'}
           done={trained}
           onClick={() => go('fitness', '/')}

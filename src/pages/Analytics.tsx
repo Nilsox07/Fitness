@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Calendar } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -37,7 +38,7 @@ import {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="card text-center">
-      <div className="text-2xl font-bold text-brand">{value}</div>
+      <div className="tabular text-2xl font-bold text-cocoa">{value}</div>
       <div className="text-xs text-cocoa-light">{label}</div>
     </div>
   )
@@ -59,7 +60,7 @@ function Ratio({
   const pctA = total > 0 ? Math.round((valueA / total) * 100) : 50
   return (
     <div>
-      <div className="mb-1 flex justify-between text-xs text-cocoa-light">
+      <div className="tabular mb-1 flex justify-between text-xs text-cocoa-light">
         <span>
           {label} · {pctA}%
         </span>
@@ -69,7 +70,7 @@ function Ratio({
       </div>
       <div className="flex h-2.5 overflow-hidden rounded-full bg-sand-dark/40">
         <div className="h-full bg-brand" style={{ width: `${pctA}%` }} />
-        <div className="h-full bg-ruby" style={{ width: `${100 - pctA}%` }} />
+        <div className="h-full bg-sand-dark" style={{ width: `${100 - pctA}%` }} />
       </div>
     </div>
   )
@@ -182,8 +183,9 @@ export default function Analytics() {
       <header className="flex items-center justify-between gap-2">
         <h1 className="text-xl font-bold">{title}</h1>
         {isNew && world === 'fitness' && (
-          <button className="btn-ghost text-sm" onClick={() => navigate('/history')}>
-            📅 Verlauf
+          <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={() => navigate('/history')}>
+            <Calendar size={16} className="text-cocoa-light" />
+            Verlauf
           </button>
         )}
       </header>
@@ -253,7 +255,7 @@ export default function Analytics() {
                         />
                       </div>
                       {tag && <span className="w-14 shrink-0 text-right text-[11px] text-cocoa-muted">{tag}</span>}
-                      <span className="w-7 shrink-0 text-right text-sm font-semibold">{m.sets}</span>
+                      <span className="tabular w-7 shrink-0 text-right text-sm font-semibold">{m.sets}</span>
                     </li>
                   )
                 })}
@@ -283,7 +285,7 @@ export default function Analytics() {
                 {recovery.slice(0, 6).map((r) => (
                   <li key={r.muscle} className="flex justify-between">
                     <span>{r.muscle}</span>
-                    <span className={r.daysAgo >= 5 ? 'font-semibold text-cocoa' : 'text-cocoa-light'}>
+                    <span className={`tabular ${r.daysAgo >= 5 ? 'font-semibold text-cocoa' : 'text-cocoa-light'}`}>
                       {r.daysAgo === 0 ? 'heute' : `vor ${r.daysAgo} Tag${r.daysAgo === 1 ? '' : 'en'}`}
                     </span>
                   </li>

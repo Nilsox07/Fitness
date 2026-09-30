@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, Lock } from 'lucide-react'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { balanceStats, frequencyStats, onlyWorking, totalVolume } from '../lib/analytics'
@@ -39,7 +40,7 @@ export default function Badges() {
     <div className="space-y-4">
       <header className="flex items-center gap-2">
         <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
-          ←
+          <ChevronLeft size={20} />
         </button>
         <h1 className="text-xl font-bold">Sammlung</h1>
       </header>
@@ -47,8 +48,8 @@ export default function Badges() {
       <div className="card flex items-center gap-3">
         <div className="text-4xl">{mascotEmoji(data.sessions)}</div>
         <div>
-          <div className="font-bold">Level {data.level.level}</div>
-          <div className="text-xs text-cocoa-light">
+          <div className="tabular font-bold">Level {data.level.level}</div>
+          <div className="tabular text-xs text-cocoa-light">
             {data.rank.title} · {doneCount}/{data.list.length} Badges
           </div>
         </div>
@@ -61,10 +62,12 @@ export default function Badges() {
             <div
               key={a.id}
               className={`flex flex-col items-center rounded-xl p-3 text-center ${
-                a.done ? 'bg-sand-light ring-1 ring-sand-dark' : 'bg-sand/30 opacity-50'
+                a.done ? 'bg-gold/15' : 'bg-sand opacity-50'
               }`}
             >
-              <span className="text-2xl">{a.done ? a.icon : '🔒'}</span>
+              <span className="grid h-8 place-items-center text-2xl">
+                {a.done ? a.icon : <Lock size={18} className="text-cocoa-muted" />}
+              </span>
               <span className="mt-1 text-[11px] leading-tight text-cocoa-light">{a.label}</span>
             </div>
           ))}
@@ -84,7 +87,7 @@ export default function Badges() {
                   title={data.level.level >= a.minLevel ? a.label : `Ab Level ${a.minLevel}`}
                 />
                 {data.level.level < a.minLevel && (
-                  <span className="absolute -bottom-1 -right-1 text-[10px]">Lv{a.minLevel}</span>
+                  <span className="tabular absolute -bottom-1 -right-1 text-[10px] text-cocoa-light">Lv{a.minLevel}</span>
                 )}
               </div>
             ))}
@@ -94,12 +97,12 @@ export default function Badges() {
             {SKINS.map((s) => (
               <div
                 key={s.id}
-                className={`rounded-xl px-3 py-1.5 text-lg ring-1 ring-sand-dark ${
+                className={`rounded-xl bg-sand px-3 py-1.5 text-lg ${
                   data.level.level >= s.minLevel ? '' : 'opacity-40'
                 }`}
                 title={data.level.level >= s.minLevel ? s.label : `Ab Level ${s.minLevel}`}
               >
-                {s.stages[3]} {data.level.level < s.minLevel && <span className="text-xs">Lv{s.minLevel}</span>}
+                {s.stages[3]} {data.level.level < s.minLevel && <span className="tabular text-xs text-cocoa-light">Lv{s.minLevel}</span>}
               </div>
             ))}
           </div>

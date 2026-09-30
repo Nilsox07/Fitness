@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { BarChart3, X } from 'lucide-react'
 import { useAiStatus } from '../hooks/useAi'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
@@ -121,17 +122,24 @@ export function WeeklyReview() {
   if (!open || !text) return null
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
+    <div className="anim-fade fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
       <div className="card max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">📊 Dein Wochenfazit</h2>
-          <button className="px-2 text-cocoa-muted" onClick={close} aria-label="Schließen">
-            ✕
+          <h2 className="flex items-center gap-1.5 text-lg font-bold">
+            <BarChart3 size={20} className="text-cocoa-light" />
+            Dein Wochenfazit
+          </h2>
+          <button
+            className="grid h-8 w-8 place-items-center rounded-full bg-sand text-cocoa-light"
+            onClick={close}
+            aria-label="Schließen"
+          >
+            <X size={16} strokeWidth={2.5} />
           </button>
         </div>
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{text}</p>
         <button className="btn-primary w-full" onClick={close}>
-          Los geht's 💪
+          Los geht's
         </button>
       </div>
     </div>

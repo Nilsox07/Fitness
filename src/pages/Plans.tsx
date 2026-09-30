@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronDown, ChevronLeft, ChevronUp, Plus, Sparkles, Trash2, TriangleAlert, X } from 'lucide-react'
 import { useExercises } from '../hooks/useExercises'
 import { usePrefs } from '../lib/prefs'
 import { useAiStatus } from '../hooks/useAi'
@@ -82,7 +83,7 @@ export default function Plans() {
             onClick={() => navigate('/exercises')}
             aria-label="Zurück zu Übungen"
           >
-            ←
+            <ChevronLeft size={20} />
           </button>
         )}
         <h1 className="text-xl font-bold">Trainingspläne</h1>
@@ -105,13 +106,20 @@ export default function Plans() {
               if (e.key === 'Enter') addPlan()
             }}
           />
-          <button className="btn-primary shrink-0" onClick={addPlan} disabled={createPlan.isPending}>
-            + Anlegen
+          <button
+            className="btn-primary flex shrink-0 items-center gap-1.5"
+            onClick={addPlan}
+            disabled={createPlan.isPending}
+          >
+            <Plus size={16} /> Anlegen
           </button>
         </div>
         {ai?.enabled && (exercises?.length ?? 0) > 0 && (
-          <button className="btn-ghost w-full text-sm" onClick={() => setGenOpen(true)}>
-            🤖 Plan von KI vorschlagen lassen
+          <button
+            className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
+            onClick={() => setGenOpen(true)}
+          >
+            <Sparkles size={16} className="text-cocoa-light" /> Plan von KI vorschlagen lassen
           </button>
         )}
       </div>
@@ -130,7 +138,9 @@ export default function Plans() {
       {genOpen && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
           <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-            <h2 className="text-lg font-bold">🤖 KI-Plan</h2>
+            <h2 className="flex items-center gap-1.5 text-lg font-bold">
+              <Sparkles size={18} className="text-cocoa-light" /> KI-Plan
+            </h2>
             {!suggestions ? (
               <>
                 <label className="label">Was für ein Plan?</label>
@@ -145,14 +155,18 @@ export default function Plans() {
                       <button
                         key={p}
                         onClick={() => setWish(p)}
-                        className="rounded-full bg-sand-light px-2.5 py-1 text-xs ring-1 ring-sand-dark"
+                        className="rounded-full bg-sand px-2.5 py-1 text-xs text-cocoa-light"
                       >
                         {p}
                       </button>
                     ),
                   )}
                 </div>
-                {genErr && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {genErr}</p>}
+                {genErr && (
+                  <p className="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400">
+                    <TriangleAlert size={16} className="shrink-0" /> {genErr}
+                  </p>
+                )}
                 <div className="flex gap-2 pt-1">
                   <button className="btn-ghost flex-1" onClick={() => setGenOpen(false)}>
                     Abbrechen
@@ -167,7 +181,7 @@ export default function Plans() {
                 <p className="text-xs text-cocoa-light">Vorschlag — beim Übernehmen werden die Pläne angelegt.</p>
                 <ul className="space-y-2">
                   {suggestions.map((s, i) => (
-                    <li key={i} className="rounded-lg bg-sand/40 p-2 ring-1 ring-sand-dark/50">
+                    <li key={i} className="rounded-lg bg-sand-light p-2">
                       <div className="font-semibold">{s.name}</div>
                       <div className="text-xs text-cocoa-light">{s.exercises.join(' · ')}</div>
                     </li>
@@ -232,14 +246,14 @@ function PlanCard({
           }}
         />
         <button
-          className="px-2 text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
+          className="grid h-8 w-8 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
           aria-label="Plan löschen"
           onClick={() => {
             if (confirm(`Plan „${plan.name}" löschen? (Übungen bleiben erhalten)`))
               deletePlan.mutate(plan.id)
           }}
         >
-          ✕
+          <Trash2 size={16} />
         </button>
       </div>
 
@@ -248,31 +262,31 @@ function PlanCard({
           {plan.exercise_ids.map((exId, i) => (
             <li
               key={exId}
-              className="flex items-center gap-1 rounded-lg bg-sand-light px-2 py-1.5 ring-1 ring-sand-dark"
+              className="flex items-center gap-1 rounded-lg bg-sand-light px-2 py-1.5"
             >
               <span className="flex-1 text-sm">{exName(exId)}</span>
               <button
-                className="px-1.5 text-cocoa-muted disabled:opacity-30"
+                className="grid h-7 w-7 place-items-center text-cocoa-muted disabled:opacity-30"
                 aria-label="Nach oben"
                 disabled={i === 0}
                 onClick={() => move(i, -1)}
               >
-                ↑
+                <ChevronUp size={16} />
               </button>
               <button
-                className="px-1.5 text-cocoa-muted disabled:opacity-30"
+                className="grid h-7 w-7 place-items-center text-cocoa-muted disabled:opacity-30"
                 aria-label="Nach unten"
                 disabled={i === plan.exercise_ids.length - 1}
                 onClick={() => move(i, 1)}
               >
-                ↓
+                <ChevronDown size={16} />
               </button>
               <button
-                className="px-1.5 text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
+                className="grid h-7 w-7 place-items-center text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
                 aria-label="Aus Plan entfernen"
                 onClick={() => removeEx.mutate({ plan_id: plan.id, exercise_id: exId })}
               >
-                ✕
+                <X size={16} />
               </button>
             </li>
           ))}

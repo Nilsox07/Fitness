@@ -1,13 +1,8 @@
+import { Flame, Trash2 } from 'lucide-react'
 import { Stepper } from './Stepper'
 import { useDeleteSet, useUpdateSet } from '../hooks/useWorkouts'
 import { parseLadder } from '../lib/weights'
-import { SET_TYPES, SET_TYPE_SHORT, type Exercise, type SetType, type WorkoutSet } from '../types'
-
-const typeChip: Record<SetType, string> = {
-  warmup: 'bg-amber-500 text-white',
-  working: 'bg-brand text-white',
-  drop: 'bg-sky-500 text-white',
-}
+import { SET_TYPES, SET_TYPE_SHORT, type Exercise, type WorkoutSet } from '../types'
 
 /** Editierbare Satz-Zeile (Typ, Versagen, Wdh/Gewicht, ggf. links/rechts). */
 export function EditableSetRow({ set: s, exercise }: { set: WorkoutSet; exercise: Exercise }) {
@@ -17,7 +12,7 @@ export function EditableSetRow({ set: s, exercise }: { set: WorkoutSet; exercise
   const weightSteps = ladder.length ? ladder : undefined
 
   return (
-    <div className="rounded-xl bg-sand/40 p-2.5 ring-1 ring-sand-dark/50">
+    <div className="rounded-xl bg-sand-light p-2.5">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex gap-1">
           {SET_TYPES.map((t) => (
@@ -25,8 +20,8 @@ export function EditableSetRow({ set: s, exercise }: { set: WorkoutSet; exercise
               key={t}
               type="button"
               onClick={() => updateSet.mutate({ id: s.id, set_type: t })}
-              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                s.set_type === t ? typeChip[t] : 'bg-sand-dark/50 text-cocoa-light'
+              className={`rounded-full px-2 py-0.5 text-xs font-semibold transition-colors duration-200 ${
+                s.set_type === t ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
               }`}
             >
               {SET_TYPE_SHORT[t]}
@@ -39,18 +34,24 @@ export function EditableSetRow({ set: s, exercise }: { set: WorkoutSet; exercise
             onClick={() => updateSet.mutate({ id: s.id, to_failure: !s.to_failure })}
             aria-label="Bis zum Versagen umschalten"
             title="Antippen, wenn du diesen Satz NICHT bis zum Versagen gemacht hast"
-            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-              s.to_failure ? 'bg-orange-500 text-white' : 'bg-sand-dark/50 text-cocoa-light'
+            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors duration-200 ${
+              s.to_failure ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
             }`}
           >
-            {s.to_failure ? '🔥 Versagen' : 'nicht ans Limit'}
+            {s.to_failure ? (
+              <>
+                <Flame size={12} /> Versagen
+              </>
+            ) : (
+              'nicht ans Limit'
+            )}
           </button>
           <button
-            className="px-2 text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
+            className="grid h-7 w-7 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
             aria-label="Satz löschen"
             onClick={() => deleteSet.mutate(s)}
           >
-            ✕
+            <Trash2 size={15} />
           </button>
         </div>
       </div>

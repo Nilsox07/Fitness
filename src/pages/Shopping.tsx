@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check, ChefHat, CircleCheck, Plus, Repeat, Save, ShoppingCart, Sparkles, Trash2, TriangleAlert, X } from 'lucide-react'
 import { useNutritionSettings } from '../hooks/useNutrition'
 import {
   adjustWeeklyPlan,
@@ -160,12 +161,12 @@ export default function Shopping() {
     try {
       if (currentPlanId) {
         await updatePlan.mutateAsync({ id: currentPlanId, days, plan: plan.days, shopping: plan.shopping })
-        setMsg('Plan aktualisiert ✅')
+        setMsg('Plan aktualisiert')
       } else {
         const name = `Plan ${new Date().toLocaleDateString('de-DE')}`
         const saved = await addPlan.mutateAsync({ name, days, plan: plan.days, shopping: plan.shopping })
         setCurrentPlanId(saved.id)
-        setMsg('Plan & Einkaufsliste gespeichert ✅')
+        setMsg('Plan & Einkaufsliste gespeichert')
       }
     } catch (e) {
       setErr(
@@ -259,8 +260,16 @@ export default function Shopping() {
         <p className="text-sm text-cocoa-light">Routinen, Plan, Rezepte & Einkaufsliste — gespeichert.</p>
       </header>
 
-      {err && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {err}</p>}
-      {msg && <p className="text-sm text-brand">{msg}</p>}
+      {err && (
+        <p className="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400">
+          <TriangleAlert size={16} className="shrink-0" /> {err}
+        </p>
+      )}
+      {msg && (
+        <p className="anim-fade flex items-center gap-1.5 text-sm text-success">
+          <CircleCheck size={16} className="shrink-0" /> {msg}
+        </p>
+      )}
 
       {/* 1) Routinen */}
       <div className="card space-y-2">
@@ -269,17 +278,17 @@ export default function Shopping() {
           Wird jeden Tag im Plan berücksichtigt — z. B. „Proteinshake 30 g Whey + Banane".
         </p>
         {(routines ?? []).map((r) => (
-          <div key={r.id} className="flex items-center justify-between rounded-lg bg-sand-light px-3 py-1.5 ring-1 ring-sand-dark">
+          <div key={r.id} className="flex items-center justify-between rounded-lg bg-sand-light px-3 py-1.5">
             <div className="text-sm">
               <span className="font-medium">{MEAL_LABEL[r.meal]}:</span> {r.title}
-              <span className="text-cocoa-muted"> · {r.kcal} kcal / {r.protein} g E</span>
+              <span className="tabular text-cocoa-muted"> · {r.kcal} kcal / {r.protein} g E</span>
             </div>
             <button
-              className="px-2 text-cocoa-muted hover:text-red-500"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-cocoa-muted hover:text-red-500"
               aria-label="Routine löschen"
               onClick={() => delRoutine.mutate(r.id)}
             >
-              ✕
+              <Trash2 size={15} />
             </button>
           </div>
         ))}
@@ -304,8 +313,18 @@ export default function Shopping() {
           />
           <MicButton onResult={(t) => setRText((v) => (v ? v + ' ' + t : t))} />
         </div>
-        <button className="btn-ghost w-full text-sm" onClick={addRoutineItem} disabled={rBusy}>
-          {rBusy ? 'Analysiere…' : '+ Routine hinzufügen'}
+        <button
+          className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
+          onClick={addRoutineItem}
+          disabled={rBusy}
+        >
+          {rBusy ? (
+            'Analysiere…'
+          ) : (
+            <>
+              <Plus size={16} /> Routine hinzufügen
+            </>
+          )}
         </button>
       </div>
 
@@ -317,8 +336,8 @@ export default function Shopping() {
             <button
               key={d}
               onClick={() => setDays(d)}
-              className={`btn flex-1 text-sm ${
-                days === d ? 'bg-ruby text-white' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+              className={`btn tabular flex-1 text-sm transition-colors duration-200 ${
+                days === d ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
               }`}
             >
               {d} Tage
@@ -335,7 +354,7 @@ export default function Shopping() {
           />
           <MicButton onResult={(t) => setWish((v) => (v ? v + ' ' + t : t))} />
         </div>
-        <p className="text-xs text-cocoa-light">
+        <p className="tabular text-xs text-cocoa-light">
           Ziel: ~{targets.kcal} kcal · {targets.protein} g Eiweiß/Tag
           {(routines?.length ?? 0) > 0 && ` · ${routines!.length} Routine(n)`}
         </p>
@@ -350,15 +369,16 @@ export default function Shopping() {
           {plan.note && <p className="px-1 text-sm text-cocoa-light">{plan.note}</p>}
 
           <button
-            className="btn-primary w-full"
+            className="btn-primary flex w-full items-center justify-center gap-1.5"
             onClick={save}
             disabled={addPlan.isPending || updatePlan.isPending}
           >
+            {!(addPlan.isPending || updatePlan.isPending) && <Save size={16} />}
             {addPlan.isPending || updatePlan.isPending
               ? 'Speichert…'
               : currentPlanId
-                ? '💾 Änderungen speichern'
-                : '💾 Plan & Einkaufsliste speichern'}
+                ? 'Änderungen speichern'
+                : 'Plan & Einkaufsliste speichern'}
           </button>
 
           {/* Per KI anpassen */}
@@ -374,8 +394,18 @@ export default function Shopping() {
               />
               <MicButton onResult={(t) => setAdjustText((v) => (v ? v + ' ' + t : t))} />
             </div>
-            <button className="btn-ghost w-full text-sm" onClick={adjust} disabled={adjustBusy}>
-              {adjustBusy ? 'Passe an…' : '✨ Plan anpassen'}
+            <button
+              className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
+              onClick={adjust}
+              disabled={adjustBusy}
+            >
+              {adjustBusy ? (
+                'Passe an…'
+              ) : (
+                <>
+                  <Sparkles size={16} className="text-cocoa-light" /> Plan anpassen
+                </>
+              )}
             </button>
           </div>
 
@@ -387,25 +417,29 @@ export default function Shopping() {
                   <div className="text-sm">
                     <span className="text-cocoa-muted">{MEAL_LABEL[m.meal]}: </span>
                     <span className="font-medium">{m.name}</span>
-                    {m.routine && <span className="ml-1 text-[10px] text-brand">● Routine</span>}
-                    <div className="text-xs text-cocoa-light">
+                    {m.routine && (
+                      <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-sand px-1.5 py-px align-middle text-[10px] font-medium text-cocoa-light">
+                        <Repeat size={10} /> Routine
+                      </span>
+                    )}
+                    <div className="tabular text-xs text-cocoa-light">
                       {m.kcal} kcal · E {m.protein} / K {m.carbs} / F {m.fat}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <button
-                      className="text-xs font-semibold text-brand disabled:opacity-40"
+                      className="flex items-center gap-1 rounded-full bg-sand px-2 py-1 text-xs font-semibold text-cocoa-light disabled:opacity-40"
                       onClick={() => makeRecipe(m)}
                       disabled={recipeBusy}
                     >
-                      🍳 Rezept
+                      <ChefHat size={14} /> Rezept
                     </button>
                     <button
-                      className="px-1 text-cocoa-muted hover:text-red-500"
+                      className="grid h-7 w-7 place-items-center rounded-full text-cocoa-muted hover:text-red-500"
                       aria-label="Mahlzeit entfernen"
                       onClick={() => removeMeal(i, j)}
                     >
-                      ✕
+                      <X size={15} />
                     </button>
                   </div>
                 </div>
@@ -414,7 +448,9 @@ export default function Shopping() {
           ))}
 
           <div className="space-y-2">
-            <h2 className="px-1 font-semibold">🛒 Einkaufsliste</h2>
+            <h2 className="flex items-center gap-1.5 px-1 font-semibold">
+              <ShoppingCart size={18} className="text-cocoa-light" /> Einkaufsliste
+            </h2>
             {plan.shopping.length === 0 && (
               <p className="px-1 text-sm text-cocoa-light">
                 Noch keine Artikel — füge unten welche hinzu oder erstelle den Plan neu.
@@ -430,20 +466,20 @@ export default function Shopping() {
                       <li key={it} className="flex items-center gap-2">
                         <button className="flex flex-1 items-center gap-2 text-left text-sm" onClick={() => toggle(it)}>
                           <span
-                            className={`grid h-4 w-4 shrink-0 place-items-center rounded text-[10px] ${
-                              done ? 'bg-brand text-white' : 'text-transparent ring-1 ring-sand-dark'
+                            className={`grid h-5 w-5 shrink-0 place-items-center rounded-md transition-colors duration-200 ${
+                              done ? 'anim-check bg-success text-white' : 'bg-sand text-transparent'
                             }`}
                           >
-                            ✓
+                            <Check size={13} strokeWidth={3} />
                           </span>
                           <span className={done ? 'text-cocoa-muted line-through' : 'text-cocoa'}>{it}</span>
                         </button>
                         <button
-                          className="px-1 text-cocoa-muted hover:text-red-500"
+                          className="grid h-7 w-7 place-items-center rounded-full text-cocoa-muted hover:text-red-500"
                           aria-label="Artikel entfernen"
                           onClick={() => removeItem(ci, it)}
                         >
-                          ✕
+                          <X size={15} />
                         </button>
                       </li>
                     )
@@ -457,8 +493,12 @@ export default function Shopping() {
                     onChange={(e) => setNewItem((n) => ({ ...n, [ci]: e.target.value }))}
                     onKeyDown={(e) => e.key === 'Enter' && addItem(ci)}
                   />
-                  <button className="btn-ghost shrink-0 text-sm" onClick={() => addItem(ci)}>
-                    +
+                  <button
+                    className="btn-ghost flex shrink-0 items-center text-sm"
+                    onClick={() => addItem(ci)}
+                    aria-label="Artikel hinzufügen"
+                  >
+                    <Plus size={16} />
                   </button>
                 </div>
               </div>
@@ -472,7 +512,7 @@ export default function Shopping() {
         <div className="card space-y-2">
           <h2 className="font-semibold">Gespeicherte Pläne</h2>
           {savedPlans!.map((p) => (
-            <div key={p.id} className="flex items-center justify-between rounded-lg bg-sand-light px-3 py-2 ring-1 ring-sand-dark">
+            <div key={p.id} className="flex items-center justify-between rounded-lg bg-sand-light px-3 py-2">
               <button
                 className="text-left text-sm"
                 onClick={() => {
@@ -483,18 +523,18 @@ export default function Shopping() {
                 }}
               >
                 <div className="font-medium">{p.name}</div>
-                <div className="text-xs text-cocoa-light">
+                <div className="tabular text-xs text-cocoa-light">
                   {p.days} Tage · {p.shopping.length} Kategorien Einkauf
                 </div>
               </button>
               <button
-                className="px-2 text-cocoa-muted hover:text-red-500"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-cocoa-muted hover:text-red-500"
                 aria-label="Plan löschen"
                 onClick={() => {
                   if (confirm(`„${p.name}" löschen?`)) delPlan.mutate(p.id)
                 }}
               >
-                ✕
+                <Trash2 size={15} />
               </button>
             </div>
           ))}
@@ -507,11 +547,15 @@ export default function Shopping() {
           <div className="card max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="font-bold">{recipe.title}</h3>
-              <button className="px-2 text-cocoa-muted" onClick={() => setRecipe(null)} aria-label="Schließen">
-                ✕
+              <button
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-cocoa-muted"
+                onClick={() => setRecipe(null)}
+                aria-label="Schließen"
+              >
+                <X size={18} />
               </button>
             </div>
-            <div className="text-xs text-cocoa-light">
+            <div className="tabular text-xs text-cocoa-light">
               {recipe.nutrition.kcal} kcal · E {recipe.nutrition.protein} / K {recipe.nutrition.carbs} / F{' '}
               {recipe.nutrition.fat} · {recipe.servings} Portion(en)
             </div>
@@ -535,8 +579,13 @@ export default function Shopping() {
                 </ol>
               </div>
             )}
-            <button className="btn-primary w-full" onClick={saveRecipe} disabled={addRecipe.isPending}>
-              {addRecipe.isPending ? 'Speichert…' : '💾 Als Rezept speichern'}
+            <button
+              className="btn-primary flex w-full items-center justify-center gap-1.5"
+              onClick={saveRecipe}
+              disabled={addRecipe.isPending}
+            >
+              {!addRecipe.isPending && <Save size={16} />}
+              {addRecipe.isPending ? 'Speichert…' : 'Als Rezept speichern'}
             </button>
           </div>
         </div>

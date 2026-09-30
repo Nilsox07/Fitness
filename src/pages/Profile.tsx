@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Apple, Award, Bell, ChevronLeft, Dumbbell, Lock, LogOut, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useTheme, type ThemeMode } from '../lib/theme'
@@ -34,8 +35,8 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 shrink-0 rounded-full transition ${
-        checked ? 'bg-ruby' : 'bg-sand-dark'
+      className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 ${
+        checked ? 'bg-success' : 'bg-sand-dark'
       }`}
     >
       <span
@@ -46,6 +47,14 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     </button>
   )
 }
+
+/** Segment-Schalter wie in der TopBar: ausgewählt = helle Fläche auf bg-sand-Spur. */
+const SEG_TRACK = 'grid gap-1 rounded-full bg-sand p-1'
+const segBtn = (active: boolean, size = 'text-sm') =>
+  `rounded-full px-2 py-1.5 ${size} font-semibold transition-colors duration-200 ${
+    active ? 'bg-sand-light text-cocoa shadow-sm dark:bg-sand-dark' : 'text-cocoa-light'
+  }`
+const TILE = 'btn gap-1.5 bg-sand text-cocoa'
 
 const MODES: { v: ThemeMode; label: string }[] = [
   { v: 'system', label: 'System' },
@@ -87,7 +96,7 @@ export default function Profile() {
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('fitbit')
     if (p === 'connected') {
-      setFitbitMsg('Fitbit verbunden ✅')
+      setFitbitMsg('Fitbit verbunden')
       syncFitbit()
       window.history.replaceState({}, '', '/profile')
     } else if (p === 'error') {
@@ -118,7 +127,7 @@ export default function Profile() {
     setPushMsg(null)
     try {
       await enablePush(user.id)
-      setPushMsg('Erinnerungen aktiviert ✅')
+      setPushMsg('Erinnerungen aktiviert')
     } catch (e) {
       setPushMsg(e instanceof Error ? e.message : 'Fehler')
     } finally {
@@ -129,8 +138,12 @@ export default function Profile() {
   return (
     <div className="space-y-4">
       <header className="flex items-center gap-2">
-        <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
-          ←
+        <button
+          className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
+          onClick={() => navigate(-1)}
+          aria-label="Zurück"
+        >
+          <ChevronLeft size={20} />
         </button>
         <h1 className="text-xl font-bold">Profil</h1>
       </header>
@@ -146,26 +159,20 @@ export default function Profile() {
           Wechsle jederzeit zwischen der schlanken, gewohnten Basis und der neuen Version mit
           allen Features. Deine Daten bleiben in beiden gleich.
         </p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={`${SEG_TRACK} grid-cols-2`}>
           <button
             type="button"
             onClick={() => setAppMode('classic')}
-            className={`btn ${
-              appMode === 'classic'
-                ? 'bg-ruby text-white'
-                : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
-            }`}
+            aria-pressed={appMode === 'classic'}
+            className={segBtn(appMode === 'classic')}
           >
             Klassisch
           </button>
           <button
             type="button"
             onClick={() => setAppMode('new')}
-            className={`btn ${
-              appMode === 'new'
-                ? 'bg-ruby text-white'
-                : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
-            }`}
+            aria-pressed={appMode === 'new'}
+            className={segBtn(appMode === 'new')}
           >
             Neu (alle Features)
           </button>
@@ -180,26 +187,20 @@ export default function Profile() {
       <div className="card space-y-2">
         <div className="label">Schnellzugriff</div>
         <div className="grid grid-cols-2 gap-2">
-          <button
-            className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
-            onClick={() => navigate('/exercises')}
-          >
-            🏋️ Übungen
+          <button className={TILE} onClick={() => navigate('/exercises')}>
+            <Dumbbell size={16} className="text-cocoa-light" />
+            Übungen
           </button>
           {isNew && (
-            <button
-              className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
-              onClick={() => navigate('/badges')}
-            >
-              🏅 Abzeichen · Lvl {level}
+            <button className={TILE} onClick={() => navigate('/badges')}>
+              <Award size={16} className="text-cocoa-light" />
+              Abzeichen · <span className="tabular">Lvl {level}</span>
             </button>
           )}
           {isNew && (
-            <button
-              className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
-              onClick={() => navigate('/social')}
-            >
-              👥 Community
+            <button className={TILE} onClick={() => navigate('/social')}>
+              <Users size={16} className="text-cocoa-light" />
+              Community
             </button>
           )}
         </div>
@@ -236,17 +237,14 @@ export default function Profile() {
 
       <div className="card space-y-2">
         <div className="label">Darstellung</div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className={`${SEG_TRACK} grid-cols-3`}>
           {MODES.map((m) => (
             <button
               key={m.v}
               type="button"
               onClick={() => setMode(m.v)}
-              className={`btn ${
-                mode === m.v
-                  ? 'bg-ruby text-white'
-                  : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
-              }`}
+              aria-pressed={mode === m.v}
+              className={segBtn(mode === m.v)}
             >
               {m.label}
             </button>
@@ -317,7 +315,11 @@ export default function Profile() {
                   } ${locked ? 'opacity-40' : ''}`}
                   style={{ background: a.swatch }}
                 >
-                  {locked && <span className="absolute inset-0 grid place-items-center text-xs">🔒</span>}
+                  {locked && (
+                    <span className="absolute inset-0 grid place-items-center text-white">
+                      <Lock size={14} />
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -334,11 +336,11 @@ export default function Profile() {
                   onClick={() => chooseSkin(s.id, s.minLevel)}
                   disabled={locked}
                   title={locked ? `Ab Level ${s.minLevel}` : s.label}
-                  className={`rounded-xl px-3 py-1.5 text-lg ring-1 ${
-                    skin === s.id ? 'bg-sand-light ring-cocoa' : 'ring-sand-dark'
+                  className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-lg transition-colors duration-200 ${
+                    skin === s.id ? 'bg-sand-light ring-2 ring-cocoa dark:bg-sand-dark' : 'bg-sand'
                   } ${locked ? 'opacity-40' : ''}`}
                 >
-                  {s.stages[3]} {locked && '🔒'}
+                  {s.stages[3]} {locked && <Lock size={14} className="text-cocoa-light" />}
                 </button>
               )
             })}
@@ -350,7 +352,7 @@ export default function Profile() {
       {isNew && ai?.enabled && (
         <div className="card space-y-2">
           <div className="label">KI-Coach-Ton</div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className={`${SEG_TRACK} grid-cols-3`}>
             {tones.map((t) => (
               <button
                 key={t}
@@ -359,9 +361,8 @@ export default function Profile() {
                   setTone(t)
                   setCoachTone(t)
                 }}
-                className={`btn text-xs ${
-                  tone === t ? 'bg-ruby text-white' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
-                }`}
+                aria-pressed={tone === t}
+                className={segBtn(tone === t, 'text-xs')}
               >
                 {COACH_TONE_LABEL[t]}
               </button>
@@ -380,11 +381,18 @@ export default function Profile() {
                 Push, wenn du ein paar Tage nicht im Gym warst.
               </div>
             </div>
-            <button className="btn-primary text-sm" onClick={activatePush} disabled={pushBusy}>
-              {pushBusy ? '…' : '🔔 Aktivieren'}
+            <button className="btn-primary gap-1.5 text-sm" onClick={activatePush} disabled={pushBusy}>
+              {pushBusy ? (
+                '…'
+              ) : (
+                <>
+                  <Bell size={16} />
+                  Aktivieren
+                </>
+              )}
             </button>
           </div>
-          {pushMsg && <p className="text-sm text-brand">{pushMsg}</p>}
+          {pushMsg && <p className="text-sm text-cocoa-light">{pushMsg}</p>}
         </div>
       )}
 
@@ -392,18 +400,20 @@ export default function Profile() {
         <div className="label">Daten exportieren (CSV)</div>
         <div className="grid grid-cols-2 gap-2">
           <button
-            className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
+            className={TILE}
             onClick={() => exportSetsCsv(allSets ?? [], exercises ?? [])}
             disabled={!allSets?.length}
           >
-            🏋️ Training
+            <Dumbbell size={16} className="text-cocoa-light" />
+            Training
           </button>
           <button
-            className="btn bg-sand-light text-cocoa ring-1 ring-sand-dark"
+            className={TILE}
             onClick={() => exportNutritionCsv(foodEntries ?? [])}
             disabled={!foodEntries?.length}
           >
-            🍎 Ernährung
+            <Apple size={16} className="text-cocoa-light" />
+            Ernährung
           </button>
         </div>
       </div>
@@ -430,26 +440,27 @@ export default function Profile() {
           {fitbitData && (
             <div className="grid grid-cols-3 gap-2 text-center text-xs">
               <div>
-                <div className="font-semibold text-cocoa">{fitbitData.steps ?? '–'}</div>
+                <div className="tabular font-semibold text-cocoa">{fitbitData.steps ?? '–'}</div>
                 <div className="text-cocoa-light">Schritte</div>
               </div>
               <div>
-                <div className="font-semibold text-cocoa">{fitbitData.restingHr ?? '–'}</div>
+                <div className="tabular font-semibold text-cocoa">{fitbitData.restingHr ?? '–'}</div>
                 <div className="text-cocoa-light">Ruhepuls</div>
               </div>
               <div>
-                <div className="font-semibold text-cocoa">
+                <div className="tabular font-semibold text-cocoa">
                   {fitbitData.weight != null ? `${fitbitData.weight} kg` : '–'}
                 </div>
                 <div className="text-cocoa-light">Gewicht</div>
               </div>
             </div>
           )}
-          {fitbitMsg && <p className="text-sm text-brand">{fitbitMsg}</p>}
+          {fitbitMsg && <p className="text-sm text-cocoa-light">{fitbitMsg}</p>}
         </div>
       )}
 
-      <button className="btn-ghost w-full" onClick={() => supabase.auth.signOut()}>
+      <button className="btn w-full gap-1.5 bg-sand text-cocoa" onClick={() => supabase.auth.signOut()}>
+        <LogOut size={16} className="text-cocoa-light" />
         Abmelden
       </button>
     </div>

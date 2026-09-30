@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import { APP_VERSION, RELEASES, lastSeenVersion, markSeen } from '../lib/whatsnew'
 
 /** Zeigt beim ersten Öffnen nach einem Update die neuen Features. */
@@ -18,10 +19,12 @@ export function WhatsNew() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/60 p-4">
+    <div className="anim-fade fixed inset-0 z-50 flex flex-col bg-black/60 p-4">
       <div className="card mx-auto flex h-full w-full max-w-md flex-col">
         <div className="mb-2 text-center">
-          <div className="text-3xl">🎉</div>
+          <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-full bg-brand/10 text-brand">
+            <Sparkles size={22} />
+          </div>
           <h2 className="text-lg font-bold">{release.title}</h2>
           <p className="text-xs text-cocoa-light">Version {release.version} · das ist neu</p>
         </div>
@@ -40,7 +43,7 @@ export function WhatsNew() {
         </div>
 
         <button className="btn-primary mt-2 w-full" onClick={close}>
-          Los geht's 💪
+          Los geht's
         </button>
       </div>
     </div>

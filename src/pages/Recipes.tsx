@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Check, ChevronDown, Plus, Share2, X } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { useRecipes, useToggleRecipeShared, useDeleteRecipe } from '../hooks/useRecipes'
 import { useAddFoodEntry } from '../hooks/useNutrition'
@@ -44,16 +45,22 @@ function RecipeCard({ r, mine }: { r: SavedRecipe; mine: boolean }) {
 
   return (
     <li className="card space-y-2">
-      <button className="w-full text-left" onClick={() => setOpen((o) => !o)}>
-        <div className="font-semibold">{r.title}</div>
-        <div className="text-xs text-cocoa-light">
-          {!mine && r.author_name ? `von ${r.author_name} · ` : ''}
-          {r.kcal} kcal · E {r.protein} / K {r.carbs} / F {r.fat} · {r.servings} Portion(en)
+      <button className="flex w-full items-start gap-2 text-left" onClick={() => setOpen((o) => !o)}>
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold">{r.title}</div>
+          <div className="tabular text-xs text-cocoa-light">
+            {!mine && r.author_name ? `von ${r.author_name} · ` : ''}
+            {r.kcal} kcal · E {r.protein} / K {r.carbs} / F {r.fat} · {r.servings} Portion(en)
+          </div>
         </div>
+        <ChevronDown
+          size={18}
+          className={`mt-0.5 shrink-0 text-cocoa-light transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {open && (
-        <div className="space-y-2 border-t border-sand-dark pt-2">
+        <div className="anim-fade space-y-2 rounded-xl bg-sand-light p-3">
           {r.ingredients.length > 0 && (
             <div>
               <div className="text-sm font-semibold">Zutaten</div>
@@ -78,18 +85,24 @@ function RecipeCard({ r, mine }: { r: SavedRecipe; mine: boolean }) {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button className="btn-ghost text-sm" onClick={log} disabled={addEntry.isPending}>
-          + Loggen
+        <button
+          className="btn-ghost flex items-center gap-1.5 text-sm"
+          onClick={log}
+          disabled={addEntry.isPending}
+        >
+          <Plus size={16} />
+          Loggen
         </button>
         {mine && (
           <>
             <button
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                r.shared ? 'bg-brand text-white' : 'bg-sand-light text-cocoa-light ring-1 ring-sand-dark'
+              className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200 ${
+                r.shared ? 'bg-success/10 text-success' : 'bg-sand text-cocoa-light'
               }`}
               onClick={() => toggle.mutate({ id: r.id, shared: !r.shared })}
             >
-              {r.shared ? '✓ geteilt' : 'Teilen'}
+              {r.shared ? <Check size={14} strokeWidth={2.5} /> : <Share2 size={14} />}
+              {r.shared ? 'geteilt' : 'Teilen'}
             </button>
             <button
               className="ml-auto px-2 text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
@@ -98,7 +111,7 @@ function RecipeCard({ r, mine }: { r: SavedRecipe; mine: boolean }) {
                 if (confirm(`„${r.title}" löschen?`)) del.mutate(r.id)
               }}
             >
-              ✕
+              <X size={18} />
             </button>
           </>
         )}
@@ -134,7 +147,7 @@ export default function Recipes() {
           ))}
           {mine.length === 0 && !isLoading && (
             <li className="text-sm text-cocoa-light">
-              Noch keine. Erstelle Rezepte im Tab „Plan" (🍳 pro Mahlzeit) oder über „Heute →
+              Noch keine. Erstelle Rezepte im Tab „Plan" („Rezept" pro Mahlzeit) oder über „Heute →
               Hinzufügen → Rezept" und speichere sie.
             </li>
           )}

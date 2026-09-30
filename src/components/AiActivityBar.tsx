@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import { aiActiveCount, subscribeAiActivity } from '../lib/aiActivity'
 
 /** Global sichtbarer, animierter Indikator, solange KI-Anfragen laufen. */
@@ -24,11 +25,14 @@ export function AiActivityBar() {
 
   return (
     <div className="fixed inset-x-0 top-0 z-50 mx-auto max-w-md px-3 pt-[env(safe-area-inset-top)]">
-      <div className="mt-2 flex items-center gap-2 rounded-full bg-cream/95 px-3 py-1.5 shadow-lg ring-1 ring-sand-dark backdrop-blur">
+      <div className="mt-2 flex items-center gap-2 rounded-full bg-cream/95 px-3 py-1.5 shadow-lg backdrop-blur">
         <span className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-ruby border-t-transparent" />
-        <span className="text-xs font-medium text-cocoa">
-          ✨ KI arbeitet… {seconds >= 1 && `${seconds}s`}
+        <span className="flex items-center gap-1.5 text-xs font-medium text-cocoa">
+          <Sparkles size={14} className="shrink-0 text-cocoa-light" />
+          <span className="tabular">
+            KI arbeitet… {seconds >= 1 && `${seconds}s`}
           {seconds >= 15 && ' · dauert gerade länger'}
+          </span>
         </span>
         <div className="ai-bar-track ml-auto h-1 w-16 shrink-0 rounded-full bg-sand-dark/40" />
       </div>

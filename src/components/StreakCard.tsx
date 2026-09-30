@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { Flame, Snowflake, Sparkles } from 'lucide-react'
 import { useStreakState, useUpdateStreakState } from '../hooks/useStreak'
 import {
   completedPerfectWeeks,
@@ -47,26 +48,40 @@ export function StreakCard({ sets }: { sets: SetWithDate[] }) {
   return (
     <section className="card space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">🔥 Serie</h2>
-        <span className="text-sm text-cocoa-light">❄️ {state?.freezes ?? 0} Freeze</span>
+        <h2 className="flex items-center gap-1.5 font-semibold">
+          <Flame size={18} className="text-cocoa-light" />
+          Serie
+        </h2>
+        <span className="flex items-center gap-1 text-sm text-cocoa-light">
+          <Snowflake size={16} />
+          <span className="tabular">{state?.freezes ?? 0}</span> Freeze
+        </span>
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="text-3xl font-bold text-brand">{streak}</div>
+        <div className="tabular text-3xl font-bold text-cocoa">{streak}</div>
         <div className="text-sm text-cocoa-light">
           Wochen am Stück
-          {frozen.includes(week) && <span className="ml-1 text-xs">(diese Woche ❄️)</span>}
+          {frozen.includes(week) && (
+            <span className="ml-1 inline-flex items-center gap-1 text-xs">
+              (diese Woche <Snowflake size={12} />)
+            </span>
+          )}
         </div>
       </div>
 
       {!trained && !frozen.includes(week) && (
-        <div className="rounded-xl bg-amber-500/15 p-2.5 text-sm ring-1 ring-amber-500/30">
-          <span className="font-semibold text-amber-600 dark:text-amber-400">
+        <div className="anim-fade rounded-xl bg-sand p-2.5 text-sm">
+          <span className="font-semibold text-cocoa">
             Diese Woche noch kein Training.
           </span>
           {canFreeze ? (
-            <button className="btn-primary mt-2 w-full text-sm" onClick={useFreeze}>
-              ❄️ Freeze einsetzen (Serie retten)
+            <button
+              className="btn-primary mt-2 flex w-full items-center justify-center gap-1.5 text-sm"
+              onClick={useFreeze}
+            >
+              <Snowflake size={16} />
+              Freeze einsetzen (Serie retten)
             </button>
           ) : (
             <p className="mt-1 text-xs text-cocoa-light">
@@ -79,7 +94,8 @@ export function StreakCard({ sets }: { sets: SetWithDate[] }) {
       )}
 
       <div className="text-xs text-cocoa-muted">
-        ✨ Perfekte Wochen (4+ Trainings): <span className="font-semibold text-cocoa">{perfect}</span> ·
+        <Sparkles size={12} className="mr-1 inline-block align-[-1px]" />
+        Perfekte Wochen (4+ Trainings): <span className="tabular font-semibold text-cocoa">{perfect}</span> ·
         Freeze gibt's für jede perfekte Woche.
       </div>
     </section>

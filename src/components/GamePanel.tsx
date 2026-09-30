@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Calendar, Check, ChevronRight, Star, Target } from 'lucide-react'
 import { balanceStats, frequencyStats, onlyWorking, totalVolume } from '../lib/analytics'
 import { achievements, rankForSessions } from '../lib/gamification'
 import { mascotEmoji } from '../lib/cosmetics'
@@ -20,20 +21,20 @@ function QuestRow({ q }: { q: Quest }) {
   return (
     <div className="flex items-center gap-2">
       <span
-        className={`grid h-4 w-4 place-items-center rounded-full text-[10px] ${
-          q.done ? 'bg-brand text-white' : 'ring-1 ring-sand-dark text-transparent'
+        className={`grid h-4 w-4 shrink-0 place-items-center rounded-full transition-colors duration-200 ${
+          q.done ? 'anim-check bg-success text-white' : 'bg-sand-dark/40 text-transparent'
         }`}
       >
-        ✓
+        <Check size={10} strokeWidth={3} />
       </span>
       <div className="flex-1">
         <div className="flex justify-between text-xs">
           <span className={q.done ? 'text-cocoa-light line-through' : 'text-cocoa'}>{q.label}</span>
-          <span className="text-cocoa-muted">+{q.xp} XP</span>
+          <span className="tabular text-cocoa-muted">+{q.xp} XP</span>
         </div>
         <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-sand-dark/40">
           <div
-            className={`h-full bg-brand ${q.done ? '' : 'opacity-60'}`}
+            className={`h-full ${q.done ? 'bg-success' : 'bg-brand opacity-60'}`}
             style={{ width: `${q.progress}%` }}
           />
         </div>
@@ -108,10 +109,13 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
     <section className="card space-y-3">
       <Confetti show={celebrate} onDone={() => setCelebrate(false)} />
       {celebrate && (
-        <div className="flex items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-ruby p-2.5 font-bold text-white">
-          <span>⭐ Level {g.xp.level} erreicht!</span>
+        <div className="anim-fade flex items-center justify-between gap-2 rounded-xl bg-gold/15 p-2.5 font-bold text-cocoa">
+          <span className="flex items-center gap-1.5">
+            <Star size={18} className="text-gold" />
+            Level <span className="tabular">{g.xp.level}</span> erreicht!
+          </span>
           <button
-            className="rounded-full bg-white/25 px-3 py-1 text-sm"
+            className="rounded-full bg-gold px-3 py-1 text-sm text-white"
             onClick={() =>
               shareStatCard({
                 title: `Level ${g.xp.level} erreicht! ⭐`,
@@ -139,29 +143,35 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
         <div className="text-4xl">{g.mascot}</div>
         <div className="flex-1">
           <div className="flex items-baseline justify-between">
-            <span className="font-bold">Level {g.xp.level}</span>
+            <span className="tabular font-bold">Level {g.xp.level}</span>
             <span className="text-xs text-cocoa-light">{g.rank.title}</span>
           </div>
           <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-sand-dark/40">
             <div className="h-full bg-brand" style={{ width: `${g.xp.progress}%` }} />
           </div>
-          <div className="mt-0.5 text-[11px] text-cocoa-muted">
+          <div className="tabular mt-0.5 text-[11px] text-cocoa-muted">
             {g.xp.xpInLevel} / {g.xp.xpForLevel} XP · gesamt {g.xp.xp.toLocaleString('de-DE')} XP
           </div>
         </div>
       </div>
 
-      <div className="text-xs text-cocoa-light">
+      <div className="tabular text-xs text-cocoa-light">
         {g.freq.totalSessions} Trainings · {g.tonnage.toLocaleString('de-DE')} kg bewegt
       </div>
 
       {/* Quests */}
-      <div className="space-y-2 rounded-xl bg-sand/40 p-3">
-        <div className="text-sm font-semibold">🎯 Tages-Quests</div>
+      <div className="space-y-2 rounded-xl bg-sand p-3">
+        <div className="flex items-center gap-1.5 text-sm font-semibold">
+          <Target size={16} className="text-cocoa-light" />
+          Tages-Quests
+        </div>
         {g.daily.map((q) => (
           <QuestRow key={q.id} q={q} />
         ))}
-        <div className="pt-1 text-sm font-semibold">📅 Wochen-Quests</div>
+        <div className="flex items-center gap-1.5 pt-1 text-sm font-semibold">
+          <Calendar size={16} className="text-cocoa-light" />
+          Wochen-Quests
+        </div>
         {g.weekly.map((q) => (
           <QuestRow key={q.id} q={q} />
         ))}
@@ -170,8 +180,12 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
       {/* Achievements */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold">Badges</span>
-        <button className="text-xs font-semibold text-brand" onClick={() => navigate('/badges')}>
-          Alle ansehen →
+        <button
+          className="flex items-center gap-0.5 text-xs font-semibold text-brand"
+          onClick={() => navigate('/badges')}
+        >
+          Alle ansehen
+          <ChevronRight size={14} />
         </button>
       </div>
       <div className="grid grid-cols-5 gap-2">
@@ -180,7 +194,7 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
             key={a.id}
             title={a.label}
             className={`flex flex-col items-center rounded-xl p-2 text-center ${
-              a.done ? 'bg-sand-light ring-1 ring-sand-dark' : 'opacity-35'
+              a.done ? 'bg-gold/15' : 'bg-sand opacity-35'
             }`}
           >
             <span className="text-xl">{a.icon}</span>

@@ -1,4 +1,20 @@
 import { useMemo, useState } from 'react'
+import {
+  Bot,
+  Camera,
+  ChefHat,
+  ClipboardList,
+  MessageSquare,
+  PenLine,
+  Plus,
+  Refrigerator,
+  Save,
+  ScanBarcode,
+  Search,
+  Share2,
+  Store,
+  X,
+} from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { useAddRecipe } from '../hooks/useRecipes'
 import { Stepper } from '../components/Stepper'
@@ -86,7 +102,9 @@ function Bar({ value, target }: { value: number; target: number }) {
   const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0
   return (
     <div className="h-2 overflow-hidden rounded-full bg-sand-dark/50">
-      <div className="h-full rounded-full bg-ruby" style={{ width: `${pct}%` }} />
+      <div
+        className={`h-full rounded-full transition-[width] duration-300 ${pct >= 100 ? 'bg-success' : 'bg-brand'}`}
+        style={{ width: `${pct}%` }} />
     </div>
   )
 }
@@ -485,17 +503,17 @@ export default function Nutrition() {
           <>
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-2xl font-bold text-brand">{totals.kcal}</div>
-                <div className="text-xs text-cocoa-light">
+                <div className="tabular text-2xl font-bold text-cocoa">{totals.kcal}</div>
+                <div className="tabular text-xs text-cocoa-light">
                   von {kcalTarget} kcal{trainedToday && ' · +Trainingstag'}
                 </div>
               </div>
-              <div className="text-right text-sm text-cocoa-light">
+              <div className="tabular text-right text-sm text-cocoa-light">
                 {kcalLeft >= 0 ? `${kcalLeft} kcal übrig` : `${-kcalLeft} kcal drüber`}
               </div>
             </div>
             <Bar value={totals.kcal} target={kcalTarget} />
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="tabular grid grid-cols-3 gap-2 text-center text-xs">
               <div>
                 <div className="font-semibold text-cocoa">{totals.protein} g</div>
                 <div className="text-cocoa-light">Eiweiß / {settings!.protein_target} g</div>
@@ -509,7 +527,7 @@ export default function Nutrition() {
                 <div className="text-cocoa-light">Fett / {settings!.fat_target} g</div>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-2 border-t border-sand-dark pt-2 text-center text-[11px] text-cocoa-light">
+            <div className="tabular grid grid-cols-4 gap-2 rounded-xl bg-sand-light p-2 text-center text-[11px] text-cocoa-light">
               <div>
                 <div className="font-semibold text-cocoa">{totals.fiber} g</div>
                 Ballaststoffe
@@ -536,8 +554,9 @@ export default function Nutrition() {
       </div>
 
       {/* Erfassen */}
-      <button className="btn-primary w-full" onClick={() => setAddMode('menu')}>
-        + Lebensmittel hinzufügen
+      <button className="btn-primary w-full gap-1.5" onClick={() => setAddMode('menu')}>
+        <Plus size={18} strokeWidth={2.5} />
+        Lebensmittel hinzufügen
       </button>
 
       {/* Zuletzt gegessen — 1-Tap-Wiederholung */}
@@ -549,10 +568,11 @@ export default function Nutrition() {
               <button
                 key={e.id}
                 onClick={() => quickAdd(e)}
-                className="shrink-0 rounded-full bg-sand-light px-3 py-1.5 text-sm ring-1 ring-sand-dark"
+                className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-3 py-1.5 text-sm transition-colors duration-200 hover:bg-sand-dark/60"
               >
-                + {e.name}{' '}
-                <span className="text-cocoa-muted">{Math.round(e.kcal)}</span>
+                <Plus size={14} className="text-cocoa-light" />
+                {e.name}
+                <span className="tabular text-cocoa-muted">{Math.round(e.kcal)}</span>
               </button>
             ))}
           </div>
@@ -569,24 +589,24 @@ export default function Nutrition() {
             <div key={meal}>
               <div className="mb-1 flex items-center justify-between px-1">
                 <span className="text-sm font-semibold">{MEAL_LABEL[meal as Meal]}</span>
-                <span className="text-xs text-cocoa-light">{Math.round(kcal)} kcal</span>
+                <span className="tabular text-xs text-cocoa-light">{Math.round(kcal)} kcal</span>
               </div>
               <div className="space-y-2">
                 {group.map((e) => (
                   <div key={e.id} className="card flex items-center justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <div className="font-medium">{e.name}</div>
-                      <div className="text-xs text-cocoa-light">
+                      <div className="tabular text-xs text-cocoa-light">
                         {e.amount_g ? `${e.amount_g} g · ` : ''}
                         {Math.round(e.kcal)} kcal · E {e.protein} / K {e.carbs} / F {e.fat}
                       </div>
                     </div>
                     <button
-                      className="ml-2 px-2 text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
+                      className="ml-2 shrink-0 px-2 text-cocoa-muted transition-colors duration-200 hover:text-red-500 dark:hover:text-red-400"
                       aria-label="Eintrag löschen"
                       onClick={() => deleteEntry.mutate(e)}
                     >
-                      ✕
+                      <X size={18} />
                     </button>
                   </div>
                 ))}
@@ -604,8 +624,8 @@ export default function Nutrition() {
 
       {/* ----- Ziel-Setup ----- */}
       {setupOpen && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">Ziel & Körperdaten</h2>
             <GoalEditor onSaved={() => setSetupOpen(false)} onCancel={() => setSetupOpen(false)} />
           </div>
@@ -614,42 +634,50 @@ export default function Nutrition() {
 
       {/* ----- Hinzufügen: Menü ----- */}
       {addMode === 'menu' && !pending && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card w-full max-w-md space-y-2">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card w-full max-w-md space-y-2">
             <h2 className="text-lg font-bold">Hinzufügen</h2>
             {aiOn && (
               <>
-                <button className="btn-primary w-full" onClick={() => setAddMode('photo')}>
-                  📸 Foto (KI)
+                <button className="btn-primary w-full gap-2" onClick={() => setAddMode('photo')}>
+                  <Camera size={18} />
+                  Foto (KI)
                 </button>
-                <button className="btn-ghost w-full" onClick={() => setAddMode('aitext')}>
-                  💬 Text beschreiben (KI)
+                <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('aitext')}>
+                  <MessageSquare size={18} className="text-cocoa-light" />
+                  Text beschreiben (KI)
                 </button>
-                <button className="btn-ghost w-full" onClick={() => setAddMode('recipe')}>
-                  🍳 Rezept (Foto/Text, KI)
+                <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('recipe')}>
+                  <ChefHat size={18} className="text-cocoa-light" />
+                  Rezept (Foto/Text, KI)
                 </button>
-                <button className="btn-ghost w-full" onClick={() => setAddMode('plan')}>
-                  📋 Tagesplan für heute (KI)
+                <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('plan')}>
+                  <ClipboardList size={18} className="text-cocoa-light" />
+                  Tagesplan für heute (KI)
                 </button>
-                <button className="btn-ghost w-full" onClick={() => setAddMode('restaurant')}>
-                  🍔 Restaurant / unterwegs (KI)
+                <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('restaurant')}>
+                  <Store size={18} className="text-cocoa-light" />
+                  Restaurant / unterwegs (KI)
                 </button>
               </>
             )}
             <button
-              className={aiOn ? 'btn-ghost w-full' : 'btn-primary w-full'}
+              className={aiOn ? 'btn-ghost w-full gap-2' : 'btn-primary w-full gap-2'}
               onClick={() => {
                 setError(null)
                 setScanning(true)
               }}
             >
-              📷 Barcode scannen
+              <ScanBarcode size={18} className={aiOn ? 'text-cocoa-light' : undefined} />
+              Barcode scannen
             </button>
-            <button className="btn-ghost w-full" onClick={() => setAddMode('search')}>
-              🔎 In Datenbank suchen
+            <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('search')}>
+              <Search size={18} className="text-cocoa-light" />
+              In Datenbank suchen
             </button>
-            <button className="btn-ghost w-full" onClick={() => setAddMode('manual')}>
-              ✍️ Manuell eingeben
+            <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('manual')}>
+              <PenLine size={18} className="text-cocoa-light" />
+              Manuell eingeben
             </button>
             <button
               className="w-full pt-1 text-center text-sm text-cocoa-light underline"
@@ -663,8 +691,8 @@ export default function Nutrition() {
 
       {/* ----- Suche ----- */}
       {addMode === 'search' && !pending && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">Suchen</h2>
             <div className="flex gap-2">
               <input
@@ -682,14 +710,14 @@ export default function Nutrition() {
               {results.map((p, i) => (
                 <li key={i}>
                   <button
-                    className="w-full rounded-lg bg-sand/40 px-3 py-2 text-left ring-1 ring-sand-dark/50"
+                    className="w-full rounded-lg bg-sand px-3 py-2 text-left transition-colors duration-200 hover:bg-sand-dark/60"
                     onClick={() => {
                       setPending(p)
                       setAmount(100)
                     }}
                   >
                     <div className="text-sm font-medium">{p.name}</div>
-                    <div className="text-xs text-cocoa-light">
+                    <div className="tabular text-xs text-cocoa-light">
                       {p.brand ? `${p.brand} · ` : ''}
                       {p.per100.kcal} kcal /100 g
                     </div>
@@ -709,16 +737,16 @@ export default function Nutrition() {
 
       {/* ----- Mengen-Bestätigung (Barcode/Suche) ----- */}
       {pending && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
-          <div className="card w-full max-w-md space-y-3">
+        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card w-full max-w-md space-y-3">
             <h2 className="text-lg font-bold">{pending.name}</h2>
-            <p className="text-xs text-cocoa-light">
+            <p className="tabular text-xs text-cocoa-light">
               {pending.brand ? `${pending.brand} · ` : ''}
               pro 100 g: {pending.per100.kcal} kcal · E {pending.per100.protein} / K{' '}
               {pending.per100.carbs} / F {pending.per100.fat}
             </p>
             <Stepper label="Menge (g)" value={amount} onChange={setAmount} step={10} min={0} suffix="g" />
-            <p className="text-sm">
+            <p className="tabular text-sm">
               = <strong>{scalePer100(pending.per100, amount).kcal} kcal</strong>, Eiweiß{' '}
               {scalePer100(pending.per100, amount).protein} g
             </p>
@@ -736,8 +764,8 @@ export default function Nutrition() {
 
       {/* ----- Manuelle Eingabe ----- */}
       {addMode === 'manual' && !pending && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">Manuell eingeben</h2>
             <div>
               <label className="label">Name</label>
@@ -789,11 +817,14 @@ export default function Nutrition() {
 
       {/* ----- KI: Restaurant / unterwegs ----- */}
       {addMode === 'restaurant' && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card w-full max-w-md space-y-3">
-            <h2 className="text-lg font-bold">🍔 Restaurant / unterwegs</h2>
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card w-full max-w-md space-y-3">
+            <h2 className="flex items-center gap-2 text-lg font-bold">
+              <Store size={20} className="text-cocoa-light" />
+              Restaurant / unterwegs
+            </h2>
             {hasTarget && (
-              <p className="text-xs text-cocoa-light">
+              <p className="tabular text-xs text-cocoa-light">
                 Noch offen heute: {Math.max(0, kcalTarget - totals.kcal)} kcal ·{' '}
                 {Math.max(0, (settings?.protein_target ?? 0) - totals.protein)} g Eiweiß
               </p>
@@ -825,8 +856,8 @@ export default function Nutrition() {
                 <button
                   key={p}
                   onClick={() => setPlace(p)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm ring-1 ${
-                    place === p ? 'bg-ruby text-white ring-ruby' : 'bg-sand-light text-cocoa ring-sand-dark'
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ${
+                    place === p ? 'bg-brand text-white' : 'bg-sand text-cocoa'
                   }`}
                 >
                   {p}
@@ -848,8 +879,9 @@ export default function Nutrition() {
               <button className="btn-primary" onClick={estimateOrder} disabled={aiBusy}>
                 {aiBusy ? '…' : 'Bestellung schätzen'}
               </button>
-              <button className="btn-ghost" onClick={suggestForBudget} disabled={aiBusy}>
-                🤖 Passt zum Budget
+              <button className="btn-ghost gap-1.5" onClick={suggestForBudget} disabled={aiBusy}>
+                <Bot size={16} className="text-cocoa-light" />
+                Passt zum Budget
               </button>
             </div>
             <button
@@ -864,9 +896,12 @@ export default function Nutrition() {
 
       {/* ----- KI: Foto + optionale Notiz ----- */}
       {addMode === 'photo' && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card w-full max-w-md space-y-3">
-            <h2 className="text-lg font-bold">📸 Essen fotografieren</h2>
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card w-full max-w-md space-y-3">
+            <h2 className="flex items-center gap-2 text-lg font-bold">
+              <Camera size={20} className="text-cocoa-light" />
+              Essen fotografieren
+            </h2>
             <p className="text-xs text-cocoa-light">
               Optional dazu schreiben oder diktieren, was drin ist oder wie viel — macht die
               Schätzung genauer.
@@ -880,8 +915,9 @@ export default function Nutrition() {
               />
               <MicButton onResult={(t) => setPhotoHint((v) => (v ? v + ' ' + t : t))} />
             </div>
-            <label className="btn-primary flex w-full cursor-pointer items-center justify-center">
-              {aiBusy ? '… analysiere' : '📷 Foto aufnehmen'}
+            <label className="btn-primary flex w-full cursor-pointer items-center justify-center gap-2">
+              {!aiBusy && <Camera size={18} />}
+              {aiBusy ? '… analysiere' : 'Foto aufnehmen'}
               <input
                 type="file"
                 accept="image/*"
@@ -902,9 +938,12 @@ export default function Nutrition() {
 
       {/* ----- KI: Text beschreiben ----- */}
       {addMode === 'aitext' && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card w-full max-w-md space-y-3">
-            <h2 className="text-lg font-bold">💬 Mahlzeit beschreiben</h2>
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card w-full max-w-md space-y-3">
+            <h2 className="flex items-center gap-2 text-lg font-bold">
+              <MessageSquare size={20} className="text-cocoa-light" />
+              Mahlzeit beschreiben
+            </h2>
             <p className="text-xs text-cocoa-light">
               Schreib einfach, was du gegessen hast — die KI schätzt die Nährwerte.
             </p>
@@ -933,8 +972,8 @@ export default function Nutrition() {
 
       {/* ----- KI: Ergebnis prüfen & übernehmen ----- */}
       {aiResults && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
-          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">KI-Schätzung</h2>
             <p className="text-xs text-cocoa-light">
               Schätzwerte — vor dem Übernehmen kurz prüfen. Zum Feinjustieren einzeln übernehmen und
@@ -944,20 +983,21 @@ export default function Nutrition() {
               {aiResults.map((it, i) => (
                 <li
                   key={i}
-                  className="flex items-center justify-between rounded-lg bg-sand/40 px-3 py-2 ring-1 ring-sand-dark/50"
+                  className="flex items-center justify-between rounded-lg bg-sand px-3 py-2"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-sm font-medium">{it.name}</div>
-                    <div className="text-xs text-cocoa-light">
+                    <div className="tabular text-xs text-cocoa-light">
                       {it.amount_g ? `${it.amount_g} g · ` : ''}
                       {it.kcal} kcal · E {it.protein} / K {it.carbs} / F {it.fat}
                     </div>
                   </div>
                   <button
-                    className="ml-2 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white"
+                    className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white"
                     onClick={() => addEstimates([it])}
+                    aria-label="Übernehmen"
                   >
-                    +
+                    <Plus size={16} strokeWidth={2.5} />
                   </button>
                 </li>
               ))}
@@ -980,9 +1020,12 @@ export default function Nutrition() {
 
       {/* ----- KI: Kühlschrank-Rezept ----- */}
       {addMode === 'recipe' && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card w-full max-w-md space-y-3">
-            <h2 className="text-lg font-bold">🍳 Rezept aus Kühlschrank</h2>
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card w-full max-w-md space-y-3">
+            <h2 className="flex items-center gap-2 text-lg font-bold">
+              <ChefHat size={20} className="text-cocoa-light" />
+              Rezept aus Kühlschrank
+            </h2>
             <p className="text-xs text-cocoa-light">
               Worauf hast du Lust? Dann den Kühlschrank/die Zutaten fotografieren — die KI macht dir
               ein passendes Rezept.
@@ -993,8 +1036,9 @@ export default function Nutrition() {
               value={craving}
               onChange={(e) => setCraving(e.target.value)}
             />
-            <label className="btn-primary flex w-full cursor-pointer items-center justify-center">
-              {aiBusy ? '… koche' : '📸 Kühlschrank fotografieren'}
+            <label className="btn-primary flex w-full cursor-pointer items-center justify-center gap-2">
+              {!aiBusy && <Refrigerator size={18} />}
+              {aiBusy ? '… koche' : 'Kühlschrank fotografieren'}
               <input
                 type="file"
                 accept="image/*"
@@ -1032,10 +1076,10 @@ export default function Nutrition() {
 
       {/* ----- Rezept-Ergebnis ----- */}
       {recipe && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
-          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">{recipe.title}</h2>
-            <p className="text-xs text-cocoa-light">
+            <p className="tabular text-xs text-cocoa-light">
               {recipe.servings} Portion(en) · pro Portion {recipe.nutrition.kcal} kcal · E{' '}
               {recipe.nutrition.protein} / K {recipe.nutrition.carbs} / F {recipe.nutrition.fat}
             </p>
@@ -1056,11 +1100,13 @@ export default function Nutrition() {
               </ol>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-1">
-              <button className="btn-ghost" onClick={() => saveRecipe(recipe, false)}>
-                💾 Speichern
+              <button className="btn-ghost gap-1.5" onClick={() => saveRecipe(recipe, false)}>
+                <Save size={16} className="text-cocoa-light" />
+                Speichern
               </button>
-              <button className="btn-ghost" onClick={() => saveRecipe(recipe, true)}>
-                📤 Speichern & teilen
+              <button className="btn-ghost gap-1.5" onClick={() => saveRecipe(recipe, true)}>
+                <Share2 size={16} className="text-cocoa-light" />
+                Speichern & teilen
               </button>
               <button className="btn-ghost" onClick={() => setRecipe(null)}>
                 Schließen
@@ -1075,10 +1121,13 @@ export default function Nutrition() {
 
       {/* ----- KI: Essensplan Eingabe ----- */}
       {addMode === 'plan' && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card w-full max-w-md space-y-3">
-            <h2 className="text-lg font-bold">📋 Tagesplan für heute</h2>
-            <p className="text-xs text-cocoa-light">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card w-full max-w-md space-y-3">
+            <h2 className="flex items-center gap-2 text-lg font-bold">
+              <ClipboardList size={20} className="text-cocoa-light" />
+              Tagesplan für heute
+            </h2>
+            <p className="tabular text-xs text-cocoa-light">
               Ziel: ~{settings?.kcal_target ?? 2000} kcal · {settings?.protein_target ?? 130} g Eiweiß.
               Wünsche?
             </p>
@@ -1106,21 +1155,21 @@ export default function Nutrition() {
 
       {/* ----- Essensplan Ergebnis ----- */}
       {planItems && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
-          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">Essensplan</h2>
             {planNote && <p className="text-xs text-cocoa-light">{planNote}</p>}
             <ul className="space-y-1.5">
               {planItems.map((it, i) => (
-                <li key={i} className="rounded-lg bg-sand/40 px-3 py-2 ring-1 ring-sand-dark/50">
+                <li key={i} className="rounded-lg bg-sand px-3 py-2">
                   <div className="text-sm font-medium">{it.name}</div>
-                  <div className="text-xs text-cocoa-light">
+                  <div className="tabular text-xs text-cocoa-light">
                     {MEAL_LABEL[it.meal]} · {it.kcal} kcal · E {it.protein} / K {it.carbs} / F {it.fat}
                   </div>
                 </li>
               ))}
             </ul>
-            <div className="text-xs text-cocoa-muted">
+            <div className="tabular text-xs text-cocoa-muted">
               Summe: {planItems.reduce((s, i) => s + i.kcal, 0)} kcal ·{' '}
               {planItems.reduce((s, i) => s + i.protein, 0)} g Eiweiß
             </div>

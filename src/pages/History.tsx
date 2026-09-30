@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, Flame, Pencil, Check, Plus, Trash2 } from 'lucide-react'
 import { usePrefs } from '../lib/prefs'
 import { useExercises } from '../hooks/useExercises'
 import { useAddSet, useAllSets, useDeleteWorkout, useWorkouts } from '../hooks/useWorkouts'
@@ -58,7 +59,7 @@ export default function History() {
       <header className="flex items-center gap-2">
         {isNew && (
           <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
-            ←
+            <ChevronLeft size={20} />
           </button>
         )}
         <h1 className="text-xl font-bold">Verlauf</h1>
@@ -94,18 +95,18 @@ export default function History() {
                       year: 'numeric',
                     })}
                   </div>
-                  <div className="text-sm text-cocoa-light">
+                  <div className="tabular text-sm text-cocoa-light">
                     {sets.length} Sätze · Volumen {Math.round(totalVolume(sets))} kg
                   </div>
                 </button>
                 <button
-                  className="ml-2 px-2 text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
+                  className="ml-2 grid h-8 w-8 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
                   aria-label="Training löschen"
                   onClick={() => {
                     if (confirm('Dieses Training löschen?')) deleteWorkout.mutate(w.id)
                   }}
                 >
-                  ✕
+                  <Trash2 size={16} />
                 </button>
               </div>
 
@@ -113,9 +114,10 @@ export default function History() {
                 <div className="mt-3 space-y-3 border-t border-sand-dark pt-3">
                   <div className="flex justify-end">
                     <button
-                      className="btn-ghost text-sm"
+                      className="btn-ghost flex items-center gap-1.5 text-sm"
                       onClick={() => setEditId(editing ? null : w.id)}
                     >
+                      {editing ? <Check size={16} /> : <Pencil size={16} />}
                       {editing ? 'Fertig' : 'Bearbeiten'}
                     </button>
                   </div>
@@ -132,29 +134,39 @@ export default function History() {
                               <EditableSetRow key={s.id} set={s} exercise={ex} />
                             ))}
                             <button
-                              className="btn-ghost w-full text-sm"
+                              className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
                               onClick={() => addSetToGroup(w.id, ex, exSets)}
                             >
-                              + Satz
+                              <Plus size={16} /> Satz
                             </button>
                           </>
                         ) : (
-                          <div className="text-sm text-cocoa-light">
-                            {sorted
-                              .map((s) => {
-                                const prefix =
-                                  s.set_type === 'warmup'
-                                    ? 'Aufw. '
-                                    : s.set_type === 'drop'
-                                      ? 'Drop '
-                                      : ''
-                                const flame = s.to_failure ? ' 🔥' : ''
-                                if (s.reps_right != null) {
-                                  return `${prefix}L ${s.reps}×${s.weight} / R ${s.reps_right}×${s.weight_right}kg${flame}`
-                                }
-                                return `${prefix}${s.reps}×${s.weight}kg${flame}`
-                              })
-                              .join(' · ')}
+                          <div className="tabular text-sm text-cocoa-light">
+                            {sorted.map((s, i) => {
+                              const prefix =
+                                s.set_type === 'warmup'
+                                  ? 'Aufw. '
+                                  : s.set_type === 'drop'
+                                    ? 'Drop '
+                                    : ''
+                              const text =
+                                s.reps_right != null
+                                  ? `${prefix}L ${s.reps}×${s.weight} / R ${s.reps_right}×${s.weight_right}kg`
+                                  : `${prefix}${s.reps}×${s.weight}kg`
+                              return (
+                                <span key={s.id}>
+                                  {i > 0 && ' · '}
+                                  {text}
+                                  {s.to_failure && (
+                                    <Flame
+                                      size={12}
+                                      className="ml-0.5 inline-block align-[-1px] text-cocoa-muted"
+                                      aria-label="bis Versagen"
+                                    />
+                                  )}
+                                </span>
+                              )
+                            })}
                           </div>
                         )}
                       </div>

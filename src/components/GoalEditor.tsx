@@ -198,23 +198,23 @@ export function GoalEditor({
       </div>
 
       {/* Live-Vorschau der berechneten Nährwerte */}
-      <div className="rounded-xl bg-sand/50 p-3 ring-1 ring-sand-dark">
+      <div className="rounded-xl bg-sand p-3">
         <div className="mb-1 text-xs font-semibold text-cocoa-light">Dein Tagesziel</div>
         <div className="grid grid-cols-4 gap-1 text-center">
           <div>
-            <div className="text-base font-bold text-cocoa">{t.kcal}</div>
+            <div className="tabular text-base font-bold text-cocoa">{t.kcal}</div>
             <div className="text-[11px] text-cocoa-light">kcal</div>
           </div>
           <div>
-            <div className="text-base font-bold text-cocoa">{t.protein}</div>
+            <div className="tabular text-base font-bold text-cocoa">{t.protein}</div>
             <div className="text-[11px] text-cocoa-light">Eiweiß</div>
           </div>
           <div>
-            <div className="text-base font-bold text-cocoa">{t.carbs}</div>
+            <div className="tabular text-base font-bold text-cocoa">{t.carbs}</div>
             <div className="text-[11px] text-cocoa-light">KH</div>
           </div>
           <div>
-            <div className="text-base font-bold text-cocoa">{t.fat}</div>
+            <div className="tabular text-base font-bold text-cocoa">{t.fat}</div>
             <div className="text-[11px] text-cocoa-light">Fett</div>
           </div>
         </div>

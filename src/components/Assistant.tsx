@@ -8,6 +8,7 @@ import { useSetGymStatus } from '../hooks/useSocial'
 import { assistant, type AssistantAction, type ChatMsg } from '../lib/ai'
 import { trainingSummary } from '../lib/analytics'
 import { sumEntries } from '../lib/nutrition'
+import { Send, Sparkles, X } from 'lucide-react'
 import { MicButton } from './MicButton'
 import type { Meal } from '../types'
 
@@ -135,12 +136,19 @@ export function Assistant() {
   return (
     <>
       {open && (
-        <div className="fixed inset-0 z-40 flex flex-col bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-40 flex flex-col bg-black/60 p-4">
           <div className="card mx-auto flex h-full w-full max-w-md flex-col">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="font-bold">✨ Assistent</h3>
-              <button className="px-2 text-cocoa-muted" onClick={() => setOpen(false)} aria-label="Schließen">
-                ✕
+              <h3 className="flex items-center gap-1.5 font-bold">
+                <Sparkles size={18} className="text-brand" />
+                Assistent
+              </h3>
+              <button
+                className="grid h-8 w-8 place-items-center rounded-full bg-sand text-cocoa-light"
+                onClick={() => setOpen(false)}
+                aria-label="Schließen"
+              >
+                <X size={16} strokeWidth={2.5} />
               </button>
             </div>
 
@@ -163,7 +171,7 @@ export function Assistant() {
                   className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${
                     m.role === 'user'
                       ? 'ml-auto bg-brand text-white'
-                      : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+                      : 'bg-sand text-cocoa'
                   }`}
                 >
                   {m.content}
@@ -181,8 +189,8 @@ export function Assistant() {
                 onKeyDown={(e) => e.key === 'Enter' && send()}
               />
               <MicButton onResult={(t) => setInput((v) => (v ? v + ' ' + t : t))} />
-              <button className="btn-primary shrink-0" onClick={send} disabled={busy}>
-                ➤
+              <button className="btn-primary shrink-0" onClick={send} disabled={busy} aria-label="Senden">
+                <Send size={18} />
               </button>
             </div>
           </div>

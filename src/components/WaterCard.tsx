@@ -1,3 +1,4 @@
+import { Droplet, GlassWater, Minus, Plus } from 'lucide-react'
 import { useWater, useSetWater } from '../hooks/useWater'
 import { useNutritionSettings } from '../hooks/useNutrition'
 
@@ -26,28 +27,38 @@ export function WaterCard() {
   return (
     <div className="card space-y-2">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">💧 Wasser</h2>
-        <span className="text-sm text-cocoa-light">
+        <h2 className="flex items-center gap-1.5 font-semibold">
+          <Droplet size={18} className="text-cocoa-light" />
+          Wasser
+        </h2>
+        <span className="tabular text-sm text-cocoa-light">
           {(ml / 1000).toFixed(2).replace('.', ',')} / {(goalMl / 1000).toString().replace('.', ',')} l
         </span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-sand-dark/40">
-        <div className="h-full bg-brand" style={{ width: `${pct}%` }} />
+        <div
+          className={`h-full transition-[width] duration-300 ${pct >= 100 ? 'bg-success' : 'bg-brand'}`}
+          style={{ width: `${pct}%` }} />
       </div>
       <div className="flex items-center gap-2">
-        <div className="flex-1 text-2xl">{'🥛'.repeat(Math.min(glasses, 10))}</div>
+        <div className="flex flex-1 flex-wrap items-center gap-0.5 text-cocoa-light">
+          {Array.from({ length: Math.min(glasses, 10) }, (_, i) => (
+            <GlassWater key={i} size={20} strokeWidth={1.75} />
+          ))}
+        </div>
         <button
-          className="h-10 w-10 rounded-full bg-sand-light text-lg ring-1 ring-sand-dark"
+          className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition-colors duration-200"
           onClick={() => change(-STEP)}
           aria-label="Weniger"
         >
-          −
+          <Minus size={18} />
         </button>
         <button
-          className="h-10 rounded-full bg-brand px-4 font-semibold text-white"
+          className="tabular flex h-10 items-center gap-1 rounded-full bg-brand px-4 font-semibold text-white"
           onClick={() => change(STEP)}
         >
-          +250 ml
+          <Plus size={16} strokeWidth={2.5} />
+          250 ml
         </button>
       </div>
     </div>

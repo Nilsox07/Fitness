@@ -1,3 +1,4 @@
+import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '../lib/theme'
 
 /** Hell-/Dunkelmodus-Umschalter (inline, z. B. in einer Kopfzeile). */
@@ -9,9 +10,9 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       onClick={toggle}
       aria-label="Hell-/Dunkelmodus wechseln"
       title={resolved === 'dark' ? 'Hellmodus' : 'Dunkelmodus'}
-      className={`btn-ghost text-base leading-none ${className}`}
+      className={`btn-ghost leading-none text-cocoa-light ${className}`}
     >
-      {resolved === 'dark' ? '☀️' : '🌙'}
+      {resolved === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
     </button>
   )
 }

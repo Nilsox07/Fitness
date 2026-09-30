@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { CalendarDays, Check, Flame, Target } from 'lucide-react'
 import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useAllWater, useWater } from '../hooks/useWater'
 import { sumEntries } from '../lib/nutrition'
@@ -33,19 +34,19 @@ function QuestRow({ q }: { q: Quest }) {
   return (
     <div className="flex items-center gap-2">
       <span
-        className={`grid h-4 w-4 place-items-center rounded-full text-[10px] ${
-          q.done ? 'bg-brand text-white' : 'text-transparent ring-1 ring-sand-dark'
+        className={`grid h-4 w-4 shrink-0 place-items-center rounded-full ${
+          q.done ? 'anim-check bg-success text-white' : 'bg-sand-dark/40 text-transparent'
         }`}
       >
-        ✓
+        <Check size={11} strokeWidth={3} />
       </span>
       <div className="flex-1">
         <div className="flex justify-between text-xs">
           <span className={q.done ? 'text-cocoa-light line-through' : 'text-cocoa'}>{q.label}</span>
-          <span className="text-cocoa-muted">+{q.xp} XP</span>
+          <span className="tabular text-cocoa-muted">+{q.xp} XP</span>
         </div>
         <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-sand-dark/40">
-          <div className={`h-full bg-brand ${q.done ? '' : 'opacity-60'}`} style={{ width: `${q.progress}%` }} />
+          <div className={`h-full ${q.done ? 'bg-success' : 'bg-brand/60'}`} style={{ width: `${q.progress}%` }} />
         </div>
       </div>
     </div>
@@ -115,8 +116,8 @@ export function NutritionGamePanel() {
     <section className="card space-y-3">
       <Confetti show={celebrate} onDone={() => setCelebrate(false)} />
       {celebrate && (
-        <div className="rounded-xl bg-gradient-to-r from-emerald-500 to-brand p-2.5 text-center font-bold text-white">
-          🥗 Ernährungs-Level {g.xp.level} erreicht!
+        <div className="anim-fade rounded-xl bg-gold/15 p-2.5 text-center font-bold text-cocoa">
+          Ernährungs-Level <span className="tabular">{g.xp.level}</span> erreicht!
         </div>
       )}
 
@@ -124,24 +125,37 @@ export function NutritionGamePanel() {
         <div className="text-4xl">{foodMascot(g.xp.level)}</div>
         <div className="flex-1">
           <div className="flex items-baseline justify-between">
-            <span className="font-bold">Ernährungs-Level {g.xp.level}</span>
-            {g.streak > 0 && <span className="text-xs text-cocoa-light">🔥 {g.streak} Tage</span>}
+            <span className="font-bold">
+              Ernährungs-Level <span className="tabular">{g.xp.level}</span>
+            </span>
+            {g.streak > 0 && (
+              <span className="tabular flex items-center gap-1 text-xs text-cocoa-light">
+                <Flame size={14} />
+                {g.streak} Tage
+              </span>
+            )}
           </div>
           <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-sand-dark/40">
             <div className="h-full bg-brand" style={{ width: `${g.xp.progress}%` }} />
           </div>
-          <div className="mt-0.5 text-[11px] text-cocoa-muted">
+          <div className="tabular mt-0.5 text-[11px] text-cocoa-muted">
             {g.xp.xpInLevel} / {g.xp.xpForLevel} XP · {g.daysLogged} Tage geloggt
           </div>
         </div>
       </div>
 
-      <div className="space-y-2 rounded-xl bg-sand/40 p-3">
-        <div className="text-sm font-semibold">🎯 Tages-Quests</div>
+      <div className="space-y-2 rounded-xl bg-sand p-3">
+        <div className="flex items-center gap-1.5 text-sm font-semibold">
+          <Target size={16} className="text-cocoa-light" />
+          Tages-Quests
+        </div>
         {g.daily.map((q) => (
           <QuestRow key={q.id} q={q} />
         ))}
-        <div className="pt-1 text-sm font-semibold">📅 Wochen-Quests</div>
+        <div className="flex items-center gap-1.5 pt-1 text-sm font-semibold">
+          <CalendarDays size={16} className="text-cocoa-light" />
+          Wochen-Quests
+        </div>
         {g.weekly.map((q) => (
           <QuestRow key={q.id} q={q} />
         ))}
@@ -154,7 +168,7 @@ export function NutritionGamePanel() {
             key={a.id}
             title={a.label}
             className={`flex flex-col items-center rounded-xl p-2 text-center ${
-              a.done ? 'bg-sand-light ring-1 ring-sand-dark' : 'opacity-35'
+              a.done ? 'bg-gold/15' : 'bg-sand opacity-40'
             }`}
           >
             <span className="text-xl">{a.icon}</span>

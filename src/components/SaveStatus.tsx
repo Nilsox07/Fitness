@@ -1,4 +1,5 @@
 import { useMutationState, useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, CloudOff, Loader2 } from 'lucide-react'
 
 /**
  * Globaler Speicher-Status. Zeigt an, wenn Schreibvorgänge laufen, offline
@@ -42,7 +43,10 @@ export function SaveStatus() {
   if (failed) {
     return (
       <div className={`${base} bg-red-600 text-white`} role="alert">
-        <span>⚠️ Nicht gespeichert – Verbindung prüfen</span>
+        <span className="flex items-center gap-1.5">
+          <AlertTriangle size={14} className="shrink-0" />
+          Nicht gespeichert – Verbindung prüfen
+        </span>
         <button
           type="button"
           onClick={retry}
@@ -56,15 +60,21 @@ export function SaveStatus() {
 
   if (paused) {
     return (
-      <div className={`${base} bg-amber-500 text-white`}>
-        <span>📴 Offline – Sätze werden gesendet, sobald wieder Verbindung besteht</span>
+      <div className={`${base} bg-cocoa text-cream`}>
+        <span className="flex items-center gap-1.5">
+          <CloudOff size={14} className="shrink-0" />
+          Offline – Sätze werden gesendet, sobald wieder Verbindung besteht
+        </span>
       </div>
     )
   }
 
   return (
-    <div className={`${base} bg-brand/90 text-white`}>
-      <span>💾 Speichert…</span>
+    <div className={`${base} bg-sand text-cocoa-light`}>
+      <span className="flex items-center gap-1.5">
+        <Loader2 size={14} className="shrink-0 animate-spin" />
+        Speichert…
+      </span>
     </div>
   )
 }

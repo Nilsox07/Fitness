@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { AlertTriangle, Dumbbell } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 export default function Login() {
@@ -54,15 +55,20 @@ export default function Login() {
   return (
     <div className="mx-auto flex h-full max-w-md flex-col justify-center px-6">
       <div className="mb-8 text-center">
-        <div className="text-4xl">🏋️</div>
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand/10 text-brand">
+          <Dumbbell size={26} />
+        </div>
         <h1 className="mt-2 text-2xl font-bold">Fitness Tracker</h1>
         <p className="text-sm text-cocoa-light">Tracke deine Gym-Performance.</p>
       </div>
 
       {!isSupabaseConfigured && (
-        <div className="card mb-4 text-sm text-amber-600 dark:text-amber-400">
-          ⚠️ Supabase ist nicht konfiguriert. Lege eine <code>.env</code> nach Vorlage
-          <code> .env.example</code> an (siehe README).
+        <div className="card mb-4 flex gap-2 text-sm text-cocoa">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-500 dark:text-red-400" />
+          <span>
+            Supabase ist nicht konfiguriert. Lege eine <code>.env</code> nach Vorlage
+            <code> .env.example</code> an (siehe README).
+          </span>
         </div>
       )}
 
@@ -98,7 +104,7 @@ export default function Login() {
         </div>
 
         {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
-        {info && <p className="text-sm text-brand">{info}</p>}
+        {info && <p className="text-sm text-success">{info}</p>}
 
         <button type="submit" className="btn-primary w-full" disabled={busy}>
           {busy ? '…' : mode === 'login' ? 'Anmelden' : 'Registrieren'}

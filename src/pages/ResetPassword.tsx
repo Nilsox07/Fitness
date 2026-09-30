@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Check, KeyRound } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 
@@ -27,14 +28,19 @@ export default function ResetPassword() {
   return (
     <div className="mx-auto flex h-full max-w-md flex-col justify-center px-6">
       <div className="mb-8 text-center">
-        <div className="text-4xl">🔑</div>
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand/10 text-brand">
+          <KeyRound size={26} />
+        </div>
         <h1 className="mt-2 text-2xl font-bold">Neues Passwort</h1>
         <p className="text-sm text-cocoa-light">Lege dein neues Passwort fest.</p>
       </div>
 
       {done ? (
         <div className="card space-y-3 text-center">
-          <p className="text-brand">✓ Passwort geändert.</p>
+          <p className="flex items-center justify-center gap-1.5 font-medium text-success">
+            <Check size={16} strokeWidth={2.5} />
+            Passwort geändert.
+          </p>
           <button className="btn-primary w-full" onClick={() => clearRecovery()}>
             Weiter zur App
           </button>
