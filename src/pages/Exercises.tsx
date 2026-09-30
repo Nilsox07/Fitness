@@ -1,6 +1,21 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, ClipboardList, Dumbbell, Mic, Plus, Settings2, Sparkles, Trash2, TriangleAlert } from 'lucide-react'
+import {
+  Camera,
+  Check,
+  ChevronRight,
+  ClipboardList,
+  Dumbbell,
+  Mic,
+  PenLine,
+  Plus,
+  Search,
+  Settings2,
+  Sparkles,
+  Trash2,
+  TriangleAlert,
+  type LucideIcon,
+} from 'lucide-react'
 import {
   useCreateExercise,
   useDeleteExercise,
@@ -8,10 +23,20 @@ import {
   useUpdateExercise,
   type ExerciseInput,
 } from '../hooks/useExercises'
+import { useAllSets } from '../hooks/useWorkouts'
 import { useAiStatus } from '../hooks/useAi'
 import { usePrefs } from '../lib/prefs'
-import { parseEquipmentList, parseNewExercise, suggestMuscles, type ExerciseDraft } from '../lib/ai'
+import { parseEquipmentList, parseNewExercise, type ExerciseDraft } from '../lib/ai'
+import { onlyWorking } from '../lib/analytics'
 import { MicButton } from '../components/MicButton'
+import { Sheet } from '../components/workout/Sheet'
+import {
+  EMPTY_EXERCISE,
+  ExerciseForm,
+  cleanExerciseInput,
+  exerciseToInput,
+} from '../components/ExerciseForm'
+import { MUSCLE_GROUPS, type Exercise, type MuscleGroup, type SetWithDate } from '../types'
 
 function fileToDataUrl(file: File, maxDim = 1280): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -35,37 +60,83 @@ function fileToDataUrl(file: File, maxDim = 1280): Promise<string> {
     reader.readAsDataURL(file)
   })
 }
-import { expandWithAddons, generateLadder } from '../lib/weights'
-import { MUSCLE_GROUPS, type Exercise, type MuscleGroup } from '../types'
 
-const empty: ExerciseInput = {
-  name: '',
-  muscle_group: 'Brust',
-  notes: null,
-  target_rep_min: 4,
-  target_rep_max: 8,
-  increment: 2.5,
-  unilateral: false,
-  weight_steps: null,
-  secondary_muscles: [],
+const kg = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 2 })
+
+/** „zuletzt 3×8 · 80 kg" aus der letzten Session (nur Arbeitssätze). */
+function lastPerformance(sets: SetWithDate[]): string | null {
+  const working = onlyWorking(sets)
+  if (working.length === 0) return null
+  const lastDate = working.reduce((d, s) => (s.date > d ? s.date : d), '')
+  const day = working.filter((s) => s.date === lastDate)
+  const top = Math.max(...day.map((s) => s.weight))
+  const atTop = day.filter((s) => s.weight === top)
+  const reps = atTop.map((s) => s.reps)
+  const sameReps = reps.every((r) => r === reps[0])
+  const scheme = sameReps ? `${atTop.length}×${reps[0]}` : `${atTop.length} Sätze`
+  const record = Math.max(...working.map((s) => s.weight))
+  const base = top > 0 ? `zuletzt ${scheme} · ${kg(top)} kg` : `zuletzt ${scheme}`
+  return record > top ? `${base} · Rekord ${kg(record)} kg` : base
+}
+
+/** Entwürfe nach Gerät gruppieren (Reihenfolge bleibt erhalten). */
+function groupByDevice(drafts: ExerciseDraft[]): { device: string | null; idx: number[] }[] {
+  const groups: { device: string | null; idx: number[] }[] = []
+  drafts.forEach((d, i) => {
+    const device = d.device ?? null
+    const g = device ? groups.find((x) => x.device === device) : undefined
+    if (g) g.idx.push(i)
+    else groups.push({ device, idx: [i] })
+  })
+  return groups
+}
+
+/** Standard-Auswahl: je Gerät mit mehreren Vorschlägen nur die ersten 2. */
+function defaultSelection(drafts: ExerciseDraft[]): Set<number> {
+  const sel = new Set<number>()
+  for (const g of groupByDevice(drafts)) g.idx.slice(0, 2).forEach((i) => sel.add(i))
+  return sel
+}
+
+function AddOption({
+  Icon,
+  title,
+  desc,
+  onClick,
+}: {
+  Icon: LucideIcon
+  title: string
+  desc: string
+  onClick: () => void
+}) {
+  return (
+    <button className="flex w-full items-center gap-3 px-3 py-3 text-left" onClick={onClick}>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa">
+        <Icon size={18} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold text-cocoa">{title}</span>
+        <span className="block truncate text-xs text-cocoa-light">{desc}</span>
+      </span>
+      <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />
+    </button>
+  )
 }
 
 export default function Exercises() {
   const navigate = useNavigate()
   const { data: exercises, isLoading } = useExercises()
+  const { data: allSets } = useAllSets()
   const createEx = useCreateExercise()
   const updateEx = useUpdateExercise()
   const deleteEx = useDeleteExercise()
 
   const { data: ai } = useAiStatus()
   const { isNew } = usePrefs()
-  const aiOn = isNew && ai?.enabled
+  const aiOn = Boolean(isNew && ai?.enabled)
   const [editing, setEditing] = useState<Exercise | null>(null)
-  const [form, setForm] = useState<ExerciseInput>(empty)
+  const [form, setForm] = useState<ExerciseInput>(EMPTY_EXERCISE)
   const [open, setOpen] = useState(false)
-  const [gen, setGen] = useState({ start: '', pattern: '', max: '', addons: '' })
-  const [suggesting, setSuggesting] = useState(false)
-  const [suggestErr, setSuggestErr] = useState<string | null>(null)
   const [assistOpen, setAssistOpen] = useState(false)
   const [assistText, setAssistText] = useState('')
   const [assistBusy, setAssistBusy] = useState(false)
@@ -75,6 +146,36 @@ export default function Exercises() {
   const [equipBusy, setEquipBusy] = useState(false)
   const [equipErr, setEquipErr] = useState<string | null>(null)
   const [equipDrafts, setEquipDrafts] = useState<ExerciseDraft[] | null>(null)
+  const [equipSel, setEquipSel] = useState<Set<number>>(new Set())
+
+  // Neue Liste (nur neue App)
+  const [addOpen, setAddOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [muscle, setMuscle] = useState<MuscleGroup | null>(null)
+
+  const setsByExercise = useMemo(() => {
+    const map = new Map<string, SetWithDate[]>()
+    for (const s of allSets ?? []) {
+      const list = map.get(s.exercise_id) ?? []
+      list.push(s)
+      map.set(s.exercise_id, list)
+    }
+    return map
+  }, [allSets])
+
+  const usedGroups = useMemo(
+    () => MUSCLE_GROUPS.filter((g) => exercises?.some((e) => e.muscle_group === g)),
+    [exercises],
+  )
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return (exercises ?? []).filter(
+      (e) =>
+        (!muscle || e.muscle_group === muscle) &&
+        (!q || e.name.toLowerCase().includes(q) || e.muscle_group.toLowerCase().includes(q)),
+    )
+  }, [exercises, query, muscle])
 
   async function genEquip(image?: string) {
     if (!equipText.trim() && !image) return
@@ -83,7 +184,10 @@ export default function Exercises() {
     try {
       const drafts = await parseEquipmentList(equipText.trim(), image)
       if (drafts.length === 0) setEquipErr('Keine Geräte erkannt.')
-      else setEquipDrafts(drafts)
+      else {
+        setEquipSel(defaultSelection(drafts))
+        setEquipDrafts(drafts)
+      }
     } catch (e) {
       setEquipErr(e instanceof Error ? e.message : 'KI-Fehler')
     } finally {
@@ -122,6 +226,15 @@ export default function Exercises() {
     setEquipText('')
   }
 
+  function toggleDraft(i: number) {
+    setEquipSel((prev) => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
+
   async function runAssistant() {
     if (!assistText.trim()) return
     setAssistBusy(true)
@@ -129,8 +242,7 @@ export default function Exercises() {
     try {
       const draft = await parseNewExercise(assistText.trim())
       setEditing(null)
-      setForm({ ...empty, ...draft })
-      setSuggestErr(null)
+      setForm({ ...EMPTY_EXERCISE, ...draft })
       setAssistOpen(false)
       setAssistText('')
       setOpen(true)
@@ -141,78 +253,21 @@ export default function Exercises() {
     }
   }
 
-  function toggleSecondary(g: MuscleGroup) {
-    setForm((f) => ({
-      ...f,
-      secondary_muscles: f.secondary_muscles.includes(g)
-        ? f.secondary_muscles.filter((m) => m !== g)
-        : [...f.secondary_muscles, g],
-    }))
-  }
-
-  async function aiSuggestMuscles() {
-    if (!form.name.trim()) return
-    setSuggesting(true)
-    setSuggestErr(null)
-    try {
-      const s = await suggestMuscles(form.name.trim())
-      setForm((f) => ({
-        ...f,
-        muscle_group: s.primary,
-        secondary_muscles: s.secondary.filter((m) => m !== s.primary),
-      }))
-    } catch (err) {
-      setSuggestErr(err instanceof Error ? err.message : 'KI-Fehler')
-    } finally {
-      setSuggesting(false)
-    }
-  }
-
-  function generateSteps() {
-    const start = parseFloat(gen.start.replace(',', '.'))
-    const max = parseFloat(gen.max.replace(',', '.'))
-    const pattern = gen.pattern
-      .split(/[\s;]+/)
-      .map((t) => parseFloat(t.trim().replace(',', '.')))
-      .filter((n) => Number.isFinite(n) && n > 0)
-    const addons = gen.addons
-      .split(/[\s;]+/)
-      .map((t) => parseFloat(t.trim().replace(',', '.')))
-      .filter((n) => Number.isFinite(n) && n > 0)
-    const ladder = expandWithAddons(generateLadder(start, pattern, max), addons)
-    if (ladder.length) setForm((f) => ({ ...f, weight_steps: ladder.join(' ') }))
-  }
-
   function startNew() {
     setEditing(null)
-    setForm(empty)
+    setForm(EMPTY_EXERCISE)
     setOpen(true)
   }
 
   function startEdit(ex: Exercise) {
     setEditing(ex)
-    setForm({
-      name: ex.name,
-      muscle_group: ex.muscle_group,
-      notes: ex.notes,
-      target_rep_min: ex.target_rep_min,
-      target_rep_max: ex.target_rep_max,
-      increment: ex.increment,
-      unilateral: ex.unilateral,
-      weight_steps: ex.weight_steps,
-      secondary_muscles: ex.secondary_muscles ?? [],
-    })
-    setSuggestErr(null)
+    setForm(exerciseToInput(ex))
     setOpen(true)
   }
 
   async function save() {
     if (!form.name.trim()) return
-    // Ungültige/leere Zahlenfelder absichern (DB verlangt min>0, max>=min, increment>0)
-    const repMin = Math.max(1, Math.round(form.target_rep_min) || 1)
-    const repMax = Math.max(repMin, Math.round(form.target_rep_max) || repMin)
-    const increment = form.increment > 0 ? form.increment : 2.5
-    const clean = { ...form, target_rep_min: repMin, target_rep_max: repMax, increment }
+    const clean = cleanExerciseInput(form)
     if (editing) {
       await updateEx.mutateAsync({ id: editing.id, ...clean })
     } else {
@@ -221,12 +276,24 @@ export default function Exercises() {
     setOpen(false)
   }
 
+  const selectedCount = equipDrafts ? equipDrafts.filter((_, i) => equipSel.has(i)).length : 0
+
   return (
     <div className="space-y-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Übungen</h1>
-        <div className="flex gap-2">
-          {!isNew && (
+      {isNew ? (
+        <header className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">Übungen</h1>
+          <button
+            className="btn-primary flex items-center gap-1.5 text-sm"
+            onClick={() => setAddOpen(true)}
+          >
+            <Plus size={16} /> Übung
+          </button>
+        </header>
+      ) : (
+        <header className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">Übungen</h1>
+          <div className="flex gap-2">
             <button
               className="btn-ghost flex items-center gap-1.5 text-sm"
               onClick={() => navigate('/plans')}
@@ -234,8 +301,6 @@ export default function Exercises() {
             >
               <ClipboardList size={16} className="text-cocoa-light" /> Pläne
             </button>
-          )}
-          {!isNew && (
             <button
               className="btn-ghost flex items-center text-base"
               onClick={() => navigate('/profile')}
@@ -243,30 +308,50 @@ export default function Exercises() {
             >
               <Settings2 size={18} className="text-cocoa-light" />
             </button>
-          )}
-          {aiOn && (
-            <button
-              className="btn-ghost flex items-center gap-1.5 text-sm"
-              onClick={() => setEquipOpen(true)}
-              aria-label="Geräte importieren"
-            >
-              <Dumbbell size={16} className="text-cocoa-light" /> Geräte
+            <button className="btn-primary flex items-center gap-1.5 text-sm" onClick={startNew}>
+              <Plus size={16} /> Neu
             </button>
-          )}
-          {aiOn && (
-            <button
-              className="btn-ghost flex items-center gap-1.5 text-sm"
-              onClick={() => setAssistOpen(true)}
-              aria-label="Übung per Sprache anlegen"
-            >
-              <Mic size={16} className="text-cocoa-light" /> KI
-            </button>
-          )}
-          <button className="btn-primary flex items-center gap-1.5 text-sm" onClick={startNew}>
-            <Plus size={16} /> Neu
-          </button>
-        </div>
-      </header>
+          </div>
+        </header>
+      )}
+
+      {addOpen && (
+        <Sheet title="Übung hinzufügen" onClose={() => setAddOpen(false)}>
+          <div className="divide-y divide-sand-dark/40 rounded-2xl bg-sand-light">
+            <AddOption
+              Icon={PenLine}
+              title="Selbst eintragen"
+              desc="Name, Muskeln und Wiederholungen manuell festlegen"
+              onClick={() => {
+                setAddOpen(false)
+                startNew()
+              }}
+            />
+            {aiOn && (
+              <AddOption
+                Icon={Sparkles}
+                title="Beschreiben oder sprechen"
+                desc="Die KI erstellt Muskeln & Gewichtsstufen für dich"
+                onClick={() => {
+                  setAddOpen(false)
+                  setAssistOpen(true)
+                }}
+              />
+            )}
+            {aiOn && (
+              <AddOption
+                Icon={Camera}
+                title="Geräte importieren"
+                desc="Geräte deines Studios per Text oder Foto übernehmen"
+                onClick={() => {
+                  setAddOpen(false)
+                  setEquipOpen(true)
+                }}
+              />
+            )}
+          </div>
+        </Sheet>
+      )}
 
       {equipOpen && !equipDrafts && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
@@ -276,12 +361,13 @@ export default function Exercises() {
             </h2>
             <p className="text-xs text-cocoa-light">
               Zähl deine Geräte/Maschinen auf (Text/Sprache) oder fotografiere die Geräteschilder —
-              die KI legt daraus Übungen mit Muskeln an.
+              die KI legt daraus Übungen mit Muskeln an. Für Kabelzug, Multipresse &amp; Co. gibt es
+              mehrere Vorschläge zur Auswahl.
             </p>
             <div className="flex gap-2">
               <input
                 className="input"
-                placeholder="z. B. Latzug, Beinpresse, Brustpresse, Rudermaschine, Beinbeuger…"
+                placeholder="z. B. Latzug, Beinpresse, Kabelzug, Multipresse, Beinbeuger…"
                 value={equipText}
                 onChange={(e) => setEquipText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && genEquip()}
@@ -324,32 +410,66 @@ export default function Exercises() {
       {equipDrafts && (
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
           <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-            <h2 className="text-lg font-bold">{equipDrafts.length} Übungen erkannt</h2>
+            <h2 className="text-lg font-bold">{equipDrafts.length} Übungen vorgeschlagen</h2>
             <p className="text-xs text-cocoa-light">
-              Prüfen und anlegen — Gewichtsstufen kannst du später je Übung ergänzen.
+              Wähle aus, was du anlegen willst — Gewichtsstufen kannst du später je Übung ergänzen.
             </p>
-            <ul className="space-y-1.5">
-              {equipDrafts.map((d, i) => (
-                <li key={i} className="rounded-lg bg-sand-light px-3 py-2 text-sm">
-                  <div className="font-medium">{d.name}</div>
-                  <div className="text-xs text-cocoa-light">
-                    {d.muscle_group}
-                    {d.secondary_muscles.length ? ` · +${d.secondary_muscles.join(', ')}` : ''}
-                    {d.unilateral ? ' · einseitig' : ''}
-                  </div>
-                </li>
+            <div className="space-y-3">
+              {groupByDevice(equipDrafts).map((g, gi) => (
+                <div key={gi}>
+                  {g.device && (
+                    <div className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
+                      {g.device}
+                    </div>
+                  )}
+                  <ul className="divide-y divide-sand-dark/40 rounded-2xl bg-sand-light">
+                    {g.idx.map((i) => {
+                      const d = equipDrafts[i]
+                      const on = equipSel.has(i)
+                      return (
+                        <li key={i}>
+                          <button
+                            type="button"
+                            role="checkbox"
+                            aria-checked={on}
+                            onClick={() => toggleDraft(i)}
+                            className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm"
+                          >
+                            <span
+                              className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border ${
+                                on ? 'border-brand bg-brand text-white' : 'border-sand-dark bg-cream'
+                              }`}
+                            >
+                              {on && <Check size={14} strokeWidth={3} />}
+                            </span>
+                            <span className={`min-w-0 flex-1 ${on ? '' : 'opacity-60'}`}>
+                              <span className="block font-medium">{d.name}</span>
+                              <span className="block text-xs text-cocoa-light">
+                                {d.muscle_group}
+                                {d.secondary_muscles.length
+                                  ? ` · +${d.secondary_muscles.join(', ')}`
+                                  : ''}
+                                {d.unilateral ? ' · einseitig' : ''}
+                              </span>
+                            </span>
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
             <div className="flex gap-2 pt-1">
               <button className="btn-ghost flex-1" onClick={() => setEquipDrafts(null)}>
                 Zurück
               </button>
               <button
                 className="btn-primary flex-1"
-                onClick={() => createAllDrafts(equipDrafts)}
-                disabled={createEx.isPending}
+                onClick={() => createAllDrafts(equipDrafts.filter((_, i) => equipSel.has(i)))}
+                disabled={createEx.isPending || selectedCount === 0}
               >
-                Alle anlegen
+                {createEx.isPending ? 'Lege an…' : `${selectedCount} anlegen`}
               </button>
             </div>
           </div>
@@ -396,248 +516,108 @@ export default function Exercises() {
 
       {isLoading && <p className="text-cocoa-light">Lädt…</p>}
 
-      <ul className="space-y-2">
-        {exercises?.map((ex) => (
-          <li key={ex.id} className="card flex items-center justify-between">
-            <button className="flex-1 text-left" onClick={() => startEdit(ex)}>
-              <div className="font-semibold">{ex.name}</div>
-              <div className="tabular text-sm text-cocoa-light">
-                {ex.muscle_group} · Ziel {ex.target_rep_min}–{ex.target_rep_max} Wdh ·
-                +{ex.increment} kg
-              </div>
-            </button>
-            <button
-              className="ml-2 grid h-8 w-8 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
-              aria-label="Übung löschen"
-              onClick={() => {
-                if (confirm(`„${ex.name}" inkl. aller Sätze löschen?`)) deleteEx.mutate(ex.id)
-              }}
-            >
-              <Trash2 size={16} />
-            </button>
-          </li>
-        ))}
-        {exercises?.length === 0 && (
-          <li className="text-cocoa-light">Noch keine Übungen. Lege deine erste an.</li>
-        )}
-      </ul>
+      {isNew ? (
+        <>
+          <div className="relative">
+            <Search
+              size={18}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cocoa-muted"
+            />
+            <input
+              className="input pl-10"
+              type="search"
+              placeholder="Übung suchen"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Übung suchen"
+            />
+          </div>
+
+          {usedGroups.length > 1 && (
+            <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {[null, ...usedGroups].map((g) => {
+                const on = muscle === g
+                return (
+                  <button
+                    key={g ?? 'all'}
+                    type="button"
+                    onClick={() => setMuscle(g)}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                      on ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
+                    }`}
+                  >
+                    {g ?? 'Alle'}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {exercises?.length === 0 && (
+            <p className="text-cocoa-light">Noch keine Übungen. Lege deine erste an.</p>
+          )}
+          {!!exercises?.length && filtered.length === 0 && (
+            <p className="text-sm text-cocoa-light">Keine Übung gefunden.</p>
+          )}
+
+          {filtered.length > 0 && (
+            <ul className="divide-y divide-sand-dark/40 rounded-2xl bg-cream">
+              {filtered.map((ex) => {
+                const perf = lastPerformance(setsByExercise.get(ex.id) ?? [])
+                return (
+                  <li key={ex.id}>
+                    <button
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                      onClick={() => navigate(`/exercises/${ex.id}`)}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold text-cocoa">{ex.name}</span>
+                        <span className="block truncate text-sm text-cocoa-light">
+                          {ex.muscle_group}
+                          {perf && <span className="tabular"> · {perf}</span>}
+                        </span>
+                      </span>
+                      <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </>
+      ) : (
+        <ul className="space-y-2">
+          {exercises?.map((ex) => (
+            <li key={ex.id} className="card flex items-center justify-between">
+              <button className="flex-1 text-left" onClick={() => startEdit(ex)}>
+                <div className="font-semibold">{ex.name}</div>
+                <div className="tabular text-sm text-cocoa-light">
+                  {ex.muscle_group} · Ziel {ex.target_rep_min}–{ex.target_rep_max} Wdh ·
+                  +{ex.increment} kg
+                </div>
+              </button>
+              <button
+                className="ml-2 grid h-8 w-8 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
+                aria-label="Übung löschen"
+                onClick={() => {
+                  if (confirm(`„${ex.name}" inkl. aller Sätze löschen?`)) deleteEx.mutate(ex.id)
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
+            </li>
+          ))}
+          {exercises?.length === 0 && (
+            <li className="text-cocoa-light">Noch keine Übungen. Lege deine erste an.</li>
+          )}
+        </ul>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
           <div className="card w-full max-w-md space-y-3">
             <h2 className="text-lg font-bold">{editing ? 'Übung bearbeiten' : 'Neue Übung'}</h2>
-            <div>
-              <label className="label">Name</label>
-              <input
-                className="input"
-                value={form.name}
-                autoFocus
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between">
-                <label className="label">Muskelgruppe (primär)</label>
-                {aiOn && (
-                  <button
-                    type="button"
-                    onClick={aiSuggestMuscles}
-                    disabled={suggesting || !form.name.trim()}
-                    className="flex items-center gap-1 text-xs font-semibold text-brand disabled:opacity-40"
-                  >
-                    {suggesting ? (
-                      '… analysiere'
-                    ) : (
-                      <>
-                        <Sparkles size={14} /> Muskeln vorschlagen
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-              <select
-                className="input"
-                value={form.muscle_group}
-                onChange={(e) =>
-                  setForm({ ...form, muscle_group: e.target.value as Exercise['muscle_group'] })
-                }
-              >
-                {MUSCLE_GROUPS.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-              {suggestErr && (
-                <p className="mt-1 flex items-center gap-1 text-xs text-red-500 dark:text-red-400">
-                  <TriangleAlert size={14} className="shrink-0" /> {suggestErr}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">Sekundärmuskeln (mit-beansprucht)</label>
-              <div className="flex flex-wrap gap-1.5">
-                {MUSCLE_GROUPS.filter((g) => g !== form.muscle_group).map((g) => {
-                  const on = form.secondary_muscles.includes(g)
-                  return (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => toggleSecondary(g)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors duration-200 ${
-                        on ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-                      }`}
-                    >
-                      {g}
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="mt-1 text-xs text-cocoa-muted">
-                z. B. Rudern → auch Schultern &amp; Bizeps. Verbessert Aufwärm-Logik &amp;
-                Muskel-Balance.
-              </p>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="label">Wdh min</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  className="input"
-                  value={form.target_rep_min}
-                  onFocus={(e) => e.currentTarget.select()}
-                  onChange={(e) =>
-                    setForm({ ...form, target_rep_min: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div>
-                <label className="label">Wdh max</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  className="input"
-                  value={form.target_rep_max}
-                  onFocus={(e) => e.currentTarget.select()}
-                  onChange={(e) =>
-                    setForm({ ...form, target_rep_max: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div>
-                <label className="label">+kg Schritt</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.5"
-                  min={0.5}
-                  className="input"
-                  value={form.increment}
-                  onFocus={(e) => e.currentTarget.select()}
-                  onChange={(e) => setForm({ ...form, increment: Number(e.target.value) })}
-                />
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setForm({ ...form, unilateral: !form.unilateral })}
-              className="flex w-full items-center justify-between rounded-xl bg-sand-light px-3 py-2.5"
-            >
-              <span className="text-sm font-medium text-cocoa">Einseitig (links/rechts)</span>
-              <span
-                className={`relative h-7 w-12 shrink-0 rounded-full transition ${
-                  form.unilateral ? 'bg-ruby' : 'bg-sand-dark'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 h-6 w-6 rounded-full bg-white transition-all ${
-                    form.unilateral ? 'left-[22px]' : 'left-0.5'
-                  }`}
-                />
-              </span>
-            </button>
-
-            <div>
-              <label className="label">Geräte-Einstellung / Notiz</label>
-              <input
-                className="input"
-                placeholder="z. B. Sitz 4, Lehne 2, Griff eng"
-                value={form.notes ?? ''}
-                onChange={(e) => setForm({ ...form, notes: e.target.value || null })}
-              />
-              <p className="mt-1 text-xs text-cocoa-muted">
-                Wird beim Training angezeigt — z. B. Sitzhöhe/Lehne der Maschine.
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-sand-light p-3">
-              <label className="label">Gewichtsstufen (optional)</label>
-              <input
-                className="input"
-                placeholder="z. B. 4 9 13 18 22 (leer = gleichmäßige Schritte)"
-                value={form.weight_steps ?? ''}
-                onChange={(e) => setForm({ ...form, weight_steps: e.target.value || null })}
-              />
-              <p className="mt-1 text-xs text-cocoa-light">
-                Real wählbare Gewichte deines Geräts, mit Leerzeichen getrennt. +/- springt dann
-                exakt auf diese Werte.
-              </p>
-              <div className="mt-2 grid grid-cols-3 items-end gap-2">
-                <div>
-                  <label className="label">Start</label>
-                  <input
-                    className="input"
-                    inputMode="decimal"
-                    placeholder="4"
-                    value={gen.start}
-                    onChange={(e) => setGen({ ...gen, start: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="label">Muster</label>
-                  <input
-                    className="input"
-                    placeholder="5 4"
-                    value={gen.pattern}
-                    onChange={(e) => setGen({ ...gen, pattern: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="label">bis</label>
-                  <input
-                    className="input"
-                    inputMode="decimal"
-                    placeholder="100"
-                    value={gen.max}
-                    onChange={(e) => setGen({ ...gen, max: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="mt-2 grid grid-cols-3 items-end gap-2">
-                <div className="col-span-2">
-                  <label className="label">Zusatzgewichte</label>
-                  <input
-                    className="input"
-                    placeholder="2,5 5 7"
-                    value={gen.addons}
-                    onChange={(e) => setGen({ ...gen, addons: e.target.value })}
-                  />
-                </div>
-                <button type="button" className="btn-ghost" onClick={generateSteps}>
-                  Erzeugen
-                </button>
-              </div>
-              <p className="mt-1 text-xs text-cocoa-muted">
-                Generator: Start + sich wiederholendes Zuwachs-Muster. Bsp. Start 4, Muster „5 4" →
-                4 · 9 · 13 · 18 · 22 … Zusatzgewichte (z. B. „2,5 5 7") werden zusätzlich
-                aufgelegt und machen die Stufen feiner.
-              </p>
-            </div>
-
+            <ExerciseForm form={form} setForm={setForm} aiOn={aiOn} autoFocus />
             <div className="flex gap-2 pt-2">
               <button className="btn-ghost flex-1" onClick={() => setOpen(false)}>
                 Abbrechen

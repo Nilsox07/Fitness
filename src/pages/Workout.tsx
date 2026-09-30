@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
 import { usePlans } from '../hooks/usePlans'
 import { usePrefs } from '../lib/prefs'
@@ -690,6 +690,27 @@ export default function Workout() {
     if (p) loadPlanOrdered(p)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingPlanId, todaysWorkout])
+
+  // „Starten" auf der Pläne-Seite: navigate('/', { state: { startPlanId } }).
+  // Einmalig ausführen, dann den State leeren (kein erneutes Auslösen bei Reload).
+  const location = useLocation()
+  const handledStartKey = useRef('')
+  useEffect(() => {
+    const startPlanId = (location.state as { startPlanId?: string } | null)?.startPlanId
+    if (!isNew || !startPlanId || handledStartKey.current === location.key) return
+    if (!workouts || !plans || (todaysWorkout && !workoutSets)) return // Daten abwarten
+    handledStartKey.current = location.key
+    navigate('.', { replace: true, state: null })
+    const p = plans.find((x) => x.id === startPlanId)
+    if (!p) return
+    if (todaysWorkout) {
+      loadPlanOrdered(p)
+    } else {
+      setPendingPlanId(p.id)
+      createWorkout.mutate({ date: today })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, location.key, location.state, workouts, plans, todaysWorkout, workoutSets])
 
   // Beim Öffnen automatisch die erste noch offene Übung wählen.
   useEffect(() => {

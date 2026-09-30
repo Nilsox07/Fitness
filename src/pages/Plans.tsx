@@ -15,8 +15,15 @@ import {
   useReorderPlanExercises,
 } from '../hooks/usePlans'
 import type { PlanWithExercises } from '../types'
+import PlansNew from '../components/plans/PlansNew'
 
 export default function Plans() {
+  const { isNew } = usePrefs()
+  return isNew ? <PlansNew /> : <ClassicPlans />
+}
+
+/** Klassische Ansicht (unverändert). */
+function ClassicPlans() {
   const navigate = useNavigate()
   const { isNew } = usePrefs()
   const { data: plans, isLoading } = usePlans()

@@ -758,6 +758,8 @@ export interface ExerciseDraft {
   target_rep_min: number
   target_rep_max: number
   increment: number
+  /** Gerät, zu dem der Vorschlag gehört (nur beim Geräte-Import). */
+  device?: string
 }
 
 /** Freitext/Sprache → fertiger Übungs-Entwurf (Muskeln + Gewichtsstufen). */
@@ -840,20 +842,35 @@ function normalizeDraft(d: Partial<ExerciseDraft>): ExerciseDraft {
     target_rep_min: min,
     target_rep_max: max,
     increment: Number(d.increment) > 0 ? Number(d.increment) : 2.5,
+    ...(typeof d.device === 'string' && d.device.trim()
+      ? { device: d.device.trim().slice(0, 60) }
+      : {}),
   }
 }
 
-/** Ganze Geräteliste (Text oder Foto) → mehrere Übungs-Entwürfe. */
+/**
+ * Ganze Geräteliste (Text oder Foto) → mehrere Übungs-Entwürfe.
+ * Multifunktions-Geräte (Kabelzug, Multipresse, Bank …) liefern mehrere typische
+ * Übungen, Einzweck-Maschinen genau eine. `device` ordnet jeden Entwurf seinem Gerät zu.
+ */
 export async function parseEquipmentList(text: string, image?: string): Promise<ExerciseDraft[]> {
   const groups = MUSCLE_GROUPS.join(', ')
   const system =
     'Du bist ein Trainings-Assistent. Aus einer Liste bzw. einem Foto von Fitnessgeräten/Maschinen ' +
-    'erstellst du je Gerät einen Übungs-Entwurf. Antworte ausschließlich mit JSON.'
+    'erstellst du Übungs-Entwürfe. Einzweck-Maschinen (z. B. Beinpresse, Latzug, Brustpresse, ' +
+    'Beinstrecker, Beinbeuger, Rudermaschine) → genau EINE Übung. Multifunktions-Geräte ' +
+    '(z. B. Kabelzug/Kabelturm, Functional Trainer, Multipresse/Smith Machine, Kurzhantelbank, ' +
+    'Kurzhanteln, Langhantel-Rack, Klimmzugstange/Dip-Station) → 3–6 typische, verschiedene ' +
+    'Übungen, die wichtigste zuerst (z. B. Kabelzug → Trizepsdrücken am Kabel, Face Pulls, ' +
+    'Kabelrudern, Cable Flys, Bizepscurls am Kabel). Antworte ausschließlich mit JSON.'
   const prompt =
     (text ? `Geräte: "${text}".\n` : 'Erkenne die Geräte im Bild.\n') +
     `Erlaubte Muskelgruppen (exakt): ${groups}.\n` +
-    'Format: {"exercises":[{"name":"...","muscle_group":"...","secondary_muscles":["..."],' +
-    '"unilateral":false,"weight_steps":"","target_rep_min":8,"target_rep_max":12,"increment":2.5}]}. ' +
+    'Format: {"exercises":[{"device":"<Gerätename>","name":"...","muscle_group":"...",' +
+    '"secondary_muscles":["..."],"unilateral":false,"weight_steps":"","target_rep_min":8,' +
+    '"target_rep_max":12,"increment":2.5}]}. ' +
+    '"device" ist bei allen Übungen desselben Geräts identisch (kurzer deutscher Gerätename). ' +
+    'Übungen eines Geräts direkt hintereinander auflisten. Keine doppelten Übungsnamen. ' +
     'weight_steps leer lassen (kann der Nutzer später ergänzen).'
   const t = await complete({ system, prompt, image, json: true, temperature: 0.2 })
   const raw = parseJson<{ exercises?: Partial<ExerciseDraft>[] }>(t)
