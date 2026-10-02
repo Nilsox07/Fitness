@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { afterSetDone, partnerOf, type Pair } from './workoutSession'
+import { afterSetDone, partnerOf, restSecondsAfter, type Pair } from './workoutSession'
 
 const pairs: Pair[] = [['bank', 'rudern']]
 
@@ -38,5 +38,22 @@ describe('partnerOf', () => {
     expect(partnerOf(pairs, 'bank')).toBe('rudern')
     expect(partnerOf(pairs, 'rudern')).toBe('bank')
     expect(partnerOf(pairs, 'curl')).toBeNull()
+  })
+})
+
+describe('restSecondsAfter', () => {
+  it('keine Pause vor einem Dropsatz', () => {
+    expect(restSecondsAfter('working', 'drop', 180)).toBe(0)
+    expect(restSecondsAfter('drop', 'drop', 180)).toBe(0)
+  })
+  it('kurze Pause nach dem Aufwärmen', () => {
+    expect(restSecondsAfter('warmup', 'warmup', 180)).toBe(45)
+    expect(restSecondsAfter('warmup', 'working', 180)).toBe(90)
+    expect(restSecondsAfter('warmup', 'working', 60)).toBe(60)
+  })
+  it('sonst die eingestellte Pause', () => {
+    expect(restSecondsAfter('working', 'working', 180)).toBe(180)
+    expect(restSecondsAfter('working', null, 120)).toBe(120)
+    expect(restSecondsAfter('drop', null, 120)).toBe(120)
   })
 })

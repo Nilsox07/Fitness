@@ -62,6 +62,8 @@ import {
 } from 'lucide-react'
 import {
   afterSetDone,
+  getExerciseRest,
+  restSecondsAfter,
   appendOrder,
   getPairs,
   getPlanQueue,
@@ -624,7 +626,16 @@ export default function Workout() {
       pairs,
       doneFlags: (id) => setsOf(id).map((x) => isSetDone(x, isUni(id))),
     })
-    if (decision.rest && rest.mode === 'auto') rest.start()
+    if (decision.rest && rest.mode === 'auto') {
+      // Pausenlänge nach Satztyp: vor Drop keine, nach Aufwärmen kurz, sonst Übungs-/Standardpause.
+      const idx = list.findIndex((x) => x.id === s.id)
+      const nextEx = decision.next ?? exId
+      const nextSet = nextEx === exId ? list[idx + 1] : setsOf(nextEx)[idx + 1]
+      const base = getExerciseRest(nextEx) ?? rest.total
+      const sec = restSecondsAfter(s.set_type, nextSet?.set_type ?? null, base)
+      if (sec > 0) rest.start(sec)
+      else rest.stop()
+    }
     if (decision.next) setExerciseId(decision.next)
     try {
       navigator.vibrate?.(15)
@@ -1017,7 +1028,7 @@ export default function Workout() {
             style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
           >
             <div className="flex items-center gap-2 rounded-2xl bg-cream/95 p-2 shadow-[0_4px_24px_rgb(0_0_0/0.12)] backdrop-blur">
-              <RestControl timer={rest} />
+              <RestControl timer={rest} exercise={active ? { id: active.id, name: active.name } : undefined} />
               {rest.left == null && (
                 <>
                   <button

@@ -142,3 +142,38 @@ export function setRestSeconds(sec: number) {
     /* ignore */
   }
 }
+
+// ---- Pausenlänge nach Satztyp ----------------------------------------------
+
+type SetKind = 'warmup' | 'working' | 'drop'
+
+/**
+ * Wie lange nach einem Satz pausieren?
+ * - Vor einem Dropsatz: gar nicht (das ist der Sinn des Drops).
+ * - Nach dem Aufwärmen: kurz (45 s bis zum nächsten Aufwärmsatz, max. 90 s vor dem ersten Arbeitssatz).
+ * - Sonst: die eingestellte Pause (Übung oder global).
+ */
+export function restSecondsAfter(done: SetKind, next: SetKind | null, base: number): number {
+  if (next === 'drop') return 0
+  if (done === 'warmup') return next === 'warmup' ? Math.min(base, 45) : Math.min(base, 90)
+  return base
+}
+
+/** Eigene Pause pro Übung (z. B. 3:00 bei Kniebeugen, 1:30 bei Curls); null = Standard. */
+export function getExerciseRest(exId: string): number | null {
+  try {
+    const v = Number(localStorage.getItem(`rest_ex_${exId}`))
+    return Number.isFinite(v) && v > 0 ? v : null
+  } catch {
+    return null
+  }
+}
+
+export function setExerciseRest(exId: string, sec: number | null) {
+  try {
+    if (sec == null) localStorage.removeItem(`rest_ex_${exId}`)
+    else localStorage.setItem(`rest_ex_${exId}`, String(sec))
+  } catch {
+    /* ignore */
+  }
+}
