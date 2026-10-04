@@ -29,7 +29,6 @@ export function ShoppingListView({
   onShare: () => void
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-  const [extra, setExtra] = useState('')
 
   const allKeys = shopping.flatMap(checkKeys)
   const total = allKeys.length
@@ -183,8 +182,6 @@ export function ShoppingListView({
         <section className="card p-0" style={stagger(shopping.length + 1, 40)}>
           <AddRow
             placeholder="Weiterer Artikel…"
-            value={extra}
-            onValue={setExtra}
             onAdd={(t) => onAdd(-1, EXTRA_CATEGORY, t)}
           />
         </section>
@@ -196,17 +193,11 @@ export function ShoppingListView({
 function AddRow({
   onAdd,
   placeholder = 'Artikel hinzufügen…',
-  value,
-  onValue,
 }: {
   onAdd: (text: string) => void
   placeholder?: string
-  value?: string
-  onValue?: (v: string) => void
 }) {
-  const [own, setOwn] = useState('')
-  const text = value ?? own
-  const setText = onValue ?? setOwn
+  const [text, setText] = useState('')
   const submit = () => {
     const t = text.trim()
     if (!t) return

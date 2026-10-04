@@ -1,5 +1,18 @@
-import { useState } from 'react'
-import { CalendarPlus, Flame, Pencil, Check, Plus, Trash2 } from 'lucide-react'
+import { useMemo, useState, type ReactElement, type ReactNode } from 'react'
+import {
+  CalendarPlus,
+  Check,
+  ChevronDown,
+  Clock,
+  Flame,
+  Layers,
+  Pencil,
+  Plus,
+  Trash2,
+  Trophy,
+  Weight,
+  X,
+} from 'lucide-react'
 import { usePrefs } from '../lib/prefs'
 import { useExercises } from '../hooks/useExercises'
 import {
@@ -12,10 +25,20 @@ import {
 } from '../hooks/useWorkouts'
 import { ProgressSwitch } from '../components/ProgressSwitch'
 import { FoodDays } from '../components/FoodDays'
-import { trainingDay } from '../lib/day'
+import { dayLabel, trainingDay } from '../lib/day'
 import { EditableSetRow } from '../components/EditableSetRow'
-import { isPerformed, totalVolume } from '../lib/analytics'
-import type { Exercise, SetWithDate } from '../types'
+import { frequencyStats, isPerformed, sessionDates, setVolume, totalVolume } from '../lib/analytics'
+import { ProgressHeader, SectionLabel } from '../components/progress/ProgressHeader'
+import { MonthHeatmap } from '../components/progress/MonthHeatmap'
+import {
+  formatVolume,
+  mondayOf,
+  weekGroupLabel,
+  workoutMetas,
+  type WorkoutMeta,
+} from '../components/progress/progressUtils'
+import { enter } from '../components/home/motion'
+import type { Exercise, SetWithDate, Workout } from '../types'
 
 export default function History() {
   const { isNew, world } = usePrefs()
@@ -82,6 +105,92 @@ export default function History() {
     })
   }
 
+  /** Aufgeklappter Inhalt eines Trainings: Sätze je Übung, Bearbeiten, Übung hinzufügen. */
+  function renderSets(w: Workout, sets: SetWithDate[], editing: boolean) {
+    const groups = Object.entries(
+      sets.reduce<Record<string, SetWithDate[]>>((acc, s) => {
+        ;(acc[s.exercise_id] ??= []).push(s)
+        return acc
+      }, {}),
+    )
+    return (
+      <>
+        {groups.map(([exId, exSets]) => {
+          const ex = exercises?.find((e) => e.id === exId)
+          const sorted = [...exSets].sort((a, b) => a.set_number - b.set_number)
+          return (
+            <div key={exId} className="space-y-2">
+              <div className="font-medium">{exName(exId)}</div>
+              {editing && ex ? (
+                <>
+                  {sorted.map((s) => (
+                    <EditableSetRow key={s.id} set={s} exercise={ex} />
+                  ))}
+                  <button
+                    className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
+                    onClick={() => addSetToGroup(w.id, ex, exSets)}
+                  >
+                    <Plus size={16} /> Satz
+                  </button>
+                </>
+              ) : (
+                <div className="tabular text-sm text-cocoa-light">
+                  {sorted.map((s, i) => {
+                    const prefix =
+                      s.set_type === 'warmup'
+                        ? 'Aufw. '
+                        : s.set_type === 'drop'
+                          ? 'Drop '
+                          : ''
+                    const text =
+                      s.reps_right != null
+                        ? `${prefix}L ${s.reps}×${s.weight} / R ${s.reps_right}×${s.weight_right}kg`
+                        : `${prefix}${s.reps}×${s.weight}kg`
+                    return (
+                      <span key={s.id}>
+                        {i > 0 && ' · '}
+                        {text}
+                        {s.to_failure && (
+                          <Flame
+                            size={12}
+                            className="ml-0.5 inline-block align-[-1px] text-cocoa-muted"
+                            aria-label="bis Versagen"
+                          />
+                        )}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {editing && (
+          <div>
+            <label className="label">Übung hinzufügen</label>
+            <select
+              className="input"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) addExerciseToWorkout(w.id, e.target.value)
+              }}
+            >
+              <option value="">— wählen —</option>
+              {exercises?.map((ex) => (
+                <option key={ex.id} value={ex.id}>
+                  {ex.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {sets.length === 0 && !editing && <p className="text-sm text-cocoa-muted">Keine Sätze.</p>}
+      </>
+    )
+  }
+
   if (isNew && world === 'food') {
     return (
       <div className="space-y-4">
@@ -91,39 +200,34 @@ export default function History() {
     )
   }
 
+  if (isNew) {
+    return (
+      <NewHistory
+        workouts={workouts}
+        allSets={allSets ?? []}
+        exName={exName}
+        isLoading={isLoading}
+        openId={openId}
+        editId={editId}
+        setOpenId={setOpenId}
+        setEditId={setEditId}
+        onDelete={(id) => deleteWorkout.mutate(id)}
+        renderSets={renderSets}
+        backfill={backfill}
+        setBackfill={setBackfill}
+        backfillDate={backfillDate}
+        setBackfillDate={setBackfillDate}
+        startBackfill={startBackfill}
+      />
+    )
+  }
+
+  // Klassischer Modus — unverändert
   return (
     <div className="space-y-4">
-      {isNew ? (
-        <>
-          <ProgressSwitch />
-          {backfill ? (
-            <div className="card anim-fade flex items-end gap-2">
-              <div className="flex-1">
-                <label className="label">Training nachtragen am</label>
-                <input
-                  type="date"
-                  className="input"
-                  value={backfillDate}
-                  max={trainingDay()}
-                  onChange={(e) => setBackfillDate(e.target.value)}
-                />
-              </div>
-              <button className="btn-primary" onClick={startBackfill} disabled={!backfillDate}>
-                Los
-              </button>
-            </div>
-          ) : (
-            <button className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm" onClick={() => setBackfill(true)}>
-              <CalendarPlus size={16} className="text-cocoa-light" />
-              Training nachtragen
-            </button>
-          )}
-        </>
-      ) : (
-        <header className="flex items-center gap-2">
-          <h1 className="text-xl font-bold">Verlauf</h1>
-        </header>
-      )}
+      <header className="flex items-center gap-2">
+        <h1 className="text-xl font-bold">Verlauf</h1>
+      </header>
       {isLoading && <p className="text-cocoa-light">Lädt…</p>}
 
       <ul className="space-y-2">
@@ -133,12 +237,6 @@ export default function History() {
           const doneSets = sets.filter(isPerformed)
           const isOpen = openId === w.id
           const editing = editId === w.id
-          const groups = Object.entries(
-            sets.reduce<Record<string, SetWithDate[]>>((acc, s) => {
-              ;(acc[s.exercise_id] ??= []).push(s)
-              return acc
-            }, {}),
-          )
           return (
             <li key={w.id} className="card">
               <div className="flex items-center justify-between">
@@ -183,81 +281,7 @@ export default function History() {
                       {editing ? 'Fertig' : 'Bearbeiten'}
                     </button>
                   </div>
-
-                  {groups.map(([exId, exSets]) => {
-                    const ex = exercises?.find((e) => e.id === exId)
-                    const sorted = [...exSets].sort((a, b) => a.set_number - b.set_number)
-                    return (
-                      <div key={exId} className="space-y-2">
-                        <div className="font-medium">{exName(exId)}</div>
-                        {editing && ex ? (
-                          <>
-                            {sorted.map((s) => (
-                              <EditableSetRow key={s.id} set={s} exercise={ex} />
-                            ))}
-                            <button
-                              className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
-                              onClick={() => addSetToGroup(w.id, ex, exSets)}
-                            >
-                              <Plus size={16} /> Satz
-                            </button>
-                          </>
-                        ) : (
-                          <div className="tabular text-sm text-cocoa-light">
-                            {sorted.map((s, i) => {
-                              const prefix =
-                                s.set_type === 'warmup'
-                                  ? 'Aufw. '
-                                  : s.set_type === 'drop'
-                                    ? 'Drop '
-                                    : ''
-                              const text =
-                                s.reps_right != null
-                                  ? `${prefix}L ${s.reps}×${s.weight} / R ${s.reps_right}×${s.weight_right}kg`
-                                  : `${prefix}${s.reps}×${s.weight}kg`
-                              return (
-                                <span key={s.id}>
-                                  {i > 0 && ' · '}
-                                  {text}
-                                  {s.to_failure && (
-                                    <Flame
-                                      size={12}
-                                      className="ml-0.5 inline-block align-[-1px] text-cocoa-muted"
-                                      aria-label="bis Versagen"
-                                    />
-                                  )}
-                                </span>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-
-                  {editing && (
-                    <div>
-                      <label className="label">Übung hinzufügen</label>
-                      <select
-                        className="input"
-                        value=""
-                        onChange={(e) => {
-                          if (e.target.value) addExerciseToWorkout(w.id, e.target.value)
-                        }}
-                      >
-                        <option value="">— wählen —</option>
-                        {exercises?.map((ex) => (
-                          <option key={ex.id} value={ex.id}>
-                            {ex.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {sets.length === 0 && !editing && (
-                    <p className="text-sm text-cocoa-muted">Keine Sätze.</p>
-                  )}
+                  {renderSets(w, sets, editing)}
                 </div>
               )}
             </li>
@@ -268,5 +292,303 @@ export default function History() {
         )}
       </ul>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Neuer Modus: Kalender-Heatmap + Trainings nach Wochen gruppiert
+// ---------------------------------------------------------------------------
+
+function NewHistory({
+  workouts,
+  allSets,
+  exName,
+  isLoading,
+  openId,
+  editId,
+  setOpenId,
+  setEditId,
+  onDelete,
+  renderSets,
+  backfill,
+  setBackfill,
+  backfillDate,
+  setBackfillDate,
+  startBackfill,
+}: {
+  workouts: Workout[] | undefined
+  allSets: SetWithDate[]
+  exName: (id: string) => string
+  isLoading: boolean
+  openId: string | null
+  editId: string | null
+  setOpenId: (id: string | null) => void
+  setEditId: (id: string | null) => void
+  onDelete: (id: string) => void
+  renderSets: (w: Workout, sets: SetWithDate[], editing: boolean) => ReactElement
+  backfill: boolean
+  setBackfill: (v: boolean) => void
+  backfillDate: string
+  setBackfillDate: (d: string) => void
+  startBackfill: () => void
+}) {
+  const today = trainingDay()
+
+  const setsByWorkout = useMemo(() => {
+    const m = new Map<string, SetWithDate[]>()
+    for (const s of allSets) {
+      const list = m.get(s.workout_id)
+      if (list) list.push(s)
+      else m.set(s.workout_id, [s])
+    }
+    return m
+  }, [allSets])
+  const metas = useMemo(() => workoutMetas(allSets), [allSets])
+
+  const volumeByDate = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const s of allSets) {
+      if (!isPerformed(s)) continue
+      m.set(s.date, (m.get(s.date) ?? 0) + setVolume(s))
+    }
+    return m
+  }, [allSets])
+
+  const freq = useMemo(() => frequencyStats(sessionDates(allSets)), [allSets])
+
+  const groups = useMemo(() => {
+    const out: { key: string; label: string; items: Workout[] }[] = []
+    for (const w of workouts ?? []) {
+      const key = mondayOf(w.date)
+      const last = out[out.length - 1]
+      if (last && last.key === key) last.items.push(w)
+      else out.push({ key, label: weekGroupLabel(w.date, today), items: [w] })
+    }
+    return out
+  }, [workouts, today])
+
+  function pickDay(date: string) {
+    const w = workouts?.find((x) => x.date === date)
+    if (!w) return
+    setOpenId(w.id)
+    requestAnimationFrame(() =>
+      document.getElementById(`workout-${w.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    )
+  }
+
+  const n = freq.totalSessions
+  const perWeek = freq.sessionsPerWeek.toLocaleString('de-DE', { maximumFractionDigits: 1 })
+  let idx = 2
+
+  return (
+    <div className="space-y-5">
+      <ProgressHeader
+        title="Verlauf"
+        subtitle={n > 0 ? `${n} ${n === 1 ? 'Training' : 'Trainings'} · Ø ${perWeek}/Woche` : 'Noch keine Trainings'}
+        action={
+          <button
+            className={`grid h-10 w-10 place-items-center rounded-full shadow-sm transition active:scale-95 ${
+              backfill ? 'bg-sand text-cocoa' : 'bg-brand text-on-brand shadow-brand/30'
+            }`}
+            onClick={() => setBackfill(!backfill)}
+            aria-label={backfill ? 'Nachtragen abbrechen' : 'Training nachtragen'}
+            aria-expanded={backfill}
+            title="Training nachtragen"
+          >
+            {backfill ? <X size={18} /> : <Plus size={20} strokeWidth={2.5} />}
+          </button>
+        }
+      />
+
+      {backfill && (
+        <div className="card anim-fade space-y-2">
+          <label className="label flex items-center gap-1.5">
+            <CalendarPlus size={14} className="text-brand" />
+            Training nachtragen am
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              className="input flex-1"
+              value={backfillDate}
+              max={trainingDay()}
+              onChange={(e) => setBackfillDate(e.target.value)}
+            />
+            <button className="btn-primary" onClick={startBackfill} disabled={!backfillDate}>
+              Los
+            </button>
+          </div>
+        </div>
+      )}
+
+      {volumeByDate.size > 0 && (
+        <MonthHeatmap today={today} volumeByDate={volumeByDate} onPick={pickDay} index={1} />
+      )}
+
+      {isLoading && <p className="text-cocoa-light">Lädt…</p>}
+
+      {groups.map((g) => {
+        const groupVolume = g.items.reduce((s, w) => s + (metas.get(w.id)?.volume ?? 0), 0)
+        return (
+          <section key={g.key} style={enter(Math.min(idx++, 8))}>
+            <SectionLabel
+              right={
+                <span className="tabular text-[11px] text-cocoa-muted">
+                  {g.items.length} {g.items.length === 1 ? 'Training' : 'Trainings'}
+                  {groupVolume > 0 && ` · ${formatVolume(groupVolume)}`}
+                </span>
+              }
+            >
+              {g.label}
+            </SectionLabel>
+            <ul className="space-y-2">
+              {g.items.map((w) => (
+                <WorkoutCard
+                  key={w.id}
+                  workout={w}
+                  today={today}
+                  meta={metas.get(w.id)}
+                  names={(metas.get(w.id)?.exerciseIds ?? []).map(exName)}
+                  open={openId === w.id}
+                  editing={editId === w.id}
+                  onToggle={() => {
+                    const isOpen = openId === w.id
+                    setOpenId(isOpen ? null : w.id)
+                    if (isOpen) setEditId(null)
+                  }}
+                  onEdit={() => setEditId(editId === w.id ? null : w.id)}
+                  onDelete={() => {
+                    if (confirm('Dieses Training löschen?')) onDelete(w.id)
+                  }}
+                >
+                  {renderSets(w, setsByWorkout.get(w.id) ?? [], editId === w.id)}
+                </WorkoutCard>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
+
+      {workouts?.length === 0 && (
+        <div className="card flex flex-col items-center gap-2 py-6 text-center">
+          <div className="grid h-12 w-12 place-items-center rounded-full bg-sand text-brand">
+            <CalendarPlus size={22} />
+          </div>
+          <p className="text-sm text-cocoa-light">Noch keine Trainings erfasst.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Stat({ icon, children, className = '' }: { icon: ReactElement; children: ReactNode; className?: string }) {
+  return (
+    <span className={`flex items-center gap-1 ${className}`}>
+      {icon}
+      {children}
+    </span>
+  )
+}
+
+function WorkoutCard({
+  workout: w,
+  today,
+  meta,
+  names,
+  open,
+  editing,
+  onToggle,
+  onEdit,
+  onDelete,
+  children,
+}: {
+  workout: Workout
+  today: string
+  meta: WorkoutMeta | undefined
+  names: string[]
+  open: boolean
+  editing: boolean
+  onToggle: () => void
+  onEdit: () => void
+  onDelete: () => void
+  children: ReactNode
+}) {
+  const sets = meta?.sets ?? 0
+  const label = dayLabel(w.date, today)
+  const long = new Date(w.date + 'T00:00:00').toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })
+
+  return (
+    <li id={`workout-${w.id}`} className={`card scroll-mt-20 transition-shadow ${open ? 'ring-1 ring-brand/30' : ''}`}>
+      <button className="flex w-full items-start gap-3 text-left" onClick={onToggle} aria-expanded={open}>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline gap-2">
+            <span className="truncate font-semibold">{label}</span>
+            {(label === 'Heute' || label === 'Gestern') && (
+              <span className="shrink-0 text-xs text-cocoa-muted">{long}</span>
+            )}
+            {w.name && <span className="truncate text-xs text-cocoa-muted">· {w.name}</span>}
+          </span>
+          <span className="tabular mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-cocoa-light">
+            {sets === 0 ? (
+              <span className="text-cocoa-muted">Keine Sätze</span>
+            ) : (
+              <>
+                {meta?.minutes != null && (
+                  <Stat icon={<Clock size={12} className="text-cocoa-muted" />}>{meta.minutes} Min</Stat>
+                )}
+                <Stat icon={<Layers size={12} className="text-cocoa-muted" />}>
+                  {sets} {sets === 1 ? 'Satz' : 'Sätze'}
+                </Stat>
+                {(meta?.volume ?? 0) > 0 && (
+                  <Stat icon={<Weight size={12} className="text-cocoa-muted" />}>{formatVolume(meta!.volume)}</Stat>
+                )}
+                {(meta?.prs ?? 0) > 0 && (
+                  <Stat icon={<Trophy size={12} strokeWidth={2.5} />} className="font-semibold text-gold">
+                    {meta!.prs} {meta!.prs === 1 ? 'Rekord' : 'Rekorde'}
+                  </Stat>
+                )}
+              </>
+            )}
+          </span>
+        </span>
+        <ChevronDown
+          size={18}
+          className={`mt-0.5 shrink-0 text-cocoa-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {names.length > 0 && !open && (
+        <button className="mt-2.5 flex w-full flex-wrap gap-1.5 text-left" onClick={onToggle} tabIndex={-1}>
+          {names.slice(0, 3).map((n, i) => (
+            <span key={i} className="max-w-[60%] truncate rounded-full bg-sand px-2.5 py-0.5 text-[11px] font-medium text-cocoa">
+              {n}
+            </span>
+          ))}
+          {names.length > 3 && (
+            <span className="rounded-full bg-sand px-2 py-0.5 text-[11px] text-cocoa-muted">+{names.length - 3}</span>
+          )}
+        </button>
+      )}
+
+      {open && (
+        <div className="anim-fade mt-3 space-y-3 border-t border-sand-dark/40 pt-3">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              className="flex items-center gap-1.5 rounded-full px-2 py-1.5 text-sm text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
+              onClick={onDelete}
+              aria-label="Training löschen"
+            >
+              <Trash2 size={15} />
+              Löschen
+            </button>
+            <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={onEdit}>
+              {editing ? <Check size={16} /> : <Pencil size={16} />}
+              {editing ? 'Fertig' : 'Bearbeiten'}
+            </button>
+          </div>
+          {children}
+        </div>
+      )}
+    </li>
   )
 }
