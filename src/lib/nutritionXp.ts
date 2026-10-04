@@ -3,6 +3,7 @@
 
 import type { FoodEntry } from '../types'
 import type { Quest } from './xp'
+import { shiftDate } from './day'
 
 function ymd(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
@@ -32,26 +33,37 @@ export function byDay(entries: FoodEntry[]): Map<string, DayTotals> {
 }
 
 /** Log-Streak: aufeinanderfolgende Tage mit Eintrag, bis heute (mit Kulanz für heute). */
+// Reine Kalender-Arithmetik auf YYYY-MM-DD (lokal) — kein `new Date('YYYY-MM-DD')`,
+// das als UTC geparst wird und westlich von UTC einen Tag zu früh landet.
 export function nutritionStreak(dates: Set<string>, today: string): number {
   let streak = 0
-  const d = new Date(today)
-  if (!dates.has(today)) d.setDate(d.getDate() - 1) // heute noch nicht geloggt → ab gestern zählen
-  while (dates.has(ymd(d))) {
+  let d = dates.has(today) ? today : shiftDate(today, -1) // heute noch nicht geloggt → ab gestern zählen
+  while (dates.has(d)) {
     streak++
-    d.setDate(d.getDate() - 1)
+    d = shiftDate(d, -1)
   }
   return streak
 }
 
-/** Gesamt-XP aus der Ernährungshistorie. */
-export function computeNutritionXp(entries: FoodEntry[], proteinTarget: number, today: string): number {
+/** Anzahl geloggter Tage, die Teil einer Serie (≥ 2 Tage am Stück) sind. Wächst nur —
+ *  eine gerissene Serie nimmt keine bereits verdienten Streak-XP wieder weg. */
+export function streakDays(dates: Set<string>): number {
+  let n = 0
+  for (const d of dates) {
+    if (dates.has(shiftDate(d, -1)) || dates.has(shiftDate(d, 1))) n++
+  }
+  return n
+}
+
+/** Gesamt-XP aus der Ernährungshistorie (monoton: neue Tage erhöhen nur). */
+export function computeNutritionXp(entries: FoodEntry[], proteinTarget: number, _today?: string): number {
   const days = byDay(entries)
   const daysLogged = days.size
   const proteinDays = proteinTarget > 0
     ? [...days.values()].filter((d) => d.protein >= proteinTarget).length
     : 0
-  const streak = nutritionStreak(new Set(days.keys()), today)
-  return Math.round(daysLogged * 20 + proteinDays * 15 + streak * 20)
+  const streakBonusDays = streakDays(new Set(days.keys()))
+  return Math.round(daysLogged * 20 + proteinDays * 15 + streakBonusDays * 20)
 }
 
 export interface NutritionQuestInput {

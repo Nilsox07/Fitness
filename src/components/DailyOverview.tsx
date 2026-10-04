@@ -6,6 +6,7 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useWater } from '../hooks/useWater'
 import { sumEntries } from '../lib/nutrition'
+import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
 
 const DAY_CUTOFF_H = 4
 
@@ -68,7 +69,8 @@ export function DailyOverview() {
   const tSets = (allSets ?? []).filter((s) => s.date === trainingToday())
   const trained = tSets.length > 0
   const totals = sumEntries(entries ?? [])
-  const kcalTarget = settings?.kcal_target ?? 0
+  // Ernährung zählt nach Kalendertag — gleiches Ziel (inkl. Trainingsbonus) wie auf „Ernährung".
+  const kcalTarget = kcalTargetFor(settings, trainedOn(today(), allSets))
   const kcalLeft = kcalTarget ? kcalTarget - totals.kcal : 0
   const proteinTarget = settings?.protein_target ?? 0
   const goalWater = settings?.water_target_ml || 2500

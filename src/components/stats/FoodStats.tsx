@@ -1,12 +1,10 @@
 import { useMemo } from 'react'
 import {
   Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   ComposedChart,
   Line,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -16,6 +14,8 @@ import { Flame, Target } from 'lucide-react'
 import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
 import { useWater } from '../../hooks/useWater'
 import { useBodyWeights } from '../../hooks/useBodyWeight'
+import { useAllSets } from '../../hooks/useWorkouts'
+import { kcalTargetFor, trainedOn } from '../../lib/dayTarget'
 import { localDate, shiftDate } from '../../lib/day'
 import { sumEntries } from '../../lib/nutrition'
 import { levelInfo } from '../../lib/xp'
@@ -131,11 +131,12 @@ function NutritionGameCard() {
   const { data: todayEntries } = useFoodEntries(today)
   const { data: water } = useWater(today)
   const { data: settings } = useNutritionSettings()
+  const { data: allSets } = useAllSets()
 
   const g = useMemo(() => {
     const entries = allEntries ?? []
     const proteinTarget = settings?.protein_target ?? 0
-    const kcalTarget = settings?.kcal_target ?? 0
+    const kcalTarget = kcalTargetFor(settings, trainedOn(today, allSets))
     const totals = sumEntries(todayEntries ?? [])
     const quests = [
       ...nutritionDailyQuests({
@@ -154,7 +155,7 @@ function NutritionGameCard() {
       streak: nutritionStreak(new Set(byDay(entries).keys()), today),
       open: quests.filter((q) => !q.done).length,
     }
-  }, [allEntries, todayEntries, water, settings, today])
+  }, [allEntries, todayEntries, water, settings, allSets, today])
   const toggle = useGameToggle(g.xp.level, 'seen_nutrition_level')
 
   return (
@@ -189,26 +190,41 @@ export function FoodStats() {
   const chart = useChartTheme()
   const { data: entries } = useAllFoodEntries()
   const { data: settings } = useNutritionSettings()
+  const { data: allSets } = useAllSets()
   const today = localDate()
-  const kcalTarget = settings?.kcal_target ?? 0
   const proteinTarget = settings?.protein_target ?? 0
+  const hasKcalTarget = kcalTargetFor(settings, false) > 0
 
   const stats = useMemo(() => {
     const days = byDay(entries ?? [])
     const from = shiftDate(today, -(WINDOW - 1))
+    // Kalorienziel je Tag (inkl. Trainingsbonus) — gleiche Regel wie auf der Ernährungsseite.
+    const targetOn = (date: string) => kcalTargetFor(settings, trainedOn(date, allSets))
     // Ø nur über abgeschlossene Tage mit Einträgen (ohne heute, ohne Lücken)
     const complete = [...days.entries()].filter(([d]) => d >= shiftDate(today, -WINDOW) && d < today)
     const n = complete.length
     const avgKcal = n ? Math.round(complete.reduce((s, [, v]) => s + v.kcal, 0) / n) : null
     const avgProtein = n ? Math.round(complete.reduce((s, [, v]) => s + v.protein, 0) / n) : null
+    // Ø-Ziel über dieselben Tage (ohne Tage → Ziel von heute)
+    const avgTarget = n
+      ? Math.round(complete.reduce((s, [d]) => s + targetOn(d), 0) / n)
+      : targetOn(today)
     const data = Array.from({ length: WINDOW }, (_, i) => {
       const date = shiftDate(from, i)
       const v = days.get(date)
-      return { date, label: ddmm(date), kcal: v ? Math.round(v.kcal) : 0, today: date === today }
+      const target = targetOn(date)
+      return {
+        date,
+        label: ddmm(date),
+        kcal: v ? Math.round(v.kcal) : 0,
+        target: target > 0 ? target : null,
+        today: date === today,
+      }
     })
-    return { n, avgKcal, avgProtein, data, hasAny: days.size > 0 }
-  }, [entries, today])
+    return { n, avgKcal, avgProtein, avgTarget, data, hasAny: days.size > 0 }
+  }, [entries, settings, allSets, today])
 
+  const kcalTarget = stats.avgTarget
   const kcalOk =
     stats.avgKcal !== null && kcalTarget > 0 && Math.abs(stats.avgKcal - kcalTarget) <= kcalTarget * 0.1
   const proteinOk = stats.avgProtein !== null && proteinTarget > 0 && stats.avgProtein >= proteinTarget
@@ -229,7 +245,9 @@ export function FoodStats() {
                 valueClass={kcalOk ? 'text-success' : 'text-cocoa'}
                 footer={
                   kcalTarget > 0 && (
-                    <span className="tabular text-[11px] text-cocoa-muted">Ziel {nf(kcalTarget)}</span>
+                    <span className="tabular text-[11px] text-cocoa-muted">
+                      {stats.n > 0 ? 'Ø Ziel' : 'Ziel'} {nf(kcalTarget)}
+                    </span>
                   )
                 }
               />
@@ -255,26 +273,31 @@ export function FoodStats() {
           <section className="card">
             <h2 className="mb-2 font-semibold">Kalorien pro Tag</h2>
             <ResponsiveContainer width="100%" height={170}>
-              <BarChart data={stats.data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
+              <ComposedChart data={stats.data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
                 <XAxis dataKey="label" tick={chart.axisStyle} tickLine={false} axisLine={false} minTickGap={8} />
                 <YAxis tick={chart.axisStyle} width={40} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip {...chart.tooltip} formatter={(v: number) => [`${nf(v)} kcal`, 'Kalorien']} />
-                {kcalTarget > 0 && (
-                  <ReferenceLine
-                    y={kcalTarget}
-                    stroke={chart.axis}
-                    strokeDasharray="4 3"
-                    ifOverflow="extendDomain"
-                    label={{ value: 'Ziel', position: 'insideTopRight', fill: chart.axis, fontSize: 10 }}
-                  />
-                )}
-                <Bar dataKey="kcal" radius={[4, 4, 0, 0]} maxBarSize={22}>
+                <Tooltip {...chart.tooltip} formatter={(v: number, name: string) => [`${nf(v)} kcal`, name]} />
+                <Bar dataKey="kcal" name="Kalorien" radius={[4, 4, 0, 0]} maxBarSize={22}>
                   {stats.data.map((d) => (
                     <Cell key={d.date} fill={chart.primary} fillOpacity={d.today ? 0.4 : 1} />
                   ))}
                 </Bar>
-              </BarChart>
+                {/* Ziel je Tag (Trainingstage +250 kcal) als Stufenlinie */}
+                {hasKcalTarget && (
+                  <Line
+                    type="step"
+                    dataKey="target"
+                    name="Ziel"
+                    stroke={chart.axis}
+                    strokeDasharray="4 3"
+                    strokeWidth={1.5}
+                    dot={false}
+                    activeDot={false}
+                    isAnimationActive={false}
+                  />
+                )}
+              </ComposedChart>
             </ResponsiveContainer>
           </section>
         </>

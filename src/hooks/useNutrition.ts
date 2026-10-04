@@ -84,6 +84,7 @@ export function useAllFoodEntries() {
         .from('food_entries')
         .select('*')
         .order('date', { ascending: true })
+        .order('created_at', { ascending: true })
       if (error) throw error
       return data as FoodEntry[]
     },
@@ -123,6 +124,28 @@ export function useAddFoodEntry() {
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ['food_entries'] })
       void maybePostCheat(s, user!.id, user?.email?.split('@')[0], qc)
+    },
+  })
+}
+
+/** Mehrere Einträge in EINEM Insert (KI-Schätzung, Tagesplan) — alles oder nichts,
+ *  keine halb geloggten Listen bei Netzfehlern; Cache nur einmal invalidieren. */
+export function useAddFoodEntries() {
+  const qc = useQueryClient()
+  const { user } = useAuth()
+  return useMutation({
+    mutationFn: async (inputs: FoodEntryInput[]) => {
+      if (inputs.length === 0) return [] as FoodEntry[]
+      const { data, error } = await supabase
+        .from('food_entries')
+        .insert(inputs.map((i) => ({ ...i, user_id: user!.id })))
+        .select()
+      if (error) throw error
+      return data as FoodEntry[]
+    },
+    onSuccess: (rows) => {
+      qc.invalidateQueries({ queryKey: ['food_entries'] })
+      for (const r of rows) void maybePostCheat(r, user!.id, user?.email?.split('@')[0], qc)
     },
   })
 }

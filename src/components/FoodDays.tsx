@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { Check, ChevronRight, Droplet } from 'lucide-react'
 import { useAllFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useAllWater } from '../hooks/useWater'
+import { useAllSets } from '../hooks/useWorkouts'
 import { dayLabel, localDate, shiftDate } from '../lib/day'
+import { kcalTargetFor } from '../lib/dayTarget'
 
 const DAYS = 30
 
@@ -13,6 +15,7 @@ export function FoodDays() {
   const { data: entries, isLoading } = useAllFoodEntries()
   const { data: water } = useAllWater()
   const { data: settings } = useNutritionSettings()
+  const { data: allSets } = useAllSets()
   const today = localDate()
 
   const days = useMemo(() => {
@@ -25,6 +28,7 @@ export function FoodDays() {
       byDate.set(e.date, d)
     }
     const waterBy = new Map((water ?? []).map((w) => [w.date, w.ml]))
+    const trainedDates = new Set((allSets ?? []).map((s) => s.date))
     return Array.from({ length: DAYS }, (_, i) => {
       const date = shiftDate(today, -i)
       const d = byDate.get(date)
@@ -34,11 +38,12 @@ export function FoodDays() {
         protein: Math.round(d?.protein ?? 0),
         count: d?.count ?? 0,
         water: waterBy.get(date) ?? 0,
+        // Kalorienziel des Tages inkl. Trainingsbonus (gleiche Regel wie auf „Ernährung")
+        kcalTarget: kcalTargetFor(settings, trainedDates.has(date)),
       }
     })
-  }, [entries, water, today])
+  }, [entries, water, allSets, settings, today])
 
-  const kcalTarget = settings?.kcal_target ?? 0
   const proteinTarget = settings?.protein_target ?? 0
 
   if (isLoading) return <p className="text-cocoa-light">Lädt…</p>
@@ -46,6 +51,7 @@ export function FoodDays() {
   return (
     <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
       {days.map((d) => {
+        const kcalTarget = d.kcalTarget
         const inRange = kcalTarget > 0 && d.count > 0 && Math.abs(d.kcal - kcalTarget) <= kcalTarget * 0.1
         const proteinOk = proteinTarget > 0 && d.protein >= proteinTarget
         return (

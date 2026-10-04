@@ -33,11 +33,14 @@ export function useAllWater() {
   })
 }
 
+type WaterCtx = { prevDay: WaterIntake | null | undefined; prevAll: WaterIntake[] | undefined }
+
 export function useSetWater() {
   const qc = useQueryClient()
   const { user } = useAuth()
-  return useMutation({
-    mutationFn: async (input: { date: string; ml: number }) => {
+  return useMutation<WaterIntake, Error, { date: string; ml: number }, WaterCtx>({
+    mutationKey: ['water', 'set'],
+    mutationFn: async (input) => {
       const { data, error } = await supabase
         .from('water_intake')
         .upsert({ user_id: user!.id, date: input.date, ml: Math.max(0, input.ml) }, { onConflict: 'user_id,date' })
@@ -46,6 +49,37 @@ export function useSetWater() {
       if (error) throw error
       return data as WaterIntake
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['water'] }),
+    // Optimistisch: schnelle Taps bauen auf dem neuen Wert auf statt auf dem alten.
+    onMutate: async (input) => {
+      const ml = Math.max(0, input.ml)
+      await qc.cancelQueries({ queryKey: ['water', input.date] })
+      await qc.cancelQueries({ queryKey: ['water', 'all'] })
+      const prevDay = qc.getQueryData<WaterIntake | null>(['water', input.date])
+      const prevAll = qc.getQueryData<WaterIntake[]>(['water', 'all'])
+      const next = { ...(prevDay ?? { user_id: user?.id ?? '', date: input.date }), ml } as WaterIntake
+      qc.setQueryData<WaterIntake | null>(['water', input.date], next)
+      if (prevAll) {
+        const exists = prevAll.some((w) => w.date === input.date)
+        qc.setQueryData<WaterIntake[]>(
+          ['water', 'all'],
+          exists
+            ? prevAll.map((w) => (w.date === input.date ? { ...w, ml } : w))
+            : [...prevAll, next].sort((a, b) => a.date.localeCompare(b.date)),
+        )
+      }
+      return { prevDay, prevAll }
+    },
+    onError: (_e, input, ctx) => {
+      if (!ctx) return
+      qc.setQueryData(['water', input.date], ctx.prevDay ?? null)
+      if (ctx.prevAll) qc.setQueryData(['water', 'all'], ctx.prevAll)
+    },
+    onSettled: () => {
+      // Erst neu laden, wenn kein weiterer Tap mehr unterwegs ist — sonst überschreibt
+      // ein älterer Serverstand kurz den optimistischen Wert.
+      if (qc.isMutating({ mutationKey: ['water', 'set'] }) <= 1) {
+        qc.invalidateQueries({ queryKey: ['water'] })
+      }
+    },
   })
 }
