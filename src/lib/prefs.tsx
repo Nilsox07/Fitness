@@ -87,7 +87,8 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         appMode,
         setAppMode,
         isNew: appMode === 'new',
-        world,
+        // Ernährung ausgeblendet → es gibt nur die Fitness-Welt
+        world: showNutrition ? world : 'fitness',
         setWorld,
       }}
     >

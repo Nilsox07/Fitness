@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { accentColor } from '../../lib/cosmetics'
 import { ChevronDown, Minus, TrendingDown, TrendingUp } from 'lucide-react'
 import { useTheme } from '../../lib/theme'
 import { PERIOD_LABELS, type Period } from '../../lib/periods'
@@ -13,7 +14,7 @@ export function useChartTheme() {
     tipBg: dark ? '#161D2B' : '#FFFFFF',
     tipBorder: dark ? '#344155' : '#D2D6DD',
     tipText: dark ? '#E5E9F0' : '#0B0F19',
-    primary: '#E11D48',
+    primary: accentColor(),
   }
   return {
     ...c,

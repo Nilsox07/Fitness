@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { accentColor } from '../lib/cosmetics'
 import { Line, LineChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts'
 import { useBodyWeights, useUpsertBodyWeight } from '../hooks/useBodyWeight'
 import { useTheme } from '../lib/theme'
@@ -82,7 +83,7 @@ export function BodyWeightCard() {
               }}
               labelStyle={{ color: dark ? '#E5E9F0' : '#0B0F19' }}
             />
-            <Line type="monotone" dataKey="kg" stroke="#E11D48" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="kg" stroke={accentColor()} strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       )}

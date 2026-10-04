@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { accentColor } from '../lib/cosmetics'
 import { useNavigate, useParams } from "react-router-dom";
 import {
   CartesianGrid,
@@ -185,7 +186,7 @@ export default function ExerciseDetail() {
     tipBg: dark ? "#161D2B" : "#FFFFFF",
     tipBorder: dark ? "#344155" : "#D2D6DD",
     tipText: dark ? "#E5E9F0" : "#0B0F19",
-    primary: "#E11D48",
+    primary: accentColor(),
   };
   const axisStyle = { fontSize: 11, fill: chart.axis };
   const metricLabel = METRICS.find((m) => m.key === metric)!.label;

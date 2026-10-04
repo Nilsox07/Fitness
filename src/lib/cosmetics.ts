@@ -73,6 +73,22 @@ export function applyAccent(id: string) {
   root.style.setProperty('--c-ruby-light', a.light)
 }
 
+/** Aktuelle Akzentfarbe als CSS-Farbe (für Diagramme/Canvas, die keine CSS-Variablen können). */
+export function accentColor(variant: 'base' | 'dark' | 'light' = 'base', alpha = 1): string {
+  const name = variant === 'base' ? '--c-ruby' : variant === 'dark' ? '--c-ruby-dark' : '--c-ruby-light'
+  let rgb = ''
+  try {
+    rgb = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  } catch {
+    /* ignore */
+  }
+  if (!rgb) {
+    const a = ACCENTS.find((x) => x.id === getAccentId()) ?? ACCENTS[0]
+    rgb = variant === 'base' ? a.base : variant === 'dark' ? a.dark : a.light
+  }
+  return `rgb(${rgb.split(/\s+/).join(', ')}${alpha < 1 ? `, ${alpha}` : ''})`.replace('rgb(', alpha < 1 ? 'rgba(' : 'rgb(')
+}
+
 export function mascotEmoji(sessions: number, skinId = getSkinId()): string {
   const skin = SKINS.find((s) => s.id === skinId) ?? SKINS[0]
   return skin.stages[mascotStageIndex(sessions)]

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { accentColor } from '../lib/cosmetics'
 import {
   Bar,
   BarChart,
@@ -91,8 +92,8 @@ function ClassicAnalytics() {
     tipBg: dark ? '#161D2B' : '#FFFFFF',
     tipBorder: dark ? '#344155' : '#D2D6DD',
     tipText: dark ? '#E5E9F0' : '#0B0F19',
-    primary: '#E11D48',
-    secondary: dark ? '#FB7185' : '#BE123C',
+    primary: accentColor(),
+    secondary: accentColor(dark ? 'light' : 'dark'),
   }
   const axisStyle = { fontSize: 11, fill: chart.axis }
 

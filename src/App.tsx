@@ -31,7 +31,7 @@ const FITNESS_ROUTES = ['/', '/plans', '/exercises']
 
 export default function App() {
   const { session, loading, recovery } = useAuth()
-  const { isNew, world, setWorld } = usePrefs()
+  const { isNew, world, setWorld, showNutrition } = usePrefs()
   const { pathname } = useLocation()
 
   // Top-Umschalter mit der aktuellen Seite synchron halten.
@@ -61,14 +61,14 @@ export default function App() {
       <main className="flex-1 overflow-y-auto px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />
-          <Route path="/nutrition" element={<Nutrition />} />
+          <Route path="/nutrition" element={showNutrition ? <Nutrition /> : <Navigate to="/" replace />} />
           <Route path="/exercises" element={<Exercises />} />
           <Route path="/exercises/:id" element={<ExerciseDetail />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/social" element={<Social />} />
           <Route path="/badges" element={<Badges />} />
-          <Route path="/recipes" element={<Recipes />} />
-          <Route path="/shopping" element={<Shopping />} />
+          <Route path="/recipes" element={showNutrition ? <Recipes /> : <Navigate to="/" replace />} />
+          <Route path="/shopping" element={showNutrition ? <Shopping /> : <Navigate to="/" replace />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/history" element={<History />} />
           <Route path="/analytics" element={<Analytics />} />

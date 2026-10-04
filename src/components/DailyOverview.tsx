@@ -59,7 +59,7 @@ function Tile({
 /** Kompakter Tagesüberblick über Fitness + Ernährung, oben auf „Heute". */
 export function DailyOverview() {
   const navigate = useNavigate()
-  const { setWorld } = usePrefs()
+  const { setWorld, showNutrition } = usePrefs()
   const { data: allSets } = useAllSets()
   const { data: settings } = useNutritionSettings()
   const { data: entries } = useFoodEntries(today())
@@ -78,6 +78,9 @@ export function DailyOverview() {
     setWorld(w)
     navigate(to)
   }
+
+  // Ohne Ernährung bliebe nur die Trainings-Kachel — dann lieber gar nicht zeigen.
+  if (!showNutrition) return null
 
   return (
     <div className="card space-y-2">

@@ -1,5 +1,7 @@
 // Erzeugt eine teilbare Bild-Karte (Canvas) eines Trainings — ohne Foto von dir,
 // nur Statistik. Teilt per Web-Share-API, sonst Download.
+import { accentColor } from './cosmetics'
+
 
 export interface StatCardData {
   title: string
@@ -26,7 +28,7 @@ export async function shareStatCard(data: StatCardData): Promise<void> {
   // Hintergrund-Verlauf
   const grad = ctx.createLinearGradient(0, 0, W, H)
   grad.addColorStop(0, '#0B0F19')
-  grad.addColorStop(1, '#7F1D1D')
+  grad.addColorStop(1, accentColor('dark', 0.55))
   ctx.fillStyle = grad
   ctx.fillRect(0, 0, W, H)
 
@@ -54,7 +56,7 @@ export async function shareStatCard(data: StatCardData): Promise<void> {
   const startY = 640
   stats.forEach(([value, label], i) => {
     const y = startY + i * 180
-    ctx.fillStyle = '#FB7185'
+    ctx.fillStyle = accentColor('light')
     ctx.font = 'bold 96px system-ui, sans-serif'
     ctx.fillText(value, W / 2, y)
     ctx.fillStyle = 'rgba(255,255,255,0.7)'
