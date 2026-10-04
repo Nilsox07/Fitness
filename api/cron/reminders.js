@@ -75,15 +75,32 @@ export default async function handler(req, res) {
     // Nicht öfter als alle 2 Tage erinnern
     if (sub.last_reminded && daysBetween(today, new Date(sub.last_reminded)) < 2) continue
 
+    // Buddy spricht: ein paar Varianten, damit es nicht immer gleich klingt
+    const pick = (arr) => arr[(today.getUTCDate() + sub.endpoint.length) % arr.length]
     const payload = JSON.stringify(
       streakDanger
-        ? { title: '🔥 Serie in Gefahr!', body: 'Trainiere heute, damit deine Wochen-Serie nicht reißt.' }
+        ? {
+            title: 'Buddy: Unsere Serie wackelt! 🔥',
+            body: pick([
+              'Nur noch ein Training diese Woche und die Serie hält. Heute?',
+              'Ich will die Serie nicht verlieren … kurzes Training reicht schon!',
+              'Keine Zeit? 10-Minuten-Schnell-Workout zählt auch.',
+            ]),
+            tag: 'fitness-reminder',
+            url: '/',
+          }
         : {
-            title: 'Zeit fürs Gym 💪',
+            title: daysSince > 900 ? 'Buddy wartet auf dich 👋' : 'Buddy vermisst das Gym 😴',
             body:
               daysSince > 900
-                ? 'Starte heute dein erstes Training!'
-                : `Du warst ${daysSince} Tage nicht im Gym. Auf geht's!`,
+                ? 'Lass uns heute dein erstes Training machen!'
+                : pick([
+                    `${daysSince} Tage ohne Training – ich werd schon ganz müde. Gehen wir heute?`,
+                    `Schon ${daysSince} Tage Pause. Komm, nur eine kurze Einheit!`,
+                    `Ich langweile mich … ${daysSince} Tage kein Gym. Heute wieder?`,
+                  ]),
+            tag: 'fitness-reminder',
+            url: '/',
           },
     )
 
