@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Loader2, RotateCcw, TriangleAlert, UtensilsCrossed, X } from 'lucide-react'
 import type { FoodEstimate, MealAnalysis } from '../../lib/ai'
 import { scoreMeal } from '../../lib/mealScore'
+import { useDietStyle } from '../../hooks/useNutrition'
 import { MEALS, MEAL_LABEL, type Meal, type NutritionGoal } from '../../types'
 import { ScoreRing, TONE_TEXT } from './ScoreRing'
 import { MacroBar } from './MacroBar'
@@ -272,9 +273,11 @@ function ReadyBody({
   const values = useMemo(() => items.map((it) => effective(it, portion)), [items, portion])
   const totals = useMemo(() => totalsOf(values), [values])
   const remainingKcal = day.kcalTarget > 0 ? day.kcalTarget - day.eaten.kcal : null
+  const diet = useDietStyle()
+  const flags = result.flags
   const score = useMemo(
-    () => scoreMeal(totals, { goal: day.goal, remainingKcal, grams: totals.grams }),
-    [totals, day.goal, remainingKcal],
+    () => scoreMeal(totals, { goal: day.goal, remainingKcal, grams: totals.grams, diet, flags }),
+    [totals, day.goal, remainingKcal, diet, flags],
   )
   const bigKcal = Math.round(useCountUp(totals.kcal))
 

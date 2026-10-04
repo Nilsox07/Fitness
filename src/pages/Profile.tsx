@@ -18,7 +18,6 @@ import {
   Users,
   Utensils,
   Volume2,
-  Watch,
   Flame,
   Layers,
   ClipboardList,
@@ -35,6 +34,8 @@ import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
 import { enablePush, pushSupported, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
 import { computeXp, levelInfo } from '../lib/xp'
+import { buddyLevelInfo } from '../lib/buddyLevel'
+import { localDate } from '../lib/day'
 import { setSoundEnabled, soundEnabled } from '../lib/sound'
 import { useFitbitStatus, useFitbitSync } from '../hooks/useFitbit'
 import { connectFitbit, type FitbitSync } from '../lib/fitbit'
@@ -59,7 +60,7 @@ import { NameSheet } from '../components/profile/NameSheet'
 import { useMyProfile } from '../hooks/useSocial'
 
 /** Unterseiten des Profils (neue Version), per ?s=… in der URL → Zurück-Geste funktioniert. */
-type Sub = 'goal' | 'review' | 'version' | 'coach' | 'push' | 'unlock' | 'export' | 'fitbit'
+type Sub = 'goal' | 'review' | 'version' | 'coach' | 'push' | 'unlock' | 'export'
 
 const SUB_TITLE: Record<Sub, string> = {
   goal: 'Ziel & Körperdaten',
@@ -69,7 +70,6 @@ const SUB_TITLE: Record<Sub, string> = {
   push: 'Trainings-Erinnerungen',
   unlock: 'Freischaltungen',
   export: 'Daten exportieren',
-  fitbit: 'Fitbit',
 }
 
 const MODES: { v: ThemeMode; label: string }[] = [
@@ -114,9 +114,9 @@ export default function Profile() {
   // Rückkehr vom Fitbit-OAuth: einmal synchronisieren
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('fitbit')
-    // Neue Version: direkt die Fitbit-Unterseite zeigen (dort steht die Meldung).
+    // Neue Version: Fitbit ist dort ausgeblendet → nur die URL aufräumen.
     const cleanUrl = () =>
-      isNew ? navigate('/profile?s=fitbit', { replace: true }) : window.history.replaceState({}, '', '/profile')
+      isNew ? navigate('/profile', { replace: true }) : window.history.replaceState({}, '', '/profile')
     if (p === 'connected') {
       setFitbitMsg('Fitbit verbunden')
       syncFitbit()
@@ -127,7 +127,18 @@ export default function Profile() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const level = levelInfo(computeXp(allSets ?? [])).level
+  const { data: settings } = useNutritionSettings()
+  // Neue App: ein Level für alles (Buddy-Level: Training + Ernährung) — auch für
+  // die Freischaltungen. Klassisch: unverändert das Trainings-Level.
+  const level = isNew
+    ? buddyLevelInfo({
+        sets: allSets ?? [],
+        foodEntries: foodEntries ?? [],
+        proteinTarget: settings?.protein_target ?? 0,
+        showNutrition,
+        today: localDate(),
+      }).level
+    : levelInfo(computeXp(allSets ?? [])).level
 
   function chooseAccent(id: string, min: number) {
     if (level < min) return
@@ -163,7 +174,6 @@ export default function Profile() {
 
   // ---------- Neue Version: Kopfkarte + gruppierte Listen + Unterseiten ----------
   const [params, setParams] = useSearchParams()
-  const { data: settings } = useNutritionSettings()
 
   const available: Record<Sub, boolean> = {
     goal: showNutrition,
@@ -173,7 +183,7 @@ export default function Profile() {
     push: pushSupported,
     unlock: true,
     export: true,
-    fitbit: Boolean(fitbit?.configured),
+    // Fitbit ist in der neuen App ausgeblendet (Code bleibt für die klassische Version).
   }
   const rawSub = params.get('s') as Sub | null
   const sub: Sub | null =
@@ -301,7 +311,7 @@ export default function Profile() {
           {sub === 'unlock' && (
             <div className="card space-y-3">
               <p className="text-xs text-cocoa-light">
-                Mit jedem Level schaltest du mehr frei — du bist auf{' '}
+                Mit jedem Buddy-Level schaltest du mehr frei — du bist auf{' '}
                 <span className="tabular font-semibold text-cocoa">Level {level}</span>.
               </p>
               <div>
@@ -389,44 +399,6 @@ export default function Profile() {
                   </button>
                 )}
               </div>
-            </div>
-          )}
-
-          {sub === 'fitbit' && fitbit?.configured && (
-            <div className="card space-y-3">
-              <p className="text-sm text-cocoa-light">Gewicht, Schritte & Ruhepuls importieren.</p>
-              {fitbit.connected ? (
-                <button
-                  className="btn-primary w-full"
-                  onClick={syncFitbit}
-                  disabled={fitbitSync.isPending}
-                >
-                  {fitbitSync.isPending ? '…' : 'Sync'}
-                </button>
-              ) : (
-                <button className="btn-primary w-full" onClick={() => connectFitbit()}>
-                  Verbinden
-                </button>
-              )}
-              {fitbitData && (
-                <div className="grid grid-cols-3 gap-2 rounded-xl bg-sand p-2 text-center text-xs">
-                  <div>
-                    <div className="tabular font-semibold text-cocoa">{fitbitData.steps ?? '–'}</div>
-                    <div className="text-cocoa-light">Schritte</div>
-                  </div>
-                  <div>
-                    <div className="tabular font-semibold text-cocoa">{fitbitData.restingHr ?? '–'}</div>
-                    <div className="text-cocoa-light">Ruhepuls</div>
-                  </div>
-                  <div>
-                    <div className="tabular font-semibold text-cocoa">
-                      {fitbitData.weight != null ? `${fitbitData.weight} kg` : '–'}
-                    </div>
-                    <div className="text-cocoa-light">Gewicht</div>
-                  </div>
-                </div>
-              )}
-              {fitbitMsg && <p className="text-sm text-cocoa-light">{fitbitMsg}</p>}
             </div>
           )}
         </div>
@@ -574,20 +546,12 @@ export default function Profile() {
           <Row icon={Dumbbell} label="Übungen" onClick={() => navigate('/exercises')} />
           <Row
             icon={Award}
-            label="Sammlung"
+            label="Buddy"
             value={<span className="tabular">Lv {level}</span>}
             onClick={() => navigate('/badges')}
           />
           <Row icon={Users} label="Community" onClick={() => navigate('/social')} />
           <Row icon={Download} label="Daten exportieren" value="CSV" onClick={() => openSub('export')} />
-          {fitbit?.configured && (
-            <Row
-              icon={Watch}
-              label="Fitbit"
-              value={fitbit.connected ? 'Verbunden' : 'Nicht verbunden'}
-              onClick={() => openSub('fitbit')}
-            />
-          )}
         </Group>
 
         <Group title="Konto">

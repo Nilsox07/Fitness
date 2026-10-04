@@ -49,8 +49,12 @@ function QuestRow({ q }: { q: Quest }) {
   )
 }
 
-/** Ernährungs-Gamification: Level/XP, Streak, Quests, Badges (analog zu Fitness). */
-export function NutritionGamePanel() {
+/**
+ * Ernährungs-Gamification: Level/XP, Streak, Quests, Badges (analog zu Fitness).
+ * `compact` (neue App, unter der Buddy-Level-Karte): nur Quests + Kennzahlen — die
+ * Ernährungs-XP fließen dort ins Buddy-Level, das auch die einzige Level-up-Feier hat.
+ */
+export function NutritionGamePanel({ compact = false }: { compact?: boolean } = {}) {
   const today = localDate()
   const { data: allEntries } = useAllFoodEntries()
   const { data: todayEntries } = useFoodEntries(today)
@@ -98,7 +102,7 @@ export function NutritionGamePanel() {
   const [celebrate, setCelebrate] = useState(false)
   useEffect(() => {
     // Erst feiern, wenn die Historie geladen ist (sonst Level 1 → falscher Vergleich).
-    if (!allEntries) return
+    if (!allEntries || compact) return
     try {
       const seen = Number(localStorage.getItem('seen_nutrition_level') || '1')
       if (g.xp.level > seen) {
@@ -109,7 +113,7 @@ export function NutritionGamePanel() {
     } catch {
       /* ignore */
     }
-  }, [g.xp.level, allEntries])
+  }, [g.xp.level, allEntries, compact])
 
   return (
     <section className="card space-y-3">
@@ -120,28 +124,34 @@ export function NutritionGamePanel() {
         </div>
       )}
 
-      <div className="flex items-center gap-3">
-        <div className="text-4xl">{foodMascot(g.xp.level)}</div>
-        <div className="flex-1">
-          <div className="flex items-baseline justify-between">
-            <span className="font-bold">
-              Ernährungs-Level <span className="tabular">{g.xp.level}</span>
-            </span>
-            {g.streak > 0 && (
-              <span className="tabular flex items-center gap-1 text-xs text-cocoa-light">
-                <Flame size={14} />
-                {g.streak} Tage
+      {compact ? (
+        <div className="tabular text-xs text-cocoa-light">
+          {g.daysLogged} {g.daysLogged === 1 ? 'Tag' : 'Tage'} geloggt · {g.proteinDays}× Eiweißziel
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <div className="text-4xl">{foodMascot(g.xp.level)}</div>
+          <div className="flex-1">
+            <div className="flex items-baseline justify-between">
+              <span className="font-bold">
+                Ernährungs-Level <span className="tabular">{g.xp.level}</span>
               </span>
-            )}
-          </div>
-          <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-sand-dark/40">
-            <div className="h-full bg-brand" style={{ width: `${g.xp.progress}%` }} />
-          </div>
-          <div className="tabular mt-0.5 text-[11px] text-cocoa-muted">
-            {g.xp.xpInLevel} / {g.xp.xpForLevel} XP · {g.daysLogged} Tage geloggt
+              {g.streak > 0 && (
+                <span className="tabular flex items-center gap-1 text-xs text-cocoa-light">
+                  <Flame size={14} />
+                  {g.streak} Tage
+                </span>
+              )}
+            </div>
+            <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-sand-dark/40">
+              <div className="h-full bg-brand" style={{ width: `${g.xp.progress}%` }} />
+            </div>
+            <div className="tabular mt-0.5 text-[11px] text-cocoa-muted">
+              {g.xp.xpInLevel} / {g.xp.xpForLevel} XP · {g.daysLogged} Tage geloggt
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="space-y-2 rounded-xl bg-sand p-3">
         <div className="flex items-center gap-1.5 text-sm font-semibold">
@@ -160,21 +170,25 @@ export function NutritionGamePanel() {
         ))}
       </div>
 
-      <div className="text-sm font-semibold">Ernährungs-Badges</div>
-      <div className="grid grid-cols-4 gap-2">
-        {g.badges.map((a) => (
-          <div
-            key={a.id}
-            title={a.label}
-            className={`flex flex-col items-center rounded-xl p-2 text-center ${
-              a.done ? 'bg-gold/15' : 'bg-sand opacity-40'
-            }`}
-          >
-            <span className="text-xl">{a.icon}</span>
-            <span className="mt-0.5 text-[10px] leading-tight text-cocoa-light">{a.label}</span>
+      {!compact && (
+        <>
+          <div className="text-sm font-semibold">Ernährungs-Badges</div>
+          <div className="grid grid-cols-4 gap-2">
+            {g.badges.map((a) => (
+              <div
+                key={a.id}
+                title={a.label}
+                className={`flex flex-col items-center rounded-xl p-2 text-center ${
+                  a.done ? 'bg-gold/15' : 'bg-sand opacity-40'
+                }`}
+              >
+                <span className="text-xl">{a.icon}</span>
+                <span className="mt-0.5 text-[10px] leading-tight text-cocoa-light">{a.label}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </section>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   useNutritionSettings,
   useUpsertNutritionSettings,
@@ -12,6 +12,21 @@ import {
   defaultWaterTarget,
 } from '../lib/nutrition'
 import { getDietAvoid, setDietAvoid } from '../lib/ai'
+import { usePrefs } from '../lib/prefs'
+import {
+  DIET_MACROS,
+  DIET_MACRO_HINT,
+  DIET_MACRO_LABEL,
+  DIET_RESTRICTIONS,
+  DIET_RESTRICTION_LABEL,
+  FASTING_HINT,
+  FASTING_LABEL,
+  FASTING_OPTIONS,
+  fastingWindow,
+  resolveDiet,
+  toggleRestriction,
+  type DietStyle,
+} from '../lib/dietStyle'
 import type { ActivityLevel, NutritionGoal, Sex } from '../types'
 
 const EMPTY: NutritionSettingsInput = {
@@ -26,6 +41,94 @@ const EMPTY: NutritionSettingsInput = {
   carbs_target: 0,
   fat_target: 0,
   water_target_ml: 2500,
+}
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-sm font-semibold transition active:scale-95 ${
+        active ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+/** Abschnitt „Ernährungsweise": Makro-Stil, Einschränkungen, Intervallfasten. */
+function DietSection({ diet, onChange }: { diet: DietStyle; onChange: (d: DietStyle) => void }) {
+  const win = fastingWindow(diet)
+  return (
+    <div className="space-y-3 rounded-xl border border-sand-dark/60 p-3">
+      <div className="text-sm font-semibold text-cocoa">Ernährungsweise</div>
+      <div>
+        <label className="label">Makro-Stil</label>
+        <div className="flex flex-wrap gap-1.5">
+          {DIET_MACROS.map((m) => (
+            <Chip key={m} active={diet.macro === m} onClick={() => onChange({ ...diet, macro: m })}>
+              {DIET_MACRO_LABEL[m]}
+            </Chip>
+          ))}
+        </div>
+        <p className="mt-1 text-xs text-cocoa-light">{DIET_MACRO_HINT[diet.macro]}</p>
+      </div>
+      <div>
+        <label className="label">Einschränkungen</label>
+        <div className="flex flex-wrap gap-1.5">
+          {DIET_RESTRICTIONS.map((r) => (
+            <Chip
+              key={r}
+              active={diet.restrictions.includes(r)}
+              onClick={() => onChange({ ...diet, restrictions: toggleRestriction(diet.restrictions, r) })}
+            >
+              {DIET_RESTRICTION_LABEL[r]}
+            </Chip>
+          ))}
+        </div>
+        <p className="mt-1 text-xs text-cocoa-light">
+          Score &amp; KI achten darauf (z. B. Hinweis „Nicht vegan").
+        </p>
+      </div>
+      <div>
+        <label className="label">Intervallfasten</label>
+        <div className="flex flex-wrap gap-1.5">
+          {FASTING_OPTIONS.map((f) => (
+            <Chip key={f} active={diet.fasting === f} onClick={() => onChange({ ...diet, fasting: f })}>
+              {FASTING_LABEL[f]}
+            </Chip>
+          ))}
+        </div>
+        {diet.fasting !== 'none' && <p className="mt-1 text-xs text-cocoa-light">{FASTING_HINT[diet.fasting]}</p>}
+        {win && (
+          <div className="mt-2 flex items-center gap-2">
+            <label className="text-sm text-cocoa-light" htmlFor="fasting-start">
+              Essensfenster ab
+            </label>
+            <input
+              id="fasting-start"
+              type="time"
+              step={900}
+              className="input w-28 py-1.5"
+              value={diet.fastingStart}
+              onChange={(e) => e.target.value && onChange({ ...diet, fastingStart: e.target.value })}
+            />
+            <span className="tabular text-sm text-cocoa-light">bis {win.end}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function FieldError({ msg }: { msg: string | null }) {
@@ -49,6 +152,10 @@ export function GoalEditor({
   const [form, setForm] = useState<NutritionSettingsInput>(EMPTY)
   const [avoid, setAvoid] = useState(() => getDietAvoid())
   const [loaded, setLoaded] = useState(false)
+  const { isNew } = usePrefs()
+  // Ernährungsweise: nur im neuen Modus wählbar; der klassische Modus rechnet
+  // mit der gespeicherten Auswahl weiter (damit sich nichts unbemerkt zurücksetzt).
+  const [diet, setDiet] = useState<DietStyle>(() => resolveDiet(settings ?? null))
 
   // Gespeicherte Körperdaten/Ziele einmalig übernehmen, sobald sie geladen sind.
   useEffect(() => {
@@ -69,10 +176,13 @@ export function GoalEditor({
       fat_target: settings.fat_target ?? EMPTY.fat_target,
       water_target_ml: settings.water_target_ml || defaultWaterTarget(weight) || EMPTY.water_target_ml,
     })
+    setDiet(resolveDiet(settings))
     setLoaded(true)
   }, [settings, loaded])
 
-  const t = computeTargets(form)
+  const t = computeTargets({ ...form, diet: diet.macro })
+  const base = computeTargets(form)
+  const showDelta = isNew && diet.macro !== 'balanced'
   const [error, setError] = useState<string | null>(null)
 
   // Plausibilitätsprüfung (DB: Alter 10–100, Größe/Gewicht > 0, Trinkziel ≥ 0).
@@ -112,6 +222,7 @@ export function GoalEditor({
         carbs_target: t.carbs,
         fat_target: t.fat,
         water_target_ml: Math.round(form.water_target_ml || defaultWaterTarget(form.weight_kg)),
+        ...(isNew ? { diet } : {}),
       })
       onSaved?.()
     } catch (e) {
@@ -243,26 +354,39 @@ export function GoalEditor({
         </p>
       </div>
 
+      {isNew && <DietSection diet={diet} onChange={setDiet} />}
+
       {/* Live-Vorschau der berechneten Nährwerte */}
       <div className="rounded-xl bg-sand p-3">
-        <div className="mb-1 text-xs font-semibold text-cocoa-light">Dein Tagesziel</div>
+        <div className="mb-1 flex items-center justify-between gap-2 text-xs font-semibold text-cocoa-light">
+          <span>Dein Tagesziel</span>
+          {showDelta && <span className="truncate font-normal">vs. Ausgewogen</span>}
+        </div>
         <div className="grid grid-cols-4 gap-1 text-center">
-          <div>
-            <div className="tabular text-base font-bold text-cocoa">{t.kcal}</div>
-            <div className="text-[11px] text-cocoa-light">kcal</div>
-          </div>
-          <div>
-            <div className="tabular text-base font-bold text-cocoa">{t.protein}</div>
-            <div className="text-[11px] text-cocoa-light">Eiweiß</div>
-          </div>
-          <div>
-            <div className="tabular text-base font-bold text-cocoa">{t.carbs}</div>
-            <div className="text-[11px] text-cocoa-light">KH</div>
-          </div>
-          <div>
-            <div className="tabular text-base font-bold text-cocoa">{t.fat}</div>
-            <div className="text-[11px] text-cocoa-light">Fett</div>
-          </div>
+          {(
+            [
+              ['kcal', 'kcal'],
+              ['protein', 'Eiweiß'],
+              ['carbs', 'KH'],
+              ['fat', 'Fett'],
+            ] as const
+          ).map(([k, label]) => {
+            const delta = t[k] - base[k]
+            return (
+              <div key={k}>
+                <div className="tabular text-base font-bold text-cocoa">{t[k]}</div>
+                <div className="text-[11px] text-cocoa-light">{label}</div>
+                {showDelta && delta !== 0 && (
+                  <div
+                    className={`tabular text-[11px] font-semibold ${delta > 0 ? 'text-success' : 'text-gold'}`}
+                  >
+                    {delta > 0 ? '+' : '−'}
+                    {Math.abs(delta)}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 

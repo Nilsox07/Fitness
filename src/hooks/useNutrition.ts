@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
@@ -55,8 +56,9 @@ export function useNutritionSettings() {
 
 /** Aktive Ernährungsweise (DB oder localStorage-Fallback vor Migration 0027). */
 export function useDietStyle(): DietStyle {
-  const { data } = useNutritionSettings()
-  return resolveDiet(data)
+  const { data, dataUpdatedAt } = useNutritionSettings()
+  // dataUpdatedAt: auch nach einem Fallback-Speichern (gleiche Zeile) neu auflösen
+  return useMemo(() => resolveDiet(data), [data, dataUpdatedAt])
 }
 
 // null = unbekannt (noch keine Zeile gelesen) → beim Speichern ausprobieren.

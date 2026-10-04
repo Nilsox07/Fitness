@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { ChevronDown, Flame, Target } from 'lucide-react'
 import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
 import { useWater } from '../../hooks/useWater'
@@ -6,28 +6,23 @@ import { useAllSets } from '../../hooks/useWorkouts'
 import { kcalTargetFor, trainedOn } from '../../lib/dayTarget'
 import { localDate } from '../../lib/day'
 import { sumEntries } from '../../lib/nutrition'
-import { levelInfo } from '../../lib/xp'
 import {
   byDay,
-  computeNutritionXp,
   nutritionDailyQuests,
   nutritionStreak,
   nutritionWeeklyQuests,
 } from '../../lib/nutritionXp'
 import { NutritionGamePanel } from '../NutritionGamePanel'
 import { Ring } from '../nutrition-home/Ring'
-import { nf, useGameToggle } from '../stats/shared'
+import { MyBuddy } from '../buddy/MyBuddy'
+import { BuddyLevelUp } from '../buddy/BuddyLevelUp'
+import { useBuddyLevel } from '../buddy/useBuddy'
+import { nf } from '../stats/shared'
 
-/** Gleiches Maskottchen wie im NutritionGamePanel. */
-function foodMascot(level: number): string {
-  if (level >= 20) return '🏆'
-  if (level >= 12) return '🥇'
-  if (level >= 8) return '🥗'
-  if (level >= 4) return '🍎'
-  return '🌱'
-}
-
-/** Kompakte Gamification-Karte: Maskottchen im XP-Ring, Level, Serie, Quests; aufklappbar. */
+/**
+ * Kompakte Gamification-Karte: Buddy im XP-Ring, Buddy-Level (Training + Ernährung),
+ * Serie, Quests; aufklappbar.
+ */
 export function NutritionGameCard({ style }: { style?: CSSProperties }) {
   const today = localDate()
   const { data: allEntries } = useAllFoodEntries()
@@ -54,33 +49,34 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
       ...nutritionWeeklyQuests(entries, proteinTarget),
     ]
     return {
-      xp: levelInfo(computeNutritionXp(entries, proteinTarget, today)),
       streak: nutritionStreak(new Set(byDay(entries).keys()), today),
       open: quests.filter((q) => !q.done).length,
     }
   }, [allEntries, todayEntries, water, settings, allSets, today])
-  const toggle = useGameToggle(g.xp.level, 'seen_nutrition_level')
+  const level = useBuddyLevel()
+  const [open, setOpen] = useState(false)
 
   return (
     <section className="space-y-5" style={style}>
+      <BuddyLevelUp />
       <button
         className="card flex w-full items-center gap-3 text-left transition active:scale-[0.99]"
-        onClick={toggle.toggle}
-        aria-expanded={toggle.open}
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
       >
-        <Ring size={52} stroke={4} progress={g.xp.progress / 100} trackClass="stroke-sand-dark/50">
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-sand text-2xl leading-none">
-            {foodMascot(g.xp.level)}
+        <Ring size={52} stroke={4} progress={level.progress / 100} trackClass="stroke-sand-dark/50">
+          <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-sand">
+            <MyBuddy size={40} mood="happy" animate={false} />
           </span>
         </Ring>
         <span className="min-w-0 flex-1">
           <span className="block text-[11px] font-semibold uppercase tracking-wide text-cocoa-muted">
-            Ernährungs-Level
+            Buddy-Level
           </span>
           <span className="tabular flex items-baseline gap-1.5">
-            <span className="text-xl font-bold text-cocoa">Level {g.xp.level}</span>
+            <span className="text-xl font-bold text-cocoa">Level {level.level}</span>
             <span className="text-xs text-cocoa-light">
-              {nf(g.xp.xpInLevel)} / {nf(g.xp.xpForLevel)} XP
+              {nf(level.xpInLevel)} / {nf(level.xpForLevel)} XP
             </span>
           </span>
           <span className="tabular mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-cocoa-light">
@@ -100,12 +96,12 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
         </span>
         <ChevronDown
           size={18}
-          className={`shrink-0 text-cocoa-muted transition-transform duration-200 ${toggle.open ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-cocoa-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         />
       </button>
       {/* Bleibt gemountet, damit Effekte (z. B. Freeze-Vergabe) weiterlaufen. */}
-      <div className={toggle.open ? 'anim-fade space-y-5' : 'hidden'}>
-        <NutritionGamePanel />
+      <div className={open ? 'anim-fade space-y-5' : 'hidden'}>
+        <NutritionGamePanel compact />
       </div>
     </section>
   )

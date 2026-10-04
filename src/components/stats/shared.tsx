@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { accentColor } from '../../lib/cosmetics'
 import { ChevronDown, Minus, TrendingDown, TrendingUp } from 'lucide-react'
 import { useTheme } from '../../lib/theme'
@@ -151,22 +151,4 @@ export function GameSummaryCard({
       <div className={open ? 'anim-fade space-y-5' : 'hidden'}>{children}</div>
     </section>
   )
-}
-
-/** Lokaler Auf-/Zu-Zustand; öffnet automatisch, wenn ein Level-up ansteht. */
-export function useGameToggle(level: number, storageKey: string) {
-  const [open, setOpen] = useState(false)
-  const [autoOpened, setAutoOpened] = useState(false)
-  let seen = 1
-  try {
-    seen = Number(localStorage.getItem(storageKey) || '1')
-  } catch {
-    /* ignore */
-  }
-  // Level-up steht an → einmalig aufklappen, damit die Feier sichtbar ist.
-  if (!autoOpened && level > 1 && level > seen && !open) {
-    setAutoOpened(true)
-    setOpen(true)
-  }
-  return { open, toggle: () => setOpen((o) => !o) }
 }
