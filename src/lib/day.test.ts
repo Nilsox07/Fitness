@@ -28,3 +28,11 @@ describe('trainingDay', () => {
     expect(trainingDay(new Date(2027, 0, 1, 2, 0))).toBe('2026-12-31')
   })
 })
+
+describe('trainingDay mit eigener Wechsel-Stunde', () => {
+  it('nutzt den übergebenen Wechsel', () => {
+    expect(trainingDay(new Date(2026, 9, 5, 0, 30), 0)).toBe('2026-10-05')
+    expect(trainingDay(new Date(2026, 9, 5, 5, 30), 6)).toBe('2026-10-04')
+    expect(trainingDay(new Date(2026, 9, 5, 6, 0), 6)).toBe('2026-10-05')
+  })
+})

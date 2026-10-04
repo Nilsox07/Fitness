@@ -38,17 +38,20 @@ export function RingAvatar({
   size = 64,
   innerClassName = 'bg-cream',
   buddy,
+  progress,
 }: {
   name?: string | null
   sessions: number
   size?: number
   innerClassName?: string
   buddy?: BuddyLook
+  /** 0…1 überschreibt den Trainings-Ring (z. B. Eiweiß-Tage in der Ernährungs-Welt) */
+  progress?: number
 }) {
   const stroke = Math.max(3, Math.round(size / 20))
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
-  const ratio = Math.min(1, sessions / WEEKLY_GOAL)
+  const ratio = Math.max(0, Math.min(1, progress ?? sessions / WEEKLY_GOAL))
   const full = ratio >= 1
   return (
     <span className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>

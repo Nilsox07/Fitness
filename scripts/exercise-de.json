@@ -1,0 +1,5466 @@
+{
+ "3_4_Sit-Up": {
+  "name": "3/4-Sit-up",
+  "steps": [
+   "Rücklings auf den Boden legen, Knie beugen und Füße fixieren; Hände seitlich an den Kopf.",
+   "Hüfte und Wirbelsäule beugen und den Oberkörper Richtung Knie anheben, bis er senkrecht zum Boden steht.",
+   "Kontrolliert nur etwa drei Viertel des Weges zurücksinken und wiederholen."
+  ]
+ },
+ "Ab_Crunch_Machine": {
+  "name": "Bauchmaschine (Crunch)",
+  "steps": [
+   "Leichtes Gewicht wählen, Füße unter die Polster, Griffe oben fassen, Trizeps auf den Polstern ablegen.",
+   "Beine anheben und gleichzeitig den Oberkörper einrollen; dabei ausatmen.",
+   "Kurz halten und langsam einatmend in die Ausgangsposition zurückkehren."
+  ]
+ },
+ "Ab_Roller": {
+  "name": "Bauchroller (Ab Wheel)",
+  "steps": [
+   "Im Kniestand den Roller mit beiden Händen vor dir auf den Boden setzen.",
+   "Langsam nach vorne rollen, bis der Körper gestreckt ist, ohne den Boden zu berühren; dabei einatmen.",
+   "Bauch fest anspannen und ausatmend zurück in die Ausgangsposition ziehen."
+  ]
+ },
+ "Advanced_Kettlebell_Windmill": {
+  "name": "Kettlebell-Windmühle (fortgeschritten)",
+  "steps": [
+   "Eine Kettlebell mit einem Arm über Kopf drücken und den Arm gestreckt halten.",
+   "Füße etwa 45° von der Kettlebell-Seite wegdrehen, Gesäß Richtung Kettlebell-Seite schieben.",
+   "So tief wie möglich seitlich absenken, kurz halten und zurück aufrichten."
+  ]
+ },
+ "Air_Bike": {
+  "name": "Fahrrad-Crunch",
+  "steps": [
+   "Rücklings liegen, Hände an den Kopf, Schultern anheben; Knie 90° angewinkelt in die Luft.",
+   "Rechtes Bein strecken, linkes Knie heranziehen und den rechten Ellbogen zum linken Knie drehen; ausatmen.",
+   "Seite wechseln und im Wechsel radfahrend fortfahren."
+  ]
+ },
+ "Alternate_Hammer_Curl": {
+  "name": "Hammercurls im Wechsel",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich mit Handflächen zum Körper, Ellbogen am Rumpf.",
+   "Oberarm fixiert lassen und eine Hantel bis auf Schulterhöhe curlen; ausatmen und kurz halten.",
+   "Langsam absenken und mit dem anderen Arm wiederholen."
+  ]
+ },
+ "Alternate_Heel_Touchers": {
+  "name": "Fersen-Tippen im Wechsel",
+  "steps": [
+   "Rücklings liegen, Knie gebeugt, Füße etwa 50 cm auseinander, Arme neben dem Körper.",
+   "Oberkörper leicht anheben und seitlich zur rechten Ferse crunchen; kurz halten.",
+   "Zurück zur Mitte und zur linken Ferse wiederholen; im Wechsel fortfahren."
+  ]
+ },
+ "Alternate_Incline_Dumbbell_Curl": {
+  "name": "Schrägbank-Curls im Wechsel",
+  "steps": [
+   "Auf eine Schrägbank setzen, Kurzhanteln hängen gestreckt, Ellbogen nah am Körper.",
+   "Eine Hantel mit Supination bis auf Schulterhöhe curlen; Oberarm bleibt ruhig.",
+   "Langsam absenken und mit der anderen Seite wiederholen."
+  ]
+ },
+ "Alternate_Leg_Diagonal_Bound": {
+  "name": "Diagonale Sprungläufe",
+  "steps": [
+   "Locker stehen, ein Fuß leicht vor dem anderen.",
+   "Mit dem vorderen Bein kräftig abdrücken, das andere Knie hoch nach vorn treiben und diagonal zur Seite springen.",
+   "Auf dem anderen Bein landen und im Wechsel weiterspringen."
+  ]
+ },
+ "Alternating_Cable_Shoulder_Press": {
+  "name": "Kabel-Schulterdrücken im Wechsel",
+  "steps": [
+   "Kabelzüge unten einstellen, Griffe auf Schulterhöhe halten, Handflächen nach vorn.",
+   "Brust raus und eine Seite gerade über Kopf drücken.",
+   "Kurz halten, zurückführen und mit der anderen Seite wiederholen."
+  ]
+ },
+ "Alternating_Deltoid_Raise": {
+  "name": "Front- & Seitheben im Wechsel",
+  "steps": [
+   "Stehend Kurzhanteln seitlich halten, Ellbogen leicht gebeugt.",
+   "Hanteln vor dem Körper bis Schulterhöhe heben und wieder absenken.",
+   "Bei der nächsten Wiederholung seitlich bis Schulterhöhe heben; abwechselnd fortfahren."
+  ]
+ },
+ "Alternating_Floor_Press": {
+  "name": "Kettlebell-Bodendrücken im Wechsel",
+  "steps": [
+   "Rücklings auf dem Boden liegen, zwei Kettlebells über der Brust gestreckt halten.",
+   "Eine Kettlebell zur Brust absenken.",
+   "Wieder hochdrücken und mit der anderen Seite wiederholen."
+  ]
+ },
+ "Alternating_Hang_Clean": {
+  "name": "Kettlebell Hang Clean im Wechsel",
+  "steps": [
+   "Zwei Kettlebells zwischen den Füßen, Gesäß zurück, Blick nach vorn.",
+   "Eine Kettlebell durch Hüft- und Beinstreckung zur Schulter umsetzen, Handgelenk dabei drehen.",
+   "Absenken und mit der anderen Kettlebell wiederholen."
+  ]
+ },
+ "Alternating_Kettlebell_Press": {
+  "name": "Kettlebell-Drücken im Wechsel",
+  "steps": [
+   "Zwei Kettlebells zu den Schultern umsetzen.",
+   "Eine Kettlebell gerade über Kopf drücken, die andere bleibt an der Schulter.",
+   "Absenken und sofort mit dem anderen Arm drücken."
+  ]
+ },
+ "Alternating_Kettlebell_Row": {
+  "name": "Kettlebell-Rudern im Wechsel",
+  "steps": [
+   "Zwei Kettlebells vor den Füßen, Knie leicht beugen, Oberkörper mit geradem Rücken vorbeugen und greifen.",
+   "Eine Kettlebell zum Bauch ziehen, Schulterblatt zurückziehen.",
+   "Absenken und mit dem anderen Arm wiederholen."
+  ]
+ },
+ "Alternating_Renegade_Row": {
+  "name": "Renegade Row im Wechsel",
+  "steps": [
+   "Liegestützposition auf zwei Kettlebells, Körper gerade, Füße eher breit.",
+   "Eine Kettlebell in den Boden drücken, die andere zur Hüfte rudern.",
+   "Absetzen und die Seite wechseln."
+  ]
+ },
+ "Anti-Gravity_Press": {
+  "name": "Anti-Gravity-Press",
+  "steps": [
+   "Bauchlings auf eine Schrägbank legen, Langhantel im Obergriff vom Boden aufnehmen und zur Brust curlen.",
+   "Stange durch Strecken der Ellbogen vor dem Kopf nach vorn drücken; Arme parallel zum Boden.",
+   "Zurück in die Ausgangsposition führen und wiederholen."
+  ]
+ },
+ "Arnold_Dumbbell_Press": {
+  "name": "Arnold Press",
+  "steps": [
+   "Auf eine Bank mit Lehne setzen, Kurzhanteln vor der oberen Brust, Handflächen zum Körper.",
+   "Hanteln nach oben drücken und dabei die Handflächen nach vorn drehen, bis die Arme gestreckt sind.",
+   "Mit Rückdrehung langsam in die Ausgangsposition absenken."
+  ]
+ },
+ "Around_The_Worlds": {
+  "name": "Around the World (Kurzhantel)",
+  "steps": [
+   "Rücklings auf einer Flachbank, Kurzhanteln neben den Oberschenkeln, Handflächen nach oben, Ellbogen leicht gebeugt.",
+   "Hanteln in einem Halbkreis parallel zum Boden bis über den Kopf führen; einatmen.",
+   "Bewegung umkehren und ausatmend zurückführen."
+  ]
+ },
+ "Back_Flyes_-_With_Bands": {
+  "name": "Reverse Flys mit Band",
+  "steps": [
+   "Band an einem Pfosten befestigen, Griffe fassen und zurücktreten, bis Spannung entsteht.",
+   "Arme gestreckt auf Schulterhöhe vor dem Körper halten.",
+   "Arme ausatmend seitlich nach hinten führen, kurz halten und kontrolliert zurück."
+  ]
+ },
+ "Backward_Medicine_Ball_Throw": {
+  "name": "Medizinball-Wurf rückwärts",
+  "steps": [
+   "Medizinball zwischen den Beinen halten, Partner oder freier Raum hinter dir.",
+   "In die Hocke gehen und explosiv strecken.",
+   "Ball dabei über den Kopf nach hinten werfen; zurückrollen lassen und wiederholen."
+  ]
+ },
+ "Balance_Board": {
+  "name": "Balance Board",
+  "steps": [
+   "Balance Board vor dir platzieren.",
+   "Daraufstellen und das Gleichgewicht finden.",
+   "Position so lange wie gewünscht halten."
+  ]
+ },
+ "Ball_Leg_Curl": {
+  "name": "Beinbeuger auf dem Gymnastikball",
+  "steps": [
+   "Rücklings liegen, Fersen auf dem Gymnastikball, Beine gestreckt.",
+   "Hüfte anheben, Gewicht auf Schulterblättern und Füßen.",
+   "Knie beugen und den Ball heranziehen, kurz halten und wieder strecken."
+  ]
+ },
+ "Band_Assisted_Pull-Up": {
+  "name": "Klimmzug mit Band-Unterstützung",
+  "steps": [
+   "Band um die Klimmzugstange schlingen, ein Knie in die Schlaufe setzen, Stange mittelbreit greifen.",
+   "Ellbogen nach unten an die Seite ziehen und das Kinn über die Stange bringen; nicht schwingen.",
+   "Kurz halten und kontrolliert absenken."
+  ]
+ },
+ "Band_Good_Morning": {
+  "name": "Good Morning mit Band",
+  "steps": [
+   "Auf ein Ende des Bandes stellen und das andere Ende hinter den Nacken legen.",
+   "Mit fast gestreckten Beinen und geradem Rücken aus der Hüfte aufrichten.",
+   "Kontrolliert wieder nach vorn beugen, ohne den Rücken zu runden."
+  ]
+ },
+ "Band_Good_Morning_Pull_Through": {
+  "name": "Good Morning mit Band (Pull Through)",
+  "steps": [
+   "Band um einen Pfosten legen, etwas entfernt stehen und das andere Ende um den Nacken legen.",
+   "Gesäß weit nach hinten schieben und mit flachem Rücken etwa 90° nach vorn beugen.",
+   "Hüfte kraftvoll nach vorn bringen und aufrichten."
+  ]
+ },
+ "Band_Hip_Adductions": {
+  "name": "Hüftadduktion mit Band",
+  "steps": [
+   "Band an einem Pfosten befestigen und um den Knöchel legen.",
+   "Aufrecht stehen, bei Bedarf festhalten.",
+   "Gestrecktes Bein gegen den Widerstand bewegen, zurückführen und nach den Wiederholungen die Seite wechseln."
+  ]
+ },
+ "Band_Pull_Apart": {
+  "name": "Band Pull-Apart",
+  "steps": [
+   "Band mit beiden Händen vor dem Körper auf Schulterhöhe halten, Arme gestreckt.",
+   "Hände seitlich auseinanderziehen, bis das Band die Brust berührt; Schultern zurück.",
+   "Kurz halten und kontrolliert zurückführen."
+  ]
+ },
+ "Band_Skull_Crusher": {
+  "name": "Stirndrücken mit Band",
+  "steps": [
+   "Band am Rack oder an der Bank befestigen und rücklings so hinlegen, dass es mit dem Kopf in Linie ist.",
+   "Oberarme senkrecht halten, Ellbogen gebeugt.",
+   "Arme strecken, oben kurz halten und wieder beugen."
+  ]
+ },
+ "Barbell_Ab_Rollout": {
+  "name": "Langhantel-Rollout",
+  "steps": [
+   "Liegestützposition mit den Händen auf einer leicht beladenen Langhantel.",
+   "Hüfte anheben und die Stange Richtung Füße rollen; Bauch fest, Arme senkrecht.",
+   "Kurz halten und langsam einatmend zurückrollen."
+  ]
+ },
+ "Barbell_Ab_Rollout_-_On_Knees": {
+  "name": "Langhantel-Rollout kniend",
+  "steps": [
+   "Im Kniestand eine leicht beladene Langhantel vor dir greifen.",
+   "Langsam nach vorn rollen, bis der Körper gestreckt ist, ohne den Boden zu berühren.",
+   "Bauch anspannen und ausatmend zurückrollen."
+  ]
+ },
+ "Barbell_Bench_Press_-_Medium_Grip": {
+  "name": "Bankdrücken (Langhantel)",
+  "steps": [
+   "Auf die Flachbank legen, Stange mittelbreit greifen und aus der Ablage heben.",
+   "Einatmend langsam bis zur mittleren Brust absenken.",
+   "Ausatmend mit der Brustmuskulatur kraftvoll hochdrücken; Senken etwa doppelt so langsam wie Drücken."
+  ]
+ },
+ "Barbell_Curl": {
+  "name": "Langhantel-Curls",
+  "steps": [
+   "Aufrecht stehen, Langhantel schulterbreit im Untergriff, Ellbogen am Körper.",
+   "Oberarme fixiert lassen und die Stange bis auf Schulterhöhe curlen; ausatmen.",
+   "Bizeps oben anspannen und langsam absenken."
+  ]
+ },
+ "Barbell_Curls_Lying_Against_An_Incline": {
+  "name": "Langhantel-Curls auf der Schrägbank",
+  "steps": [
+   "Rücklings gegen eine Schrägbank lehnen, Langhantel hängt an gestreckten Armen.",
+   "Oberarme ruhig halten und so hoch wie möglich curlen; ausatmen.",
+   "Kurz halten und vollständig absenken."
+  ]
+ },
+ "Barbell_Deadlift": {
+  "name": "Kreuzheben (Langhantel)",
+  "steps": [
+   "Vor die Langhantel stellen, Knie beugen und schulterbreit im Obergriff greifen; Rücken gerade.",
+   "Mit den Beinen drücken und gleichzeitig den Oberkörper aufrichten; oben Brust raus, Schulterblätter zurück.",
+   "Mit geradem Rücken über Hüfte und Knie kontrolliert absenken, bis die Scheiben den Boden berühren."
+  ]
+ },
+ "Barbell_Full_Squat": {
+  "name": "Tiefe Kniebeuge (Langhantel)",
+  "steps": [
+   "Stange im Rack knapp unter Schulterhöhe auf den oberen Rücken legen, ausheben und schulterbreit stehen.",
+   "Mit geradem Rücken und Blick nach vorn tief absenken, bis die Oberschenkelrückseite die Waden berührt.",
+   "Aus der Ferse bzw. Fußmitte kraftvoll hochdrücken und die Hüfte strecken."
+  ]
+ },
+ "Barbell_Glute_Bridge": {
+  "name": "Glute Bridge (Langhantel)",
+  "steps": [
+   "Rücklings liegen, beladene Langhantel (mit Polster) über der Hüfte.",
+   "Durch die Fersen drücken und die Hüfte senkrecht nach oben strecken.",
+   "Oben kurz halten und kontrolliert absenken."
+  ]
+ },
+ "Barbell_Guillotine_Bench_Press": {
+  "name": "Guillotine-Bankdrücken",
+  "steps": [
+   "Auf der Flachbank liegen, Stange mittelbreit greifen und über dem Hals halten.",
+   "Einatmend langsam bis etwa 2–3 cm über den Hals absenken.",
+   "Ausatmend mit der Brust hochdrücken; nur mit leichtem Gewicht ausführen."
+  ]
+ },
+ "Barbell_Hack_Squat": {
+  "name": "Hackenschmidt-Kniebeuge (Langhantel)",
+  "steps": [
+   "Langhantel hinter dem Körper mit gestreckten Armen halten, Füße schulterbreit.",
+   "Mit geradem Rücken in die Hocke gehen, bis die Oberschenkel parallel zum Boden sind.",
+   "Über die Fersen hochdrücken und ausatmen."
+  ]
+ },
+ "Barbell_Hip_Thrust": {
+  "name": "Hip Thrust (Langhantel)",
+  "steps": [
+   "Mit dem oberen Rücken an eine Bank lehnen, beladene Langhantel (mit Polster) über der Hüfte.",
+   "Durch die Füße drücken und die Hüfte nach oben strecken, bis der Körper eine Linie bildet.",
+   "Gesäß oben anspannen und kontrolliert absenken."
+  ]
+ },
+ "Barbell_Incline_Bench_Press_-_Medium_Grip": {
+  "name": "Schrägbankdrücken (Langhantel)",
+  "steps": [
+   "Auf die Schrägbank legen, Stange mittelbreit greifen und ausheben.",
+   "Einatmend langsam zur oberen Brust absenken.",
+   "Ausatmend kraftvoll hochdrücken und oben die Brust anspannen."
+  ]
+ },
+ "Barbell_Incline_Shoulder_Raise": {
+  "name": "Schulterheben auf der Schrägbank",
+  "steps": [
+   "Auf die Schrägbank legen und die Langhantel mit gestreckten Armen über dir halten.",
+   "Mit gestreckten Armen die Schulterblätter nach vorn schieben und die Schultern von der Bank heben.",
+   "Kontrolliert zurücksinken lassen."
+  ]
+ },
+ "Barbell_Lunge": {
+  "name": "Ausfallschritte (Langhantel)",
+  "steps": [
+   "Langhantel aus dem Rack auf den oberen Rücken nehmen und aufrecht stehen.",
+   "Mit einem Bein nach vorn treten und mit aufrechtem Oberkörper absenken.",
+   "Über die Ferse zurück in den Stand drücken; nach den Wiederholungen Bein wechseln."
+  ]
+ },
+ "Barbell_Rear_Delt_Row": {
+  "name": "Langhantel-Rudern für hintere Schulter",
+  "steps": [
+   "Langhantel weit im Obergriff halten, mit geradem Rücken vorbeugen, bis der Oberkörper fast parallel ist.",
+   "Ellbogen weit nach außen und die Stange zur oberen Brust ziehen; hintere Schulter anspannen.",
+   "Langsam absenken."
+  ]
+ },
+ "Barbell_Rollout_from_Bench": {
+  "name": "Langhantel-Rollout von der Bank",
+  "steps": [
+   "Auf einer Bank knien und eine beladene Langhantel davor eng greifen.",
+   "Hüfte strecken und die Stange langsam nach vorn rollen, Arme gestreckt.",
+   "So weit wie möglich rollen und zurückkehren."
+  ]
+ },
+ "Barbell_Seated_Calf_Raise": {
+  "name": "Wadenheben sitzend (Langhantel)",
+  "steps": [
+   "Auf eine Bank setzen, Fußballen auf einen Block, Langhantel auf die Oberschenkel nahe den Knien.",
+   "Fersen so hoch wie möglich heben und die Waden anspannen.",
+   "Langsam tief absenken und dehnen."
+  ]
+ },
+ "Barbell_Shoulder_Press": {
+  "name": "Schulterdrücken sitzend (Langhantel)",
+  "steps": [
+   "Auf eine Bank mit Lehne im Rack setzen und die Stange im Obergriff greifen.",
+   "Stange über Kopf gestreckt halten und einatmend zu den Schultern absenken.",
+   "Ausatmend wieder nach oben drücken."
+  ]
+ },
+ "Barbell_Shrug": {
+  "name": "Shrugs (Langhantel)",
+  "steps": [
+   "Aufrecht stehen, Langhantel etwas weiter als schulterbreit im Obergriff vor dem Körper.",
+   "Schultern so hoch wie möglich ziehen, kurz halten; nicht mit dem Bizeps ziehen.",
+   "Langsam absenken."
+  ]
+ },
+ "Barbell_Shrug_Behind_The_Back": {
+  "name": "Shrugs hinter dem Rücken",
+  "steps": [
+   "Langhantel hinter dem Rücken im Obergriff halten, Arme gestreckt.",
+   "Schultern so hoch wie möglich ziehen und kurz halten.",
+   "Langsam absenken."
+  ]
+ },
+ "Barbell_Side_Bend": {
+  "name": "Seitbeugen mit Langhantel",
+  "steps": [
+   "Aufrecht stehen, Langhantel auf dem oberen Rücken, Füße schulterbreit.",
+   "Nur aus der Taille so weit wie möglich zur rechten Seite beugen, kurz halten.",
+   "Aufrichten und zur linken Seite wiederholen."
+  ]
+ },
+ "Barbell_Side_Split_Squat": {
+  "name": "Seitliche Split-Kniebeuge (Langhantel)",
+  "steps": [
+   "Langhantel auf dem oberen Rücken, weiter Stand, vorderer Fuß zur Seite gedreht.",
+   "Zur Seite des gedrehten Fußes absenken, das andere Bein bleibt fast gestreckt.",
+   "Zurückdrücken; nach den Wiederholungen Seite wechseln."
+  ]
+ },
+ "Barbell_Squat": {
+  "name": "Kniebeuge (Langhantel)",
+  "steps": [
+   "Stange im Rack knapp unter Schulterhöhe auf den oberen Rücken legen, ausheben, schulterbreit stehen, Zehen leicht nach außen.",
+   "Mit geradem Rücken und Blick nach vorn absenken, bis die Knie etwas über 90° gebeugt sind.",
+   "Ausatmend über die Fersen hochdrücken."
+  ]
+ },
+ "Barbell_Squat_To_A_Bench": {
+  "name": "Kniebeuge auf die Bank (Langhantel)",
+  "steps": [
+   "Bank oder Box hinter dir platzieren, Langhantel auf den oberen Rücken nehmen.",
+   "Hüfte nach hinten schieben und absenken, bis du die Bank leicht berührst.",
+   "Über die Fersen kraftvoll aufstehen."
+  ]
+ },
+ "Barbell_Step_Ups": {
+  "name": "Step-ups (Langhantel)",
+  "steps": [
+   "Langhantel auf dem oberen Rücken, vor einer erhöhten Plattform stehen.",
+   "Rechten Fuß auf die Plattform setzen und über die Ferse hochsteigen; linken Fuß nachziehen.",
+   "Kontrolliert herabsteigen; nach den Wiederholungen Bein wechseln."
+  ]
+ },
+ "Barbell_Walking_Lunge": {
+  "name": "Gehende Ausfallschritte (Langhantel)",
+  "steps": [
+   "Langhantel auf dem oberen Rücken, Füße schulterbreit.",
+   "Nach vorn treten und absenken, bis das hintere Knie fast den Boden berührt.",
+   "Hochdrücken, hinteren Fuß nach vorn bringen und mit dem anderen Bein fortfahren."
+  ]
+ },
+ "Battling_Ropes": {
+  "name": "Battle Ropes",
+  "steps": [
+   "Vor das verankerte Seil stellen und je ein Ende in eine Hand nehmen.",
+   "Einen Arm schnell bis Schulterhöhe heben, während der andere fällt.",
+   "Arme abwechselnd so schnell wie möglich auf und ab schlagen."
+  ]
+ },
+ "Bench_Dips": {
+  "name": "Dips an der Bank",
+  "steps": [
+   "Hände schulterbreit hinter dir auf der Bankkante, Beine nach vorn gestreckt.",
+   "Ellbogen beugen und den Körper absenken, bis etwa 90° erreicht sind; Ellbogen eng.",
+   "Mit dem Trizeps wieder hochdrücken."
+  ]
+ },
+ "Bench_Jump": {
+  "name": "Sprünge über die Bank",
+  "steps": [
+   "Etwa 30–60 cm vor einer Bank stehen, Füße schulterbreit.",
+   "Kurz in die Hocke gehen, Arme zurückschwingen und explosiv über die Bank springen.",
+   "Weich mit gebeugten Knien landen, umdrehen und zurückspringen."
+  ]
+ },
+ "Bench_Press_-_Powerlifting": {
+  "name": "Bankdrücken (Powerlifting)",
+  "steps": [
+   "Auf der Bank Hohlkreuz bilden, Schulterblätter zusammenziehen, Füße fest unter dem Körper.",
+   "Stange ausheben und kontrolliert zur unteren Brust absenken; Handgelenk und Ellbogen in Linie.",
+   "Kurz pausieren und mit maximaler Kraft hochdrücken, Ellbogen eng bis zum Lockout."
+  ]
+ },
+ "Bench_Press_-_With_Bands": {
+  "name": "Bankdrücken mit Band",
+  "steps": [
+   "Band unter dem Bankbein am Kopfende befestigen, Griffe fassen und hinlegen.",
+   "Griffe schulterbreit über der Brust halten, Handflächen vom Körper weg; bis 90° Ellbogenwinkel absenken.",
+   "Ausatmend mit der Brust hochdrücken und oben anspannen."
+  ]
+ },
+ "Bench_Press_with_Chains": {
+  "name": "Bankdrücken mit Ketten",
+  "steps": [
+   "Ketten an den Hantelenden befestigen; Hohlkreuz und Schulterblätter zusammen.",
+   "Stange ausheben und zur unteren Brust absenken.",
+   "Kurz pausieren und explosiv hochdrücken."
+  ]
+ },
+ "Bench_Sprint": {
+  "name": "Bank-Sprints",
+  "steps": [
+   "Einen Fuß auf eine Bank oder Box stellen.",
+   "Mit dem oberen Fuß abdrücken und Hüfte sowie Knie strecken.",
+   "In der Luft die Füße wechseln und zügig im Wechsel fortfahren."
+  ]
+ },
+ "Bent-Arm_Barbell_Pullover": {
+  "name": "Pullover mit Langhantel (gebeugte Arme)",
+  "steps": [
+   "Rücklings auf der Flachbank, Langhantel schulterbreit mit leicht gebeugten Armen über der Brust.",
+   "Gewicht im Bogen hinter den Kopf absenken, bis die Brust gedehnt ist; einatmen.",
+   "Im gleichen Bogen zurückführen."
+  ]
+ },
+ "Bent-Arm_Dumbbell_Pullover": {
+  "name": "Kurzhantel-Pullover",
+  "steps": [
+   "Quer auf einer Flachbank liegen, nur die Schultern auf der Bank, Füße fest am Boden.",
+   "Kurzhantel mit beiden Händen und leicht gebeugten Armen über der Brust halten.",
+   "Im Bogen hinter den Kopf absenken und wieder zurückführen."
+  ]
+ },
+ "Bent-Knee_Hip_Raise": {
+  "name": "Hüftheben mit gebeugten Knien",
+  "steps": [
+   "Rücklings liegen, Arme neben dem Körper, Knie gebeugt und Füße leicht angehoben.",
+   "Mit dem unteren Bauch die Knie zur Brust ziehen und das Becken vom Boden rollen.",
+   "Oben anspannen und langsam zurück."
+  ]
+ },
+ "Bent_Over_Barbell_Row": {
+  "name": "Langhantelrudern vorgebeugt",
+  "steps": [
+   "Langhantel im Obergriff, Knie leicht beugen und mit geradem Rücken fast parallel vorbeugen.",
+   "Stange zum Körper ziehen, Ellbogen eng, oben den Rücken anspannen.",
+   "Langsam absenken."
+  ]
+ },
+ "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench": {
+  "name": "Reverse Flys mit Kopfstütze",
+  "steps": [
+   "Vorgebeugt stehen und die Stirn auf einer Schrägbank ablegen, Kurzhanteln hängen.",
+   "Mit leicht gebeugten Armen die Hanteln seitlich bis auf Schulterhöhe heben.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Bent_Over_Low-Pulley_Side_Lateral": {
+  "name": "Vorgebeugtes Seitheben am Kabel",
+  "steps": [
+   "Griff des unteren Kabelzugs mit einer Hand fassen und vorbeugen, andere Hand auf dem Oberschenkel.",
+   "Arm leicht gebeugt seitlich bis parallel zum Boden heben.",
+   "Langsam absenken; danach Seite wechseln."
+  ]
+ },
+ "Bent_Over_One-Arm_Long_Bar_Row": {
+  "name": "T-Bar-Rudern einarmig",
+  "steps": [
+   "Ein Ende der Langhantel in eine Ecke stellen, das andere Ende beladen.",
+   "Vorbeugen und die Stange einarmig hinter den Scheiben greifen.",
+   "Bis zur unteren Brust ziehen, oben halten und langsam absenken; Seite wechseln."
+  ]
+ },
+ "Bent_Over_Two-Arm_Long_Bar_Row": {
+  "name": "T-Bar-Rudern",
+  "steps": [
+   "Ein Ende der Langhantel in einer Ecke fixieren, das andere beladen.",
+   "Vorbeugen und die Stange mit beiden Händen hinter den Scheiben greifen.",
+   "Zur unteren Brust ziehen, Rücken anspannen und langsam absenken."
+  ]
+ },
+ "Bent_Over_Two-Dumbbell_Row": {
+  "name": "Kurzhantelrudern vorgebeugt",
+  "steps": [
+   "Kurzhanteln in beiden Händen, Knie leicht beugen und mit geradem Rücken fast parallel vorbeugen.",
+   "Hanteln ausatmend zur Seite hochziehen, Ellbogen nah am Körper.",
+   "Oben kurz anspannen und langsam absenken."
+  ]
+ },
+ "Bent_Over_Two-Dumbbell_Row_With_Palms_In": {
+  "name": "Kurzhantelrudern vorgebeugt (neutraler Griff)",
+  "steps": [
+   "Kurzhanteln mit Handflächen zueinander, mit geradem Rücken vorbeugen.",
+   "Hanteln zur Seite hochziehen und die Schulterblätter zusammendrücken.",
+   "Oben kurz halten und langsam absenken."
+  ]
+ },
+ "Bent_Press": {
+  "name": "Bent Press (Kettlebell)",
+  "steps": [
+   "Kettlebell zur Schulter umsetzen.",
+   "Zur Gegenseite neigen, bis die freie Hand den Boden berührt; dabei den Arm unter der Kettlebell strecken, Blick zur Kettlebell.",
+   "Mit gestrecktem Arm aufrichten, Kettlebell zur Schulter zurückführen und wiederholen."
+  ]
+ },
+ "Board_Press": {
+  "name": "Board Press",
+  "steps": [
+   "Auf der Bank liegen, Bretter (1–5) liegen auf der Brust; Hohlkreuz, Schulterblätter zusammen.",
+   "Stange ausheben und bis auf die Bretter absenken.",
+   "Mit maximaler Kraft hochdrücken, Ellbogen eng bis zum Lockout."
+  ]
+ },
+ "Body-Up": {
+  "name": "Body-Up (Unterarmstütz zu Hochstütz)",
+  "steps": [
+   "Unterarmstütz einnehmen, Unterarme schulterbreit, Körper gerade.",
+   "Handflächen in den Boden drücken und die Ellbogen strecken, bis du auf den Händen stützt.",
+   "Kontrolliert zurück auf die Unterarme absenken."
+  ]
+ },
+ "Body_Tricep_Press": {
+  "name": "Trizepsdrücken mit Körpergewicht",
+  "steps": [
+   "Stange auf Brusthöhe im Rack, schulterbreit greifen und einen Schritt zurücktreten, Arme gestreckt.",
+   "Ellbogen beugen und den Körper zur Stange absenken.",
+   "Kurz halten und durch Strecken der Ellbogen zurückdrücken."
+  ]
+ },
+ "Bodyweight_Flyes": {
+  "name": "Flys mit Körpergewicht (Rollstangen)",
+  "steps": [
+   "Zwei gleich beladene SZ-Stangen nebeneinander auf den Boden legen, Liegestützposition darauf.",
+   "Hände langsam auseinanderrollen, so weit wie möglich; einatmen.",
+   "Stangen mit der Brust wieder zusammenziehen; ausatmen."
+  ]
+ },
+ "Bodyweight_Mid_Row": {
+  "name": "Rudern mit Körpergewicht an der Stange",
+  "steps": [
+   "Klimmzugstange mittelbreit greifen, Knie anziehen und zurücklehnen.",
+   "Ellbogen beugen und Schulterblätter zurückziehen, bis die Beine die Stange berühren.",
+   "Kurz halten und kontrolliert zurück."
+  ]
+ },
+ "Bodyweight_Squat": {
+  "name": "Kniebeuge (Körpergewicht)",
+  "steps": [
+   "Schulterbreit stehen, Hände hinter dem Kopf oder vor der Brust.",
+   "Knie und Hüfte beugen und mit dem Gesäß nach hinten so tief wie möglich setzen.",
+   "Mit Brust oben und Knien nach außen zügig aufrichten."
+  ]
+ },
+ "Bodyweight_Walking_Lunge": {
+  "name": "Gehende Ausfallschritte (Körpergewicht)",
+  "steps": [
+   "Schulterbreit stehen, Hände an der Hüfte.",
+   "Nach vorn treten und absenken, bis das hintere Knie fast den Boden berührt.",
+   "Über die vordere Ferse hochdrücken und mit dem anderen Bein weitergehen."
+  ]
+ },
+ "Bosu_Ball_Cable_Crunch_With_Side_Bends": {
+  "name": "Kabel-Crunch auf dem Bosu mit Seitbeugen",
+  "steps": [
+   "Rücklings auf den Bosu-Ball vor den unteren Kabelzug legen und beide Griffe fassen.",
+   "Arme gestreckt halten und den Oberkörper einrollen; langsam zurück in die Dehnung.",
+   "Zum Abschluss in Planke gehen und seitliche Beugen zu den Fersen ausführen."
+  ]
+ },
+ "Bottoms-Up_Clean_From_The_Hang_Position": {
+  "name": "Bottoms-up Clean aus dem Hang",
+  "steps": [
+   "Aufrecht stehen, Kettlebell in einer Hand.",
+   "Kettlebell kraftvoll zurück- und dann nach vorn schwingen.",
+   "Griff fest zudrücken und die Kettlebell mit dem Boden nach oben zur Schulter bringen."
+  ]
+ },
+ "Bottoms_Up": {
+  "name": "Bottoms Up (Bauch)",
+  "steps": [
+   "Rücklings liegen, Beine gestreckt, Arme neben dem Körper.",
+   "Knie zur Brust ziehen und dann die Beine senkrecht nach oben strecken, Hüfte anheben.",
+   "Kurz halten und kontrolliert zurückkehren."
+  ]
+ },
+ "Box_Jump_Multiple_Response": {
+  "name": "Box Jumps (wiederholt)",
+  "steps": [
+   "Etwa eine Armlänge vor einer Box locker stehen, Knie leicht gebeugt.",
+   "Mit Armschwung explosiv nach oben springen und beidbeinig auf der Box landen.",
+   "Sofort wieder herunterspringen und direkt wiederholen."
+  ]
+ },
+ "Box_Skip": {
+  "name": "Box Skips",
+  "steps": [
+   "Mehrere Boxen im Abstand von etwa 2,5 m aufstellen und vor der ersten stehen.",
+   "Mit dem hinteren Bein abdrücken und auf die Box springen.",
+   "Sofort mit dem anderen Bein nach vorn-oben abspringen, zwischen den Boxen landen und weitermachen."
+  ]
+ },
+ "Box_Squat": {
+  "name": "Box-Kniebeuge",
+  "steps": [
+   "Im Rack mit Box hinter dir die Stange auf den oberen Rücken nehmen, Schulterblätter zusammen.",
+   "Rumpf fest, Knie nach außen und mit der Hüfte nach hinten auf die Box setzen.",
+   "Gewicht auf den Fersen und explosiv von der Box hochdrücken."
+  ]
+ },
+ "Box_Squat_with_Bands": {
+  "name": "Box-Kniebeuge mit Bändern",
+  "steps": [
+   "Bänder an der Stange und am Rack befestigen, Box hinter dir.",
+   "Stange auf den oberen Rücken nehmen und mit der Hüfte nach hinten auf die Box setzen.",
+   "Explosiv von der Box hochdrücken, Knie nach außen."
+  ]
+ },
+ "Box_Squat_with_Chains": {
+  "name": "Box-Kniebeuge mit Ketten",
+  "steps": [
+   "Ketten an der Stange befestigen, Box in passender Höhe hinter dir.",
+   "Stange auf den oberen Rücken nehmen und kontrolliert auf die Box setzen.",
+   "Mit festem Rumpf explosiv hochdrücken."
+  ]
+ },
+ "Bradford_Rocky_Presses": {
+  "name": "Bradford Press",
+  "steps": [
+   "Auf einer Schulterdrückbank die Stange im Obergriff über Kopf drücken.",
+   "Hinter den Kopf absenken und wieder hochdrücken.",
+   "Vor den Kopf absenken und wieder hochdrücken; im Wechsel fortfahren."
+  ]
+ },
+ "Butt-Ups": {
+  "name": "Butt-Ups",
+  "steps": [
+   "Unterarmstütz einnehmen, Ellbogen 90° gebeugt.",
+   "Gesäß Richtung Decke heben und den Bauch fest anspannen.",
+   "Langsam einatmend zurück in den Unterarmstütz."
+  ]
+ },
+ "Butt_Lift_Bridge": {
+  "name": "Glute Bridge (Körpergewicht)",
+  "steps": [
+   "Rücklings liegen, Knie gebeugt, Füße schulterbreit, Hände neben dem Körper.",
+   "Über die Fersen die Hüfte anheben, Rücken gerade; oben kurz halten.",
+   "Langsam einatmend absenken."
+  ]
+ },
+ "Butterfly": {
+  "name": "Butterfly (Maschine)",
+  "steps": [
+   "Rücken flach an das Polster, Griffe fassen.",
+   "Griffe langsam vor der Brust zusammendrücken und kurz halten; ausatmen.",
+   "Einatmend langsam zurück, bis die Brust gedehnt ist."
+  ]
+ },
+ "Cable_Chest_Press": {
+  "name": "Brustpresse am Kabelzug",
+  "steps": [
+   "Hinsetzen und die Griffe fassen, Oberarme etwa 45° zum Körper, Brust raus.",
+   "Griffe nach vorn zusammendrücken, Schulterblätter zurück.",
+   "Kurz halten und mit Spannung zurückführen."
+  ]
+ },
+ "Cable_Crossover": {
+  "name": "Cable Crossover",
+  "steps": [
+   "Kabelzüge oben einstellen, Griffe fassen und einen Schritt nach vorn treten, Oberkörper leicht vorgeneigt.",
+   "Arme mit leicht gebeugten Ellbogen im weiten Bogen seitlich öffnen, bis die Brust gedehnt ist.",
+   "Im gleichen Bogen vor dem Körper zusammenführen und kurz halten."
+  ]
+ },
+ "Cable_Crunch": {
+  "name": "Kabel-Crunch kniend",
+  "steps": [
+   "Unter dem oberen Kabelzug knien, Seil fassen und neben das Gesicht ziehen.",
+   "Hüfte fixiert lassen und den Oberkörper einrollen, Ellbogen Richtung Oberschenkel; ausatmen.",
+   "Langsam einatmend zurück."
+  ]
+ },
+ "Cable_Deadlifts": {
+  "name": "Kreuzheben am Kabelzug",
+  "steps": [
+   "Zwischen den Kabeltürmen stehen, Züge unten einstellen.",
+   "In die Hocke gehen und die Griffe fassen.",
+   "Über die Fersen Hüfte und Knie strecken, Brust oben; kontrolliert zurück."
+  ]
+ },
+ "Cable_Hammer_Curls_-_Rope_Attachment": {
+  "name": "Hammercurls am Kabel (Seil)",
+  "steps": [
+   "Seil am unteren Kabelzug, neutral greifen und aufrecht stehen.",
+   "Ellbogen am Körper fixieren und das Seil hochcurlen; ausatmen.",
+   "Kurz anspannen und langsam absenken."
+  ]
+ },
+ "Cable_Hip_Adduction": {
+  "name": "Hüftadduktion am Kabelzug",
+  "steps": [
+   "Fußmanschette am unteren Kabelzug am inneren Bein befestigen, seitlich stehen und festhalten.",
+   "Bein mit den Adduktoren vor das Standbein ziehen; ausatmen.",
+   "Langsam zurückführen; danach Seite wechseln."
+  ]
+ },
+ "Cable_Incline_Pushdown": {
+  "name": "Lat-Pullover auf der Schrägbank (Kabel)",
+  "steps": [
+   "Auf eine Schrägbank mit dem Rücken zum oberen Kabelzug legen, Stange schulterbreit greifen.",
+   "Arme gestreckt im Halbkreis über den Kopf führen; einatmen.",
+   "Mit dem Latissimus zurückziehen und anspannen."
+  ]
+ },
+ "Cable_Incline_Triceps_Extension": {
+  "name": "Trizepsstrecken auf der Schrägbank (Kabel)",
+  "steps": [
+   "Auf eine Schrägbank mit dem Rücken zum oberen Kabelzug legen, Stange eng greifen.",
+   "Oberarme fixiert lassen und die Arme strecken; kurz anspannen.",
+   "Langsam zurückführen."
+  ]
+ },
+ "Cable_Internal_Rotation": {
+  "name": "Innenrotation am Kabelzug",
+  "steps": [
+   "Seitlich neben den unteren Kabelzug setzen, Griff mit dem nahen Arm fassen.",
+   "Ellbogen 90° gebeugt am Körper und den Unterarm zum Bauch drehen.",
+   "Langsam zurückführen."
+  ]
+ },
+ "Cable_Iron_Cross": {
+  "name": "Iron Cross am Kabelzug",
+  "steps": [
+   "Zwischen zwei oberen Kabelzügen stehen, Arme seitlich gestreckt (T-Form).",
+   "Mit gestreckten Ellbogen die Arme seitlich nach unten ziehen.",
+   "Kurz halten und langsam zurückführen."
+  ]
+ },
+ "Cable_Judo_Flip": {
+  "name": "Kabel-Judowurf",
+  "steps": [
+   "Seitlich zum unteren Kabelzug weit stehen, Seil mit beiden Händen fassen.",
+   "Seil über die Schulter ziehen und den Oberkörper wie bei einem Judowurf wegdrehen und einrollen.",
+   "Zurückkehren und nach den Wiederholungen die Seite wechseln."
+  ]
+ },
+ "Cable_Lying_Triceps_Extension": {
+  "name": "Liegendes Trizepsstrecken am Kabel",
+  "steps": [
+   "Auf eine Flachbank legen und die Stange des unteren Kabelzugs eng im Obergriff über der Brust halten.",
+   "Ellbogen beugen, bis die Stange fast die Stirn berührt; Oberarme ruhig.",
+   "Mit dem Trizeps zurückstrecken und kurz halten."
+  ]
+ },
+ "Cable_One_Arm_Tricep_Extension": {
+  "name": "Einarmiges Trizepsdrücken am Kabel (Untergriff)",
+  "steps": [
+   "Griff am oberen Kabelzug im Untergriff fassen, Oberarm am Körper fixieren.",
+   "Arm nach unten strecken, bis er gerade ist; ausatmen.",
+   "Kurz anspannen und langsam zurückführen; Seite wechseln."
+  ]
+ },
+ "Cable_Preacher_Curl": {
+  "name": "Scott-Curls am Kabelzug",
+  "steps": [
+   "Scottbank vor den unteren Kabelzug stellen, Oberarme auf das Polster legen.",
+   "Stange greifen und zur Schulter curlen; oben anspannen.",
+   "Langsam absenken."
+  ]
+ },
+ "Cable_Rear_Delt_Fly": {
+  "name": "Reverse Flys am Kabelzug",
+  "steps": [
+   "Kabelzüge oben einstellen, Griffe über Kreuz fassen (links rechts, rechts links).",
+   "Arme gestreckt nach hinten außen ziehen.",
+   "Kurz halten und kontrolliert zurückführen."
+  ]
+ },
+ "Cable_Reverse_Crunch": {
+  "name": "Reverse Crunch am Kabelzug",
+  "steps": [
+   "Fußmanschetten am unteren Kabelzug befestigen, rücklings liegen, Knie 90° gebeugt.",
+   "Knie zum Oberkörper ziehen und die Hüfte vom Boden heben.",
+   "Kurz halten und kontrolliert zurück auf 90°."
+  ]
+ },
+ "Cable_Rope_Overhead_Triceps_Extension": {
+  "name": "Überkopf-Trizepsstrecken am Seil",
+  "steps": [
+   "Seil am unteren Kabelzug, mit dem Rücken zum Turm, Arme über dem Kopf gestreckt.",
+   "Seil langsam hinter den Kopf absenken, Oberarme ruhig.",
+   "Mit dem Trizeps wieder nach oben strecken."
+  ]
+ },
+ "Cable_Rope_Rear-Delt_Rows": {
+  "name": "Rudern für hintere Schulter am Seil",
+  "steps": [
+   "Am Ruderzug sitzen, Seil im Obergriff, Arme gestreckt, Ellbogen nach außen.",
+   "Seil zur oberen Brust ziehen, Ellbogen hoch und außen.",
+   "Langsam zurück, Schultern nach vorn dehnen."
+  ]
+ },
+ "Cable_Russian_Twists": {
+  "name": "Russian Twists am Kabelzug",
+  "steps": [
+   "Auf einem Gymnastikball quer zum mittleren Kabelzug liegen, Griff mit gestreckten Armen über der Brust.",
+   "Hüfte oben, Oberkörper eine Vierteldrehung vom Zug wegdrehen.",
+   "Langsam zurück; danach Seite wechseln."
+  ]
+ },
+ "Cable_Seated_Crunch": {
+  "name": "Kabel-Crunch sitzend",
+  "steps": [
+   "Mit dem Rücken zum oberen Kabelzug auf eine Bank setzen, Seil über die Schultern halten.",
+   "Oberkörper einrollen, Ellbogen Richtung Hüfte; ausatmen.",
+   "Langsam einatmend zurück."
+  ]
+ },
+ "Cable_Seated_Lateral_Raise": {
+  "name": "Seitheben sitzend am Kabelzug",
+  "steps": [
+   "Zwischen zwei unteren Kabelzügen auf eine Bank setzen und vorbeugen.",
+   "Griffe über Kreuz halten und die Arme seitlich bis Schulterhöhe heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Cable_Shoulder_Press": {
+  "name": "Schulterdrücken am Kabelzug",
+  "steps": [
+   "Zwischen den Kabeltürmen stehen, Griffe auf Schulterhöhe, Handflächen nach vorn.",
+   "Griffe gerade über Kopf drücken.",
+   "Kurz halten und zurückführen."
+  ]
+ },
+ "Cable_Shrugs": {
+  "name": "Shrugs am Kabelzug",
+  "steps": [
+   "Stange am unteren Kabelzug schulterbreit im Obergriff, aufrecht stehen.",
+   "Schultern so hoch wie möglich ziehen; kurz halten.",
+   "Langsam absenken."
+  ]
+ },
+ "Cable_Wrist_Curl": {
+  "name": "Handgelenkcurls am Kabelzug",
+  "steps": [
+   "Flachbank vor den unteren Kabelzug, Stange im Untergriff, Unterarme auf den Oberschenkeln.",
+   "Nur die Handgelenke nach oben beugen und kurz halten.",
+   "Langsam absenken."
+  ]
+ },
+ "Calf-Machine_Shoulder_Shrug": {
+  "name": "Shrugs an der Wadenmaschine",
+  "steps": [
+   "Unter die Schulterpolster der Wadenmaschine stellen, Arme hängen.",
+   "Schultern zu den Ohren ziehen und eine Sekunde halten.",
+   "Langsam absenken."
+  ]
+ },
+ "Calf_Press": {
+  "name": "Wadendrücken (Maschine)",
+  "steps": [
+   "Sitz so einstellen, dass die Beine fast gestreckt sind; Fußballen auf der Plattform.",
+   "Plattform mit den Fußballen wegdrücken, Fersen strecken.",
+   "Kurz halten und langsam zurück in die Dehnung."
+  ]
+ },
+ "Calf_Press_On_The_Leg_Press_Machine": {
+  "name": "Wadendrücken an der Beinpresse",
+  "steps": [
+   "In der Beinpresse Fußballen schulterbreit auf die Plattform, Beine gestreckt (nicht durchgedrückt).",
+   "Plattform durch Strecken der Füße wegdrücken und Waden anspannen.",
+   "Langsam zurück, bis die Waden gedehnt sind."
+  ]
+ },
+ "Calf_Raise_On_A_Dumbbell": {
+  "name": "Wadenheben auf der Kurzhantel",
+  "steps": [
+   "Festhalten und mit den Fußballen auf den Griff einer Kurzhantel stellen.",
+   "Fuß nach vorn rollen, um die Wade zu dehnen.",
+   "Auf die Zehenspitzen hochdrücken, oben anspannen und langsam absenken."
+  ]
+ },
+ "Calf_Raises_-_With_Bands": {
+  "name": "Wadenheben mit Band",
+  "steps": [
+   "Mit den Fußballen auf das Band stellen, Griffe auf Schulterhöhe halten.",
+   "Auf die Zehenspitzen hochdrücken und die Waden fest anspannen.",
+   "Nach einer Sekunde langsam absenken."
+  ]
+ },
+ "Car_Drivers": {
+  "name": "Lenkrad-Drehungen (Hantelscheibe)",
+  "steps": [
+   "Aufrecht stehen und eine Hantelscheibe mit gestreckten Armen vor dir halten (3 und 9 Uhr).",
+   "Scheibe wie ein Lenkrad so weit wie möglich zu einer Seite drehen.",
+   "Zur anderen Seite drehen und im Wechsel fortfahren."
+  ]
+ },
+ "Carioca_Quick_Step": {
+  "name": "Carioca Quick Step",
+  "steps": [
+   "Füße eng, athletische Position, ein Arm locker oben.",
+   "Rechten Fuß schnell hinter dem anderen kreuzen und das Knie hochziehen.",
+   "Arme aktiv mitnehmen, Blick nach vorn und seitlich fortbewegen."
+  ]
+ },
+ "Catch_and_Overhead_Throw": {
+  "name": "Medizinball-Überkopfwurf mit Fangen",
+  "steps": [
+   "Vor einer Wand oder einem Partner stehen.",
+   "Ball mit beiden Händen hinter den Kopf führen und kraftvoll nach vorn werfen.",
+   "Ball fangen und direkt den nächsten Wurf einleiten."
+  ]
+ },
+ "Chain_Handle_Extension": {
+  "name": "Trizepsstrecken mit Ketten",
+  "steps": [
+   "Ketten an Kabelgriffen befestigen und auf einer Flachbank liegen.",
+   "Ellbogen mit fixierten Oberarmen strecken, Handgelenke proniert.",
+   "Oben kurz halten und zurückführen."
+  ]
+ },
+ "Chain_Press": {
+  "name": "Bankdrücken mit Ketten-Griffen",
+  "steps": [
+   "Ketten an Kabelgriffen befestigen, auf der Flachbank wie beim Kurzhanteldrücken liegen.",
+   "Ellbogen beugen und die Ketten absenken, bis 90° erreicht sind.",
+   "Durch Strecken der Ellbogen bis zum Lockout hochdrücken."
+  ]
+ },
+ "Chair_Squat": {
+  "name": "Stuhl-Kniebeuge (Maschine)",
+  "steps": [
+   "Stange auf den oberen Rücken nehmen und die Füße etwa 45 cm vor die Stange setzen.",
+   "Mit geradem Rücken absenken, bis die Knie unter 90° gebeugt sind.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Chest_Push_from_3_point_stance": {
+  "name": "Medizinball-Brustwurf aus dem Dreipunktstand",
+  "steps": [
+   "Im Dreipunktstand starten, Ball vor dir.",
+   "Mit dem ersten Schritt den Ball zur Brust ziehen.",
+   "Beim zweiten Schritt den Ball explosiv nach vorn stoßen."
+  ]
+ },
+ "Chest_Push_multiple_response": {
+  "name": "Medizinball-Brustwurf kniend (wiederholt)",
+  "steps": [
+   "Kniend vor einer Wand, Ball eng an der Brust.",
+   "Hüfte explosiv nach vorn bringen und den Ball kraftvoll wegstoßen.",
+   "Mit den Händen abfangen, aufrichten und direkt wiederholen."
+  ]
+ },
+ "Chest_Push_single_response": {
+  "name": "Medizinball-Brustwurf kniend",
+  "steps": [
+   "Kniend den Ball eng an der Brust halten.",
+   "Hüfte explosiv strecken und den Ball so weit wie möglich stoßen.",
+   "Nach vorn fallen lassen und mit den Händen abfangen."
+  ]
+ },
+ "Chest_Push_with_Run_Release": {
+  "name": "Medizinball-Brustwurf mit Sprint",
+  "steps": [
+   "Athletische Position, Ball vor den Beinen halten.",
+   "Beim ersten Schritt den Ball zur Brust ziehen.",
+   "Beim zweiten Schritt explosiv stoßen und sofort etwa 10 m sprinten."
+  ]
+ },
+ "Chin-Up": {
+  "name": "Klimmzüge im Untergriff (Chin-ups)",
+  "steps": [
+   "Stange enger als schulterbreit im Untergriff fassen, Körper gestreckt.",
+   "Ausatmend hochziehen, bis der Kopf auf Stangenhöhe ist; Fokus auf den Bizeps.",
+   "Kurz halten und langsam ganz absenken."
+  ]
+ },
+ "Clean_and_Press": {
+  "name": "Umsetzen und Drücken",
+  "steps": [
+   "Schulterbreit stehen, Stange mit geradem Rücken greifen.",
+   "Stange explosiv über Knie und Hüfte nach oben ziehen und auf die vorderen Schultern umsetzen.",
+   "Aufrichten und die Stange über Kopf drücken; kontrolliert absenken."
+  ]
+ },
+ "Clock_Push-Up": {
+  "name": "Uhr-Liegestütze",
+  "steps": [
+   "Liegestützposition, Hände schulterbreit, Körper gerade.",
+   "Absenken und explosiv hochdrücken, sodass die Hände abheben.",
+   "In der Luft etwa 30° seitlich versetzen und so einmal im Kreis herum fortfahren."
+  ]
+ },
+ "Close-Grip_Barbell_Bench_Press": {
+  "name": "Enges Bankdrücken",
+  "steps": [
+   "Auf der Flachbank liegen, Stange etwa schulterbreit greifen und ausheben.",
+   "Einatmend langsam zur mittleren Brust absenken, Ellbogen eng.",
+   "Mit dem Trizeps ausatmend hochdrücken."
+  ]
+ },
+ "Close-Grip_Dumbbell_Press": {
+  "name": "Enges Kurzhanteldrücken",
+  "steps": [
+   "Quer auf der Bank liegen, nur Schultern auf der Bank.",
+   "Eine Kurzhantel mit beiden Händen über der Brust halten.",
+   "Zur Brust absenken und durch Strecken der Ellbogen hochdrücken."
+  ]
+ },
+ "Close-Grip_EZ-Bar_Curl_with_Band": {
+  "name": "Enge SZ-Curls mit Band",
+  "steps": [
+   "Band an beiden Enden der SZ-Stange befestigen und mittig daraufstellen; enger Untergriff.",
+   "Oberarme ruhig halten und bis Schulterhöhe curlen.",
+   "Oben anspannen und langsam absenken."
+  ]
+ },
+ "Close-Grip_EZ-Bar_Press": {
+  "name": "Enges SZ-Stangen-Drücken",
+  "steps": [
+   "Auf der Flachbank die SZ-Stange eng über dem Oberkörper halten.",
+   "Zur unteren Brust absenken, Ellbogen eng.",
+   "Mit dem Trizeps zurückdrücken."
+  ]
+ },
+ "Close-Grip_EZ_Bar_Curl": {
+  "name": "Enge SZ-Curls",
+  "steps": [
+   "Aufrecht stehen, SZ-Stange am inneren Griff fassen.",
+   "Oberarme ruhig halten und bis Schulterhöhe curlen.",
+   "Bizeps anspannen und langsam absenken."
+  ]
+ },
+ "Close-Grip_Front_Lat_Pulldown": {
+  "name": "Latzug eng zur Brust",
+  "steps": [
+   "Am Latzug sitzen, Knie unter dem Polster, Stange eng greifen.",
+   "Oberkörper etwa 30° zurücklehnen und die Stange zur oberen Brust ziehen.",
+   "Schulterblätter zusammendrücken und langsam zurückführen."
+  ]
+ },
+ "Close-Grip_Push-Up_off_of_a_Dumbbell": {
+  "name": "Enge Liegestütze auf der Kurzhantel",
+  "steps": [
+   "Hände auf eine aufrecht stehende Kurzhantel, Körper gerade, Ellbogen eng.",
+   "Einatmend absenken, ohne die Hüfte hängen zu lassen.",
+   "Ausatmend durch Strecken der Arme hochdrücken."
+  ]
+ },
+ "Close-Grip_Standing_Barbell_Curl": {
+  "name": "Enge Langhantel-Curls stehend",
+  "steps": [
+   "Langhantel eng im Untergriff halten, aufrecht stehen, Ellbogen am Körper.",
+   "Stange im Halbkreis hochcurlen, bis die Unterarme den Bizeps berühren.",
+   "Kurz anspannen und langsam absenken."
+  ]
+ },
+ "Cocoons": {
+  "name": "Cocoons (Klappmesser-Einrollen)",
+  "steps": [
+   "Rücklings liegen, Beine gestreckt, Arme hinter dem Kopf.",
+   "Knie zur Brust ziehen, Gesäß anheben und gleichzeitig Oberkörper und Arme nach vorn einrollen.",
+   "Kurz halten und zurück in die Streckung."
+  ]
+ },
+ "Concentration_Curls": {
+  "name": "Konzentrationscurls",
+  "steps": [
+   "Auf eine Bank setzen, Oberarm innen am Oberschenkel abstützen, Kurzhantel hängt.",
+   "Nur den Unterarm bewegen und die Hantel zur Schulter curlen; ausatmen.",
+   "Ohne Schwung langsam absenken; Seite wechseln."
+  ]
+ },
+ "Cross-Body_Crunch": {
+  "name": "Diagonaler Crunch",
+  "steps": [
+   "Rücklings liegen, Knie gebeugt, Hände locker am Kopf.",
+   "Rechten Ellbogen zum linken Knie führen und gleichzeitig das Knie heranziehen.",
+   "Zurück und zur anderen Seite wiederholen."
+  ]
+ },
+ "Cross_Body_Hammer_Curl": {
+  "name": "Hammercurls über den Körper",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich mit Handflächen zum Körper.",
+   "Eine Hantel ohne Drehung diagonal zur gegenüberliegenden Schulter curlen.",
+   "Langsam absenken und mit dem anderen Arm wiederholen."
+  ]
+ },
+ "Cross_Over_-_With_Bands": {
+  "name": "Brust-Crossover mit Band",
+  "steps": [
+   "Band an einem Pfosten befestigen, mit dem Rücken dazu stehen und Griffe fassen.",
+   "Arme seitlich in T-Form, dann gestreckt im Halbkreis vor der Brust zusammenführen.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Crunch_-_Hands_Overhead": {
+  "name": "Crunch mit Armen über Kopf",
+  "steps": [
+   "Rücklings liegen, Knie gebeugt, Arme über dem Kopf gestreckt.",
+   "Oberkörper einrollen, bis die Schulterblätter abheben; Arme bleiben in Linie mit dem Kopf.",
+   "Langsam einatmend zurück."
+  ]
+ },
+ "Crunch_-_Legs_On_Exercise_Ball": {
+  "name": "Crunch mit Beinen auf dem Ball",
+  "steps": [
+   "Rücklings liegen, Füße auf dem Gymnastikball, Knie 90° gebeugt, Hände am Kopf.",
+   "Lendenwirbel in den Boden drücken und die Schultern etwa 10 cm anheben.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Crunches": {
+  "name": "Crunches",
+  "steps": [
+   "Rücklings liegen, Knie gebeugt, Hände locker seitlich am Kopf.",
+   "Unteren Rücken in den Boden drücken und die Schultern etwa 10 cm einrollen; ausatmen.",
+   "Eine Sekunde halten und langsam zurück."
+  ]
+ },
+ "Cuban_Press": {
+  "name": "Cuban Press",
+  "steps": [
+   "Kurzhanteln im Obergriff, Oberarme seitlich parallel zum Boden, Unterarme hängen.",
+   "Schultern außenrotieren, bis die Unterarme senkrecht nach oben zeigen.",
+   "Hanteln über Kopf drücken und in umgekehrter Reihenfolge zurück."
+  ]
+ },
+ "Dead_Bug": {
+  "name": "Dead Bug",
+  "steps": [
+   "Rücklings liegen, Arme senkrecht nach oben, Hüfte und Knie 90° gebeugt.",
+   "Rücken flach in den Boden drücken und ein Bein knapp über dem Boden ausstrecken.",
+   "Zurückführen und mit der anderen Seite wiederholen, ohne ins Hohlkreuz zu fallen."
+  ]
+ },
+ "Deadlift_with_Bands": {
+  "name": "Kreuzheben mit Bändern",
+  "steps": [
+   "Bänder über die Stange legen bzw. am Boden verankern und hineinsteigen.",
+   "Tief einatmen, Schienbeine an die Stange, Brust raus und über die Fersen hochziehen.",
+   "Aufrichten, Hüfte strecken und kontrolliert absenken."
+  ]
+ },
+ "Deadlift_with_Chains": {
+  "name": "Kreuzheben mit Ketten",
+  "steps": [
+   "Ketten an der Stange befestigen; Füße hüftbreit, Stange mittig über den Füßen.",
+   "Schulterbreit greifen, Brust hoch und über die Fersen ziehen; nach den Knien Hüfte kraftvoll nach vorn.",
+   "Über die Hüfte kontrolliert absenken."
+  ]
+ },
+ "Decline_Barbell_Bench_Press": {
+  "name": "Negativ-Bankdrücken (Langhantel)",
+  "steps": [
+   "Beine auf der Negativbank fixieren, hinlegen und die Stange mittelbreit ausheben.",
+   "Einatmend langsam zur unteren Brust absenken.",
+   "Ausatmend mit der Brust hochdrücken."
+  ]
+ },
+ "Decline_Close-Grip_Bench_To_Skull_Crusher": {
+  "name": "Enges Negativ-Bankdrücken mit Stirndrücken",
+  "steps": [
+   "Auf der Negativbank liegen, Stange eng greifen und ausheben.",
+   "Eng zur unteren Brust absenken und mit dem Trizeps hochdrücken.",
+   "Danach Oberarme fixieren, Stange zur Stirn senken und wieder strecken; im Wechsel."
+  ]
+ },
+ "Decline_Crunch": {
+  "name": "Crunch auf der Negativbank",
+  "steps": [
+   "Beine an der Negativbank fixieren, hinlegen, Hände am Kopf.",
+   "Unteren Rücken in die Bank drücken und die Schultern einrollen; ausatmen.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Decline_Dumbbell_Bench_Press": {
+  "name": "Negativ-Kurzhanteldrücken",
+  "steps": [
+   "Beine auf der Negativbank fixieren, mit Kurzhanteln hinlegen.",
+   "Hanteln schulterbreit, Handflächen nach vorn, langsam seitlich der Brust absenken.",
+   "Mit der Brust ausatmend hochdrücken."
+  ]
+ },
+ "Decline_Dumbbell_Flyes": {
+  "name": "Negativ-Fliegende mit Kurzhanteln",
+  "steps": [
+   "Auf der Negativbank liegen, Kurzhanteln über der Brust, Handflächen zueinander.",
+   "Arme leicht gebeugt im weiten Bogen seitlich absenken, bis die Brust gedehnt ist.",
+   "Im Bogen zurückführen und die Brust anspannen."
+  ]
+ },
+ "Decline_Dumbbell_Triceps_Extension": {
+  "name": "Trizepsstrecken auf der Negativbank (Kurzhantel)",
+  "steps": [
+   "Auf der Negativbank liegen, Kurzhanteln gestreckt über der Brust, Handflächen zueinander.",
+   "Oberarme fixieren und die Hanteln im Halbkreis neben den Kopf absenken.",
+   "Mit dem Trizeps wieder strecken."
+  ]
+ },
+ "Decline_EZ_Bar_Triceps_Extension": {
+  "name": "SZ-Stirndrücken auf der Negativbank",
+  "steps": [
+   "Auf der Negativbank liegen, SZ-Stange eng über dir halten.",
+   "Oberarme fixieren und die Stange zur Stirn absenken.",
+   "Mit dem Trizeps zurückstrecken."
+  ]
+ },
+ "Decline_Oblique_Crunch": {
+  "name": "Schräger Crunch auf der Negativbank",
+  "steps": [
+   "Beine fixieren, Oberkörper etwa 35–45° angehoben, eine Hand am Kopf.",
+   "Oberkörper eindrehend hochrollen, bis der Ellbogen das gegenüberliegende Knie berührt.",
+   "Langsam zurück; nach dem Satz Seite wechseln."
+  ]
+ },
+ "Decline_Push-Up": {
+  "name": "Liegestütze mit erhöhten Füßen",
+  "steps": [
+   "Hände etwas breiter als schulterbreit am Boden, Füße auf einer Bank oder Box.",
+   "Einatmend absenken, bis die Brust fast den Boden berührt.",
+   "Ausatmend hochdrücken und die Brust anspannen."
+  ]
+ },
+ "Decline_Reverse_Crunch": {
+  "name": "Reverse Crunch auf der Negativbank",
+  "steps": [
+   "Rücklings auf der Negativbank liegen und oben festhalten, Beine parallel zum Boden.",
+   "Beine zum Oberkörper ziehen und die Hüfte von der Bank rollen; ausatmen.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Decline_Smith_Press": {
+  "name": "Negativ-Bankdrücken an der Multipresse",
+  "steps": [
+   "Negativbank unter die Multipresse stellen, Stange mittelbreit greifen und entriegeln.",
+   "Einatmend absenken, bis die Stange den Oberkörper leicht berührt.",
+   "Ausatmend hochdrücken; am Ende Stange einhaken."
+  ]
+ },
+ "Deficit_Deadlift": {
+  "name": "Defizit-Kreuzheben",
+  "steps": [
+   "Auf einer 3–8 cm hohen Erhöhung stehen, Stange mittig über den Füßen.",
+   "Tief einatmen, Hüfte senken, Schienbeine an die Stange, Brust raus und über die Fersen ziehen.",
+   "Aufrichten und kontrolliert absenken."
+  ]
+ },
+ "Depth_Jump_Leap": {
+  "name": "Depth Jump auf höhere Box",
+  "steps": [
+   "Auf eine niedrige Box stellen, eine höhere Box etwa 1 m entfernt.",
+   "Herabfallen lassen und beidbeinig landen.",
+   "Sofort explosiv mit Armschwung auf die höhere Box springen und weich landen."
+  ]
+ },
+ "Dip_Machine": {
+  "name": "Dip-Maschine",
+  "steps": [
+   "In die Maschine setzen, Gewicht wählen und Griffe fassen, Ellbogen eng.",
+   "Mit dem Trizeps die Arme nach unten strecken; ausatmen.",
+   "Langsam zurück in die Ausgangsposition."
+  ]
+ },
+ "Dips_-_Chest_Version": {
+  "name": "Dips (Brust)",
+  "steps": [
+   "Am Barren mit gestreckten Armen stützen.",
+   "Oberkörper etwa 30° nach vorn neigen, Ellbogen leicht außen und absenken, bis die Brust gedehnt ist.",
+   "Mit der Brust wieder hochdrücken."
+  ]
+ },
+ "Dips_-_Triceps_Version": {
+  "name": "Dips (Trizeps)",
+  "steps": [
+   "Am Barren mit fast gestreckten Armen stützen.",
+   "Oberkörper aufrecht, Ellbogen eng und langsam absenken.",
+   "Mit dem Trizeps wieder hochdrücken."
+  ]
+ },
+ "Donkey_Calf_Raises": {
+  "name": "Donkey-Wadenheben",
+  "steps": [
+   "Unteren Rücken unter das Polster der Maschine, Fußballen auf den Block, Fersen frei.",
+   "Fersen so hoch wie möglich heben, Knie ruhig.",
+   "Langsam absenken, bis die Waden gedehnt sind."
+  ]
+ },
+ "Double_Kettlebell_Alternating_Hang_Clean": {
+  "name": "Doppel-Kettlebell Hang Clean im Wechsel",
+  "steps": [
+   "Zwei Kettlebells zwischen den Füßen, Gesäß zurück.",
+   "Eine Kettlebell zur Schulter umsetzen, die andere hängt.",
+   "Fließend die obere absenken und gleichzeitig die untere hochbringen."
+  ]
+ },
+ "Double_Kettlebell_Jerk": {
+  "name": "Doppel-Kettlebell Jerk",
+  "steps": [
+   "Zwei Kettlebells zu den Schultern umsetzen.",
+   "Kurz in die Knie gehen und explosiv strecken, dabei die Kettlebells über Kopf stoßen und im Ausfallschritt landen.",
+   "Füße zusammenführen, aufrichten und Kettlebells absenken."
+  ]
+ },
+ "Double_Kettlebell_Push_Press": {
+  "name": "Doppel-Kettlebell Push Press",
+  "steps": [
+   "Zwei Kettlebells zu den Schultern umsetzen.",
+   "Leicht in die Knie gehen und mit dem Schwung der Beine über Kopf drücken.",
+   "Zu den Schultern absenken und wiederholen."
+  ]
+ },
+ "Double_Kettlebell_Snatch": {
+  "name": "Doppel-Kettlebell Snatch",
+  "steps": [
+   "Zwei Kettlebells hinter den Füßen, in die Knie gehen und greifen.",
+   "Kettlebells kraftvoll zwischen den Beinen schwingen.",
+   "Mit Hüftstoß in einer Bewegung über Kopf bringen und fixieren."
+  ]
+ },
+ "Double_Kettlebell_Windmill": {
+  "name": "Doppel-Kettlebell-Windmühle",
+  "steps": [
+   "Eine Kettlebell über Kopf halten, die andere vor dem vorderen Fuß am Boden.",
+   "Gesäß zur Seite der oberen Kettlebell schieben und seitlich beugen, bis du die untere greifst.",
+   "Kurz halten und zurück aufrichten."
+  ]
+ },
+ "Double_Leg_Butt_Kick": {
+  "name": "Anfersen-Sprung beidbeinig",
+  "steps": [
+   "Mit leicht gebeugten Knien stehen.",
+   "Kurz in die Hocke gehen und maximal hoch springen.",
+   "In der Luft die Fersen zum Gesäß ziehen und weich landen."
+  ]
+ },
+ "Downward_Facing_Balance": {
+  "name": "Balance auf dem Gymnastikball (bäuchlings)",
+  "steps": [
+   "Bäuchlings auf einen Gymnastikball legen.",
+   "Mit den Händen nach vorn laufen und die Beine anheben.",
+   "Arme und Beine strecken und das Gleichgewicht halten."
+  ]
+ },
+ "Drag_Curl": {
+  "name": "Drag Curls",
+  "steps": [
+   "Langhantel im Untergriff, Ellbogen nah am Körper und leicht hinten.",
+   "Stange am Körper entlang nach oben ziehen, Ellbogen wandern nach hinten.",
+   "Am Körper entlang langsam absenken."
+  ]
+ },
+ "Drop_Push": {
+  "name": "Drop Push-ups",
+  "steps": [
+   "Zwei niedrige Boxen etwa 60–90 cm auseinander, Hände auf den Boxen in Liegestützposition.",
+   "Abdrücken und die Hände schulterbreit zwischen den Boxen auf den Boden fallen lassen.",
+   "Landung mit den Armen abfedern."
+  ]
+ },
+ "Dumbbell_Alternate_Bicep_Curl": {
+  "name": "Kurzhantel-Curls im Wechsel",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich, Handflächen zu den Oberschenkeln.",
+   "Eine Hantel curlen und dabei die Handfläche nach oben drehen; oben anspannen.",
+   "Langsam absenken und mit dem anderen Arm wiederholen."
+  ]
+ },
+ "Dumbbell_Bench_Press": {
+  "name": "Kurzhantel-Bankdrücken",
+  "steps": [
+   "Mit Kurzhanteln auf den Oberschenkeln auf die Flachbank legen und Hanteln hochbringen.",
+   "Hanteln seitlich der Brust, Handflächen nach vorn, kontrolliert absenken.",
+   "Ausatmend mit der Brust hochdrücken und oben anspannen."
+  ]
+ },
+ "Dumbbell_Bench_Press_with_Neutral_Grip": {
+  "name": "Kurzhantel-Bankdrücken (neutraler Griff)",
+  "steps": [
+   "Auf der Flachbank liegen, Schulterblätter zurück, Hanteln mit Handflächen zueinander über dir.",
+   "Ellbogen beugen und die Hanteln bis zum Oberkörper absenken.",
+   "Kurz halten und hochdrücken."
+  ]
+ },
+ "Dumbbell_Bicep_Curl": {
+  "name": "Bizepscurls mit Kurzhanteln",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln gestreckt, Handflächen nach vorn, Ellbogen am Körper.",
+   "Oberarme fixiert lassen und die Hanteln bis auf Schulterhöhe curlen; ausatmen.",
+   "Einatmend langsam absenken."
+  ]
+ },
+ "Dumbbell_Clean": {
+  "name": "Kurzhantel-Umsetzen",
+  "steps": [
+   "Schulterbreit stehen, Kurzhanteln über Hüft- und Kniebeugung zum Boden senken.",
+   "Explosiv strecken und die Hanteln nach oben beschleunigen.",
+   "In der Hocke an den Schultern auffangen und aufrichten."
+  ]
+ },
+ "Dumbbell_Floor_Press": {
+  "name": "Kurzhantel-Bodendrücken",
+  "steps": [
+   "Rücklings auf dem Boden liegen, Kurzhanteln gestreckt über dir.",
+   "Absenken, bis die Oberarme den Boden berühren.",
+   "Kurz pausieren und die Hanteln oben zusammenführen."
+  ]
+ },
+ "Dumbbell_Flyes": {
+  "name": "Kurzhantel-Flys (Fliegende)",
+  "steps": [
+   "Auf der Flachbank liegen, Kurzhanteln über der Brust, Handflächen zueinander.",
+   "Arme leicht gebeugt im weiten Bogen seitlich absenken, bis die Brust gedehnt ist.",
+   "Im gleichen Bogen zurückführen und die Brust anspannen."
+  ]
+ },
+ "Dumbbell_Incline_Row": {
+  "name": "Kurzhantelrudern auf der Schrägbank",
+  "steps": [
+   "Bäuchlings auf eine Schrägbank legen, Kurzhanteln neutral greifen, Arme gestreckt.",
+   "Schulterblätter zurückziehen und die Hanteln zur Seite rudern.",
+   "Oben kurz halten und absenken."
+  ]
+ },
+ "Dumbbell_Incline_Shoulder_Raise": {
+  "name": "Schulterheben auf der Schrägbank (Kurzhantel)",
+  "steps": [
+   "Auf der Schrägbank Kurzhanteln mit gestreckten Armen über den Schultern halten.",
+   "Arme gestreckt lassen und die Schultern von der Bank heben.",
+   "Kontrolliert zurücksinken lassen."
+  ]
+ },
+ "Dumbbell_Lunges": {
+  "name": "Ausfallschritte mit Kurzhanteln",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich.",
+   "Einen großen Schritt nach vorn und mit aufrechtem Oberkörper absenken.",
+   "Über die Ferse zurückdrücken; Bein wechseln."
+  ]
+ },
+ "Dumbbell_Lying_One-Arm_Rear_Lateral_Raise": {
+  "name": "Einarmiges Reverse Fly auf der Schrägbank",
+  "steps": [
+   "Bäuchlings auf eine leicht geneigte Bank (ca. 15°) legen, Kurzhantel in einer Hand.",
+   "Arm leicht gebeugt seitlich bis Schulterhöhe heben.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "Dumbbell_Lying_Pronation": {
+  "name": "Liegende Außenrotation (bäuchlings)",
+  "steps": [
+   "Bäuchlings auf der Bank, Oberarm seitlich, Ellbogen 90° gebeugt, Unterarm hängt.",
+   "Unterarm nach vorn oben rotieren, 90° beibehalten.",
+   "Langsam zurück."
+  ]
+ },
+ "Dumbbell_Lying_Rear_Lateral_Raise": {
+  "name": "Reverse Flys auf der Schrägbank",
+  "steps": [
+   "Bäuchlings auf eine leicht geneigte Bank legen, Kurzhanteln hängen.",
+   "Arme leicht gebeugt seitlich bis Schulterhöhe heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Dumbbell_Lying_Supination": {
+  "name": "Liegende Außenrotation (seitlich)",
+  "steps": [
+   "Seitlich auf der Bank liegen, Kurzhantel im oberen Arm, Ellbogen 90° am Körper.",
+   "Unterarm im Halbkreis nach oben rotieren.",
+   "Langsam zurück; Seite wechseln."
+  ]
+ },
+ "Dumbbell_One-Arm_Shoulder_Press": {
+  "name": "Einarmiges Kurzhantel-Schulterdrücken",
+  "steps": [
+   "Sitzend oder stehend eine Kurzhantel auf Schulterhöhe, Handfläche nach vorn.",
+   "Hantel ausatmend nach oben drücken, bis der Arm gestreckt ist.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "Dumbbell_One-Arm_Triceps_Extension": {
+  "name": "Einarmiges Überkopf-Trizepsstrecken",
+  "steps": [
+   "Kurzhantel mit gestrecktem Arm über dem Kopf halten.",
+   "Oberarm fixieren und die Hantel langsam hinter den Kopf absenken.",
+   "Mit dem Trizeps wieder strecken; Seite wechseln."
+  ]
+ },
+ "Dumbbell_One-Arm_Upright_Row": {
+  "name": "Einarmiges Kurzhantel-Aufrechtrudern",
+  "steps": [
+   "Aufrecht stehen, Kurzhantel vor dem Körper.",
+   "Hantel nah am Körper bis fast zum Kinn ziehen, Ellbogen führt.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "Dumbbell_Prone_Incline_Curl": {
+  "name": "Spider Curls (Kurzhantel)",
+  "steps": [
+   "Bäuchlings auf eine Schrägbank legen, Arme hängen senkrecht.",
+   "Handflächen nach vorn, Ellbogen ruhig und die Hanteln hochcurlen.",
+   "Langsam vollständig absenken."
+  ]
+ },
+ "Dumbbell_Raise": {
+  "name": "Kurzhantel-Seitheben (enges Aufrechtrudern)",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich, Ellbogen leicht gebeugt.",
+   "Hanteln seitlich am Körper nach oben ziehen, Ellbogen führen.",
+   "Langsam absenken."
+  ]
+ },
+ "Dumbbell_Rear_Lunge": {
+  "name": "Ausfallschritte rückwärts (Kurzhantel)",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich.",
+   "Mit einem Bein nach hinten treten und absenken.",
+   "Zurück in den Stand drücken; Bein wechseln."
+  ]
+ },
+ "Dumbbell_Scaption": {
+  "name": "Scaption (Y-Heben)",
+  "steps": [
+   "Leichte Kurzhanteln seitlich, Daumen nach vorn/oben.",
+   "Arme gestreckt etwa 30° seitlich vor dem Körper bis Schulterhöhe heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Dumbbell_Seated_Box_Jump": {
+  "name": "Box Jump aus dem Sitzen",
+  "steps": [
+   "Auf einer Bank sitzen, Kurzhantel vor der Brust, Box etwas entfernt.",
+   "Nach vorn lehnen und explosiv auf die Box springen.",
+   "Weich landen, herabsteigen und zurück zur Bank."
+  ]
+ },
+ "Dumbbell_Seated_One-Leg_Calf_Raise": {
+  "name": "Einbeiniges Wadenheben sitzend (Kurzhantel)",
+  "steps": [
+   "Sitzend Fußballen auf einen Block, Kurzhantel auf den Oberschenkel nahe dem Knie.",
+   "Ferse so hoch wie möglich heben und die Wade anspannen.",
+   "Langsam tief absenken; Seite wechseln."
+  ]
+ },
+ "Dumbbell_Shoulder_Press": {
+  "name": "Kurzhantel-Schulterdrücken",
+  "steps": [
+   "Auf eine Bank mit Lehne setzen, Kurzhanteln auf Schulterhöhe, Handflächen nach vorn.",
+   "Ausatmend nach oben drücken, bis sich die Hanteln fast berühren.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Dumbbell_Shrug": {
+  "name": "Shrugs mit Kurzhanteln",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich, Handflächen zum Körper.",
+   "Schultern so hoch wie möglich ziehen; eine Sekunde halten.",
+   "Langsam absenken."
+  ]
+ },
+ "Dumbbell_Side_Bend": {
+  "name": "Seitbeugen mit Kurzhantel",
+  "steps": [
+   "Aufrecht stehen, Kurzhantel in einer Hand, andere Hand an der Hüfte.",
+   "Nur aus der Taille zur Seite beugen und kurz halten.",
+   "Aufrichten und zur Gegenseite beugen; Seite wechseln."
+  ]
+ },
+ "Dumbbell_Squat": {
+  "name": "Kniebeuge mit Kurzhanteln",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich, schulterbreiter Stand.",
+   "Mit geradem Rücken absenken, bis die Oberschenkel parallel zum Boden sind.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Dumbbell_Squat_To_A_Bench": {
+  "name": "Kniebeuge auf die Bank (Kurzhantel)",
+  "steps": [
+   "Mit Kurzhanteln vor einer Bank stehen, schulterbreit.",
+   "Absenken, bis du die Bank leicht berührst.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Dumbbell_Step_Ups": {
+  "name": "Step-ups mit Kurzhanteln",
+  "steps": [
+   "Kurzhanteln seitlich, vor einer erhöhten Plattform stehen.",
+   "Einen Fuß aufsetzen und über die Ferse hochsteigen.",
+   "Kontrolliert herabsteigen; Bein wechseln."
+  ]
+ },
+ "Dumbbell_Tricep_Extension_-Pronated_Grip": {
+  "name": "Liegendes Trizepsstrecken (Kurzhantel, Obergriff)",
+  "steps": [
+   "Auf der Flachbank Kurzhanteln gestreckt über den Schultern, Handflächen nach vorn.",
+   "Oberarme fixieren und die Hanteln neben die Ohren absenken.",
+   "Mit dem Trizeps zurückstrecken."
+  ]
+ },
+ "EZ-Bar_Curl": {
+  "name": "SZ-Curls",
+  "steps": [
+   "Aufrecht stehen, SZ-Stange am äußeren Griff im Untergriff.",
+   "Oberarme fixiert lassen und bis auf Schulterhöhe curlen; ausatmen.",
+   "Oben anspannen und langsam absenken."
+  ]
+ },
+ "EZ-Bar_Skullcrusher": {
+  "name": "Stirndrücken (SZ-Stange)",
+  "steps": [
+   "Auf der Flachbank liegen, SZ-Stange eng über der Brust, Arme senkrecht.",
+   "Oberarme fixieren und die Stange durch Beugen der Ellbogen zur Stirn absenken.",
+   "Mit dem Trizeps zurückstrecken."
+  ]
+ },
+ "Elbow_to_Knee": {
+  "name": "Ellbogen-zu-Knie-Crunch",
+  "steps": [
+   "Rücklings liegen, rechtes Bein über das gebeugte linke Knie legen, Hände hinter dem Kopf.",
+   "Oberkörper einrollen und drehen, linken Ellbogen zum rechten Knie führen.",
+   "Zurück; nach den Wiederholungen Seite wechseln."
+  ]
+ },
+ "Elevated_Back_Lunge": {
+  "name": "Ausfallschritt rückwärts von erhöhter Fläche",
+  "steps": [
+   "Langhantel auf dem oberen Rücken, auf einer niedrigen Plattform stehen.",
+   "Mit einem Bein nach hinten treten und absenken, bis das Knie fast den Boden berührt.",
+   "Über Hüfte und Knie zurück auf die Plattform; Bein wechseln."
+  ]
+ },
+ "Elevated_Cable_Rows": {
+  "name": "Erhöhtes Kabelrudern",
+  "steps": [
+   "Auf eine 10–15 cm hohe Erhöhung am Ruderzug setzen, Knie leicht gebeugt, V-Griff fassen.",
+   "Oberkörper aufrecht, Brust raus.",
+   "Griff zum Bauch ziehen, Rücken anspannen und langsam zurück."
+  ]
+ },
+ "Exercise_Ball_Crunch": {
+  "name": "Crunch auf dem Gymnastikball",
+  "steps": [
+   "Mit dem unteren Rücken auf dem Ball liegen, Füße fest am Boden.",
+   "Oberkörper in die Dehnung sinken lassen.",
+   "Bauch anspannen und Schultern einrollen; langsam zurück."
+  ]
+ },
+ "Exercise_Ball_Pull-In": {
+  "name": "Knie-Einziehen auf dem Gymnastikball",
+  "steps": [
+   "Liegestützposition, Schienbeine auf dem Gymnastikball.",
+   "Rücken gerade, Knie zur Brust ziehen, sodass der Ball nach vorn rollt.",
+   "Beine langsam wieder strecken."
+  ]
+ },
+ "Extended_Range_One-Arm_Kettlebell_Floor_Press": {
+  "name": "Einarmiges Kettlebell-Bodendrücken",
+  "steps": [
+   "Rücklings auf dem Boden, Kettlebell am Griff seitlich, Bein der gleichen Seite gebeugt.",
+   "Kettlebell über den Körper nach oben drücken.",
+   "Kontrolliert zurück; Seite wechseln."
+  ]
+ },
+ "External_Rotation": {
+  "name": "Außenrotation (Kurzhantel, seitlich liegend)",
+  "steps": [
+   "Seitlich auf der Bank liegen, Kurzhantel im oberen Arm, Ellbogen 90° am Körper.",
+   "Unterarm im Halbkreis nach oben rotieren.",
+   "Langsam zurück; Seite wechseln."
+  ]
+ },
+ "External_Rotation_with_Band": {
+  "name": "Außenrotation mit Band",
+  "steps": [
+   "Band auf Ellbogenhöhe befestigen, seitlich dazu stehen, Ellbogen 90° am Körper.",
+   "Unterarm nach außen drehen, Ellbogen bleibt fixiert.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "External_Rotation_with_Cable": {
+  "name": "Außenrotation am Kabelzug",
+  "steps": [
+   "Kabelzug auf Ellbogenhöhe, seitlich stehen, Griff mit der äußeren Hand.",
+   "Ellbogen 90° am Körper fixieren.",
+   "Unterarm nach außen drehen und kontrolliert zurück."
+  ]
+ },
+ "Face_Pull": {
+  "name": "Face Pulls",
+  "steps": [
+   "Seil am oberen Kabelzug fassen und einen Schritt zurücktreten.",
+   "Seil zum Gesicht ziehen und die Hände dabei auseinanderführen; Oberarme parallel zum Boden.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Fast_Skipping": {
+  "name": "Schnelles Skipping",
+  "steps": [
+   "Locker stehen, ein Bein leicht vorn.",
+   "Im Schritt-Hüpf-Rhythmus abwechselnd vorwärts skippen.",
+   "Bodenkontakt kurz halten und so schnell wie möglich bewegen."
+  ]
+ },
+ "Finger_Curls": {
+  "name": "Fingercurls (Langhantel)",
+  "steps": [
+   "Langhantel schulterbreit im Untergriff halten.",
+   "Stange in die Fingerspitzen abrollen lassen.",
+   "Hände schließen und die Stange so hoch wie möglich einrollen."
+  ]
+ },
+ "Flat_Bench_Cable_Flyes": {
+  "name": "Kabel-Flys auf der Flachbank",
+  "steps": [
+   "Flachbank zwischen zwei unteren Kabelzüge stellen und mit den Griffen hinlegen.",
+   "Arme leicht gebeugt seitlich ausbreiten.",
+   "Im Halbkreis über der Brust zusammenführen, anspannen und langsam zurück."
+  ]
+ },
+ "Flat_Bench_Leg_Pull-In": {
+  "name": "Knieheben auf der Flachbank",
+  "steps": [
+   "Auf der Bank liegen, Beine über das Ende gestreckt, Hände halten die Bank.",
+   "Knie beugen und zur Brust ziehen; ausatmen.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Flat_Bench_Lying_Leg_Raise": {
+  "name": "Beinheben auf der Flachbank",
+  "steps": [
+   "Rücklings auf der Bank liegen, Beine gestreckt über dem Ende, Hände halten die Bank.",
+   "Beine fast gestreckt bis 90° anheben; ausatmen.",
+   "Langsam einatmend absenken."
+  ]
+ },
+ "Flexor_Incline_Dumbbell_Curls": {
+  "name": "Schrägbank-Curls (Außengriff)",
+  "steps": [
+   "Auf eine 45°-Schrägbank setzen, Kurzhanteln am äußeren Ende gegriffen, Arme hängen.",
+   "Handflächen nach vorn, beide Hanteln gleichzeitig curlen.",
+   "Langsam absenken."
+  ]
+ },
+ "Floor_Glute-Ham_Raise": {
+  "name": "Nordic Curls (Boden)",
+  "steps": [
+   "Kniend, Füße fixiert (Partner oder Gerät), Oberkörper aufrecht.",
+   "Langsam nach vorn sinken, ohne die Hüfte zu beugen.",
+   "Mit den Händen abfangen, leicht abdrücken und mit den Beinbeugern hochziehen."
+  ]
+ },
+ "Floor_Press": {
+  "name": "Bodendrücken (Langhantel)",
+  "steps": [
+   "Im Rack auf dem Boden liegen, Schulterblätter zusammen, Stange ausheben.",
+   "Stange zur unteren Brust absenken, bis die Oberarme den Boden berühren; Ellbogen eng.",
+   "So schnell wie möglich hochdrücken."
+  ]
+ },
+ "Floor_Press_with_Chains": {
+  "name": "Bodendrücken mit Ketten",
+  "steps": [
+   "Ketten über die Stangenenden hängen, im Rack auf dem Boden liegen.",
+   "Stange ausheben und zur unteren Brust absenken.",
+   "Explosiv hochdrücken."
+  ]
+ },
+ "Flutter_Kicks": {
+  "name": "Flutter Kicks (bäuchlings)",
+  "steps": [
+   "Bäuchlings auf eine Bank, Hüfte an der Kante, Bank festhalten.",
+   "Gesäß anspannen und Beine auf Hüfthöhe strecken.",
+   "Beine abwechselnd auf und ab bewegen wie beim Kraulbeinschlag."
+  ]
+ },
+ "Freehand_Jump_Squat": {
+  "name": "Sprungkniebeuge",
+  "steps": [
+   "Arme vor der Brust kreuzen, Füße schulterbreit.",
+   "Mit geradem Rücken tief in die Hocke gehen.",
+   "Explosiv nach oben springen und direkt in die nächste Kniebeuge landen."
+  ]
+ },
+ "Frog_Sit-Ups": {
+  "name": "Frosch-Sit-ups",
+  "steps": [
+   "Rücklings liegen, Fußsohlen aneinander, Knie nach außen fallen lassen.",
+   "Arme vor der Brust kreuzen.",
+   "Unteren Rücken flach drücken und den Oberkörper einrollen; langsam zurück."
+  ]
+ },
+ "Front_Barbell_Squat": {
+  "name": "Frontkniebeuge (Langhantel)",
+  "steps": [
+   "Stange im Rack vorn auf die Schultern legen, ausheben und schulterbreit stehen.",
+   "Mit aufrechtem Oberkörper absenken, bis die Oberschenkel unter parallel sind.",
+   "Über die Fußmitte hochdrücken."
+  ]
+ },
+ "Front_Barbell_Squat_To_A_Bench": {
+  "name": "Frontkniebeuge auf die Bank",
+  "steps": [
+   "Bank hinter dir, Langhantel vorn auf den Schultern.",
+   "Aufrecht absenken, bis das Gesäß die Bank berührt.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Front_Box_Jump": {
+  "name": "Box Jump",
+  "steps": [
+   "30–60 cm vor einer Box schulterbreit stehen.",
+   "Kurz in die Hocke, Arme zurück und explosiv auf die Box springen.",
+   "Weich landen und Bein für Bein herabsteigen."
+  ]
+ },
+ "Front_Cable_Raise": {
+  "name": "Frontheben am Kabelzug",
+  "steps": [
+   "Mit dem Rücken zum unteren Kabelzug, Griff in einer Hand vor dem Oberschenkel.",
+   "Arm leicht gebeugt ohne Schwung bis Schulterhöhe nach vorn heben.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "Front_Cone_Hops_or_hurdle_hops": {
+  "name": "Hütchensprünge",
+  "steps": [
+   "Mehrere Hütchen im Abstand von etwa 1 m aufstellen.",
+   "Beidbeinig mit Armschwung über das erste Hütchen springen.",
+   "Landung abfedern und direkt über das nächste springen."
+  ]
+ },
+ "Front_Dumbbell_Raise": {
+  "name": "Frontheben mit Kurzhanteln im Wechsel",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln vor den Oberschenkeln.",
+   "Eine Hantel mit leicht gebeugtem Arm bis Schulterhöhe heben.",
+   "Absenken und gleichzeitig die andere heben."
+  ]
+ },
+ "Front_Incline_Dumbbell_Raise": {
+  "name": "Frontheben auf der Schrägbank",
+  "steps": [
+   "Auf einer Schrägbank (30–60°) sitzen, Kurzhanteln knapp über den Oberschenkeln.",
+   "Mit gestreckten Armen bis knapp über Schulterhöhe heben.",
+   "Kurz anspannen und langsam absenken."
+  ]
+ },
+ "Front_Plate_Raise": {
+  "name": "Frontheben mit Hantelscheibe",
+  "steps": [
+   "Hantelscheibe mit beiden Händen vor dem Körper halten.",
+   "Ausatmend bis knapp über Schulterhöhe heben und kurz halten.",
+   "Langsam absenken."
+  ]
+ },
+ "Front_Raise_And_Pullover": {
+  "name": "Frontheben mit Pullover (liegend)",
+  "steps": [
+   "Auf der Flachbank liegen, Langhantel eng auf den Oberschenkeln, Arme gestreckt.",
+   "Stange im Halbkreis über den Kopf bis hinter den Kopf führen.",
+   "Bewegung umkehren und zurück zu den Oberschenkeln."
+  ]
+ },
+ "Front_Squat_Clean_Grip": {
+  "name": "Frontkniebeuge (Clean-Griff)",
+  "steps": [
+   "Stange vorn auf den Schultern ablegen, Finger unter der Stange, Ellbogen hoch.",
+   "Zwischen die Beine tief absenken, Knie über den Füßen.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Front_Squats_With_Two_Kettlebells": {
+  "name": "Frontkniebeuge mit zwei Kettlebells",
+  "steps": [
+   "Zwei Kettlebells zu den Schultern umsetzen.",
+   "Blick nach vorn, Knie nach außen und so tief wie möglich absenken.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Front_Two-Dumbbell_Raise": {
+  "name": "Frontheben mit Kurzhanteln",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln vor den Oberschenkeln.",
+   "Beide Hanteln ohne Schwung bis Schulterhöhe heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Full_Range-Of-Motion_Lat_Pulldown": {
+  "name": "Latzug über Kreuz (voller Bewegungsumfang)",
+  "steps": [
+   "Zwei obere Kabelgriffe über Kreuz fassen, Arme über dem Kopf.",
+   "Brust raus, leichtes Hohlkreuz.",
+   "Griffe in einem weiten Bogen nach unten ziehen und langsam zurück."
+  ]
+ },
+ "Gironda_Sternum_Chins": {
+  "name": "Gironda-Klimmzüge zum Brustbein",
+  "steps": [
+   "Stange schulterbreit im Untergriff, Brust raus und zurücklehnen.",
+   "Mit Hohlkreuz hochziehen, Kopf zurück.",
+   "Bis das Brustbein die Stange berührt; kurz halten und langsam absenken."
+  ]
+ },
+ "Glute_Ham_Raise": {
+  "name": "Glute Ham Raise",
+  "steps": [
+   "Gerät einstellen, Füße gegen die Fußplatte, Knie hinter dem Polster.",
+   "Aus der unteren Position die Knie beugen und den Oberkörper hochziehen.",
+   "Kontrolliert absenken."
+  ]
+ },
+ "Glute_Kickback": {
+  "name": "Glute Kickbacks (Vierfüßlerstand)",
+  "steps": [
+   "Vierfüßlerstand, Knie 90° gebeugt.",
+   "Ein Bein mit 90°-Kniewinkel nach oben heben, bis der Oberschenkel in Linie mit dem Rücken ist.",
+   "Zurück und mit dem anderen Bein wiederholen."
+  ]
+ },
+ "Goblet_Squat": {
+  "name": "Goblet Squat",
+  "steps": [
+   "Kettlebell an den Hörnern nah vor der Brust halten.",
+   "Zwischen die Beine tief absenken, Brust und Kopf oben.",
+   "Unten Knie mit den Ellbogen nach außen drücken und aufstehen."
+  ]
+ },
+ "Good_Morning": {
+  "name": "Good Morning (Langhantel)",
+  "steps": [
+   "Langhantel auf dem oberen Rücken wie bei der Kniebeuge, Rücken fest.",
+   "Hüfte nach hinten schieben und mit geradem Rücken fast parallel vorbeugen.",
+   "Mit Gesäß und Beinbeugern aufrichten."
+  ]
+ },
+ "Good_Morning_off_Pins": {
+  "name": "Good Morning aus den Pins",
+  "steps": [
+   "Stange im Rack auf Bauchhöhe, vorgebeugt darunter auf den oberen Rücken legen.",
+   "Mit Gesäß und Beinbeugern aufrichten.",
+   "Langsam zurück auf die Pins absenken."
+  ]
+ },
+ "Gorilla_Chin_Crunch": {
+  "name": "Gorilla-Klimmzug mit Crunch",
+  "steps": [
+   "An der Stange im Untergriff hängen, Knie 90° gebeugt.",
+   "Hochziehen und gleichzeitig die Knie zur Brust ziehen.",
+   "Langsam zurück in den Hang."
+  ]
+ },
+ "Hack_Squat": {
+  "name": "Hackenschmidt-Kniebeuge (Maschine)",
+  "steps": [
+   "Rücken ans Polster, Schultern unter die Polster, Füße schulterbreit auf der Plattform.",
+   "Sicherung lösen und absenken, bis die Knie etwa 90° gebeugt sind.",
+   "Über die Fersen hochdrücken, ohne die Knie durchzustrecken."
+  ]
+ },
+ "Hammer_Curls": {
+  "name": "Hammercurls",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich, Handflächen zum Körper.",
+   "Oberarme ruhig und beide Hanteln hochcurlen.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Hammer_Grip_Incline_DB_Bench_Press": {
+  "name": "Schrägbankdrücken mit Kurzhanteln (Hammergriff)",
+  "steps": [
+   "Auf die Schrägbank legen, Kurzhanteln schulterbreit mit Handflächen zueinander.",
+   "Einatmend langsam seitlich absenken.",
+   "Ausatmend mit der Brust hochdrücken."
+  ]
+ },
+ "Handstand_Push-Ups": {
+  "name": "Handstand-Liegestütze",
+  "steps": [
+   "Mit dem Rücken zur Wand Hände schulterbreit aufsetzen und in den Handstand schwingen.",
+   "Körper gestreckt, langsam absenken, bis der Kopf fast den Boden berührt.",
+   "Wieder hochdrücken."
+  ]
+ },
+ "Hanging_Bar_Good_Morning": {
+  "name": "Good Morning an hängender Stange",
+  "steps": [
+   "Stange an Ketten auf Bauchhöhe aufhängen.",
+   "Vorgebeugt unter die Stange gehen und sie auf den oberen Rücken legen.",
+   "Mit Gesäß und Beinbeugern aufrichten und langsam zurück."
+  ]
+ },
+ "Hanging_Leg_Raise": {
+  "name": "Beinheben im Hang",
+  "steps": [
+   "An der Klimmzugstange mit gestreckten Armen hängen, Beine gestreckt.",
+   "Beine bis 90° anheben und kurz halten.",
+   "Langsam absenken."
+  ]
+ },
+ "Hanging_Pike": {
+  "name": "Hanging Pike",
+  "steps": [
+   "An der Stange im Obergriff hängen, Beine zusammen.",
+   "Beine anziehen und hochführen, bis die Schienbeine fast die Stange berühren.",
+   "So langsam wie möglich absenken."
+  ]
+ },
+ "Heavy_Bag_Thrust": {
+  "name": "Sandsack-Stoß",
+  "steps": [
+   "Neben einem Boxsack in versetztem Stand, Hand auf Brusthöhe am Sack.",
+   "Aus der Hüfte drehen und den Sack kraftvoll wegstoßen.",
+   "Zurückschwingenden Sack auffangen und wiederholen."
+  ]
+ },
+ "High_Cable_Curls": {
+  "name": "Bizepscurls am oberen Kabelzug",
+  "steps": [
+   "Zwischen zwei oberen Kabelzügen stehen, Oberarme seitlich parallel zum Boden.",
+   "Griffe zu den Ohren curlen, Oberarme ruhig.",
+   "Langsam zurückführen."
+  ]
+ },
+ "Hip_Extension_with_Bands": {
+  "name": "Hüftstreckung mit Band",
+  "steps": [
+   "Band unten an einem Pfosten und am Knöchel befestigen, zum Pfosten schauen.",
+   "Bein gestreckt so weit wie möglich nach hinten führen.",
+   "Zurückführen; Seite wechseln."
+  ]
+ },
+ "Hip_Flexion_with_Band": {
+  "name": "Hüftbeugung mit Band",
+  "steps": [
+   "Band unten an einem Pfosten und am Knöchel befestigen, vom Pfosten wegschauen.",
+   "Knie bis 90° anheben und kurz halten.",
+   "Zurückführen; Seite wechseln."
+  ]
+ },
+ "Hip_Lift_with_Band": {
+  "name": "Hüftheben mit Band",
+  "steps": [
+   "Rücklings im Rack liegen, Band über der Hüfte befestigt, Knie gebeugt.",
+   "Über die Fersen die Hüfte gegen das Band so hoch wie möglich drücken.",
+   "Oben halten und zurück."
+  ]
+ },
+ "Hurdle_Hops": {
+  "name": "Hürdensprünge",
+  "steps": [
+   "Kleine Hürden im Abstand von etwa 1 m aufstellen.",
+   "Beidbeinig mit Armschwung über die erste Hürde springen.",
+   "Landung abfedern und direkt weiter über die nächste springen."
+  ]
+ },
+ "Hyperextensions_Back_Extensions": {
+  "name": "Hyperextensions (Rückenstrecker)",
+  "steps": [
+   "Bäuchlings auf die Hyperextension-Bank, Fersen unter den Polstern, Arme vor der Brust.",
+   "Mit geradem Rücken langsam nach vorn beugen, bis die Beinbeuger gedehnt sind.",
+   "Oberkörper wieder in Linie mit den Beinen aufrichten."
+  ]
+ },
+ "Hyperextensions_With_No_Hyperextension_Bench": {
+  "name": "Rückenstrecken auf der Flachbank",
+  "steps": [
+   "Bäuchlings auf eine Flachbank, Hüfte über der Kante, Partner hält die Beine.",
+   "Mit geradem Rücken nach vorn beugen.",
+   "Oberkörper langsam wieder aufrichten."
+  ]
+ },
+ "Incline_Barbell_Triceps_Extension": {
+  "name": "Trizepsstrecken auf der Schrägbank (Langhantel)",
+  "steps": [
+   "Auf einer 45–75°-Schrägbank die Langhantel eng über dem Kopf halten.",
+   "Stange im Halbkreis hinter den Kopf senken, bis die Unterarme den Bizeps berühren.",
+   "Mit dem Trizeps zurückstrecken."
+  ]
+ },
+ "Incline_Bench_Pull": {
+  "name": "Rudern auf der Schrägbank (Obergriff)",
+  "steps": [
+   "Bäuchlings auf eine 30°-Schrägbank, Kurzhanteln im Obergriff, Ellbogen nach außen.",
+   "Hanteln wie umgekehrtes Bankdrücken nach oben ziehen.",
+   "Langsam absenken."
+  ]
+ },
+ "Incline_Cable_Chest_Press": {
+  "name": "Schräge Brustpresse am Kabelzug",
+  "steps": [
+   "Auf eine Schrägbank zwischen den Kabelzügen setzen, Griffe fassen.",
+   "Griffe nach vorn oben zusammendrücken, Schulterblätter zurück.",
+   "Mit Spannung zurückführen."
+  ]
+ },
+ "Incline_Cable_Flye": {
+  "name": "Kabel-Flys auf der Schrägbank",
+  "steps": [
+   "Schrägbank (45°) zwischen zwei untere Kabelzüge, Griffe über dem Gesicht halten.",
+   "Arme leicht gebeugt im weiten Bogen seitlich absenken.",
+   "Zurückführen und die Brust anspannen."
+  ]
+ },
+ "Incline_Dumbbell_Bench_With_Palms_Facing_In": {
+  "name": "Schrägbankdrücken mit Kurzhanteln (neutraler Griff)",
+  "steps": [
+   "Auf der Schrägbank Kurzhanteln schulterbreit mit Handflächen zueinander.",
+   "Einatmend langsam absenken.",
+   "Ausatmend mit der Brust hochdrücken."
+  ]
+ },
+ "Incline_Dumbbell_Curl": {
+  "name": "Schrägbank-Curls (Kurzhantel)",
+  "steps": [
+   "Auf der Schrägbank sitzen, Kurzhanteln hängen, Handflächen nach vorn.",
+   "Oberarme ruhig und bis auf Schulterhöhe curlen.",
+   "Langsam absenken."
+  ]
+ },
+ "Incline_Dumbbell_Flyes": {
+  "name": "Schrägbank-Flys (Kurzhantel)",
+  "steps": [
+   "Auf einer Schrägbank (max. 30°) Kurzhanteln über der Brust halten.",
+   "Arme leicht gebeugt seitlich absenken, Handflächen zueinander drehen.",
+   "Im Bogen zurückführen und die Brust anspannen."
+  ]
+ },
+ "Incline_Dumbbell_Flyes_-_With_A_Twist": {
+  "name": "Schrägbank-Flys mit Drehung",
+  "steps": [
+   "Auf einer Schrägbank Kurzhanteln über der Brust, Handflächen zu dir.",
+   "Beim seitlichen Absenken die Handflächen zueinander drehen.",
+   "Beim Zurückführen eindrehen, sodass sich die kleinen Finger oben nähern."
+  ]
+ },
+ "Incline_Dumbbell_Press": {
+  "name": "Schrägbankdrücken (Kurzhantel)",
+  "steps": [
+   "Auf die Schrägbank legen, Kurzhanteln schulterbreit, Handflächen nach vorn.",
+   "Ausatmend mit der Brust nach oben drücken.",
+   "Langsam (etwa doppelt so langsam) absenken."
+  ]
+ },
+ "Incline_Hammer_Curls": {
+  "name": "Hammercurls auf der Schrägbank",
+  "steps": [
+   "Auf der Schrägbank sitzen, Kurzhanteln hängen neutral.",
+   "Oberarme ruhig und die Hanteln hochcurlen.",
+   "Oben halten und langsam absenken."
+  ]
+ },
+ "Incline_Inner_Biceps_Curl": {
+  "name": "Schrägbank-Curls nach außen",
+  "steps": [
+   "Auf der Schrägbank liegen, Kurzhanteln hängen, Handflächen nach außen.",
+   "Hanteln nach außen oben bis Schulterhöhe curlen.",
+   "Auf gleichem Weg langsam absenken."
+  ]
+ },
+ "Incline_Push-Up": {
+  "name": "Schräge Liegestütze (Hände erhöht)",
+  "steps": [
+   "Hände etwas breiter als schulterbreit auf eine Bank oder stabile Erhöhung.",
+   "Füße zurücksetzen, Körper gerade, Brust zur Kante absenken.",
+   "Arme strecken und wiederholen."
+  ]
+ },
+ "Incline_Push-Up_Close-Grip": {
+  "name": "Schräge Liegestütze eng",
+  "steps": [
+   "Hände nebeneinander auf eine Stange oder stabile Erhöhung.",
+   "Füße zurücksetzen, Körper gerade und die Brust zur Stange senken.",
+   "Durch Strecken der Ellbogen hochdrücken."
+  ]
+ },
+ "Incline_Push-Up_Depth_Jump": {
+  "name": "Plyo-Liegestütze mit erhöhten Füßen",
+  "steps": [
+   "Füße auf einer niedrigen Box, Hände zwischen zwei Steppern in Liegestützposition.",
+   "Absenken und explosiv abdrücken, Hände auf die Stepper setzen.",
+   "Wieder abdrücken und zurück zwischen die Stepper."
+  ]
+ },
+ "Incline_Push-Up_Medium": {
+  "name": "Schräge Liegestütze schulterbreit",
+  "steps": [
+   "Hände schulterbreit auf eine Stange oder stabile Erhöhung.",
+   "Körper gerade halten und die Brust zur Stange senken.",
+   "Hochdrücken."
+  ]
+ },
+ "Incline_Push-Up_Reverse_Grip": {
+  "name": "Schräge Liegestütze im Untergriff",
+  "steps": [
+   "Hände schulterbreit im Untergriff auf eine Stange.",
+   "Körper gerade halten und die Brust zur Stange senken.",
+   "Hochdrücken."
+  ]
+ },
+ "Incline_Push-Up_Wide": {
+  "name": "Schräge Liegestütze breit",
+  "steps": [
+   "Hände breiter als schulterbreit auf eine Stange oder Erhöhung.",
+   "Körper gerade halten und die Brust zur Stange senken.",
+   "Hochdrücken."
+  ]
+ },
+ "Internal_Rotation_with_Band": {
+  "name": "Innenrotation mit Band",
+  "steps": [
+   "Band auf Ellbogenhöhe befestigen, seitlich dazu stehen, Ellbogen 90° am Körper.",
+   "Unterarm nach innen zum Bauch drehen, Ellbogen bleibt fixiert.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "Inverted_Row": {
+  "name": "Umgekehrtes Rudern (Australian Pull-up)",
+  "steps": [
+   "Stange auf Hüfthöhe, breiter als schulterbreit greifen und darunter hängen, Fersen am Boden.",
+   "Brust zur Stange ziehen und die Schulterblätter zusammenziehen.",
+   "Oben kurz halten und kontrolliert absenken."
+  ]
+ },
+ "Inverted_Row_with_Straps": {
+  "name": "Umgekehrtes Rudern am Schlingentrainer",
+  "steps": [
+   "Schlingen oder Seile fassen und mit geradem Körper zurücklehnen.",
+   "Brust zu den Händen ziehen, Schulterblätter zusammen.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "Iron_Cross": {
+  "name": "Iron Cross (Kurzhantel)",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich, Knie leicht gebeugt.",
+   "Arme gestreckt seitlich bis Schulterhöhe heben, sodass ein T entsteht.",
+   "Kurz halten und kontrolliert absenken."
+  ]
+ },
+ "Isometric_Chest_Squeezes": {
+  "name": "Isometrisches Brustdrücken",
+  "steps": [
+   "Ellbogen 90° gebeugt, Handflächen vor der Brust zusammen.",
+   "Hände gegeneinander drücken und die Spannung langsam steigern; normal weiteratmen.",
+   "Halten und langsam lösen."
+  ]
+ },
+ "Isometric_Neck_Exercise_-_Front_And_Back": {
+  "name": "Isometrische Nackenübung vorn/hinten",
+  "steps": [
+   "Kopf neutral, beide Hände an die Stirn.",
+   "Kopf gegen die Hände drücken, ohne ihn zu bewegen; Spannung langsam aufbauen.",
+   "Halten, lösen und mit den Händen am Hinterkopf wiederholen."
+  ]
+ },
+ "Isometric_Neck_Exercise_-_Sides": {
+  "name": "Isometrische Nackenübung seitlich",
+  "steps": [
+   "Kopf neutral, eine Hand seitlich an den Kopf.",
+   "Kopf gegen die Hand drücken, ohne ihn zu bewegen.",
+   "Halten, lösen und zur anderen Seite wiederholen."
+  ]
+ },
+ "Isometric_Wipers": {
+  "name": "Scheibenwischer-Liegestütze",
+  "steps": [
+   "Liegestützposition, Hände etwas breiter als schulterbreit.",
+   "Gewicht zu einer Seite verlagern und diesen Arm beugen.",
+   "Wieder hochdrücken und zur anderen Seite absenken."
+  ]
+ },
+ "JM_Press": {
+  "name": "JM Press",
+  "steps": [
+   "Auf der Flachbank, Langhantel eng mit gestreckten Armen.",
+   "Stange wie beim Stirndrücken absenken, auf halber Strecke Richtung Hals rollen lassen.",
+   "Mit dem Trizeps wie beim engen Bankdrücken hochdrücken."
+  ]
+ },
+ "Jackknife_Sit-Up": {
+  "name": "Klappmesser (Jackknife)",
+  "steps": [
+   "Rücklings liegen, Arme über dem Kopf, Beine gestreckt.",
+   "Gleichzeitig Arme und Beine anheben und über der Hüfte zusammenführen.",
+   "Langsam zurück in die Streckung."
+  ]
+ },
+ "Janda_Sit-Up": {
+  "name": "Janda-Sit-up",
+  "steps": [
+   "Sit-up-Position, Knie 90°, Arme vor der Brust.",
+   "Gesäß und Beinbeuger fest anspannen und langsam (3–6 s) hochrollen.",
+   "Kontrolliert zurück."
+  ]
+ },
+ "Jefferson_Squats": {
+  "name": "Jefferson-Kniebeuge",
+  "steps": [
+   "Längs über einer Langhantel stehen, Stange vorn und hinten neutral greifen.",
+   "Mit dem Gewicht aufrichten.",
+   "Mit geradem Rücken bis parallel absenken und wieder hochdrücken."
+  ]
+ },
+ "Kettlebell_Arnold_Press": {
+  "name": "Kettlebell Arnold Press",
+  "steps": [
+   "Kettlebell zur Schulter umsetzen, Handfläche zum Körper.",
+   "Über Kopf drücken und dabei die Handfläche nach vorn drehen.",
+   "Mit Rückdrehung zur Schulter absenken."
+  ]
+ },
+ "Kettlebell_Dead_Clean": {
+  "name": "Kettlebell Dead Clean",
+  "steps": [
+   "Kettlebell zwischen den Füßen, Gesäß zurück, Blick nach vorn.",
+   "Durch Hüft- und Beinstreckung zur Schulter umsetzen.",
+   "Mit geradem Rücken wieder zum Boden absenken."
+  ]
+ },
+ "Kettlebell_Figure_8": {
+  "name": "Kettlebell-Achter",
+  "steps": [
+   "Weiter Stand, mit flachem Rücken vorbeugen.",
+   "Kettlebell zwischen den Beinen von einer Hand an die andere übergeben.",
+   "In einer Achterbewegung fortfahren."
+  ]
+ },
+ "Kettlebell_Halo": {
+  "name": "Kettlebell Halo",
+  "steps": [
+   "Hüftbreit stehen, Kettlebell kopfüber an den Hörnern vor der Brust, Bauch fest.",
+   "Kettlebell nah am Kopf an einem Ohr vorbei um den Kopf herumführen.",
+   "Zurück vor die Brust; Richtung wechseln, Hüfte und Rücken ruhig."
+  ]
+ },
+ "Kettlebell_Halo_With_Overhead_Extension": {
+  "name": "Kettlebell Halo mit Überkopfstrecken",
+  "steps": [
+   "Kettlebell kopfüber vor der Brust halten und um den Kopf führen, bis sie hinter dem Kopf ist.",
+   "Ellbogen strecken und die Kettlebell über Kopf drücken, dann wieder hinter den Kopf senken.",
+   "Kreis vollenden; Richtung bei jeder Wiederholung wechseln."
+  ]
+ },
+ "Kettlebell_Hang_Clean": {
+  "name": "Kettlebell Hang Clean",
+  "steps": [
+   "Kettlebell zwischen den Füßen, Gesäß zurück, Blick nach vorn.",
+   "Durch Hüft- und Beinstreckung zur Schulter umsetzen.",
+   "In den Hang zwischen die Beine absenken, Beinbeuger unter Spannung."
+  ]
+ },
+ "Kettlebell_One-Legged_Deadlift": {
+  "name": "Einbeiniges Kreuzheben (Kettlebell)",
+  "steps": [
+   "Kettlebell in einer Hand, auf dem Bein derselben Seite stehen.",
+   "Knie leicht gebeugt, aus der Hüfte vorbeugen und das freie Bein nach hinten strecken.",
+   "Bis parallel zum Boden absenken und aufrichten."
+  ]
+ },
+ "Kettlebell_Overhead_Triceps_Extension": {
+  "name": "Überkopf-Trizepsstrecken (Kettlebell)",
+  "steps": [
+   "Kettlebell an den Hörnern über Kopf drücken, Oberarme nah am Kopf.",
+   "Ellbogen beugen und die Kettlebell hinter den Kopf absenken.",
+   "Strecken, ohne ins Hohlkreuz zu gehen."
+  ]
+ },
+ "Kettlebell_Pass_Between_The_Legs": {
+  "name": "Kettlebell-Übergabe zwischen den Beinen",
+  "steps": [
+   "Bequemer Stand, mit flachem Rücken vorbeugen.",
+   "Kettlebell zwischen den Beinen an die andere Hand übergeben.",
+   "Im W-Muster hin und her fortfahren."
+  ]
+ },
+ "Kettlebell_Pirate_Ships": {
+  "name": "Kettlebell Pirate Ships",
+  "steps": [
+   "Weiter Stand, Kettlebell mit beiden Händen und gestreckten Armen auf Hüfthöhe.",
+   "Zu einer Seite drehen und die Kettlebell bis Kopfhöhe schwingen.",
+   "Fallen lassen und zur anderen Seite schwingen."
+  ]
+ },
+ "Kettlebell_Pistol_Squat": {
+  "name": "Pistol Squat mit Kettlebell",
+  "steps": [
+   "Kettlebell an den Hörnern vor dir, ein Bein vom Boden heben.",
+   "Auf dem Standbein tief in die Hocke gehen.",
+   "Kurz halten und über die Ferse hochdrücken."
+  ]
+ },
+ "Kettlebell_Seated_Press": {
+  "name": "Kettlebell-Drücken im Sitzen",
+  "steps": [
+   "Mit gegrätschten Beinen auf dem Boden sitzen.",
+   "Kettlebell zur Schulter umsetzen.",
+   "Über Kopf drücken und zurückführen."
+  ]
+ },
+ "Kettlebell_Seesaw_Press": {
+  "name": "Kettlebell-Wippdrücken",
+  "steps": [
+   "Zwei Kettlebells zu den Schultern umsetzen.",
+   "Eine Kettlebell über Kopf drücken.",
+   "Beim Absenken sofort die andere drücken; gleich viele Wiederholungen pro Seite."
+  ]
+ },
+ "Kettlebell_Sumo_High_Pull": {
+  "name": "Kettlebell Sumo-Hochziehen",
+  "steps": [
+   "Weiter Stand, Kettlebell zwischen den Füßen mit beiden Händen greifen, Hüfte zurück.",
+   "Hüfte und Knie strecken und die Kettlebell zu den Schultern ziehen, Ellbogen hoch.",
+   "Kontrolliert zurück."
+  ]
+ },
+ "Kettlebell_Thruster": {
+  "name": "Kettlebell Thruster",
+  "steps": [
+   "Zwei Kettlebells zu den Schultern umsetzen.",
+   "Mit aufrechtem Rücken tief in die Hocke gehen.",
+   "Explosiv aufstehen und dabei die Kettlebells über Kopf drücken."
+  ]
+ },
+ "Kettlebell_Turkish_Get-Up_Lunge_style": {
+  "name": "Turkish Get-up (Ausfallschritt)",
+  "steps": [
+   "Rücklings liegen, Kettlebell gestreckt über dir, Knie derselben Seite gebeugt.",
+   "Mit Hilfe des freien Arms über die Seite in den Ausfallschritt kommen, Arm bleibt gestreckt.",
+   "Aufstehen, Blick zur Kettlebell, und den Ablauf umkehren."
+  ]
+ },
+ "Kettlebell_Turkish_Get-Up_Squat_style": {
+  "name": "Turkish Get-up (Kniebeuge)",
+  "steps": [
+   "Rücklings liegen, Kettlebell gestreckt über dir, Knie derselben Seite gebeugt.",
+   "Über die Seite und die freie Hand in den Sitz kommen.",
+   "Aus der Hocke aufstehen, Blick zur Kettlebell; Ablauf umkehren."
+  ]
+ },
+ "Kettlebell_Windmill": {
+  "name": "Kettlebell-Windmühle",
+  "steps": [
+   "Kettlebell über Kopf drücken und fixieren.",
+   "Füße 45° wegdrehen, Gesäß zur Kettlebell-Seite schieben und seitlich zum Boden beugen.",
+   "Kurz halten und aufrichten."
+  ]
+ },
+ "Kipping_Muscle_Up": {
+  "name": "Muscle-up mit Kipping (Ringe)",
+  "steps": [
+   "Ringe im falschen Griff fassen.",
+   "Beine zurück und dann kraftvoll nach vorn oben schwingen, Brust zurück und hochziehen.",
+   "Über die Ringe kommen und die Arme strecken; vorsichtig absenken."
+  ]
+ },
+ "Knee_Hip_Raise_On_Parallel_Bars": {
+  "name": "Beinheben am Dip-Barren / Kapitänsstuhl",
+  "steps": [
+   "Unterarme auf die Polster, Griffe fassen, Rücken am Polster, Beine hängen.",
+   "Beine gestreckt bis parallel zum Boden heben; kurz halten.",
+   "Langsam absenken."
+  ]
+ },
+ "Knee_Tuck_Jump": {
+  "name": "Hocksprünge",
+  "steps": [
+   "Locker stehen, Hände auf Brusthöhe vor dir.",
+   "Kurz in die Viertelhocke und explosiv hochspringen, Knie zu den Händen.",
+   "Beine strecken und weich landen."
+  ]
+ },
+ "Kneeling_Arm_Drill": {
+  "name": "Armtechnik-Drill kniend",
+  "steps": [
+   "Halbkniestand, vorderer Fuß aufgestellt, Gesäß angespannt.",
+   "Arme wie beim Laufen pendeln, vom Joggen bis zum Sprinttempo steigern.",
+   "Hände nach dem Hüftdurchgang schnell nach vorn bringen; Knie wechseln."
+  ]
+ },
+ "Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists": {
+  "name": "Kabel-Crunch kniend mit Drehung",
+  "steps": [
+   "Unter dem oberen Kabelzug knien, Seil neben die Ohren.",
+   "Zu den Knien einrollen und langsam zurück.",
+   "In der nächsten Wiederholung auf halbem Weg einen Ellbogen zum gegenüberliegenden Knie drehen; im Wechsel."
+  ]
+ },
+ "Kneeling_Cable_Triceps_Extension": {
+  "name": "Überkopf-Trizepsstrecken kniend am Kabel",
+  "steps": [
+   "Bank vor den oberen Kabelzug, mit dem Rücken zum Turm knien, Oberarme auf der Bank.",
+   "Stange eng greifen und im Halbkreis nach vorn strecken.",
+   "Langsam zurück."
+  ]
+ },
+ "Kneeling_High_Pulley_Row": {
+  "name": "Kniendes Rudern am oberen Kabelzug",
+  "steps": [
+   "Vor dem oberen Kabelzug knien, Seil mit gestreckten Armen halten.",
+   "Seil zur oberen Brust ziehen, Ellbogen außen, Schulterblätter zurück.",
+   "Langsam zurück."
+  ]
+ },
+ "Kneeling_Single-Arm_High_Pulley_Row": {
+  "name": "Einarmiges Rudern kniend am oberen Kabelzug",
+  "steps": [
+   "Vor dem oberen Kabelzug knien, Griff mit einer Hand.",
+   "Zum Körper ziehen, Schulterblatt zurück und dabei das Handgelenk drehen.",
+   "Kurz halten und zurück; Seite wechseln."
+  ]
+ },
+ "Kneeling_Squat": {
+  "name": "Kniende Kniebeuge",
+  "steps": [
+   "Im Rack hinter der Stange knien (Matte) und sie auf den oberen Rücken nehmen.",
+   "Gesäß nach hinten bis zu den Waden senken.",
+   "Hüfte strecken und aufrichten."
+  ]
+ },
+ "Landmine_180s": {
+  "name": "Landmine 180°",
+  "steps": [
+   "Langhantel in einer Landmine fixieren, Ende mit gestreckten Armen auf Schulterhöhe.",
+   "Rumpf und Hüfte drehen und das Gewicht zu einer Seite schwingen.",
+   "Zur anderen Seite schwingen; Arme bleiben gestreckt."
+  ]
+ },
+ "Landmine_Linear_Jammer": {
+  "name": "Landmine Jammer",
+  "steps": [
+   "Landmine mit Griff vorbereiten und die Griffe zu den Schultern bringen.",
+   "In athletischem Stand in die Hocke gehen.",
+   "Explosiv strecken und die Arme nach vorn oben durchdrücken; zurück."
+  ]
+ },
+ "Lateral_Bound": {
+  "name": "Seitliche Sprünge (Lateral Bounds)",
+  "steps": [
+   "Halbe Hocke, quer zur Sprungrichtung.",
+   "Gewicht aufs äußere Bein verlagern und kraftvoll seitlich abspringen.",
+   "Landen und sofort zurückspringen."
+  ]
+ },
+ "Lateral_Box_Jump": {
+  "name": "Seitlicher Box Jump",
+  "steps": [
+   "Seitlich neben einer niedrigen Box stehen.",
+   "Kurz in die Viertelhocke und seitlich hoch auf die Box springen.",
+   "Weich landen, auf die andere Seite springen und zurück."
+  ]
+ },
+ "Lateral_Cone_Hops": {
+  "name": "Seitliche Hütchensprünge",
+  "steps": [
+   "Hütchen in einer Reihe aufstellen und seitlich dazu stehen.",
+   "Kurz in die Knie und seitlich über das erste Hütchen springen.",
+   "Landung abfedern und direkt weiterspringen."
+  ]
+ },
+ "Lateral_Raise_-_With_Bands": {
+  "name": "Seitheben mit Band",
+  "steps": [
+   "Auf das Band stellen, Griffe seitlich halten.",
+   "Mit der seitlichen Schulter die Griffe bis knapp über Schulterhöhe heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Leg-Over_Floor_Press": {
+  "name": "Kettlebell-Bodendrücken mit übergeschlagenem Bein",
+  "steps": [
+   "Rücklings liegen, Kettlebell auf der Brust, Bein der Arbeitsseite über das andere legen.",
+   "Kettlebell gerade nach oben drücken.",
+   "Absenken, bis der Ellbogen den Boden berührt; wiederholen."
+  ]
+ },
+ "Leg_Extensions": {
+  "name": "Beinstrecker (Maschine)",
+  "steps": [
+   "Gewicht wählen, Polster vor den Schienbeinen, Griffe fassen.",
+   "Beine mit dem Quadrizeps vollständig strecken und kurz halten.",
+   "Langsam bis maximal 90° zurück."
+  ]
+ },
+ "Leg_Lift": {
+  "name": "Beinbeugen im Stehen",
+  "steps": [
+   "Aufrecht stehen und an einem stabilen Gegenstand festhalten.",
+   "Ein Bein nach hinten beugen, als würdest du die Ferse zum Gesäß ziehen.",
+   "Langsam absenken; Bein wechseln."
+  ]
+ },
+ "Leg_Press": {
+  "name": "Beinpresse",
+  "steps": [
+   "In die Beinpresse setzen, Füße schulterbreit auf der Plattform.",
+   "Sicherung lösen und die Plattform einatmend absenken, bis die Knie 90° gebeugt sind.",
+   "Über die Fersen ausatmend zurückdrücken, ohne die Knie zu überstrecken."
+  ]
+ },
+ "Leg_Pull-In": {
+  "name": "Knieanziehen (Boden)",
+  "steps": [
+   "Rücklings auf einer Matte, Beine gestreckt, Hände neben oder unter dem Gesäß.",
+   "Knie beugen und zur Brust ziehen; Bauch anspannen.",
+   "Einatmend zurück."
+  ]
+ },
+ "Leverage_Chest_Press": {
+  "name": "Brustpresse (Hebelmaschine)",
+  "steps": [
+   "Gewicht laden, Sitz so einstellen, dass die Griffe auf Brusthöhe sind; Schulterblätter zurück.",
+   "Griffe durch Strecken der Ellbogen nach vorn drücken.",
+   "Kurz halten und zurück, ohne das Gewicht abzulegen."
+  ]
+ },
+ "Leverage_Deadlift": {
+  "name": "Kreuzheben (Hebelmaschine)",
+  "steps": [
+   "Zwischen die Griffe stellen und unten greifen, Hüfte senken, Brust hoch.",
+   "Über die Fersen in den Stand drücken.",
+   "Kontrolliert zurückführen."
+  ]
+ },
+ "Leverage_Decline_Chest_Press": {
+  "name": "Negativ-Brustpresse (Hebelmaschine)",
+  "steps": [
+   "Gewicht laden, Sitz so einstellen, dass die Griffe an der unteren Brust sind.",
+   "Griffe nach vorn drücken.",
+   "Kurz halten und mit Spannung zurück."
+  ]
+ },
+ "Leverage_High_Row": {
+  "name": "Hohes Rudern (Hebelmaschine)",
+  "steps": [
+   "Sitz so einstellen, dass du die Griffe über dir gerade erreichst; Knie fixieren.",
+   "Griffe zum Körper ziehen, Schulterblätter zurück.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Leverage_Incline_Chest_Press": {
+  "name": "Schräge Brustpresse (Hebelmaschine)",
+  "steps": [
+   "Gewicht laden, Griffe auf Höhe der oberen Brust.",
+   "Griffe nach vorn oben drücken.",
+   "Kurz halten und mit Spannung zurück."
+  ]
+ },
+ "Leverage_Iso_Row": {
+  "name": "Rudern (Hebelmaschine)",
+  "steps": [
+   "Sitz so einstellen, dass die Griffe auf Brusthöhe sind; neutral oder im Obergriff fassen.",
+   "Griffe zum Körper ziehen, Schulterblätter zurück.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Leverage_Shoulder_Press": {
+  "name": "Schulterpresse (Hebelmaschine)",
+  "steps": [
+   "Gewicht laden, Griffe knapp über den Schultern.",
+   "Griffe nach oben drücken.",
+   "Kurz halten und mit Spannung zurück."
+  ]
+ },
+ "Leverage_Shrug": {
+  "name": "Shrugs (Hebelmaschine)",
+  "steps": [
+   "Zwischen die Griffe stellen und aufrichten, Arme gestreckt.",
+   "Schultern gerade nach oben zu den Ohren ziehen.",
+   "Kurz halten und absenken."
+  ]
+ },
+ "Linear_3-Part_Start_Technique": {
+  "name": "Dreiteilige Starttechnik",
+  "steps": [
+   "Beide Füße an der Linie, ein Fuß zurück.",
+   "Eine Hand auf die Linie, tief vorbeugen, Gewicht auf das vordere Bein.",
+   "Anderen Arm nach hinten halten und explosiv lossprinten."
+  ]
+ },
+ "Linear_Acceleration_Wall_Drill": {
+  "name": "Beschleunigungs-Drill an der Wand",
+  "steps": [
+   "Etwa 45° gegen eine Wand lehnen, Füße zusammen, Gesäß angespannt.",
+   "Ein Knie schnell heben und kraftvoll in den Boden treten.",
+   "Beine wechseln und am Ende so schnell wie möglich im Wechsel treten."
+  ]
+ },
+ "Linear_Depth_Jump": {
+  "name": "Depth Jump (Box zu Box)",
+  "steps": [
+   "Auf einer Box stehen, eine zweite Box ein paar Meter entfernt.",
+   "Herabfallen lassen und mit gebeugten Knien landen.",
+   "Sofort explosiv auf die andere Box springen und weich landen."
+  ]
+ },
+ "London_Bridges": {
+  "name": "London Bridges (Seil)",
+  "steps": [
+   "Auf eine fixierte Stange stellen und ein Kletterseil greifen.",
+   "Mit geradem Körper Hand über Hand zurücklehnen, bis du waagerecht bist.",
+   "Hand über Hand zurück nach oben."
+  ]
+ },
+ "Low_Cable_Crossover": {
+  "name": "Cable Crossover von unten",
+  "steps": [
+   "Kabelzüge unten einstellen, Griffe fassen und nach vorn treten, Arme unter Hüfthöhe.",
+   "Arme leicht gebeugt nach oben zur Körpermitte führen.",
+   "Vor der Brust zusammenführen, kurz halten und zurück."
+  ]
+ },
+ "Low_Cable_Triceps_Extension": {
+  "name": "Liegendes Trizepsstrecken am Seil (unten)",
+  "steps": [
+   "Rücklings auf die Bank des Ruderzugs, Kopf zum Zug, Seil neutral fassen.",
+   "Oberarme senkrecht zum Körper, Ellbogen 90°.",
+   "Unterarme strecken und langsam zurück."
+  ]
+ },
+ "Low_Pulley_Row_To_Neck": {
+  "name": "Rudern zum Hals am unteren Kabelzug",
+  "steps": [
+   "Am Ruderzug sitzen, Seil im Obergriff, Rücken gerade, Knie leicht gebeugt.",
+   "Ellbogen hoch und das Seil zum Hals ziehen; Oberarme parallel zum Boden.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Lunge_Pass_Through": {
+  "name": "Ausfallschritt mit Kettlebell-Übergabe",
+  "steps": [
+   "Aufrecht stehen, Kettlebell in einer Hand.",
+   "Nach vorn in den Ausfallschritt gehen und die Kettlebell unter dem vorderen Bein an die andere Hand übergeben.",
+   "Über die Ferse zurück und mit dem anderen Bein wiederholen."
+  ]
+ },
+ "Lunge_Sprint": {
+  "name": "Sprung-Ausfallschritt an der Multipresse",
+  "steps": [
+   "Stange der Multipresse auf den oberen Rücken nehmen, Schrittstellung einnehmen.",
+   "Hinteres Knie fast bis zum Boden absenken.",
+   "Explosiv über die vordere Ferse hochspringen und wieder in der Schrittstellung landen."
+  ]
+ },
+ "Lying_Cable_Curl": {
+  "name": "Liegende Kabel-Curls",
+  "steps": [
+   "Rücklings vor dem unteren Kabelzug liegen, Stange schulterbreit im Untergriff, Füße am Rahmen.",
+   "Oberarme ruhig und die Stange zur Brust curlen.",
+   "Oben anspannen und langsam zurück."
+  ]
+ },
+ "Lying_Cambered_Barbell_Row": {
+  "name": "Liegendes Rudern mit gebogener Stange",
+  "steps": [
+   "Bäuchlings auf eine Bank, gebogene Stange darunter breit im Obergriff.",
+   "Stange zur Brust oder zum Bauch rudern, Ellbogen nah am Körper.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Lying_Close-Grip_Bar_Curl_On_High_Pulley": {
+  "name": "Liegende Curls am oberen Kabelzug",
+  "steps": [
+   "Rücklings auf eine Bank vor dem oberen Kabelzug, Stange im Untergriff, Arme senkrecht.",
+   "Stange im Halbkreis zum Kinn curlen.",
+   "Kurz anspannen und langsam zurück."
+  ]
+ },
+ "Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head": {
+  "name": "Liegendes Trizepsstrecken hinter dem Kopf",
+  "steps": [
+   "Auf der Flachbank liegen, Stange eng im Obergriff, Arme hinter den Kopf geneigt.",
+   "Ellbogen beugen, bis die Unterarme senkrecht zum Boden sind.",
+   "Stange im Halbkreis zurück nach oben strecken."
+  ]
+ },
+ "Lying_Close-Grip_Barbell_Triceps_Press_To_Chin": {
+  "name": "Liegendes Trizepsdrücken zum Kinn",
+  "steps": [
+   "Auf der Flachbank, Stange eng über der Brust, Arme senkrecht.",
+   "Ellbogen beugen und die Stange im Halbkreis zum Kinn senken.",
+   "Mit dem Trizeps zurückdrücken und oben anspannen."
+  ]
+ },
+ "Lying_Dumbbell_Tricep_Extension": {
+  "name": "Liegendes Trizepsstrecken (Kurzhantel)",
+  "steps": [
+   "Auf der Flachbank Kurzhanteln gestreckt über der Brust, Handflächen zueinander.",
+   "Oberarme fixieren und die Hanteln neben die Ohren absenken.",
+   "Mit dem Trizeps zurückstrecken."
+  ]
+ },
+ "Lying_Face_Down_Plate_Neck_Resistance": {
+  "name": "Nackenstrecken mit Hantelscheibe (bäuchlings)",
+  "steps": [
+   "Bäuchlings auf einer Bank, Kopf über der Kante, Hantelscheibe am Hinterkopf.",
+   "Kopf langsam nach unten nicken.",
+   "Im Halbkreis anheben und kurz halten."
+  ]
+ },
+ "Lying_Face_Up_Plate_Neck_Resistance": {
+  "name": "Nackenbeugen mit Hantelscheibe (rücklings)",
+  "steps": [
+   "Rücklings auf einer Bank, Kopf über der Kante, Hantelscheibe auf der Stirn.",
+   "Kopf langsam nach hinten absenken.",
+   "Im Halbkreis anheben und kurz halten."
+  ]
+ },
+ "Lying_High_Bench_Barbell_Curl": {
+  "name": "Liegende Langhantel-Curls auf hoher Bank",
+  "steps": [
+   "Bäuchlings auf eine hohe Bank, Langhantel im Untergriff hängt.",
+   "Oberarme ruhig und die Stange im Halbkreis hochcurlen.",
+   "Langsam absenken."
+  ]
+ },
+ "Lying_Leg_Curls": {
+  "name": "Beinbeuger liegend (Maschine)",
+  "steps": [
+   "Bäuchlings auf die Maschine, Polster knapp über den Fersen, Griffe fassen.",
+   "Beine so weit wie möglich beugen, ohne die Oberschenkel anzuheben; kurz halten.",
+   "Langsam zurück."
+  ]
+ },
+ "Lying_Machine_Squat": {
+  "name": "Liegende Kniebeuge (Maschine)",
+  "steps": [
+   "In die Maschine legen, Knie gebeugt, Füße schulterbreit.",
+   "Über die Fußballen ausatmend strecken.",
+   "Langsam bis parallel absenken und wiederholen."
+  ]
+ },
+ "Lying_One-Arm_Lateral_Raise": {
+  "name": "Einarmiges Reverse Fly liegend",
+  "steps": [
+   "Bäuchlings auf eine Flachbank, Kurzhantel in einer Hand, Arm hängt leicht gebeugt.",
+   "Arm seitlich bis Schulterhöhe heben.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "Lying_Rear_Delt_Raise": {
+  "name": "Reverse Flys liegend (Flachbank)",
+  "steps": [
+   "Bäuchlings auf eine Flachbank, Kurzhanteln hängen neutral.",
+   "Arme leicht gebeugt seitlich bis Schulterhöhe heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Lying_Supine_Dumbbell_Curl": {
+  "name": "Liegende Kurzhantel-Curls",
+  "steps": [
+   "Rücklings auf der Flachbank, Arme seitlich nach unten hängen lassen.",
+   "Hanteln curlen und dabei die Handflächen nach oben drehen.",
+   "Sehr langsam zurück."
+  ]
+ },
+ "Lying_T-Bar_Row": {
+  "name": "Liegendes T-Bar-Rudern",
+  "steps": [
+   "Bäuchlings auf das Polster der T-Bar-Maschine, Griffe fassen.",
+   "Gewicht ausheben und mit gestreckten Armen halten.",
+   "Zum Körper ziehen, Rücken anspannen und langsam absenken."
+  ]
+ },
+ "Lying_Triceps_Press": {
+  "name": "Liegendes Trizepsdrücken (Stirndrücken)",
+  "steps": [
+   "Auf der Flachbank SZ-Stange mittelbreit über der Brust halten.",
+   "Oberarme fixieren und die Stange zur Stirn absenken.",
+   "Mit dem Trizeps zurückstrecken."
+  ]
+ },
+ "Machine_Bench_Press": {
+  "name": "Brustpresse (Maschine)",
+  "steps": [
+   "In die Maschine setzen, Griffe im Obergriff, Oberarme seitlich parallel zum Boden.",
+   "Griffe einatmend zum Körper kommen lassen.",
+   "Mit der Brust ausatmend wegdrücken und kurz halten."
+  ]
+ },
+ "Machine_Bicep_Curl": {
+  "name": "Bizepscurls (Maschine)",
+  "steps": [
+   "Sitz einstellen, Oberarme auf das Polster, Griffe fassen.",
+   "Ellbogen beugen und die Griffe zur Schulter bringen.",
+   "Kurz halten und langsam zurück, ohne abzulegen."
+  ]
+ },
+ "Machine_Preacher_Curls": {
+  "name": "Scott-Curls (Maschine)",
+  "steps": [
+   "In die Scottcurl-Maschine setzen, Trizeps auf dem Polster, Griffe im Untergriff.",
+   "Griffe hochcurlen und eine Sekunde halten.",
+   "Langsam zurück."
+  ]
+ },
+ "Machine_Shoulder_Military_Press": {
+  "name": "Schulterpresse (Maschine)",
+  "steps": [
+   "In die Maschine setzen, Griffe seitlich, Ellbogen gebeugt.",
+   "Griffe ausatmend nach oben drücken und kurz halten.",
+   "Langsam zurück."
+  ]
+ },
+ "Machine_Triceps_Extension": {
+  "name": "Trizepsstrecken (Maschine)",
+  "steps": [
+   "Sitz einstellen, Oberarme auf das Polster, Griffe fassen.",
+   "Ellbogen strecken.",
+   "Kurz halten und langsam zurück, ohne abzulegen."
+  ]
+ },
+ "Medicine_Ball_Chest_Pass": {
+  "name": "Medizinball-Brustpass",
+  "steps": [
+   "Einem Partner oder einer Wand gegenüber stehen, Ball vor dem Körper.",
+   "Ball zur Brust ziehen und durch Strecken der Arme kraftvoll wegstoßen.",
+   "Ball auf Brusthöhe fangen und wiederholen."
+  ]
+ },
+ "Medicine_Ball_Full_Twist": {
+  "name": "Medizinball-Rotation mit Partner",
+  "steps": [
+   "Rücken an Rücken mit einem Partner, etwa 1 m Abstand, Ball vor dem Rumpf.",
+   "Hüfte und Schultern gleichzeitig drehen und den Ball übergeben.",
+   "Zur anderen Seite drehen und wieder übernehmen."
+  ]
+ },
+ "Medicine_Ball_Scoop_Throw": {
+  "name": "Medizinball-Schaufelwurf",
+  "steps": [
+   "Halbe Hocke, Ball hängt mit gestreckten Armen nahe den Füßen.",
+   "Hüfte explosiv strecken und hochspringen.",
+   "Ball mit gestreckten Armen über den Kopf nach hinten möglichst weit werfen."
+  ]
+ },
+ "Middle_Back_Shrug": {
+  "name": "Schulterblatt-Shrugs auf der Schrägbank",
+  "steps": [
+   "Bäuchlings auf eine Schrägbank, Kurzhanteln hängen gestreckt.",
+   "Schulterblätter zusammendrücken und eine Sekunde halten.",
+   "Langsam lösen."
+  ]
+ },
+ "Mixed_Grip_Chin": {
+  "name": "Klimmzüge im Kreuzgriff",
+  "steps": [
+   "Stange etwas weiter als schulterbreit greifen, eine Hand Ober-, eine Untergriff.",
+   "Ausatmend hochziehen und oben kurz halten.",
+   "Langsam absenken; Griff im nächsten Satz tauschen."
+  ]
+ },
+ "Monster_Walk": {
+  "name": "Monster Walk",
+  "steps": [
+   "Je ein Band um Knöchel und Knie legen.",
+   "Mit Spannung kleine Schritte abwechselnd nach vorn gehen.",
+   "Nach einigen Schritten rückwärts zurückgehen."
+  ]
+ },
+ "Mountain_Climbers": {
+  "name": "Mountain Climbers",
+  "steps": [
+   "Liegestützposition einnehmen.",
+   "Ein Knie unter die Hüfte ziehen.",
+   "Beine explosiv wechseln und zügig fortfahren."
+  ]
+ },
+ "Moving_Claw_Series": {
+  "name": "Laufdrill: Claw Series",
+  "steps": [
+   "Locker laufen und die Ferse Richtung Gesäß ziehen, während die Hüfte streckt.",
+   "Bein aktiv nach vorn bringen und den Boden „angreifen“.",
+   "Arme schnell im Rhythmus mitführen."
+  ]
+ },
+ "Muscle_Up": {
+  "name": "Muscle-up (Ringe)",
+  "steps": [
+   "Ringe im falschen Griff fassen und einen Klimmzug einleiten.",
+   "Oben die Ringe zu den Achseln ziehen, Schultern nach vorn rollen und über die Ringe kommen.",
+   "Arme strecken; vorsichtig absenken."
+  ]
+ },
+ "Narrow_Stance_Hack_Squats": {
+  "name": "Hackenschmidt-Kniebeuge eng",
+  "steps": [
+   "Rücken ans Polster, Füße eng (unter schulterbreit) auf der Plattform.",
+   "Sicherung lösen und mit Rücken am Polster absenken.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Narrow_Stance_Leg_Press": {
+  "name": "Beinpresse eng",
+  "steps": [
+   "Füße eng auf der Plattform, Sicherung lösen.",
+   "Plattform absenken, bis die Knie 90° gebeugt sind.",
+   "Über die Fersen zurückdrücken."
+  ]
+ },
+ "Narrow_Stance_Squats": {
+  "name": "Kniebeuge eng (Langhantel)",
+  "steps": [
+   "Langhantel aus dem Rack nehmen, Füße 8–15 cm auseinander.",
+   "Mit geradem Rücken absenken.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Natural_Glute_Ham_Raise": {
+  "name": "Natural Glute Ham Raise",
+  "steps": [
+   "Kniend auf einem Sitz, Fersen unter einem Polster fixiert.",
+   "Kontrolliert nach vorn absenken, bis die Knie fast gestreckt sind.",
+   "Mit den Beinbeugern wieder hochziehen; bei Bedarf mit Band oder Abdrücken helfen."
+  ]
+ },
+ "Neck_Press": {
+  "name": "Bankdrücken zum Hals",
+  "steps": [
+   "Auf der Flachbank die Stange mittelbreit ausheben.",
+   "Einatmend langsam zum Hals absenken.",
+   "Ausatmend hochdrücken; nur leichtes Gewicht verwenden."
+  ]
+ },
+ "Oblique_Crunches": {
+  "name": "Seitliche Crunches",
+  "steps": [
+   "Rücklings liegen, Füße erhöht, eine Hand am Kopf.",
+   "Schulter der Kopfhand anheben und zum gegenüberliegenden Knie crunchen.",
+   "Langsam zurück; Seiten abwechseln."
+  ]
+ },
+ "Oblique_Crunches_-_On_The_Floor": {
+  "name": "Seitliche Crunches in Seitenlage",
+  "steps": [
+   "Auf der Seite liegen, Beine übereinander, Knie leicht gebeugt, obere Hand am Kopf.",
+   "Ellbogen nach oben führen und seitlich crunchen.",
+   "Kurz halten, langsam zurück; Seite wechseln."
+  ]
+ },
+ "One-Arm_Dumbbell_Row": {
+  "name": "Einarmiges Kurzhantelrudern",
+  "steps": [
+   "Knie und Hand einer Seite auf die Bank, Oberkörper parallel zum Boden.",
+   "Kurzhantel mit der freien Hand zur Seite der Brust ziehen, Oberarm nah am Körper.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "One-Arm_Flat_Bench_Dumbbell_Flye": {
+  "name": "Einarmige Kurzhantel-Flys",
+  "steps": [
+   "Auf der Flachbank liegen, Kurzhantel in einer Hand über der Brust.",
+   "Arm leicht gebeugt seitlich im Bogen absenken.",
+   "Zurückführen und die Brust anspannen; Seite wechseln."
+  ]
+ },
+ "One-Arm_High-Pulley_Cable_Side_Bends": {
+  "name": "Seitbeugen am oberen Kabelzug",
+  "steps": [
+   "Seitlich zum oberen Kabelzug, Griff bis zur Schulter ziehen, Ellbogen an der Seite.",
+   "Arm fixiert lassen und seitlich nach unten crunchen.",
+   "Langsam zurück; Seite wechseln."
+  ]
+ },
+ "One-Arm_Incline_Lateral_Raise": {
+  "name": "Einarmiges Seitheben auf der Schrägbank",
+  "steps": [
+   "Seitlich auf eine Schrägbank legen, Kurzhantel im oberen Arm vor dem Körper.",
+   "Arm seitlich bis senkrecht nach oben heben.",
+   "Langsam zurück; Seite wechseln."
+  ]
+ },
+ "One-Arm_Kettlebell_Clean": {
+  "name": "Einarmiger Kettlebell Clean",
+  "steps": [
+   "Kettlebell zwischen den Füßen, Gesäß zurück, Blick nach vorn.",
+   "Durch Hüft- und Beinstreckung zur Schulter umsetzen, Handgelenk drehen.",
+   "Zurück in die Ausgangsposition."
+  ]
+ },
+ "One-Arm_Kettlebell_Clean_and_Jerk": {
+  "name": "Einarmiges Kettlebell-Stoßen",
+  "steps": [
+   "Kettlebell zur Schulter umsetzen.",
+   "Kurz in die Knie gehen und explosiv strecken, Kettlebell über Kopf stoßen und in der Hocke auffangen.",
+   "Aufrichten und Kettlebell absenken."
+  ]
+ },
+ "One-Arm_Kettlebell_Floor_Press": {
+  "name": "Einarmiges Kettlebell-Bodendrücken (neutral)",
+  "steps": [
+   "Rücklings liegen, Kettlebell in einer Hand, Oberarm am Boden, Handfläche innen.",
+   "Gerade nach oben drücken und dabei das Handgelenk drehen.",
+   "Zurück und wiederholen."
+  ]
+ },
+ "One-Arm_Kettlebell_Jerk": {
+  "name": "Einarmiger Kettlebell Jerk",
+  "steps": [
+   "Kettlebell zur Schulter umsetzen.",
+   "Kurz in die Knie gehen und explosiv strecken.",
+   "Kettlebell dabei über Kopf stoßen; absenken und wiederholen."
+  ]
+ },
+ "One-Arm_Kettlebell_Military_Press_To_The_Side": {
+  "name": "Einarmiges Kettlebell-Drücken zur Seite",
+  "steps": [
+   "Kettlebell zur Schulter umsetzen.",
+   "Blick zur Kettlebell und nach oben außen drücken.",
+   "Kontrolliert zur Schulter senken; Rumpf und Gesäß fest anspannen."
+  ]
+ },
+ "One-Arm_Kettlebell_Para_Press": {
+  "name": "Einarmige Kettlebell Para Press",
+  "steps": [
+   "Kettlebell zur Schulter umsetzen, Ellbogen seitlich.",
+   "Nach oben außen drücken.",
+   "Kontrolliert zur Schulter senken."
+  ]
+ },
+ "One-Arm_Kettlebell_Push_Press": {
+  "name": "Einarmige Kettlebell Push Press",
+  "steps": [
+   "Kettlebell zur Schulter umsetzen.",
+   "Kurz in die Knie gehen.",
+   "Explosiv strecken und die Kettlebell mit dem Schwung über Kopf drücken."
+  ]
+ },
+ "One-Arm_Kettlebell_Row": {
+  "name": "Einarmiges Kettlebell-Rudern",
+  "steps": [
+   "Kettlebell vor den Füßen, Knie leicht beugen, mit Hohlkreuz vorbeugen und greifen.",
+   "Kettlebell zum Bauch ziehen, Schulterblatt zurück.",
+   "Absenken; Seite wechseln."
+  ]
+ },
+ "One-Arm_Kettlebell_Snatch": {
+  "name": "Einarmiger Kettlebell Snatch",
+  "steps": [
+   "Kettlebell zwischen den Füßen, Knie beugen, Gesäß zurück.",
+   "Kettlebell zwischen den Beinen zurückschwingen.",
+   "Hüfte explosiv strecken und die Kettlebell in einem Zug über Kopf bringen."
+  ]
+ },
+ "One-Arm_Kettlebell_Split_Jerk": {
+  "name": "Einarmiger Kettlebell Split Jerk",
+  "steps": [
+   "Kettlebell zur Schulter umsetzen, kurz in die Knie gehen.",
+   "Explosiv strecken und die Kettlebell im Ausfallschritt über Kopf fixieren.",
+   "Füße zusammenführen und absenken."
+  ]
+ },
+ "One-Arm_Kettlebell_Split_Snatch": {
+  "name": "Einarmiger Kettlebell Split Snatch",
+  "steps": [
+   "Kettlebell in einer Hand, in die Hocke gehen.",
+   "Hüfte, Knie und Sprunggelenke strecken und die Kettlebell nach oben reißen.",
+   "Im Ausfallschritt über Kopf auffangen, aufrichten und absenken."
+  ]
+ },
+ "One-Arm_Kettlebell_Swings": {
+  "name": "Einarmiger Kettlebell Swing",
+  "steps": [
+   "Kettlebell in einer Hand zwischen den Beinen, Hüfte zurück, Rücken gerade.",
+   "Hüfte explosiv strecken und die Kettlebell bis Brusthöhe schwingen.",
+   "Zwischen die Beine zurückschwingen lassen; Seite wechseln."
+  ]
+ },
+ "One-Arm_Long_Bar_Row": {
+  "name": "Einarmiges Landmine-Rudern",
+  "steps": [
+   "Langhantel in einer Landmine oder Ecke fixieren, Ende beladen.",
+   "Neben der Stange vorbeugen, Brust hoch, Ende einarmig greifen.",
+   "Zur Seite ziehen, kurz halten und absenken; Seite wechseln."
+  ]
+ },
+ "One-Arm_Medicine_Ball_Slam": {
+  "name": "Einarmiger Medizinball-Slam",
+  "steps": [
+   "Versetzter Stand, Ball in der Hand auf der Seite des hinteren Beins.",
+   "Arm über den Kopf führen und den Körper strecken.",
+   "Ball kraftvoll vor dir auf den Boden schmettern und auffangen."
+  ]
+ },
+ "One-Arm_Open_Palm_Kettlebell_Clean": {
+  "name": "Kettlebell Clean mit offener Hand",
+  "steps": [
+   "Kettlebell zwischen den Füßen am Griff fassen.",
+   "Schnell hochziehen und die Kugel in der offenen Handfläche landen lassen.",
+   "Nach vorn werfen, am Griff fangen und absenken; beide Arme trainieren."
+  ]
+ },
+ "One-Arm_Overhead_Kettlebell_Squats": {
+  "name": "Einarmige Überkopf-Kniebeuge (Kettlebell)",
+  "steps": [
+   "Kettlebell mit einem Arm über Kopf fixieren.",
+   "Brust hoch und zwischen die Beine tief absenken.",
+   "Kurz halten und über die Fersen hochdrücken."
+  ]
+ },
+ "One-Arm_Side_Deadlift": {
+  "name": "Einarmiges seitliches Kreuzheben",
+  "steps": [
+   "Seitlich neben der Mitte einer Langhantel stehen und sie wie einen Koffer greifen.",
+   "Mit den Beinen in den Stand drücken.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "One-Arm_Side_Laterals": {
+  "name": "Einarmiges Seitheben",
+  "steps": [
+   "Mit einer Hand festhalten, Kurzhantel in der anderen seitlich.",
+   "Ohne Schwung seitlich bis Schulterhöhe heben.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "One-Legged_Cable_Kickback": {
+  "name": "Kabel-Kickbacks (Gesäß)",
+  "steps": [
+   "Fußmanschette am unteren Kabelzug befestigen, zur Maschine schauen und festhalten.",
+   "Gesäß anspannen und das Bein im Bogen nach hinten oben führen.",
+   "Langsam zurück; Seite wechseln."
+  ]
+ },
+ "One_Arm_Chin-Up": {
+  "name": "Einarmiger Klimmzug (mit Handtuch)",
+  "steps": [
+   "Eine Hand an der Stange (Untergriff), die andere am Handtuch.",
+   "Brust raus, hochziehen, bis die Stange die obere Brust berührt.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "One_Arm_Dumbbell_Bench_Press": {
+  "name": "Einarmiges Kurzhantel-Bankdrücken",
+  "steps": [
+   "Auf der Flachbank liegen, Kurzhantel in einer Hand auf Schulterhöhe.",
+   "Einatmend langsam seitlich absenken.",
+   "Ausatmend hochdrücken; Seite wechseln."
+  ]
+ },
+ "One_Arm_Dumbbell_Preacher_Curl": {
+  "name": "Einarmige Scott-Curls (Kurzhantel)",
+  "steps": [
+   "Oberarm auf das Polster der Scottbank legen, Kurzhantel in der Hand.",
+   "Langsam absenken, bis der Arm gestreckt ist.",
+   "Hochcurlen und oben anspannen; Seite wechseln."
+  ]
+ },
+ "One_Arm_Floor_Press": {
+  "name": "Einarmiges Bodendrücken (Langhantel)",
+  "steps": [
+   "Rücklings auf dem Boden, Knie gebeugt, Langhantel einarmig gestreckt halten.",
+   "Absenken, bis der Ellbogen den Boden berührt.",
+   "Wieder hochdrücken; Seite wechseln."
+  ]
+ },
+ "One_Arm_Lat_Pulldown": {
+  "name": "Einarmiger Latzug",
+  "steps": [
+   "Knie fixieren und den Griff einarmig im Obergriff fassen.",
+   "Griff nach unten ziehen, Ellbogen an die Seite.",
+   "Kurz halten und langsam zurück; Seite wechseln."
+  ]
+ },
+ "One_Arm_Pronated_Dumbbell_Triceps_Extension": {
+  "name": "Einarmiges Trizepsstrecken liegend (Obergriff)",
+  "steps": [
+   "Auf der Flachbank, Kurzhantel gestreckt über dir, Handfläche zu den Füßen.",
+   "Freie Hand stützt den Oberarm; Hantel langsam absenken.",
+   "Mit dem Trizeps strecken; Seite wechseln."
+  ]
+ },
+ "One_Arm_Supinated_Dumbbell_Triceps_Extension": {
+  "name": "Einarmiges Trizepsstrecken liegend (Untergriff)",
+  "steps": [
+   "Auf der Flachbank, Kurzhantel gestreckt über dir, Handfläche zum Gesicht.",
+   "Freie Hand stützt den Oberarm; Hantel langsam absenken.",
+   "Mit dem Trizeps strecken; Seite wechseln."
+  ]
+ },
+ "One_Leg_Barbell_Squat": {
+  "name": "Bulgarische Split-Kniebeuge (Langhantel)",
+  "steps": [
+   "Mit dem Rücken zu einer Bank stehen, Langhantel auf dem oberen Rücken, hinteren Fuß auf die Bank legen.",
+   "Einatmend absenken, bis der vordere Oberschenkel parallel zum Boden ist.",
+   "Über das vordere Bein hochdrücken; Bein wechseln."
+  ]
+ },
+ "Open_Palm_Kettlebell_Clean": {
+  "name": "Kettlebell Clean mit offenen Händen",
+  "steps": [
+   "Kettlebell zwischen den Füßen, durch Hüftstreckung nach oben bringen.",
+   "Loslassen und die Kugel in beiden Handflächen landen lassen.",
+   "Nach vorn abgeben, am Griff fangen und absenken."
+  ]
+ },
+ "Otis-Up": {
+  "name": "Otis-up (Sit-up mit Drücken)",
+  "steps": [
+   "Füße fixiert, Knie gebeugt, Gewicht vor der Brust.",
+   "Oberkörper hochrollen und dabei das Gewicht über den Kopf drücken.",
+   "Gewicht zur Brust zurück und absenken, ohne ganz abzulegen."
+  ]
+ },
+ "Overhead_Cable_Curl": {
+  "name": "Überkopf-Kabelcurls",
+  "steps": [
+   "Zwischen zwei oberen Kabelzügen stehen, Griffe im Untergriff, Arme seitlich gestreckt.",
+   "Bizeps anspannen und die Griffe zum Kopf curlen.",
+   "Langsam zurück; nur die Unterarme bewegen sich."
+  ]
+ },
+ "Overhead_Slam": {
+  "name": "Medizinball-Slam",
+  "steps": [
+   "Schulterbreit stehen, Medizinball mit beiden Händen.",
+   "Ball über den Kopf führen und den Körper strecken.",
+   "Ball mit voller Kraft vor dir auf den Boden schmettern und auffangen."
+  ]
+ },
+ "Pallof_Press": {
+  "name": "Pallof Press",
+  "steps": [
+   "Seitlich zum Kabelzug auf Brusthöhe stehen, Griff mit beiden Händen an der Brust.",
+   "Arme nach vorn strecken und der Rotation widerstehen; Rumpf fest.",
+   "Einige Sekunden halten, zurück; danach Seite wechseln."
+  ]
+ },
+ "Pallof_Press_With_Rotation": {
+  "name": "Pallof Press mit Rotation",
+  "steps": [
+   "Seitlich zum Kabelzug, Griff mit beiden Händen vor der Brust, Arme strecken.",
+   "Hüfte gerade lassen und den Oberkörper eine Vierteldrehung vom Zug wegdrehen.",
+   "Kontrolliert zurück, Hände zur Brust und erneut strecken; Seite wechseln."
+  ]
+ },
+ "Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench": {
+  "name": "Handgelenkstrecken mit Kurzhanteln (Obergriff)",
+  "steps": [
+   "Vor einer Flachbank knien, Unterarme auf der Bank, Kurzhanteln im Obergriff.",
+   "Nur die Handgelenke nach oben strecken.",
+   "Langsam absenken."
+  ]
+ },
+ "Palms-Down_Wrist_Curl_Over_A_Bench": {
+  "name": "Handgelenkstrecken mit Langhantel (Obergriff)",
+  "steps": [
+   "Vor einer Flachbank knien, Unterarme auf der Bank, Langhantel im Obergriff.",
+   "Nur die Handgelenke nach oben strecken.",
+   "Langsam absenken."
+  ]
+ },
+ "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench": {
+  "name": "Handgelenkcurls mit Langhantel (Untergriff)",
+  "steps": [
+   "Vor einer Flachbank knien, Unterarme auf der Bank, Langhantel im Untergriff.",
+   "Nur die Handgelenke nach oben beugen.",
+   "Langsam absenken."
+  ]
+ },
+ "Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench": {
+  "name": "Handgelenkcurls mit Kurzhanteln (Untergriff)",
+  "steps": [
+   "Vor einer Flachbank knien, Unterarme auf der Bank, Kurzhanteln im Untergriff.",
+   "Nur die Handgelenke nach oben beugen.",
+   "Langsam absenken."
+  ]
+ },
+ "Parallel_Bar_Dip": {
+  "name": "Barrendips",
+  "steps": [
+   "Zwischen den Barren mit gestreckten Armen stützen.",
+   "Ellbogen beugen, bis knapp unter 90°; nicht schwingen.",
+   "Wieder hochdrücken."
+  ]
+ },
+ "Physioball_Hip_Bridge": {
+  "name": "Hüftbrücke auf dem Gymnastikball",
+  "steps": [
+   "Oberen Rücken auf den Ball legen, Füße hüftbreit am Boden, Hüfte hängt.",
+   "Mit Gesäß und Beinbeugern die Hüfte nach oben strecken.",
+   "Oben kurz halten und absenken."
+  ]
+ },
+ "Pin_Presses": {
+  "name": "Pin Press (Bankdrücken aus den Pins)",
+  "steps": [
+   "Im Rack die Pins auf die gewünschte Höhe stellen, Stange liegt darauf.",
+   "Auf der Bank Hohlkreuz, Schulterblätter zusammen, Stange greifen.",
+   "Explosiv bis zum Lockout drücken und wieder auf den Pins ablegen."
+  ]
+ },
+ "Plank": {
+  "name": "Unterarmstütz (Plank)",
+  "steps": [
+   "Auf Unterarme und Zehen stützen, Ellbogen unter den Schultern.",
+   "Körper in einer geraden Linie halten, Bauch und Gesäß angespannt.",
+   "So lange wie möglich halten."
+  ]
+ },
+ "Plate_Pinch": {
+  "name": "Hantelscheiben-Pinch",
+  "steps": [
+   "Zwei Hantelscheiben mit der glatten Seite nach außen zusammenlegen.",
+   "Mit Fingern und Daumen seitlich zusammendrücken und anheben.",
+   "So lange wie möglich halten; Hand wechseln."
+  ]
+ },
+ "Plate_Twist": {
+  "name": "Russian Twist mit Hantelscheibe",
+  "steps": [
+   "Sitzen, Hantelscheibe vor dem Bauch, Oberkörper leicht zurückgelehnt.",
+   "Beine gekreuzt leicht anheben.",
+   "Scheibe abwechselnd links und rechts zum Boden führen."
+  ]
+ },
+ "Platform_Hamstring_Slides": {
+  "name": "Beinbeuger-Slides",
+  "steps": [
+   "Rücklings auf glattem Boden, Handtuch unter einer Ferse.",
+   "Knie beugen und die Ferse zum Gesäß ziehen.",
+   "Zurück in die Streckung gleiten."
+  ]
+ },
+ "Plie_Dumbbell_Squat": {
+  "name": "Plié-Kniebeuge (Kurzhantel)",
+  "steps": [
+   "Weiter Stand, Zehen nach außen, Kurzhantel mit beiden Händen hängend.",
+   "Absenken, bis die Oberschenkel parallel zum Boden sind.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Plyo_Kettlebell_Pushups": {
+  "name": "Plyo-Liegestütze über die Kettlebell",
+  "steps": [
+   "Liegestützposition, eine Hand am Boden, eine auf der Kettlebell.",
+   "Tief absenken.",
+   "Explosiv abdrücken, Hände wechseln und auf der anderen Seite landen."
+  ]
+ },
+ "Plyo_Push-up": {
+  "name": "Plyo-Liegestütze",
+  "steps": [
+   "Liegestützposition, Hände schulterbreit, Körper gerade.",
+   "Brust zum Boden senken.",
+   "Explosiv hochdrücken, bis die Hände abheben; optional klatschen."
+  ]
+ },
+ "Power_Clean": {
+  "name": "Power Clean (Umsetzen)",
+  "steps": [
+   "Etwas weiter als schulterbreit stehen, Stange über den Fußballen schulterbreit greifen, Rücken gerade.",
+   "Stange nah am Körper über die Knie ziehen und explosiv Hüfte, Knie und Füße strecken, Schultern hochziehen.",
+   "Unter die Stange ziehen, sie in der Viertelhocke vorn auf den Schultern fangen und aufstehen."
+  ]
+ },
+ "Power_Partials": {
+  "name": "Power Partials (Seitheben)",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich, Handflächen zum Körper.",
+   "Arme gestreckt seitlich bis Schulterhöhe heben.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Preacher_Curl": {
+  "name": "Scott-Curls (SZ-Stange)",
+  "steps": [
+   "Oberarme und Brust an das Polster der Scottbank, SZ-Stange eng greifen.",
+   "Langsam absenken, bis die Arme fast gestreckt sind.",
+   "Hochcurlen und oben fest anspannen."
+  ]
+ },
+ "Preacher_Hammer_Dumbbell_Curl": {
+  "name": "Scott-Hammercurls (Kurzhantel)",
+  "steps": [
+   "Oberarme auf die Scottbank, Kurzhanteln im neutralen Griff.",
+   "Langsam absenken, bis der Bizeps gedehnt ist.",
+   "Hochcurlen und oben anspannen."
+  ]
+ },
+ "Press_Sit-Up": {
+  "name": "Sit-up mit Langhanteldrücken",
+  "steps": [
+   "Auf einer Bauchbank liegen, Füße fixiert, Langhantel auf der Brust.",
+   "Oberkörper hochrollen und gleichzeitig die Stange über Kopf drücken.",
+   "Zurücksinken und die Stange zur Brust senken."
+  ]
+ },
+ "Prone_Manual_Hamstring": {
+  "name": "Beinbeugen mit Partnerwiderstand",
+  "steps": [
+   "Bäuchlings liegen, Partner hält die Ferse.",
+   "Knie gegen den Widerstand des Partners beugen.",
+   "Oben kurz halten und gegen Widerstand zurück."
+  ]
+ },
+ "Pull_Through": {
+  "name": "Kabel Pull-Through",
+  "steps": [
+   "Mit dem Rücken zum unteren Kabelzug, Seil zwischen den Beinen, weiter Stand.",
+   "Aus der Hüfte vorbeugen und das Seil weit durch die Beine führen.",
+   "Mit gestreckten Armen die Hüfte nach vorn strecken und aufrichten."
+  ]
+ },
+ "Pullups": {
+  "name": "Klimmzüge",
+  "steps": [
+   "Stange im Obergriff greifen, Oberkörper leicht zurückneigen, Brust raus.",
+   "Schultern und Oberarme nach unten hinten ziehen, bis die Stange die obere Brust berührt.",
+   "Kurz halten und langsam ganz absenken."
+  ]
+ },
+ "Push-Up_Wide": {
+  "name": "Breite Liegestütze",
+  "steps": [
+   "Hände weit auseinander, Körper gerade.",
+   "Einatmend die Brust zum Boden senken.",
+   "Mit der Brust ausatmend hochdrücken."
+  ]
+ },
+ "Push-Ups_-_Close_Triceps_Position": {
+  "name": "Enge Liegestütze (Trizeps)",
+  "steps": [
+   "Hände enger als schulterbreit, Körper gerade.",
+   "Absenken, bis die Brust fast den Boden berührt.",
+   "Mit dem Trizeps hochdrücken."
+  ]
+ },
+ "Push-Ups_With_Feet_Elevated": {
+  "name": "Liegestütze mit Füßen auf der Bank",
+  "steps": [
+   "Hände am Boden, Zehen auf einer Flachbank.",
+   "Absenken, bis die Brust fast den Boden berührt.",
+   "Mit der Brust hochdrücken."
+  ]
+ },
+ "Push-Ups_With_Feet_On_An_Exercise_Ball": {
+  "name": "Liegestütze mit Füßen auf dem Gymnastikball",
+  "steps": [
+   "Hände am Boden, Zehen auf einem Gymnastikball.",
+   "Körper stabil halten und die Brust zum Boden senken.",
+   "Hochdrücken."
+  ]
+ },
+ "Push_Up_to_Side_Plank": {
+  "name": "Liegestütz mit Seitstütz",
+  "steps": [
+   "Liegestützposition, Hände etwas weiter als schulterbreit.",
+   "Einen Liegestütz ausführen.",
+   "Oben in den Seitstütz drehen, Arm zur Decke; zurück und zur anderen Seite."
+  ]
+ },
+ "Pushups": {
+  "name": "Liegestütze",
+  "steps": [
+   "Hände etwas weiter als schulterbreit, Körper gerade von Kopf bis Fuß.",
+   "Einatmend absenken, bis die Brust fast den Boden berührt.",
+   "Ausatmend hochdrücken und die Brust anspannen."
+  ]
+ },
+ "Pushups_Close_and_Wide_Hand_Positions": {
+  "name": "Liegestütze eng und breit",
+  "steps": [
+   "Liegestützposition mit enger oder breiter Handstellung.",
+   "Absenken, bis die Brust fast den Boden berührt.",
+   "Hochdrücken; Handstellung zwischen den Sätzen wechseln."
+  ]
+ },
+ "Quick_Leap": {
+  "name": "Quick Leap (Box)",
+  "steps": [
+   "30–60 cm vor einer Box stehen.",
+   "Beidbeinig auf die Box springen und mit gebeugten Knien landen.",
+   "Sofort mit Armschwung explosiv von der Box nach vorn abspringen und weich landen."
+  ]
+ },
+ "Rack_Pull_with_Bands": {
+  "name": "Rack Pulls mit Bändern",
+  "steps": [
+   "Stange im Rack auf Pins (Kniehöhe), Bänder an der Stange befestigen.",
+   "Kreuzheben-Position: hüftbreit, schulterbreit greifen, Rücken gespannt.",
+   "Hüfte und Knie strecken bis zum Lockout, Schultern zurück."
+  ]
+ },
+ "Rack_Pulls": {
+  "name": "Rack Pulls",
+  "steps": [
+   "Stange im Rack auf Pins knapp unter oder über Kniehöhe.",
+   "In Kreuzheben-Position greifen und Hüfte sowie Knie bis zum Lockout strecken.",
+   "Zurück auf die Pins ablegen."
+  ]
+ },
+ "Return_Push_from_Stance": {
+  "name": "Medizinball-Rückpass aus dem Stand",
+  "steps": [
+   "Mit Partner in athletischem Zwei- oder Dreipunktstand starten.",
+   "Auf Signal in Position laufen und den Pass fangen.",
+   "Ball sofort kraftvoll zurückstoßen."
+  ]
+ },
+ "Reverse_Band_Bench_Press": {
+  "name": "Bankdrücken mit Reverse Bands",
+  "steps": [
+   "Bänder oben am Rack und an der Stange befestigen, sodass sie unten entlasten.",
+   "Hohlkreuz, Schulterblätter zusammen, Stange zur unteren Brust senken.",
+   "Kurz pausieren und explosiv hochdrücken."
+  ]
+ },
+ "Reverse_Band_Box_Squat": {
+  "name": "Box-Kniebeuge mit Reverse Bands",
+  "steps": [
+   "Bänder oben am Rack befestigen, Box hinter dir.",
+   "Stange auf den oberen Rücken, Hüfte zurück auf die Box setzen.",
+   "Explosiv hochdrücken, Knie nach außen."
+  ]
+ },
+ "Reverse_Band_Deadlift": {
+  "name": "Kreuzheben mit Reverse Bands",
+  "steps": [
+   "Bänder oben am Rack und an der Stange befestigen.",
+   "Hüftbreit stehen, schulterbreit greifen, Schienbeine an die Stange.",
+   "Über die Fersen hochziehen, Hüfte nach vorn; kontrolliert absenken."
+  ]
+ },
+ "Reverse_Band_Power_Squat": {
+  "name": "Power-Kniebeuge mit Reverse Bands",
+  "steps": [
+   "Bänder oben am Rack und an der Stange befestigen.",
+   "Stange auf den oberen Rücken, Rumpf fest, Hüfte weit zurück absenken.",
+   "Über die Fersen hochdrücken, Knie nach außen."
+  ]
+ },
+ "Reverse_Band_Sumo_Deadlift": {
+  "name": "Sumo-Kreuzheben mit Reverse Bands",
+  "steps": [
+   "Bänder oben am Rack und an der Stange befestigen, sehr weiter Stand.",
+   "Stange innen greifen, Brust hoch, Füße auseinanderdrücken und ziehen.",
+   "Hüfte zur Stange bringen und kontrolliert absenken."
+  ]
+ },
+ "Reverse_Barbell_Curl": {
+  "name": "Reverse Curls (Langhantel)",
+  "steps": [
+   "Aufrecht stehen, Langhantel schulterbreit im Obergriff.",
+   "Oberarme ruhig und die Stange bis Schulterhöhe curlen.",
+   "Langsam absenken."
+  ]
+ },
+ "Reverse_Barbell_Preacher_Curls": {
+  "name": "Reverse Scott-Curls (SZ-Stange)",
+  "steps": [
+   "SZ-Stange schulterbreit im Obergriff, Oberarme auf der Scottbank.",
+   "Bis Schulterhöhe curlen und kurz anspannen.",
+   "Langsam absenken."
+  ]
+ },
+ "Reverse_Cable_Curl": {
+  "name": "Reverse Curls am Kabelzug",
+  "steps": [
+   "Stange am unteren Kabelzug schulterbreit im Obergriff.",
+   "Oberarme ruhig und hochcurlen.",
+   "Langsam zurück."
+  ]
+ },
+ "Reverse_Crunch": {
+  "name": "Reverse Crunch",
+  "steps": [
+   "Rücklings liegen, Arme neben dem Körper, Oberschenkel senkrecht, Unterschenkel parallel zum Boden.",
+   "Knie zum Oberkörper ziehen und das Becken vom Boden rollen.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "Reverse_Flyes": {
+  "name": "Reverse Flys (Schrägbank)",
+  "steps": [
+   "Bäuchlings auf eine Schrägbank, Kurzhanteln neutral, Arme hängen.",
+   "Arme leicht gebeugt im Bogen seitlich bis parallel zum Boden heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Reverse_Flyes_With_External_Rotation": {
+  "name": "Reverse Flys mit Außenrotation",
+  "steps": [
+   "Bäuchlings auf eine 30°-Schrägbank, Kurzhanteln im Obergriff.",
+   "Arme seitlich heben und dabei die Handgelenke um 90° nach außen drehen.",
+   "Bis auf Kopfhöhe heben und langsam absenken."
+  ]
+ },
+ "Reverse_Grip_Bent-Over_Rows": {
+  "name": "Langhantelrudern im Untergriff",
+  "steps": [
+   "Langhantel im Untergriff, mit geradem Rücken fast parallel vorbeugen.",
+   "Stange zum Bauch ziehen, Ellbogen nah am Körper.",
+   "Langsam absenken."
+  ]
+ },
+ "Reverse_Grip_Triceps_Pushdown": {
+  "name": "Trizepsdrücken im Untergriff",
+  "steps": [
+   "Stange am oberen Kabelzug schulterbreit im Untergriff, Ellbogen am Körper.",
+   "Stange bis Brusthöhe kommen lassen.",
+   "Nach unten strecken und den Trizeps anspannen."
+  ]
+ },
+ "Reverse_Hyperextension": {
+  "name": "Reverse Hyperextension",
+  "steps": [
+   "Bäuchlings auf das Gerät, Hüfte über der Kante, Füße zwischen den Polstern, Griffe fassen.",
+   "Hüfte beugen und die Beine nach vorn ziehen.",
+   "Beine nach hinten oben strecken, ohne zu überstrecken."
+  ]
+ },
+ "Reverse_Machine_Flyes": {
+  "name": "Reverse Butterfly (Maschine)",
+  "steps": [
+   "Griffe ganz nach hinten stellen, Sitz auf Schulterhöhe, Griffe fassen.",
+   "Arme leicht gebeugt im Halbkreis nach hinten führen.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Reverse_Plate_Curls": {
+  "name": "Reverse Curls mit Hantelscheibe",
+  "steps": [
+   "Hantelscheibe im Obergriff vor dem Körper halten.",
+   "Ellbogen am Körper und die Scheibe hochcurlen.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Reverse_Triceps_Bench_Press": {
+  "name": "Bankdrücken im Untergriff (Trizeps)",
+  "steps": [
+   "Auf der Flachbank, Stange eng im Untergriff ausheben.",
+   "Einatmend langsam zur mittleren Brust absenken.",
+   "Mit dem Trizeps hochdrücken."
+  ]
+ },
+ "Ring_Dips": {
+  "name": "Ring-Dips",
+  "steps": [
+   "In jede Hand einen Ring, mit gestreckten Armen stützen.",
+   "Ellbogen beugen, bis knapp unter 90°; stabil bleiben.",
+   "Wieder hochdrücken."
+  ]
+ },
+ "Rocket_Jump": {
+  "name": "Raketensprung",
+  "steps": [
+   "Schulterbreit stehen, Arme am Körper.",
+   "Halb in die Hocke und explosiv so hoch wie möglich springen.",
+   "Körper und Arme nach oben strecken; weich landen."
+  ]
+ },
+ "Rocking_Standing_Calf_Raise": {
+  "name": "Wippendes Wadenheben (Langhantel)",
+  "steps": [
+   "Langhantel auf dem oberen Rücken, schulterbreit stehen.",
+   "Fersen so hoch wie möglich heben und langsam absenken.",
+   "Dann die Zehenspitzen anheben (Schienbeinmuskel) und absenken."
+  ]
+ },
+ "Rocky_Pull-Ups_Pulldowns": {
+  "name": "Klimmzüge vorn und hinten (Rocky)",
+  "steps": [
+   "Stange breit im Obergriff.",
+   "Mit zurückgelehntem Oberkörper zur oberen Brust ziehen und absenken.",
+   "Dann aufrecht hinter den Nacken ziehen; abwechselnd fortfahren."
+  ]
+ },
+ "Romanian_Deadlift": {
+  "name": "Rumänisches Kreuzheben",
+  "steps": [
+   "Langhantel etwas weiter als schulterbreit im Obergriff, Knie leicht gebeugt.",
+   "Mit geradem Rücken die Hüfte nach hinten schieben und die Stange an den Beinen entlang absenken.",
+   "Hüfte nach vorn bringen und aufrichten."
+  ]
+ },
+ "Rope_Climb": {
+  "name": "Seilklettern",
+  "steps": [
+   "Seil über dem Kopf greifen und mit einem kleinen Sprung festhalten.",
+   "Seil um ein Bein wickeln und mit den Füßen klemmen; Arme weit nach oben.",
+   "Mit den Armen hochziehen, Füße neu klemmen und fortfahren; Hand über Hand herab."
+  ]
+ },
+ "Rope_Crunch": {
+  "name": "Seil-Crunch am Kabelzug",
+  "steps": [
+   "30–60 cm vor dem Kabelzug knien, Seil über dem Kopf greifen.",
+   "Wirbelsäule beugen und die Rippen zu den Beinen ziehen.",
+   "Unten halten und langsam zurück."
+  ]
+ },
+ "Rope_Straight-Arm_Pulldown": {
+  "name": "Überzüge am Seil (gestreckte Arme)",
+  "steps": [
+   "Seil am oberen Kabelzug, Schrittstellung, leicht vorgebeugt.",
+   "Arme gestreckt das Seil bis zu den Oberschenkeln ziehen.",
+   "Latissimus anspannen und langsam zurück."
+  ]
+ },
+ "Russian_Twist": {
+  "name": "Russian Twist",
+  "steps": [
+   "Sitzen, Knie gebeugt, Füße fixiert, Oberkörper in V-Position, Arme gestreckt.",
+   "Oberkörper nach rechts drehen; ausatmen.",
+   "Zurück zur Mitte und nach links drehen."
+  ]
+ },
+ "Scapular_Pull-Up": {
+  "name": "Schulterblatt-Klimmzüge",
+  "steps": [
+   "Stange im Obergriff, im Hang.",
+   "Ohne Armbeugung die Schultern nach unten ziehen und den Körper wenige Zentimeter anheben.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Scissors_Jump": {
+  "name": "Ausfallschritt-Sprünge",
+  "steps": [
+   "Ausfallschritt-Position, hinteres Knie fast am Boden.",
+   "Kraftvoll mit Armschwung nach oben springen.",
+   "In der Luft die Beine wechseln und im Ausfallschritt weich landen."
+  ]
+ },
+ "Seated_Band_Hamstring_Curl": {
+  "name": "Beinbeugen sitzend mit Band",
+  "steps": [
+   "Band bodennah befestigen, Bank davor, Band hinter den Knöcheln.",
+   "Knie beugen und die Füße zur Bank ziehen.",
+   "Kurz halten und langsam strecken."
+  ]
+ },
+ "Seated_Barbell_Military_Press": {
+  "name": "Schulterdrücken sitzend vor dem Kopf",
+  "steps": [
+   "Auf eine Schulterdrückbank setzen, Langhantel über Kopf halten.",
+   "Einatmend langsam bis zum Schlüsselbein absenken.",
+   "Ausatmend wieder hochdrücken."
+  ]
+ },
+ "Seated_Barbell_Twist": {
+  "name": "Rumpfdrehen sitzend mit Langhantel",
+  "steps": [
+   "Am Bankende sitzen, Langhantel auf dem oberen Rücken, Füße schulterbreit.",
+   "Füße und Kopf ruhig halten und die Taille zu einer Seite drehen.",
+   "Zur anderen Seite drehen und im Wechsel fortfahren."
+  ]
+ },
+ "Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension": {
+  "name": "Einarmige Kickbacks sitzend vorgebeugt",
+  "steps": [
+   "Am Bankende sitzen und mit geradem Rücken vorbeugen, Kurzhantel in einer Hand.",
+   "Oberarm parallel zum Boden am Körper fixieren.",
+   "Arm nach hinten strecken, kurz halten und absenken; Seite wechseln."
+  ]
+ },
+ "Seated_Bent-Over_Rear_Delt_Raise": {
+  "name": "Reverse Flys sitzend vorgebeugt",
+  "steps": [
+   "Am Bankende sitzen, vorbeugen und die Kurzhanteln hinter den Waden greifen.",
+   "Arme leicht gebeugt seitlich bis parallel zum Boden heben.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension": {
+  "name": "Kickbacks sitzend vorgebeugt (beidarmig)",
+  "steps": [
+   "Am Bankende sitzen und mit geradem Rücken vorbeugen, Kurzhanteln in beiden Händen.",
+   "Oberarme parallel zum Boden am Körper fixieren.",
+   "Arme nach hinten strecken, kurz halten und absenken."
+  ]
+ },
+ "Seated_Cable_Rows": {
+  "name": "Rudern am Kabelzug sitzend",
+  "steps": [
+   "Am Ruderzug sitzen, Knie leicht gebeugt, V-Griff fassen.",
+   "Oberkörper aufrecht, Brust raus, Rücken leicht hohl.",
+   "Griff zum Bauch ziehen, Schulterblätter zusammen; langsam zurück."
+  ]
+ },
+ "Seated_Cable_Shoulder_Press": {
+  "name": "Schulterdrücken sitzend am Kabelzug",
+  "steps": [
+   "Sitzend die Griffe auf Schulterhöhe fassen, Oberarme etwa 90° zum Körper.",
+   "Griffe über dem Kopf zusammendrücken.",
+   "Kurz halten und mit Spannung zurück."
+  ]
+ },
+ "Seated_Calf_Raise": {
+  "name": "Wadenheben sitzend (Maschine)",
+  "steps": [
+   "Fußballen auf die Plattform, Polster auf die Oberschenkel, Sicherung lösen.",
+   "Fersen langsam absenken, bis die Waden gedehnt sind.",
+   "Fersen so hoch wie möglich heben und kurz halten."
+  ]
+ },
+ "Seated_Close-Grip_Concentration_Barbell_Curl": {
+  "name": "Konzentrationscurls mit Langhantel",
+  "steps": [
+   "Auf der Bank sitzen, Oberarme innen auf den Oberschenkeln, Stange eng im Untergriff.",
+   "Nur die Unterarme bewegen und hochcurlen.",
+   "Langsam absenken."
+  ]
+ },
+ "Seated_Dumbbell_Curl": {
+  "name": "Kurzhantel-Curls sitzend",
+  "steps": [
+   "Auf der Bank sitzen, Kurzhanteln hängen neutral.",
+   "Hochcurlen und dabei die Handflächen nach oben drehen.",
+   "Langsam absenken und zurückdrehen."
+  ]
+ },
+ "Seated_Dumbbell_Inner_Biceps_Curl": {
+  "name": "Kurzhantel-Curls sitzend nach außen",
+  "steps": [
+   "Am Bankende sitzen, Kurzhanteln hängen neutral.",
+   "Nach außen oben curlen und die Handflächen nach außen drehen.",
+   "Langsam absenken."
+  ]
+ },
+ "Seated_Dumbbell_Palms-Down_Wrist_Curl": {
+  "name": "Handgelenkstrecken sitzend (Kurzhantel)",
+  "steps": [
+   "Sitzend Unterarme auf den Oberschenkeln, Kurzhanteln im Obergriff.",
+   "Handgelenke nach oben strecken.",
+   "Langsam absenken."
+  ]
+ },
+ "Seated_Dumbbell_Palms-Up_Wrist_Curl": {
+  "name": "Handgelenkcurls sitzend (Kurzhantel)",
+  "steps": [
+   "Sitzend Unterarme auf den Oberschenkeln, Kurzhanteln im Untergriff.",
+   "Handgelenke nach oben beugen.",
+   "Langsam absenken."
+  ]
+ },
+ "Seated_Dumbbell_Press": {
+  "name": "Kurzhantel-Schulterdrücken sitzend",
+  "steps": [
+   "Auf eine Bank mit Lehne setzen, Kurzhanteln auf Schulterhöhe, Handflächen nach vorn.",
+   "Ausatmend nach oben drücken, bis sie sich fast berühren.",
+   "Langsam absenken."
+  ]
+ },
+ "Seated_Flat_Bench_Leg_Pull-In": {
+  "name": "Knieanziehen sitzend auf der Bank",
+  "steps": [
+   "Auf der Bank sitzen, an den Seiten festhalten, Oberkörper zurückgelehnt, Beine gestreckt.",
+   "Knie heranziehen und den Oberkörper entgegenbringen.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "Seated_Good_Mornings": {
+  "name": "Good Morning sitzend",
+  "steps": [
+   "Auf einer Box im Rack sitzen, Langhantel auf dem oberen Rücken.",
+   "Mit geradem Rücken aus der Hüfte so weit wie möglich vorbeugen.",
+   "Oberkörper wieder aufrichten."
+  ]
+ },
+ "Seated_Head_Harness_Neck_Resistance": {
+  "name": "Nackentraining mit Kopfgeschirr",
+  "steps": [
+   "Am Bankende sitzen, vorgebeugt, Kopfgeschirr mit Gewicht anlegen, Hände auf den Knien.",
+   "Kinn langsam zur Brust senken.",
+   "Nacken wieder aufrichten."
+  ]
+ },
+ "Seated_Leg_Curl": {
+  "name": "Beinbeuger sitzend (Maschine)",
+  "steps": [
+   "Maschine einstellen, Polster unter die Waden, Oberschenkelpolster fixieren.",
+   "Knie so weit wie möglich beugen und kurz halten.",
+   "Langsam zurück."
+  ]
+ },
+ "Seated_Leg_Tucks": {
+  "name": "Leg Tucks sitzend",
+  "steps": [
+   "Auf der Bank sitzen, festhalten, Oberkörper zurückgelehnt, Beine gestreckt.",
+   "Knie zur Brust ziehen und den Oberkörper nach vorn bringen.",
+   "Kurz halten und strecken."
+  ]
+ },
+ "Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl": {
+  "name": "Einarmiges Handgelenkstrecken sitzend",
+  "steps": [
+   "Sitzend Unterarm auf dem Oberschenkel, Kurzhantel im Obergriff.",
+   "Hantel absenken und dann so hoch wie möglich strecken.",
+   "Kurz halten; Seite wechseln."
+  ]
+ },
+ "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl": {
+  "name": "Einarmige Handgelenkcurls sitzend",
+  "steps": [
+   "Sitzend Unterarm auf dem Oberschenkel, Kurzhantel im Untergriff.",
+   "Hantel absenken und dann so hoch wie möglich curlen.",
+   "Kurz halten; Seite wechseln."
+  ]
+ },
+ "Seated_One-arm_Cable_Pulley_Rows": {
+  "name": "Einarmiges Kabelrudern sitzend",
+  "steps": [
+   "Am Ruderzug sitzen, Einzelgriff im Obergriff, Oberkörper aufrecht.",
+   "Griff zur Seite ziehen und dabei das Handgelenk eindrehen.",
+   "Kurz halten und langsam zurück; Seite wechseln."
+  ]
+ },
+ "Seated_Palm-Up_Barbell_Wrist_Curl": {
+  "name": "Handgelenkcurls sitzend (Langhantel)",
+  "steps": [
+   "Sitzend Unterarme auf den Oberschenkeln, Langhantel im Untergriff.",
+   "Stange so weit wie möglich absenken.",
+   "So hoch wie möglich einrollen und kurz halten."
+  ]
+ },
+ "Seated_Palms-Down_Barbell_Wrist_Curl": {
+  "name": "Handgelenkstrecken sitzend (Langhantel)",
+  "steps": [
+   "Sitzend Unterarme auf den Oberschenkeln, Langhantel im Obergriff.",
+   "Stange so weit wie möglich absenken.",
+   "So hoch wie möglich strecken und kurz halten."
+  ]
+ },
+ "Seated_Side_Lateral_Raise": {
+  "name": "Seitheben sitzend",
+  "steps": [
+   "Am Bankende sitzen, Kurzhanteln seitlich, Handflächen zum Körper.",
+   "Ohne Schwung seitlich bis Schulterhöhe heben, Ellbogen leicht gebeugt.",
+   "Langsam absenken."
+  ]
+ },
+ "Seated_Triceps_Press": {
+  "name": "Überkopf-Trizepsdrücken sitzend (Kurzhantel)",
+  "steps": [
+   "Auf einer Bank mit Lehne eine Kurzhantel mit beiden Händen über Kopf halten.",
+   "Oberarme nah am Kopf und die Hantel im Halbkreis hinter den Kopf senken.",
+   "Mit dem Trizeps hochstrecken."
+  ]
+ },
+ "Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl": {
+  "name": "Handgelenkcurls sitzend am Kabelzug",
+  "steps": [
+   "Bank vor den unteren Kabelzug, Stange im Untergriff, Unterarme auf den Oberschenkeln.",
+   "Stange so weit wie möglich absenken.",
+   "Hochcurlen und kurz halten."
+  ]
+ },
+ "See-Saw_Press_Alternating_Side_Press": {
+  "name": "Wippdrücken (Seitdrücken im Wechsel)",
+  "steps": [
+   "Kurzhanteln auf Schulterhöhe, Handflächen zum Körper.",
+   "Einen Arm über Kopf drücken, dabei die Hand nach vorn drehen und leicht zur Gegenseite neigen.",
+   "Absenken und mit dem anderen Arm drücken."
+  ]
+ },
+ "Shotgun_Row": {
+  "name": "Shotgun Row (Kabel)",
+  "steps": [
+   "Einzelgriff am unteren Kabelzug, weiter Ausfallschritt, Arm gestreckt.",
+   "Schulter zurückziehen, Ellbogen beugen und dabei die Handfläche nach oben drehen.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "Shoulder_Press_-_With_Bands": {
+  "name": "Schulterdrücken mit Band",
+  "steps": [
+   "Auf das Band stellen, Griffe auf Schulterhöhe, Handflächen nach vorn.",
+   "Ausatmend nach oben drücken, bis die Arme gestreckt sind.",
+   "Langsam zurück."
+  ]
+ },
+ "Side_Bridge": {
+  "name": "Seitstütz",
+  "steps": [
+   "Auf der Seite liegen, Ellbogen unter der Schulter, Beine gestreckt.",
+   "Hüfte anheben, bis der Körper eine gerade Linie bildet.",
+   "Position halten; Seite wechseln."
+  ]
+ },
+ "Side_Hop-Sprint": {
+  "name": "Seitsprünge mit Sprint",
+  "steps": [
+   "Seitlich neben einem Hütchen oder einer Hürde stehen.",
+   "Schnell seitlich hin und her springen.",
+   "Nach dem letzten Sprung sofort kurz lossprinten."
+  ]
+ },
+ "Side_Jackknife": {
+  "name": "Seitliches Klappmesser",
+  "steps": [
+   "Auf der Seite liegen, Beine gestreckt, obere Hand am Kopf.",
+   "Oberkörper und Beine seitlich gleichzeitig anheben.",
+   "Kurz halten und absenken; Seite wechseln."
+  ]
+ },
+ "Side_Lateral_Raise": {
+  "name": "Seitheben (Kurzhantel)",
+  "steps": [
+   "Aufrecht stehen, Kurzhanteln seitlich, Handflächen zum Körper.",
+   "Ohne Schwung seitlich bis Schulterhöhe heben, Ellbogen leicht gebeugt.",
+   "Langsam absenken."
+  ]
+ },
+ "Side_Laterals_to_Front_Raise": {
+  "name": "Front- zu Seitheben",
+  "steps": [
+   "Kurzhanteln seitlich, Ellbogen leicht gebeugt.",
+   "Vorne bis Schulterhöhe heben, dann seitlich öffnen und absenken.",
+   "Nächste Wiederholung umgekehrt: vorn heben, zur Seite führen, absenken."
+  ]
+ },
+ "Side_Standing_Long_Jump": {
+  "name": "Seitlicher Standweitsprung",
+  "steps": [
+   "Hüftbreit in athletischer Haltung stehen.",
+   "Zur Seite lehnen und mit Armeinsatz so weit wie möglich seitlich springen.",
+   "Mit hüftbreiten Füßen weich landen."
+  ]
+ },
+ "Side_To_Side_Chins": {
+  "name": "Seitliche Klimmzüge",
+  "steps": [
+   "Stange breit im Obergriff, Oberkörper leicht zurück.",
+   "Zur linken Seite hochziehen und absenken.",
+   "Zur rechten Seite hochziehen und absenken; abwechseln."
+  ]
+ },
+ "Side_to_Side_Box_Shuffle": {
+  "name": "Box-Shuffle seitlich",
+  "steps": [
+   "Seitlich neben einer Box, ein Fuß darauf.",
+   "Seitlich über die Box springen und die Füße dabei wechseln.",
+   "Zügig hin und her fortfahren."
+  ]
+ },
+ "Single-Arm_Cable_Crossover": {
+  "name": "Einarmiger Cable Crossover",
+  "steps": [
+   "Kabelzüge oben, beide Griffe vor dem Körper zusammen.",
+   "Einen Arm leicht gebeugt zur Seite öffnen.",
+   "Zurück zur Mitte führen und Seiten abwechseln."
+  ]
+ },
+ "Single-Arm_Linear_Jammer": {
+  "name": "Einarmiger Landmine Jammer",
+  "steps": [
+   "Langhantel in Landmine, Ende zur Schulter bringen, weiter Stand.",
+   "Explosiv Hüfte und Knie strecken und die Stange nach vorn oben drücken.",
+   "Zurück zur Schulter."
+  ]
+ },
+ "Single-Arm_Push-Up": {
+  "name": "Einarmige Liegestütze",
+  "steps": [
+   "Auf Zehen und einem Arm stützen, Hand unter der Schulter, andere Hand auf dem Rücken.",
+   "Langsam absenken, bis die Brust den Boden fast berührt.",
+   "Durch Strecken des Arms hochdrücken."
+  ]
+ },
+ "Single-Cone_Sprint_Drill": {
+  "name": "Hütchen-Sprintdrill",
+  "steps": [
+   "Neben einem Hütchen stehen, Arme in Laufhaltung.",
+   "Mit schnellen Schritten und hohen Knien um das Hütchen laufen.",
+   "Nach drei Runden pausieren."
+  ]
+ },
+ "Single-Leg_High_Box_Squat": {
+  "name": "Einbeinige Kniebeuge auf hoher Box",
+  "steps": [
+   "Auf eine Box steigen, an einem Band oder Seil festhalten.",
+   "Auf einem Bein absenken, das andere Bein frei.",
+   "Wieder hochdrücken; Seite wechseln."
+  ]
+ },
+ "Single-Leg_Hop_Progression": {
+  "name": "Einbeinige Hütchensprünge",
+  "steps": [
+   "Hütchen in einer Reihe, auf einem Bein stehen.",
+   "Auf demselben Bein von Hütchen zu Hütchen springen.",
+   "Am Ende umdrehen und mit dem anderen Bein zurück."
+  ]
+ },
+ "Single-Leg_Lateral_Hop": {
+  "name": "Einbeinige Seitsprünge",
+  "steps": [
+   "Auf einem Bein seitlich neben einem Hütchen stehen.",
+   "Seitlich darüber springen und auf demselben Bein landen.",
+   "Sofort zurückspringen und fortfahren."
+  ]
+ },
+ "Single-Leg_Leg_Extension": {
+  "name": "Einbeiniger Beinstrecker",
+  "steps": [
+   "In der Maschine sitzen, Polster am unteren Schienbein.",
+   "Ein Bein vollständig strecken und kurz halten.",
+   "Ohne Ablegen zurück; Seite wechseln."
+  ]
+ },
+ "Single-Leg_Stride_Jump": {
+  "name": "Einbeiniger Sprung von der Box",
+  "steps": [
+   "Seitlich an einer Box, inneren Fuß auf der Box.",
+   "Mit Armschwung über das obere Bein so hoch wie möglich springen, anderes Knie hoch.",
+   "In der Ausgangsposition landen."
+  ]
+ },
+ "Single_Dumbbell_Raise": {
+  "name": "Frontheben mit einer Kurzhantel",
+  "steps": [
+   "Weiter Stand, Kurzhantel mit beiden Händen am Kopf greifen.",
+   "Mit gestreckten Armen bis über Schulterhöhe heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Single_Leg_Butt_Kick": {
+  "name": "Einbeiniges Anfersen im Sprung",
+  "steps": [
+   "Auf einem Bein stehen, anderes Knie angehoben.",
+   "Kraftvoll vom Standbein abspringen.",
+   "Ferse zum Gesäß ziehen und weich landen."
+  ]
+ },
+ "Single_Leg_Glute_Bridge": {
+  "name": "Einbeinige Glute Bridge",
+  "steps": [
+   "Rücklings, Füße flach, Knie gebeugt; ein Knie zur Brust ziehen.",
+   "Über die Ferse des Standbeins die Hüfte anheben.",
+   "Oben halten und absenken; Seite wechseln."
+  ]
+ },
+ "Single_Leg_Push-off": {
+  "name": "Einbeiniger Abdruck von der Box",
+  "steps": [
+   "Einen Fuß auf eine Box stellen.",
+   "Mit dem oberen Bein explosiv nach oben abdrücken.",
+   "Mit demselben Fuß auf der Box landen und wiederholen."
+  ]
+ },
+ "Sit-Up": {
+  "name": "Sit-ups",
+  "steps": [
+   "Rücklings liegen, Knie gebeugt, Füße fixiert, Hände hinter dem Kopf.",
+   "Oberkörper ausatmend aufrichten, bis eine V-Form entsteht.",
+   "Kurz halten und langsam einatmend absenken."
+  ]
+ },
+ "Sled_Overhead_Backward_Walk": {
+  "name": "Schlitten rückwärts ziehen (über Kopf)",
+  "steps": [
+   "Griffe am Schlitten befestigen, leichtes Gewicht, zum Schlitten schauen.",
+   "Arme gestreckt über den Kopf halten.",
+   "Rückwärts gehen, ohne ruckartige Bewegungen."
+  ]
+ },
+ "Sled_Overhead_Triceps_Extension": {
+  "name": "Überkopf-Trizepsstrecken am Schlitten",
+  "steps": [
+   "Vom Schlitten wegschauen, Griffe über dem Kopf, Ellbogen gebeugt.",
+   "Arme strecken, Oberarme bleiben fixiert.",
+   "Nach vorn gehen, um Spannung aufzubauen, und wiederholen."
+  ]
+ },
+ "Sled_Reverse_Flye": {
+  "name": "Reverse Flys am Schlitten",
+  "steps": [
+   "Zum Schlitten schauen, Griffe auf Hüfthöhe, Knie leicht gebeugt.",
+   "Arme gestreckt nach oben außen ziehen.",
+   "Zurück und einige Schritte rückwärts gehen."
+  ]
+ },
+ "Sled_Row": {
+  "name": "Schlitten-Rudern",
+  "steps": [
+   "Zum Schlitten schauen, Griffe mit gestreckten Armen, Knie leicht gebeugt.",
+   "Ellbogen beugen und Schulterblätter zusammenziehen, Schlitten heranziehen.",
+   "Zurückgehen und wiederholen."
+  ]
+ },
+ "Sledgehammer_Swings": {
+  "name": "Vorschlaghammer-Schläge",
+  "steps": [
+   "Etwa 60 cm vor einem Reifen in Schrittstellung, Hammer greifen.",
+   "Hammer über die Schulter führen, obere Hand rutscht zum Kopf.",
+   "Kraftvoll auf den Reifen schlagen; Seite wechseln."
+  ]
+ },
+ "Smith_Incline_Shoulder_Raise": {
+  "name": "Schulterheben schräg an der Multipresse",
+  "steps": [
+   "Schrägbank unter die Multipresse, Stange schulterbreit mit fast gestreckten Armen halten.",
+   "Schultern nach oben schieben, bis die Arme ganz gestreckt sind.",
+   "Langsam zurück."
+  ]
+ },
+ "Smith_Machine_Behind_the_Back_Shrug": {
+  "name": "Shrugs hinter dem Rücken an der Multipresse",
+  "steps": [
+   "Stange auf Oberschenkelhöhe hinter dir, schulterbreit im Obergriff.",
+   "Schultern gerade nach oben ziehen, Arme gestreckt.",
+   "Kurz halten und absenken."
+  ]
+ },
+ "Smith_Machine_Bench_Press": {
+  "name": "Bankdrücken an der Multipresse",
+  "steps": [
+   "Flachbank unter die Multipresse, Stange mittelbreit greifen und entriegeln.",
+   "Einatmend langsam zur mittleren Brust absenken.",
+   "Ausatmend mit der Brust hochdrücken; am Ende einhaken."
+  ]
+ },
+ "Smith_Machine_Bent_Over_Row": {
+  "name": "Vorgebeugtes Rudern an der Multipresse",
+  "steps": [
+   "Stange etwa 5 cm unter Kniehöhe, mit geradem Rücken vorbeugen und im Obergriff greifen.",
+   "Stange zum Bauch ziehen, Ellbogen nah am Körper.",
+   "Langsam absenken."
+  ]
+ },
+ "Smith_Machine_Calf_Raise": {
+  "name": "Wadenheben an der Multipresse",
+  "steps": [
+   "Block unter die Stange, Stange auf den oberen Rücken, Fußballen auf den Block.",
+   "Fersen so hoch wie möglich heben, Knie gestreckt.",
+   "Langsam absenken."
+  ]
+ },
+ "Smith_Machine_Close-Grip_Bench_Press": {
+  "name": "Enges Bankdrücken an der Multipresse",
+  "steps": [
+   "Flachbank unter die Multipresse, Stange eng greifen und entriegeln.",
+   "Langsam zur mittleren Brust absenken.",
+   "Mit dem Trizeps hochdrücken."
+  ]
+ },
+ "Smith_Machine_Decline_Press": {
+  "name": "Negativ-Drücken an der Multipresse",
+  "steps": [
+   "Negativbank in die Multipresse, Stange entriegeln, Schulterblätter zurück.",
+   "Stange zur Brust absenken.",
+   "Kurz halten und hochdrücken."
+  ]
+ },
+ "Smith_Machine_Hang_Power_Clean": {
+  "name": "Hang Power Clean an der Multipresse",
+  "steps": [
+   "Stange auf Kniehöhe, breiter als schulterbreit greifen und entriegeln.",
+   "Hüfte und Knie explosiv strecken, Arme gestreckt.",
+   "Unter die Stange gehen, sie auf den Schultern fangen und aufrichten."
+  ]
+ },
+ "Smith_Machine_Hip_Raise": {
+  "name": "Hüftheben an der Multipresse",
+  "steps": [
+   "Auf eine Bank unter der Multipresse legen, Füße gegen die Stange, entriegeln.",
+   "Becken einrollen und die Hüfte von der Bank heben.",
+   "Kurz halten und absenken."
+  ]
+ },
+ "Smith_Machine_Incline_Bench_Press": {
+  "name": "Schrägbankdrücken an der Multipresse",
+  "steps": [
+   "Schrägbank unter die Multipresse, Stange greifen und entriegeln.",
+   "Langsam zur oberen Brust absenken.",
+   "Mit der Brust hochdrücken."
+  ]
+ },
+ "Smith_Machine_Leg_Press": {
+  "name": "Beinpresse an der Multipresse",
+  "steps": [
+   "Stange knapp über dem Boden auf die Sicherungen, darunter legen, Füße an die Stange.",
+   "Hüfte und Knie strecken, ohne die Knie durchzudrücken.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "Smith_Machine_One-Arm_Upright_Row": {
+  "name": "Einarmiges Aufrechtrudern an der Multipresse",
+  "steps": [
+   "Stange auf Oberschenkelhöhe, einarmig weit greifen und entriegeln.",
+   "Ellbogen nach außen hochziehen, bis der Oberarm parallel zum Boden ist.",
+   "Kurz halten und zurück; Seite wechseln."
+  ]
+ },
+ "Smith_Machine_Overhead_Shoulder_Press": {
+  "name": "Schulterdrücken an der Multipresse",
+  "steps": [
+   "Bank unter die Multipresse, Stange über Kopf greifen und entriegeln.",
+   "Einatmend bis auf Kinnhöhe absenken.",
+   "Ausatmend nach oben drücken."
+  ]
+ },
+ "Smith_Machine_Pistol_Squat": {
+  "name": "Einbeinige Kniebeuge an der Multipresse",
+  "steps": [
+   "Stange auf den oberen Rücken, einen Fuß nach vorn, anderes Bein gestreckt in der Luft.",
+   "So tief wie möglich auf dem Standbein absenken.",
+   "Über die Ferse hochdrücken; Seite wechseln."
+  ]
+ },
+ "Smith_Machine_Reverse_Calf_Raises": {
+  "name": "Schienbeinheben an der Multipresse",
+  "steps": [
+   "Fersen auf eine Erhöhung unter der Multipresse, Fußballen frei, Stange auf dem oberen Rücken.",
+   "Fußspitzen so hoch wie möglich anziehen, Knie ruhig.",
+   "Langsam absenken."
+  ]
+ },
+ "Smith_Machine_Squat": {
+  "name": "Kniebeuge an der Multipresse",
+  "steps": [
+   "Stange auf den oberen Rücken, entriegeln, Füße schulterbreit.",
+   "Mit geradem Rücken absenken, bis die Knie etwas über 90° gebeugt sind.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Smith_Machine_Stiff-Legged_Deadlift": {
+  "name": "Gestrecktes Kreuzheben an der Multipresse",
+  "steps": [
+   "Stange auf Oberschenkelhöhe greifen und entriegeln, Knie leicht gebeugt.",
+   "Mit geradem Rücken aus der Hüfte vorbeugen, bis die Beinbeuger gedehnt sind.",
+   "Hüfte strecken und aufrichten."
+  ]
+ },
+ "Smith_Machine_Upright_Row": {
+  "name": "Aufrechtrudern an der Multipresse",
+  "steps": [
+   "Stange auf Oberschenkelhöhe im Obergriff, entriegeln.",
+   "Stange nah am Körper bis fast zum Kinn ziehen.",
+   "Langsam absenken."
+  ]
+ },
+ "Smith_Single-Leg_Split_Squat": {
+  "name": "Bulgarische Split-Kniebeuge an der Multipresse",
+  "steps": [
+   "Bank hinter der Multipresse, Stange auf dem Rücken, hinterer Fuß auf der Bank.",
+   "Vorderes Knie beugen und absenken.",
+   "Über die vordere Ferse hochdrücken; Bein wechseln."
+  ]
+ },
+ "Snatch_Pull": {
+  "name": "Reißzug (Snatch Pull)",
+  "steps": [
+   "Stange nah an den Schienbeinen im breiten Reißgriff, Rücken gerade, Brust hoch.",
+   "Über die Fersen ziehen, Knie strecken, Rückenwinkel konstant.",
+   "Ab Oberschenkelmitte explosiv Hüfte, Knie und Füße strecken und die Schultern hochziehen."
+  ]
+ },
+ "Speed_Band_Overhead_Triceps": {
+  "name": "Schnelles Überkopf-Trizepsstrecken mit Band",
+  "steps": [
+   "Band am Boden verankern und hinter den Kopf ziehen, Ellbogen oben.",
+   "Arme schnell strecken, Oberarme fixiert.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "Speed_Box_Squat": {
+  "name": "Speed Box Squat",
+  "steps": [
+   "Bänder an der Stange befestigen, Box hinter dir, moderates Gewicht.",
+   "Kontrolliert auf die Box setzen.",
+   "Kurz halten und explosiv hochdrücken."
+  ]
+ },
+ "Speed_Squats": {
+  "name": "Speed-Kniebeuge",
+  "steps": [
+   "Langhantel aus dem Rack auf den oberen Rücken nehmen, schulterbreit stehen.",
+   "Kontrolliert bis knapp unter 90° absenken.",
+   "So schnell wie möglich hochdrücken."
+  ]
+ },
+ "Spell_Caster": {
+  "name": "Spell Caster (Kurzhantel)",
+  "steps": [
+   "Weiter Stand, Kurzhanteln im Obergriff.",
+   "Hanteln zu einer Hüfte ziehen und dabei den Oberkörper drehen.",
+   "Mit gestreckten Armen zur anderen Seite schwingen; abwechseln."
+  ]
+ },
+ "Spider_Crawl": {
+  "name": "Spider Crawl",
+  "steps": [
+   "Tiefe Liegestützposition, Arme 90° gebeugt.",
+   "Ein Bein seitlich anheben und das Knie zum Ellbogen ziehen.",
+   "Zurück und zur anderen Seite."
+  ]
+ },
+ "Spider_Curl": {
+  "name": "Spider Curls (SZ-Stange)",
+  "steps": [
+   "Bäuchlings 45° gegen die Scottbank lehnen, Oberarme auf der senkrechten Seite.",
+   "SZ-Stange schulterbreit im Untergriff hochcurlen.",
+   "Oben anspannen und langsam absenken."
+  ]
+ },
+ "Split_Jump": {
+  "name": "Split Jumps",
+  "steps": [
+   "Ausfallschritt, hinteres Knie fast am Boden.",
+   "Mit Armschwung kraftvoll hochspringen.",
+   "In der gleichen Schrittstellung landen und abfedern."
+  ]
+ },
+ "Split_Squat_with_Dumbbells": {
+  "name": "Bulgarische Split-Kniebeuge (Kurzhantel)",
+  "steps": [
+   "Schrittstellung, hinterer Fuß erhöht, Kurzhanteln seitlich.",
+   "Vorderes Knie und Hüfte beugen und absenken.",
+   "Über die vordere Ferse hochdrücken; Bein wechseln."
+  ]
+ },
+ "Squat_Jerk": {
+  "name": "Squat Jerk",
+  "steps": [
+   "Stange vorn auf den Schultern, Füße unter der Hüfte.",
+   "Kurz in die Knie gehen und explosiv strecken, um die Stange nach oben zu treiben.",
+   "In tiefer Hocke mit gestreckten Armen auffangen und aufstehen."
+  ]
+ },
+ "Squat_with_Bands": {
+  "name": "Kniebeuge mit Bändern",
+  "steps": [
+   "Bänder an Stange und Rack befestigen.",
+   "Stange auf den oberen Rücken, Rumpf fest, Hüfte zurück absenken.",
+   "Über die Fersen hochdrücken, Knie nach außen."
+  ]
+ },
+ "Squat_with_Chains": {
+  "name": "Kniebeuge mit Ketten",
+  "steps": [
+   "Ketten an der Stange befestigen.",
+   "Stange auf den oberen Rücken, Hüfte zurück und absenken.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Squat_with_Plate_Movers": {
+  "name": "Kniebeuge mit Scheibenschieben",
+  "steps": [
+   "Langhantel auf dem Rücken, weiter Stand, ein Fuß auf einer Hantelscheibe.",
+   "Bis knapp unter 90° absenken und hochdrücken.",
+   "Seitlich treten, die Scheibe mit dem Fuß rüberschieben und wiederholen."
+  ]
+ },
+ "Squats_-_With_Bands": {
+  "name": "Kniebeuge mit Band",
+  "steps": [
+   "Mittig auf das Band stellen, Griffe auf Schulterhöhe.",
+   "Absenken, bis die Oberschenkel parallel zum Boden sind.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Standing_Alternating_Dumbbell_Press": {
+  "name": "Kurzhantel-Schulterdrücken stehend im Wechsel",
+  "steps": [
+   "Stehend Kurzhanteln auf Schulterhöhe, Handflächen nach vorn.",
+   "Einen Arm gerade nach oben drücken, ohne zu lehnen.",
+   "Absenken und mit dem anderen Arm drücken."
+  ]
+ },
+ "Standing_Barbell_Calf_Raise": {
+  "name": "Wadenheben stehend (Langhantel)",
+  "steps": [
+   "Langhantel aus dem Rack auf den oberen Rücken, schulterbreit stehen.",
+   "Fersen so hoch wie möglich heben, Knie ruhig.",
+   "Langsam absenken."
+  ]
+ },
+ "Standing_Barbell_Press_Behind_Neck": {
+  "name": "Nackendrücken stehend",
+  "steps": [
+   "Langhantel aus dem Rack auf den oberen Rücken nehmen.",
+   "Ausatmend über Kopf drücken.",
+   "Kurz halten und langsam hinter den Kopf absenken."
+  ]
+ },
+ "Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension": {
+  "name": "Einarmige Trizeps-Kickbacks",
+  "steps": [
+   "Vorgebeugt stehen, Kurzhantel in einer Hand, Oberarm parallel zum Boden am Körper.",
+   "Unterarm nach hinten strecken, bis der Arm gerade ist.",
+   "Kurz halten und absenken; Seite wechseln."
+  ]
+ },
+ "Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension": {
+  "name": "Trizeps-Kickbacks (beidarmig)",
+  "steps": [
+   "Vorgebeugt stehen, Kurzhanteln in beiden Händen, Oberarme am Körper.",
+   "Unterarme nach hinten strecken.",
+   "Kurz halten und absenken."
+  ]
+ },
+ "Standing_Biceps_Cable_Curl": {
+  "name": "Bizepscurls am Kabelzug",
+  "steps": [
+   "Stange am unteren Kabelzug schulterbreit im Untergriff, Ellbogen am Körper.",
+   "Oberarme ruhig und bis Schulterhöhe curlen.",
+   "Langsam zurück."
+  ]
+ },
+ "Standing_Bradford_Press": {
+  "name": "Bradford Press stehend",
+  "steps": [
+   "Langhantel vorn auf den Schultern, schulterbreit im Obergriff.",
+   "Über den Kopf führen und hinter dem Kopf bis 90° Ellbogenwinkel absenken.",
+   "Wieder über den Kopf nach vorn absenken; abwechseln."
+  ]
+ },
+ "Standing_Cable_Chest_Press": {
+  "name": "Brustdrücken stehend am Kabelzug",
+  "steps": [
+   "Kabelzüge auf Brusthöhe, mit dem Rücken dazu in Schrittstellung.",
+   "Oberarme 90°, Schulterblätter zusammen.",
+   "Griffe nach vorn zusammendrücken und zurück."
+  ]
+ },
+ "Standing_Cable_Lift": {
+  "name": "Kabel-Lift (von unten nach oben)",
+  "steps": [
+   "Seitlich zum unteren Kabelzug, Griff mit beiden Händen, in die Hocke gehen.",
+   "Griff diagonal über den Körper nach oben ziehen und aufrichten.",
+   "Kontrolliert zurück; Seite wechseln."
+  ]
+ },
+ "Standing_Cable_Wood_Chop": {
+  "name": "Holzhacker am Kabelzug",
+  "steps": [
+   "Seitlich zum oberen Kabelzug, Griff mit beiden Händen, Arme gestreckt.",
+   "Griff diagonal nach unten zum vorderen Knie ziehen und den Oberkörper drehen.",
+   "Kontrolliert zurück; Seite wechseln."
+  ]
+ },
+ "Standing_Calf_Raises": {
+  "name": "Wadenheben stehend (Maschine)",
+  "steps": [
+   "Schultern unter die Polster, Fußballen auf den Block.",
+   "Fersen so hoch wie möglich heben, Knie ruhig.",
+   "Langsam absenken, bis die Waden gedehnt sind."
+  ]
+ },
+ "Standing_Concentration_Curl": {
+  "name": "Konzentrationscurls stehend",
+  "steps": [
+   "Vorgebeugt stehen, Arbeitsarm hängt senkrecht.",
+   "Kurzhantel mit fixiertem Oberarm hochcurlen und anspannen.",
+   "Langsam absenken."
+  ]
+ },
+ "Standing_Dumbbell_Calf_Raise": {
+  "name": "Wadenheben mit Kurzhanteln",
+  "steps": [
+   "Kurzhanteln seitlich, Fußballen auf einem Brett, Fersen frei.",
+   "Fersen so hoch wie möglich heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Standing_Dumbbell_Press": {
+  "name": "Kurzhantel-Schulterdrücken stehend",
+  "steps": [
+   "Schulterbreit stehen, Kurzhanteln auf Kopfhöhe, Ellbogen außen.",
+   "Ohne Beinschwung gerade nach oben drücken.",
+   "Langsam zurück."
+  ]
+ },
+ "Standing_Dumbbell_Reverse_Curl": {
+  "name": "Reverse Curls (Kurzhantel)",
+  "steps": [
+   "Stehend Kurzhanteln im Obergriff, Arme gestreckt.",
+   "Oberarme ruhig und hochcurlen.",
+   "Langsam absenken."
+  ]
+ },
+ "Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head": {
+  "name": "Frontheben bis über den Kopf",
+  "steps": [
+   "Kurzhanteln vor den Oberschenkeln, Arme fast gestreckt.",
+   "Im Halbkreis bis über den Kopf heben.",
+   "Auf gleichem Weg langsam absenken."
+  ]
+ },
+ "Standing_Dumbbell_Triceps_Extension": {
+  "name": "Überkopf-Trizepsstrecken stehend (Kurzhantel)",
+  "steps": [
+   "Stehend eine Kurzhantel mit beiden Händen über Kopf halten.",
+   "Oberarme nah am Kopf und die Hantel hinter den Kopf absenken.",
+   "Mit dem Trizeps zurückstrecken."
+  ]
+ },
+ "Standing_Dumbbell_Upright_Row": {
+  "name": "Aufrechtrudern (Kurzhantel)",
+  "steps": [
+   "Kurzhanteln im Obergriff vor den Oberschenkeln.",
+   "Hanteln nah am Körper bis fast zum Kinn ziehen, Ellbogen führen.",
+   "Langsam absenken."
+  ]
+ },
+ "Standing_Front_Barbell_Raise_Over_Head": {
+  "name": "Frontheben mit Langhantel bis über Kopf",
+  "steps": [
+   "Langhantel eng im Obergriff vor dem Körper, Ellbogen leicht gebeugt.",
+   "Stange bis über den Kopf heben.",
+   "Langsam absenken."
+  ]
+ },
+ "Standing_Inner-Biceps_Curl": {
+  "name": "Kurzhantel-Curls nach außen (stehend)",
+  "steps": [
+   "Stehend Kurzhanteln neutral, Ellbogen am Körper.",
+   "Nach außen curlen und die Handflächen nach oben drehen.",
+   "Oben anspannen und langsam zurückdrehen."
+  ]
+ },
+ "Standing_Leg_Curl": {
+  "name": "Beinbeuger stehend (Maschine)",
+  "steps": [
+   "Maschine einstellen, Oberkörper leicht vorgeneigt, Griffe fassen.",
+   "Ein Bein so weit wie möglich beugen und kurz halten.",
+   "Langsam zurück; Bein wechseln."
+  ]
+ },
+ "Standing_Long_Jump": {
+  "name": "Standweitsprung",
+  "steps": [
+   "Halbe Hocke, Füße schulterbreit.",
+   "Mit großem Armschwung so weit wie möglich nach vorn springen.",
+   "Mit den Füßen vorn landen und die Weite messen."
+  ]
+ },
+ "Standing_Low-Pulley_Deltoid_Raise": {
+  "name": "Seitheben am unteren Kabelzug",
+  "steps": [
+   "Seitlich zum unteren Kabelzug, Griff mit der äußeren Hand quer vor dem Körper.",
+   "Arm seitlich bis Schulterhöhe heben.",
+   "Kurz halten und langsam zurück; Seite wechseln."
+  ]
+ },
+ "Standing_Low-Pulley_One-Arm_Triceps_Extension": {
+  "name": "Einarmiges Überkopf-Trizepsstrecken am Kabel",
+  "steps": [
+   "Mit dem Rücken zum unteren Kabelzug, Griff über dem Kopf, Arm gestreckt.",
+   "Oberarm am Kopf und den Griff hinter den Kopf absenken.",
+   "Mit dem Trizeps strecken; Seite wechseln."
+  ]
+ },
+ "Standing_Military_Press": {
+  "name": "Military Press (Schulterdrücken stehend)",
+  "steps": [
+   "Langhantel aus dem Rack auf das Schlüsselbein nehmen, schulterbreit stehen.",
+   "Stange über Kopf drücken, bis die Arme gestreckt sind.",
+   "Einatmend langsam zum Schlüsselbein absenken."
+  ]
+ },
+ "Standing_Olympic_Plate_Hand_Squeeze": {
+  "name": "Hantelscheiben-Griffkraft stehend",
+  "steps": [
+   "In jeder Hand eine Hantelscheibe am Rand halten, Arme hängen.",
+   "Scheiben in die Fingerspitzen rutschen lassen.",
+   "Hände schließen und die Scheiben wieder hochziehen."
+  ]
+ },
+ "Standing_One-Arm_Cable_Curl": {
+  "name": "Einarmige Kabelcurls",
+  "steps": [
+   "Einzelgriff am unteren Kabelzug, Oberarm am Körper, andere Hand an der Hüfte.",
+   "Griff hochcurlen, bis der Unterarm den Bizeps berührt.",
+   "Langsam zurück; Seite wechseln."
+  ]
+ },
+ "Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench": {
+  "name": "Einarmige Curls über der Schrägbank",
+  "steps": [
+   "Hinter einer Schrägbank stehen, Oberarm auf der Lehne, Kurzhantel im Untergriff.",
+   "Hantel hochcurlen, Oberarm ruhig.",
+   "Langsam absenken; Seite wechseln."
+  ]
+ },
+ "Standing_One-Arm_Dumbbell_Triceps_Extension": {
+  "name": "Einarmiges Überkopf-Trizepsstrecken stehend",
+  "steps": [
+   "Kurzhantel einarmig gestreckt über dem Kopf.",
+   "Oberarm am Kopf und die Hantel hinter den Kopf absenken.",
+   "Mit dem Trizeps strecken; Seite wechseln."
+  ]
+ },
+ "Standing_Overhead_Barbell_Triceps_Extension": {
+  "name": "Überkopf-Trizepsstrecken stehend (Langhantel)",
+  "steps": [
+   "Langhantel oder SZ-Stange eng über Kopf, Ellbogen eng.",
+   "Stange im Halbkreis hinter den Kopf absenken.",
+   "Mit dem Trizeps strecken."
+  ]
+ },
+ "Standing_Palm-In_One-Arm_Dumbbell_Press": {
+  "name": "Einarmiges Schulterdrücken (neutraler Griff)",
+  "steps": [
+   "An einer Bank festhalten, Kurzhantel neutral auf Schulterhöhe.",
+   "Nach oben drücken, bis der Arm gestreckt ist.",
+   "Bis 90° Ellbogenwinkel absenken; Seite wechseln."
+  ]
+ },
+ "Standing_Palms-In_Dumbbell_Press": {
+  "name": "Schulterdrücken stehend (neutraler Griff)",
+  "steps": [
+   "Kurzhanteln neutral auf Schulterhöhe, Ellbogen 90°.",
+   "Hanteln nach oben drücken, bis die Arme gestreckt sind.",
+   "Bis 90° Ellbogenwinkel absenken."
+  ]
+ },
+ "Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl": {
+  "name": "Handgelenkcurls hinter dem Rücken",
+  "steps": [
+   "Langhantel hinter dem Gesäß halten, Handflächen nach hinten.",
+   "Nur die Handgelenke nach oben einrollen.",
+   "Kurz halten und absenken."
+  ]
+ },
+ "Standing_Rope_Crunch": {
+  "name": "Seil-Crunch stehend",
+  "steps": [
+   "Mit dem Rücken zum oberen Kabelzug, Seil über den Schultern an der Brust.",
+   "Wirbelsäule beugen und nach unten crunchen.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "Standing_Towel_Triceps_Extension": {
+  "name": "Trizepsstrecken mit Handtuch (Partner)",
+  "steps": [
+   "Handtuch mit beiden Händen über dem Kopf halten, Partner hält das andere Ende.",
+   "Gegen den Widerstand hinter den Kopf absenken.",
+   "Mit dem Trizeps wieder strecken."
+  ]
+ },
+ "Standing_Two-Arm_Overhead_Throw": {
+  "name": "Medizinball-Überkopfwurf stehend",
+  "steps": [
+   "Schulterbreit stehen, Ball tief hinter den Kopf führen, Knie leicht gebeugt.",
+   "Ball explosiv mit dem ganzen Körper nach vorn werfen.",
+   "Zurückprallenden Ball fangen."
+  ]
+ },
+ "Star_Jump": {
+  "name": "Hampelmann-Sprung (Star Jump)",
+  "steps": [
+   "Locker stehen, Arme am Körper.",
+   "Halb in die Hocke und explosiv hochspringen, Arme und Beine zum Stern spreizen.",
+   "Gliedmaßen zusammenführen und weich landen."
+  ]
+ },
+ "Step-up_with_Knee_Raise": {
+  "name": "Step-up mit Kniehub",
+  "steps": [
+   "Vor einer Box oder Bank stehen.",
+   "Mit einem Fuß aufsteigen, Bein strecken und das andere Knie hochziehen.",
+   "Herabsteigen und mit dem anderen Bein wiederholen."
+  ]
+ },
+ "Stiff-Legged_Barbell_Deadlift": {
+  "name": "Kreuzheben mit gestreckten Beinen (Langhantel)",
+  "steps": [
+   "Langhantel im Obergriff, Füße schulterbreit, Knie leicht gebeugt.",
+   "Mit geradem Rücken aus der Hüfte vorbeugen, bis die Beinbeuger gedehnt sind.",
+   "Hüfte strecken und aufrichten."
+  ]
+ },
+ "Stiff-Legged_Dumbbell_Deadlift": {
+  "name": "Kreuzheben mit gestreckten Beinen (Kurzhantel)",
+  "steps": [
+   "Kurzhanteln seitlich, Füße schulterbreit, Knie leicht gebeugt.",
+   "Mit geradem Rücken die Hanteln Richtung Füße absenken.",
+   "Hüfte strecken und aufrichten."
+  ]
+ },
+ "Stiff_Leg_Barbell_Good_Morning": {
+  "name": "Good Morning mit gestreckten Beinen",
+  "steps": [
+   "Langhantel aus dem Rack auf den oberen Rücken, schulterbreit stehen.",
+   "Beine gestreckt und aus der Hüfte bis parallel vorbeugen.",
+   "Oberkörper wieder aufrichten."
+  ]
+ },
+ "Straight-Arm_Dumbbell_Pullover": {
+  "name": "Kurzhantel-Pullover mit gestreckten Armen",
+  "steps": [
+   "Quer auf der Flachbank, Schultern auf der Bank, Kurzhantel mit beiden Händen über der Brust.",
+   "Mit gestreckten Armen im Bogen hinter den Kopf absenken.",
+   "Im Bogen zurückführen."
+  ]
+ },
+ "Straight-Arm_Pulldown": {
+  "name": "Überzüge am Kabelzug (gestreckte Arme)",
+  "steps": [
+   "Breite Stange am oberen Kabelzug, zurücktreten und leicht vorbeugen.",
+   "Arme gestreckt die Stange bis zu den Oberschenkeln ziehen.",
+   "Langsam zurück."
+  ]
+ },
+ "Straight_Bar_Bench_Mid_Rows": {
+  "name": "Rudern von der Bank (Langhantel)",
+  "steps": [
+   "Auf einer Bank stehen, beladene Langhantel davor im Obergriff, Brust hoch, Hüfte zurück.",
+   "Stange zum Oberkörper rudern, Schulterblätter zurück.",
+   "Langsam ganz absenken."
+  ]
+ },
+ "Straight_Raises_on_Incline_Bench": {
+  "name": "Frontheben bäuchlings auf der Schrägbank",
+  "steps": [
+   "Bäuchlings auf eine Schrägbank, Langhantel hängt im Obergriff.",
+   "Mit gestreckten Armen vor dem Kopf nach oben heben.",
+   "Langsam zurück."
+  ]
+ },
+ "Stride_Jump_Crossover": {
+  "name": "Box-Sprung mit Seitenwechsel",
+  "steps": [
+   "Seitlich neben einer Box, inneren Fuß darauf.",
+   "Mit Armschwung über das obere Bein hoch und über die Box springen.",
+   "Auf der anderen Seite landen, Füße getauscht, und zurückspringen."
+  ]
+ },
+ "Sumo_Deadlift": {
+  "name": "Sumo-Kreuzheben",
+  "steps": [
+   "Sehr weiter Stand, Stange mittig über den Füßen, innen schulterbreit greifen.",
+   "Hüfte senken, Brust hoch und die Füße auseinanderdrücken, um hochzuziehen.",
+   "Hüfte zur Stange, Schultern zurück; kontrolliert absenken."
+  ]
+ },
+ "Sumo_Deadlift_with_Bands": {
+  "name": "Sumo-Kreuzheben mit Bändern",
+  "steps": [
+   "Bänder über die Stange legen und hineinsteigen, sehr weiter Stand.",
+   "Hüfte senken, Brust hoch und kraftvoll hochziehen.",
+   "Hüfte zur Stange und kontrolliert absenken."
+  ]
+ },
+ "Sumo_Deadlift_with_Chains": {
+  "name": "Sumo-Kreuzheben mit Ketten",
+  "steps": [
+   "Ketten an der Stange befestigen, sehr weiter Stand.",
+   "Hüfte senken, Brust hoch und hochziehen.",
+   "Hüfte zur Stange und kontrolliert absenken."
+  ]
+ },
+ "Supine_Chest_Throw": {
+  "name": "Medizinball-Brustwurf liegend",
+  "steps": [
+   "Rücklings, Knie gebeugt, Ball auf der Brust.",
+   "Ball explosiv senkrecht nach oben stoßen.",
+   "Mit beiden Händen fangen."
+  ]
+ },
+ "Supine_One-Arm_Overhead_Throw": {
+  "name": "Einarmiger Überkopfwurf liegend",
+  "steps": [
+   "Rücklings, Knie gebeugt, Ball in einer Hand hinter dem Kopf.",
+   "Beim Aufrichten den Ball kraftvoll nach vorn werfen.",
+   "Zu einem Partner oder gegen eine Wand werfen; Seite wechseln."
+  ]
+ },
+ "Supine_Two-Arm_Overhead_Throw": {
+  "name": "Beidarmiger Überkopfwurf liegend",
+  "steps": [
+   "Rücklings, Knie gebeugt, Ball mit beiden Händen hinter dem Kopf.",
+   "Beim Aufrichten den Ball kraftvoll nach vorn werfen.",
+   "Zu einem Partner oder gegen eine Wand werfen."
+  ]
+ },
+ "Suspended_Fallout": {
+  "name": "Fallout am Schlingentrainer",
+  "steps": [
+   "Schlingen unter Hüfthöhe, Griffe fassen und in eine schräge Liegestützposition lehnen.",
+   "Mit gestreckten Armen die Arme über den Kopf führen und den Körper absenken.",
+   "Rumpf fest, kurz halten und zurück."
+  ]
+ },
+ "Suspended_Push-Up": {
+  "name": "Liegestütze am Schlingentrainer",
+  "steps": [
+   "Griffe fassen und in eine möglichst flache Liegestützposition lehnen.",
+   "Körper fest, langsam absenken, bis die Ellbogen 90° gebeugt sind.",
+   "Kurz halten und hochdrücken."
+  ]
+ },
+ "Suspended_Reverse_Crunch": {
+  "name": "Knieanziehen am Schlingentrainer",
+  "steps": [
+   "Füße in die Schlaufen (ca. 30 cm über dem Boden), Liegestützposition.",
+   "Knie zur Brust ziehen und das Becken einrollen.",
+   "Kontrolliert zurück in die Planke."
+  ]
+ },
+ "Suspended_Row": {
+  "name": "Rudern am Schlingentrainer",
+  "steps": [
+   "Schlingen auf Brusthöhe, Griffe fassen und mit geradem Körper zurücklehnen.",
+   "Ellbogen beugen und die Brust zu den Griffen ziehen.",
+   "Kurz halten und zurück."
+  ]
+ },
+ "Suspended_Split_Squat": {
+  "name": "Split-Kniebeuge am Schlingentrainer",
+  "steps": [
+   "Schlaufen 45–75 cm über dem Boden, hinteren Fuß in die Schlaufe.",
+   "Vorderes Knie beugen und absenken, Brust hoch.",
+   "Über die Ferse hochdrücken; Bein wechseln."
+  ]
+ },
+ "Svend_Press": {
+  "name": "Svend Press",
+  "steps": [
+   "Stehend zwei leichte Hantelscheiben zwischen den Handflächen vor der Brust zusammendrücken.",
+   "Arme gerade nach vorn strecken und weiter zusammendrücken.",
+   "Kurz halten und zurück zur Brust."
+  ]
+ },
+ "T-Bar_Row_with_Handle": {
+  "name": "T-Bar-Rudern mit Griff",
+  "steps": [
+   "Langhantel in Landmine oder Ecke, Rudergriff an der Stange.",
+   "Weiter Stand, Hüfte zurück, Brust hoch, Arme gestreckt.",
+   "Zum oberen Bauch ziehen, Schulterblätter zusammen, und langsam absenken."
+  ]
+ },
+ "Tate_Press": {
+  "name": "Tate Press",
+  "steps": [
+   "Auf der Flachbank Kurzhanteln über der Brust, Ellbogen nach außen.",
+   "Oberarme fixieren und die Hanteln im Halbkreis zur oberen Brust absenken.",
+   "Mit dem Trizeps zurückstrecken."
+  ]
+ },
+ "Thigh_Abductor": {
+  "name": "Abduktorenmaschine",
+  "steps": [
+   "In die Maschine setzen, Polster außen an den Knien, Griffe fassen.",
+   "Beine gegen den Widerstand auseinanderdrücken.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Thigh_Adductor": {
+  "name": "Adduktorenmaschine",
+  "steps": [
+   "In die Maschine setzen, Polster innen an den Beinen, Griffe fassen.",
+   "Beine gegen den Widerstand zusammendrücken.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Trap_Bar_Deadlift": {
+  "name": "Kreuzheben mit Trap Bar",
+  "steps": [
+   "In die Mitte der Trap Bar stellen und beide Griffe fassen.",
+   "Hüfte senken, Brust hoch, Blick nach vorn.",
+   "Über die Fersen Hüfte und Knie strecken; kontrolliert absenken."
+  ]
+ },
+ "Tricep_Dumbbell_Kickback": {
+  "name": "Trizeps-Kickbacks (Kurzhantel)",
+  "steps": [
+   "Mit geradem Rücken vorbeugen, Oberarme parallel zum Körper.",
+   "Unterarme nach hinten strecken, bis die Arme gerade sind.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Triceps_Overhead_Extension_with_Rope": {
+  "name": "Überkopf-Trizepsstrecken am Seil (stehend)",
+  "steps": [
+   "Seil am unteren Kabelzug, mit dem Rücken zum Turm, Hände hinter dem Kopf.",
+   "Ellbogen strecken, Oberarme fixiert.",
+   "Oben anspannen und langsam zurück."
+  ]
+ },
+ "Triceps_Pushdown": {
+  "name": "Trizepsdrücken am Kabelzug (Stange)",
+  "steps": [
+   "Stange am oberen Kabelzug schulterbreit im Obergriff, Oberarme am Körper.",
+   "Mit dem Trizeps die Stange nach unten drücken, bis die Arme gestreckt sind.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Triceps_Pushdown_-_Rope_Attachment": {
+  "name": "Trizepsdrücken am Seil",
+  "steps": [
+   "Seil am oberen Kabelzug neutral greifen, Oberarme am Körper.",
+   "Seil nach unten ziehen und die Enden seitlich auseinanderführen.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Triceps_Pushdown_-_V-Bar_Attachment": {
+  "name": "Trizepsdrücken am V-Griff",
+  "steps": [
+   "V-Griff am oberen Kabelzug fassen, Oberarme am Körper.",
+   "Griff nach unten drücken, bis die Arme gestreckt sind.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Tuck_Crunch": {
+  "name": "Tuck Crunch",
+  "steps": [
+   "Rücklings, Beine gekreuzt und angehoben, Oberschenkel senkrecht, Arme vor der Brust.",
+   "Unteren Rücken am Boden lassen und den Oberkörper einrollen.",
+   "Langsam zurück."
+  ]
+ },
+ "Two-Arm_Dumbbell_Preacher_Curl": {
+  "name": "Scott-Curls mit Kurzhanteln",
+  "steps": [
+   "Oberarme auf die Scottbank, Kurzhanteln im Untergriff.",
+   "Langsam absenken, bis der Bizeps gedehnt ist.",
+   "Hochcurlen und oben anspannen."
+  ]
+ },
+ "Two-Arm_Kettlebell_Clean": {
+  "name": "Beidarmiger Kettlebell Clean",
+  "steps": [
+   "Zwei Kettlebells zwischen den Füßen, Gesäß zurück.",
+   "Durch Hüft- und Beinstreckung zu den Schultern umsetzen.",
+   "Absenken und wiederholen."
+  ]
+ },
+ "Two-Arm_Kettlebell_Jerk": {
+  "name": "Beidarmiger Kettlebell Jerk",
+  "steps": [
+   "Zwei Kettlebells zu den Schultern umsetzen.",
+   "Kurz in die Knie gehen und explosiv strecken.",
+   "Kettlebells über Kopf stoßen und zur Schulter zurück."
+  ]
+ },
+ "Two-Arm_Kettlebell_Military_Press": {
+  "name": "Beidarmiges Kettlebell-Schulterdrücken",
+  "steps": [
+   "Zwei Kettlebells zu den Schultern umsetzen.",
+   "Nach oben außen drücken und unter die Gewichte lehnen.",
+   "Rumpf und Gesäß anspannen und kontrolliert absenken."
+  ]
+ },
+ "Two-Arm_Kettlebell_Row": {
+  "name": "Beidarmiges Kettlebell-Rudern",
+  "steps": [
+   "Zwei Kettlebells vor den Füßen, Knie leicht gebeugt, Gesäß zurück.",
+   "Beide Kettlebells zum Bauch ziehen, Schulterblätter zusammen.",
+   "Mit geradem Rücken absenken."
+  ]
+ },
+ "Underhand_Cable_Pulldowns": {
+  "name": "Latzug im Untergriff",
+  "steps": [
+   "Am Latzug sitzen, Stange enger als schulterbreit im Untergriff.",
+   "Leicht zurücklehnen und die Stange zur oberen Brust ziehen.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Upright_Barbell_Row": {
+  "name": "Aufrechtrudern (Langhantel)",
+  "steps": [
+   "Langhantel etwas enger als schulterbreit im Obergriff vor den Oberschenkeln.",
+   "Ellbogen nach oben außen und die Stange nah am Körper bis fast zum Kinn ziehen.",
+   "Langsam absenken."
+  ]
+ },
+ "Upright_Cable_Row": {
+  "name": "Aufrechtrudern am Kabelzug",
+  "steps": [
+   "Stange am unteren Kabelzug eng im Obergriff.",
+   "Nah am Körper bis fast zum Kinn ziehen.",
+   "Langsam absenken."
+  ]
+ },
+ "Upright_Row_-_With_Bands": {
+  "name": "Aufrechtrudern mit Band",
+  "steps": [
+   "Auf das Band stellen, Griffe eng im Obergriff.",
+   "Griffe nah am Körper bis fast zum Kinn ziehen.",
+   "Langsam absenken."
+  ]
+ },
+ "V-Bar_Pulldown": {
+  "name": "Latzug mit V-Griff",
+  "steps": [
+   "Am Latzug sitzen, Knie fixiert, V-Griff neutral greifen.",
+   "Brust raus, leicht zurücklehnen und den Griff zur Brust ziehen.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "V-Bar_Pullup": {
+  "name": "Klimmzüge mit V-Griff",
+  "steps": [
+   "V-Griff mittig über die Klimmzugstange legen und neutral greifen.",
+   "Brust raus und hochziehen, bis die Brust fast den Griff berührt.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Vertical_Swing": {
+  "name": "Kurzhantel-Swing mit Sprung",
+  "steps": [
+   "Kurzhantel mit beiden Händen zwischen den Beinen, Rücken gerade.",
+   "Hantel zwischen den Beinen zurückschwingen.",
+   "Explosiv strecken und die Hantel über den Kopf schwingen; weich landen."
+  ]
+ },
+ "Weighted_Ball_Hyperextension": {
+  "name": "Rückenstrecken auf dem Gymnastikball",
+  "steps": [
+   "Bäuchlings auf dem Ball, Füße fest am Boden.",
+   "Oberkörper aus dem unteren Rücken anheben.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Weighted_Ball_Side_Bend": {
+  "name": "Seitbeugen auf dem Gymnastikball",
+  "steps": [
+   "Seitlich auf dem Ball liegen, Füße gekreuzt am Boden, Hantelscheibe am Kopf.",
+   "Oberkörper seitlich anheben.",
+   "Kurz halten, absenken; Seite wechseln."
+  ]
+ },
+ "Weighted_Bench_Dip": {
+  "name": "Dips zwischen zwei Bänken mit Gewicht",
+  "steps": [
+   "Hände hinter dir auf einer Bank, Füße auf einer zweiten Bank, Gewicht auf den Oberschenkeln.",
+   "Ellbogen beugen und absenken, bis knapp unter 90°.",
+   "Mit dem Trizeps hochdrücken."
+  ]
+ },
+ "Weighted_Crunches": {
+  "name": "Crunches mit Gewicht",
+  "steps": [
+   "Rücklings, Knie gebeugt, Gewicht an der Brust oder über dem Oberkörper.",
+   "Schultern etwa 10 cm vom Boden einrollen.",
+   "Kurz halten und langsam zurück."
+  ]
+ },
+ "Weighted_Jump_Squat": {
+  "name": "Sprungkniebeuge mit Gewicht",
+  "steps": [
+   "Leichte Langhantel auf dem oberen Rücken, Füße knapp außerhalb schulterbreit.",
+   "Kurz in die Hocke und explosiv abspringen.",
+   "Landung mit den Beinen abfedern."
+  ]
+ },
+ "Weighted_Pull_Ups": {
+  "name": "Klimmzüge mit Zusatzgewicht",
+  "steps": [
+   "Gewicht am Dip-Gürtel befestigen, Stange im Obergriff.",
+   "Brust raus und hochziehen, bis der Kopf über den Händen ist.",
+   "Langsam ganz absenken."
+  ]
+ },
+ "Weighted_Sissy_Squat": {
+  "name": "Sissy Squat mit Gewicht",
+  "steps": [
+   "An einer Stange festhalten, Hantelscheibe an der Brust, auf den Fußballen.",
+   "Knie nach vorn schieben und den Oberkörper nach hinten absenken.",
+   "Kurz halten und mit dem Quadrizeps hochdrücken."
+  ]
+ },
+ "Weighted_Sit-Ups_-_With_Bands": {
+  "name": "Sit-ups mit Band auf der Negativbank",
+  "steps": [
+   "Bänder an der Negativbank befestigen, Beine fixieren, Griffe an den Schultern.",
+   "Oberkörper aufrichten, bis er senkrecht ist.",
+   "Kurz halten und langsam absenken."
+  ]
+ },
+ "Weighted_Squat": {
+  "name": "Kniebeuge mit Gewichtsgürtel",
+  "steps": [
+   "Auf zwei Bänken stehen, Gewicht am Gürtel hängt zwischen den Beinen.",
+   "Absenken, bis die Knie knapp unter 90° gebeugt sind.",
+   "Über die Fußballen hochdrücken."
+  ]
+ },
+ "Wide-Grip_Barbell_Bench_Press": {
+  "name": "Breites Bankdrücken",
+  "steps": [
+   "Auf der Flachbank liegen, Stange breit im Obergriff ausheben.",
+   "Einatmend langsam zur mittleren Brust absenken.",
+   "Mit der Brust ausatmend hochdrücken."
+  ]
+ },
+ "Wide-Grip_Decline_Barbell_Bench_Press": {
+  "name": "Breites Negativ-Bankdrücken",
+  "steps": [
+   "Auf der Negativbank, Füße fixiert, Stange breit greifen.",
+   "Langsam zur unteren Brust absenken.",
+   "Mit der Brust hochdrücken."
+  ]
+ },
+ "Wide-Grip_Decline_Barbell_Pullover": {
+  "name": "Breiter Pullover auf der Negativbank",
+  "steps": [
+   "Auf der Negativbank liegen, Langhantel breit über der Brust.",
+   "Im Halbkreis hinter den Kopf absenken, bis die Arme parallel zum Boden sind.",
+   "Kontrolliert zurückführen."
+  ]
+ },
+ "Wide-Grip_Lat_Pulldown": {
+  "name": "Latzug breit zur Brust",
+  "steps": [
+   "Am Latzug sitzen, Knie fixiert, Stange breit im Obergriff.",
+   "Leicht zurücklehnen und die Stange zur oberen Brust ziehen.",
+   "Schulterblätter zusammendrücken und langsam zurück."
+  ]
+ },
+ "Wide-Grip_Pulldown_Behind_The_Neck": {
+  "name": "Latzug breit in den Nacken",
+  "steps": [
+   "Am Latzug sitzen, Stange breit im Obergriff, Kopf leicht nach vorn.",
+   "Stange hinter den Nacken ziehen.",
+   "Langsam zurück."
+  ]
+ },
+ "Wide-Grip_Rear_Pull-Up": {
+  "name": "Breite Nackenklimmzüge",
+  "steps": [
+   "Stange breit im Obergriff, Kopf leicht nach vorn.",
+   "Hochziehen, bis die Stange nahe am Nacken ist.",
+   "Langsam ganz absenken."
+  ]
+ },
+ "Wide-Grip_Standing_Barbell_Curl": {
+  "name": "Breite Langhantel-Curls",
+  "steps": [
+   "Aufrecht stehen, Langhantel breit im Untergriff.",
+   "Oberarme ruhig und bis Schulterhöhe curlen.",
+   "Anspannen und langsam absenken."
+  ]
+ },
+ "Wide_Stance_Barbell_Squat": {
+  "name": "Breite Kniebeuge (Langhantel)",
+  "steps": [
+   "Langhantel aus dem Rack auf den oberen Rücken, breiter Stand, Zehen leicht nach außen.",
+   "Mit geradem Rücken absenken, bis knapp unter 90°.",
+   "Über die Fersen hochdrücken."
+  ]
+ },
+ "Wind_Sprints": {
+  "name": "Knieheben im Hang (Wind Sprints)",
+  "steps": [
+   "Im Obergriff an der Klimmzugstange hängen.",
+   "Ein Knie schnell so hoch wie möglich ziehen, ohne zu schwingen.",
+   "Beine zügig abwechseln."
+  ]
+ },
+ "Wrist_Roller": {
+  "name": "Handgelenkroller",
+  "steps": [
+   "Roller im Obergriff mit gestreckten Armen vor dem Körper halten.",
+   "Handgelenke abwechselnd drehen und das Gewicht hochrollen.",
+   "Langsam wieder abrollen."
+  ]
+ },
+ "Wrist_Rotations_with_Straight_Bar": {
+  "name": "Handgelenkdrehen mit Langhantel",
+  "steps": [
+   "Langhantel schulterbreit im Obergriff halten.",
+   "Handgelenke abwechselnd strecken, als würdest du eine Zeitung aufrollen.",
+   "Richtung umkehren und bis zur Ermüdung fortfahren."
+  ]
+ },
+ "Zercher_Squats": {
+  "name": "Zercher-Kniebeuge",
+  "steps": [
+   "Langhantel in die Ellbogenbeugen legen, aus dem Rack nehmen.",
+   "Mit aufrechtem Oberkörper absenken, bis knapp unter 90°.",
+   "Hochdrücken."
+  ]
+ },
+ "Zottman_Curl": {
+  "name": "Zottman-Curls",
+  "steps": [
+   "Kurzhanteln neutral seitlich, Ellbogen am Körper.",
+   "Mit Untergriff hochcurlen und oben anspannen.",
+   "Oben in den Obergriff drehen und langsam absenken."
+  ]
+ },
+ "Zottman_Preacher_Curl": {
+  "name": "Zottman-Scott-Curls",
+  "steps": [
+   "Oberarme auf der Scottbank, Kurzhanteln im Obergriff absenken.",
+   "Unten in den Untergriff drehen.",
+   "Hochcurlen, anspannen und oben wieder in den Obergriff drehen."
+  ]
+ }
+}
