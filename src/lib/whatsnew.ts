@@ -41,15 +41,15 @@ export const RELEASES: Release[] = [
       {
         title: '📈 Auswertung',
         items: [
-          'Sätze pro Muskel/Woche, Drücken/Ziehen-Balance, Regeneration, Trainings-Heatmap.',
+          'Sätze pro Muskel/Woche, Drücken/Ziehen-Balance, Regeneration, Monatskalender.',
         ],
       },
       {
         title: '🎮 Gamification',
         items: [
-          'XP & Level, Tages-/Wochen-Quests, Ränge, Badges & Sammlung.',
-          'Monats-Season mit Battle-Pass, Streak-Freeze, Konfetti & Sounds.',
-          'Freischaltbare Akzentfarben und Maskottchen-Skins.',
+          'Dein Buddy: ein Level für Training + Ernährung, Tages-/Wochen-Quests, Meilensteine.',
+          'Streak-Freeze, Konfetti & Sounds.',
+          'Freischaltbare Akzentfarben und Buddy-Skins.',
         ],
       },
       {
@@ -63,7 +63,6 @@ export const RELEASES: Release[] = [
       {
         title: '⌚ Mehr',
         items: [
-          'Fitbit-Anbindung (Gewicht, Schritte, Ruhepuls).',
           'Offline-Speicher, Trainings-Erinnerungen, CSV-Export, frisches Design.',
         ],
       },
