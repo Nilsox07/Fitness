@@ -40,7 +40,7 @@ export const segBtn = (active: boolean, size = 'text-sm') =>
 export const TILE = 'btn gap-1.5 bg-sand text-cocoa'
 
 /** Gruppierte Liste im iOS-Stil mit kleiner Überschrift. */
-export function Group({ title, children }: { title?: string; children: ReactNode }) {
+export function Group({ title, children, footer }: { title?: string; children: ReactNode; footer?: ReactNode }) {
   return (
     <section className="space-y-1.5">
       {title && (
@@ -51,16 +51,39 @@ export function Group({ title, children }: { title?: string; children: ReactNode
       <div className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
         {children}
       </div>
+      {footer && <p className="px-4 text-xs leading-relaxed text-cocoa-muted">{footer}</p>}
     </section>
   )
 }
 
+/** Farbton der Icon-Kachel (wie iOS-Einstellungen, aber mit App-Tokens). */
+export type RowTint = 'brand' | 'success' | 'gold' | 'sky' | 'violet' | 'neutral'
+
+const TINT: Record<RowTint, string> = {
+  brand: 'bg-brand/10 text-brand',
+  success: 'bg-success/15 text-success',
+  gold: 'bg-gold/15 text-gold',
+  sky: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
+  violet: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+  neutral: 'bg-sand text-cocoa-light',
+}
+
+/** Runde Icon-Kachel für Listenzeilen. */
+export function IconTile({ icon: Icon, tint = 'brand' }: { icon: LucideIcon; tint?: RowTint }) {
+  return (
+    <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${TINT[tint]}`}>
+      <Icon size={18} strokeWidth={2.2} />
+    </span>
+  )
+}
+
 /**
- * Listenzeile: Icon + Label (+ Hinweis) + optionaler Wert rechts.
+ * Listenzeile: Icon-Kachel + Label (+ Hinweis) + optionaler Wert rechts.
  * Mit `onClick` → tippbare Zeile mit Chevron; sonst `trailing` (z. B. Toggle).
  */
 export function Row({
   icon: Icon,
+  tint = 'brand',
   label,
   hint,
   value,
@@ -69,6 +92,7 @@ export function Row({
   danger,
 }: {
   icon?: LucideIcon
+  tint?: RowTint
   label: string
   hint?: string
   value?: ReactNode
@@ -78,28 +102,37 @@ export function Row({
 }) {
   const inner = (
     <>
-      {Icon && (
-        <Icon size={18} className={`shrink-0 ${danger ? 'text-brand' : 'text-cocoa-light'}`} />
-      )}
+      {Icon &&
+        (danger ? (
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-red-500/10 text-red-500 dark:text-red-400">
+            <Icon size={18} strokeWidth={2.2} />
+          </span>
+        ) : (
+          <IconTile icon={Icon} tint={tint} />
+        ))}
       <div className="min-w-0 flex-1">
-        <div className={`font-medium ${danger ? 'text-brand' : 'text-cocoa'}`}>{label}</div>
-        {hint && <div className="text-xs text-cocoa-light">{hint}</div>}
+        <div
+          className={`truncate text-[15px] font-semibold ${danger ? 'text-red-500 dark:text-red-400' : 'text-cocoa'}`}
+        >
+          {label}
+        </div>
+        {hint && <div className="text-xs leading-snug text-cocoa-light">{hint}</div>}
       </div>
       {value != null && value !== '' && (
-        <span className="min-w-0 max-w-[55%] truncate text-right text-sm text-cocoa-light">
+        <span className="tabular min-w-0 max-w-[50%] truncate text-right text-sm text-cocoa-light">
           {value}
         </span>
       )}
       {trailing}
-      {onClick && !danger && <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />}
+      {onClick && !danger && <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />}
     </>
   )
-  const cls = 'flex min-h-[52px] w-full items-center gap-3 px-4 py-2.5 text-left'
+  const cls = 'flex min-h-[3.5rem] w-full items-center gap-3 px-4 py-2.5 text-left'
   return onClick ? (
     <button
       type="button"
       onClick={onClick}
-      className={`${cls} transition-colors duration-150 active:bg-sand/60`}
+      className={`${cls} transition-colors duration-150 active:bg-sand-light`}
     >
       {inner}
     </button>
@@ -108,19 +141,35 @@ export function Row({
   )
 }
 
-/** Kopfzeile einer Unterseite: runder Zurück-Button + Titel. */
-export function SubHeader({ title, onBack }: { title: string; onBack: () => void }) {
+/** Kopfzeile einer Unterseite: runder Zurück-Button + großer Titel (+ Unterzeile). */
+export function SubHeader({
+  title,
+  subtitle,
+  onBack,
+}: {
+  title: string
+  subtitle?: ReactNode
+  onBack: () => void
+}) {
   return (
-    <header className="flex items-center gap-2">
+    <header className="flex items-center gap-3">
       <button
         type="button"
-        className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
         onClick={onBack}
         aria-label="Zurück"
       >
         <ChevronLeft size={20} />
       </button>
-      <h1 className="text-xl font-bold">{title}</h1>
+      <div className="min-w-0">
+        <h1 className="truncate text-2xl font-bold leading-tight tracking-tight">{title}</h1>
+        {subtitle && <p className="truncate text-sm text-cocoa-light">{subtitle}</p>}
+      </div>
     </header>
   )
+}
+
+/** Weiße Abschnittskarte einer Unterseite (gleiche Rundung wie die Listen). */
+export function SubCard({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <div className={`space-y-3 rounded-2xl bg-cream p-4 ${className}`}>{children}</div>
 }

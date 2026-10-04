@@ -54,7 +54,7 @@ import { GoalEditor } from '../components/GoalEditor'
 import { getStoredReview } from '../lib/weeklyReview'
 import { useNutritionSettings } from '../hooks/useNutrition'
 import { GOAL_LABEL } from '../lib/nutrition'
-import { Group, Row, SEG_TRACK, SubHeader, TILE, Toggle, segBtn } from '../components/profile/ui'
+import { Group, Row, SEG_TRACK, SubCard, SubHeader, TILE, Toggle, segBtn } from '../components/profile/ui'
 import { ProfileHeader } from '../components/profile/ProfileHeader'
 import { BUDDY_SKIN_EVENT } from '../components/buddy/useBuddy'
 import { NameSheet } from '../components/profile/NameSheet'
@@ -76,6 +76,17 @@ const SUB_TITLE: Record<Sub, string> = {
   coach: 'Buddy-Ton',
   push: 'Trainings-Erinnerungen',
   export: 'Daten exportieren',
+}
+
+const SUB_SUBTITLE: Record<Sub, string> = {
+  rhythm: 'Wann du trainierst',
+  settings: 'Training & Ernährung',
+  goal: 'Nährwerte automatisch berechnet',
+  review: 'Jeden Montag neu',
+  version: 'Klassisch oder Neu',
+  coach: 'So spricht dein Buddy',
+  push: 'Push-Benachrichtigungen',
+  export: 'CSV-Download',
 }
 
 const MODES: { v: ThemeMode; label: string }[] = [
@@ -216,7 +227,7 @@ export default function Profile() {
     if (sub) {
       return (
         <div className="anim-fade space-y-4">
-          <SubHeader title={SUB_TITLE[sub]} onBack={closeSub} />
+          <SubHeader title={SUB_TITLE[sub]} subtitle={SUB_SUBTITLE[sub]} onBack={closeSub} />
 
           {sub === 'rhythm' && <RhythmEditor />}
 
@@ -228,16 +239,16 @@ export default function Profile() {
           )}
 
           {sub === 'goal' && (
-            <div className="card space-y-3">
+            <SubCard>
               <p className="text-xs text-cocoa-light">
                 Passe deine Angaben und dein Ziel an — die Nährwerte werden automatisch berechnet.
               </p>
               <GoalEditor onSaved={closeSub} />
-            </div>
+            </SubCard>
           )}
 
           {sub === 'review' && (
-            <div className="card space-y-2">
+            <SubCard>
               {(() => {
                 const r = getStoredReview()
                 return r ? (
@@ -246,11 +257,11 @@ export default function Profile() {
                   <p className="text-xs text-cocoa-light">{reviewHint}</p>
                 )
               })()}
-            </div>
+            </SubCard>
           )}
 
           {sub === 'version' && (
-            <div className="card space-y-2">
+            <SubCard>
               <p className="text-xs text-cocoa-light">
                 Wechsle jederzeit zwischen der schlanken, gewohnten Basis und der neuen Version mit
                 allen Features. Deine Daten bleiben in beiden gleich.
@@ -276,11 +287,11 @@ export default function Profile() {
               <p className="text-xs text-cocoa-light">
                 Neu: KI-Assistent, Gamification, Social, KI-Ernährung, automatische Aufwärmsätze …
               </p>
-            </div>
+            </SubCard>
           )}
 
           {sub === 'coach' && (
-            <div className="card space-y-2">
+            <SubCard>
               <p className="text-xs text-cocoa-light">So spricht dein Buddy mit dir.</p>
               <div className={`${SEG_TRACK} grid-cols-3`}>
                 {tones.map((t) => (
@@ -298,11 +309,11 @@ export default function Profile() {
                   </button>
                 ))}
               </div>
-            </div>
+            </SubCard>
           )}
 
           {sub === 'push' && (
-            <div className="card space-y-3">
+            <SubCard>
               <p className="text-sm text-cocoa-light">
                 Push, wenn du ein paar Tage nicht im Gym warst.
               </p>
@@ -321,11 +332,11 @@ export default function Profile() {
                 )}
               </button>
               {pushMsg && <p className="text-sm text-cocoa-light">{pushMsg}</p>}
-            </div>
+            </SubCard>
           )}
 
           {sub === 'export' && (
-            <div className="card space-y-2">
+            <SubCard>
               <p className="text-xs text-cocoa-light">Alle Einträge als CSV-Datei herunterladen.</p>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -347,7 +358,7 @@ export default function Profile() {
                   </button>
                 )}
               </div>
-            </div>
+            </SubCard>
           )}
         </div>
       )
@@ -372,7 +383,7 @@ export default function Profile() {
           >
             <ChevronLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold">Profil</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Profil</h1>
         </header>
 
         <ProfileHeader
@@ -386,25 +397,25 @@ export default function Profile() {
 
         <Group title="Training">
           <Row
-            icon={CalendarDays}
+            icon={CalendarDays} tint="brand"
             label="Trainingsrhythmus"
             value={userPrefs.schedule ? describeSchedule(userPrefs.schedule) : 'Festlegen'}
             onClick={() => openSub('rhythm')}
           />
-          <Row icon={SlidersHorizontal} label="Meine Einstellungen" onClick={() => openSub('settings')} />
+          <Row icon={SlidersHorizontal} tint="neutral" label="Meine Einstellungen" onClick={() => openSub('settings')} />
         </Group>
 
         <Group title="Ziele">
           {showNutrition && (
             <Row
-              icon={Target}
+              icon={Target} tint="success"
               label="Ziel & Körperdaten"
               value={goalValue}
               onClick={() => openSub('goal')}
             />
           )}
           <Row
-            icon={ClipboardList}
+            icon={ClipboardList} tint="sky"
             label="Wochenfazit"
             value={review ? review.weekId.replace(/^\d{4}-W/, 'KW ') : undefined}
             onClick={() => openSub('review')}
@@ -413,13 +424,13 @@ export default function Profile() {
 
         <Group title="App">
           <Row
-            icon={Layers}
+            icon={Layers} tint="violet"
             label="App-Version"
             value={appMode === 'new' ? 'Neu' : 'Klassisch'}
             onClick={() => openSub('version')}
           />
           <Row
-            icon={Moon}
+            icon={Moon} tint="neutral"
             label="Darstellung"
             trailing={
               <div className="flex shrink-0 gap-1 rounded-full bg-sand p-1">
@@ -438,7 +449,7 @@ export default function Profile() {
             }
           />
           <Row
-            icon={Utensils}
+            icon={Utensils} tint="success"
             label="Ernährungstracking"
             hint={'Zeigt den „Essen"-Tab und die Ernährungs-Auswertung.'}
             trailing={
@@ -450,7 +461,7 @@ export default function Profile() {
             }
           />
           <Row
-            icon={Volume2}
+            icon={Volume2} tint="sky"
             label="Sound-Effekte"
             hint="Töne bei Level-up und Quests."
             trailing={
@@ -466,7 +477,7 @@ export default function Profile() {
           />
           {showNutrition && (
             <Row
-              icon={Flame}
+              icon={Flame} tint="brand"
               label="Cheat-Meal-Alarm"
               hint="Freunde sehen, wenn du dir was richtig Ungesundes gönnst (die KI entscheidet)."
               trailing={
@@ -483,17 +494,17 @@ export default function Profile() {
           )}
           {ai?.enabled && (
             <Row
-              icon={MessageSquare}
+              icon={MessageSquare} tint="violet"
               label="Buddy-Ton"
               value={COACH_TONE_LABEL[tone]}
               onClick={() => openSub('coach')}
             />
           )}
           {pushSupported && (
-            <Row icon={Bell} label="Trainings-Erinnerungen" onClick={() => openSub('push')} />
+            <Row icon={Bell} tint="gold" label="Trainings-Erinnerungen" onClick={() => openSub('push')} />
           )}
           <Row
-            icon={Palette}
+            icon={Palette} tint="gold"
             label="Freischaltungen"
             value={[currentAccent?.label, currentSkin && `Buddy ${currentSkin.label}`].filter(Boolean).join(' · ')}
             onClick={() => navigate('/badges')}
@@ -501,20 +512,20 @@ export default function Profile() {
         </Group>
 
         <Group title="Mehr">
-          <Row icon={Dumbbell} label="Übungen" onClick={() => navigate('/exercises')} />
+          <Row icon={Dumbbell} tint="brand" label="Übungen" onClick={() => navigate('/exercises')} />
           <Row
-            icon={Award}
+            icon={Award} tint="gold"
             label="Buddy"
             value={<span className="tabular">Lv {level}</span>}
             onClick={() => navigate('/badges')}
           />
-          <Row icon={Users} label="Community" onClick={() => navigate('/social')} />
-          <Row icon={Download} label="Daten exportieren" value="CSV" onClick={() => openSub('export')} />
+          <Row icon={Users} tint="sky" label="Community" onClick={() => navigate('/social')} />
+          <Row icon={Download} tint="neutral" label="Daten exportieren" value="CSV" onClick={() => openSub('export')} />
         </Group>
 
         <Group title="Konto">
-          <Row icon={PenLine} label="Name" value={myProfile?.display_name || '—'} onClick={() => setNameOpen(true)} />
-          <Row icon={User} label="Angemeldet als" value={user?.email ?? '—'} />
+          <Row icon={PenLine} tint="neutral" label="Name" value={myProfile?.display_name || '—'} onClick={() => setNameOpen(true)} />
+          <Row icon={User} tint="neutral" label="Angemeldet als" value={user?.email ?? '—'} />
           <Row
             icon={LogOut}
             label="Abmelden"

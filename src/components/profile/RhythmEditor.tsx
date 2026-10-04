@@ -16,7 +16,7 @@ import {
   type ScheduleStep,
   type ScheduleType,
 } from '../../lib/schedule'
-import { Sheet } from '../workout/Sheet'
+import { PremiumSheet } from '../ui/PremiumSheet'
 import { SEG_TRACK, segBtn } from './ui'
 
 const TYPES: { v: ScheduleType; label: string; hint: string }[] = [
@@ -138,7 +138,7 @@ function RhythmEditorInner() {
 
   return (
     <div className="space-y-4">
-      <div className="card space-y-3">
+      <div className="space-y-3 rounded-2xl bg-cream p-4">
         <div className={`${SEG_TRACK} grid-cols-3`} role="radiogroup" aria-label="Art des Rhythmus">
           {TYPES.map((t) => (
             <button
@@ -228,7 +228,7 @@ function RhythmEditorInner() {
           </div>
 
           {steps.some(Boolean) && (
-            <div className="card space-y-2">
+            <div className="space-y-2 rounded-2xl bg-cream p-4">
               <div className="font-semibold">Wo stehe ich gerade?</div>
               <p className="text-xs text-cocoa-light">
                 Was ist als Nächstes dran? Normalerweise erkennt die App das an deinem letzten Training —
@@ -260,7 +260,7 @@ function RhythmEditorInner() {
 
       {/* ---- Flexibel ---- */}
       {type === 'flexible' && (
-        <div className="card flex items-center justify-between gap-3">
+        <div className="flex min-h-[3.5rem] items-center justify-between gap-3 rounded-2xl bg-cream px-4 py-3">
           <div>
             <div className="font-medium">Trainings pro Woche</div>
             <div className="text-xs text-cocoa-light">Dein Wochenziel</div>
@@ -292,7 +292,7 @@ function RhythmEditorInner() {
       )}
 
       {/* ---- Vorschau ---- */}
-      <div className="card space-y-2.5">
+      <div className="space-y-2.5 rounded-2xl bg-cream p-4">
         <div className="flex items-baseline justify-between gap-2">
           <div className="font-semibold">Nächste 7 Tage</div>
           {hasTraining && (
@@ -353,7 +353,8 @@ function RhythmEditorInner() {
       )}
 
       {pick && (
-        <Sheet
+        <PremiumSheet
+          bodyClassName="space-y-2"
           title={
             pick.kind === 'weekday'
               ? WEEKDAY_LONG[pick.i]
@@ -374,7 +375,7 @@ function RhythmEditorInner() {
                   type="button"
                   onClick={() => choose(id)}
                   className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition active:scale-[0.98] ${
-                    active ? 'bg-brand/10 ring-1 ring-brand/30' : 'bg-sand-light ring-1 ring-sand-dark'
+                    active ? 'bg-brand/10 ring-1 ring-brand/30' : 'bg-cream'
                   }`}
                 >
                   <span
@@ -390,7 +391,7 @@ function RhythmEditorInner() {
               )
             })}
           </div>
-        </Sheet>
+        </PremiumSheet>
       )}
     </div>
   )
