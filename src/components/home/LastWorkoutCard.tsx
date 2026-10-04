@@ -15,7 +15,7 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
 }
 
 function formatVolume(kg: number): string {
-  if (kg >= 10000) return `${(kg / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 })} t`
+  if (kg >= 1000) return `${(kg / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 })} t`
   return `${kg.toLocaleString('de-DE')} kg`
 }
 

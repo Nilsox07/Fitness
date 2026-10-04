@@ -51,13 +51,13 @@ export function MealCard({
               <>
                 <span className="font-semibold text-cocoa">{fmtInt(kcal)} kcal</span>
                 {` · E ${Math.round(protein)} g`}
-                {recommended > 0 && <span className="text-cocoa-muted">{` · ~${fmtInt(recommended)}`}</span>}
+                {recommended > 0 && <span className="text-cocoa-muted">{` · von ~${fmtInt(recommended)}`}</span>}
               </>
             )}
           </p>
         </div>
         <button
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand text-on-brand transition active:scale-90"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand/10 text-brand transition active:scale-90"
           onClick={onAdd}
           aria-label={`${MEAL_LABEL[meal]}: Lebensmittel hinzufügen`}
         >
