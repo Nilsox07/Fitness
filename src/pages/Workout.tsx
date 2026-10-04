@@ -47,6 +47,7 @@ import {
 import { CompactSetRow, SetTableHeader, isSetDone, type PrevSet } from '../components/workout/CompactSetRow'
 import { RestControl, useRestTimer } from '../components/workout/RestControl'
 import { Sheet } from '../components/workout/Sheet'
+import { HomeStart } from '../components/home/HomeStart'
 import {
   AlertTriangle,
   Check,
@@ -877,54 +878,18 @@ export default function Workout() {
     // ---- Heute noch kein Training: Start-Screen ----
     if (!todaysWorkout) {
       return (
-        <div className="space-y-4">
-          <header>
-            <h1 className="text-xl font-bold">Heute</h1>
-            <p className="text-sm text-cocoa-light">{dateLabel}</p>
-          </header>
-          <DailyOverview />
-          <div className="card space-y-3">
-            <h2 className="font-semibold">Training starten</h2>
-            {plans && plans.length > 0 && (
-              <div className="grid grid-cols-2 gap-2">
-                {plans.map((p) => (
-                  <button
-                    key={p.id}
-                    className="btn-ghost justify-start gap-2 py-3 text-left"
-                    disabled={busy}
-                    onClick={() =>
-                      guarded(() => {
-                        setPendingPlanId(p.id)
-                        startWorkout()
-                      })
-                    }
-                  >
-                    <Play size={14} className="shrink-0 fill-brand text-brand" />
-                    <span className="truncate">{p.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            <button
-              className={plans?.length ? 'btn-ghost w-full' : 'btn-primary w-full'}
-              onClick={() => guarded(startWorkout)}
-              disabled={busy}
-            >
-              {plans?.length ? 'Freies Training' : 'Training starten'}
-            </button>
-            {saveError && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {saveError.message}</p>}
-          </div>
-          <p className="px-2 text-center text-xs text-cocoa-muted">
-            <span className="font-semibold">Challenge des Tages:</span> {challengeOfDay()}
-          </p>
-          <button
-            className="w-full text-center text-xs text-cocoa-muted underline"
-            onClick={() => setExcuse(randomExcuse())}
-          >
-            Keine Lust? Ausrede generieren 😅
-          </button>
-          {excuse && <p className="text-center text-sm italic text-cocoa-light">„{excuse}"</p>}
-        </div>
+        <HomeStart
+          today={today}
+          busy={busy}
+          error={saveError}
+          onStartPlan={(p) =>
+            guarded(() => {
+              setPendingPlanId(p.id)
+              startWorkout()
+            })
+          }
+          onStartFree={() => guarded(startWorkout)}
+        />
       )
     }
 

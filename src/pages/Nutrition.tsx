@@ -14,17 +14,16 @@ import {
   Search,
   Share2,
   Store,
+  Target,
   Trash2,
   X,
 } from 'lucide-react'
-import { DayNav } from '../components/DayNav'
 import { Sheet } from '../components/workout/Sheet'
 import { useAuth } from '../lib/auth'
 import { useAddRecipe } from '../hooks/useRecipes'
 import { Stepper } from '../components/Stepper'
 import { BarcodeScanner } from '../components/BarcodeScanner'
 import { BodyWeightCard } from '../components/BodyWeightCard'
-import { WaterCard } from '../components/WaterCard'
 import { MicButton } from '../components/MicButton'
 import { useAllSets } from '../hooks/useWorkouts'
 import { MealAnalysisSheet, type AnalysisStatus } from '../components/food/MealAnalysisSheet'
@@ -74,7 +73,15 @@ import {
 import { useAiStatus } from '../hooks/useAi'
 import { usePrefs } from '../lib/prefs'
 import { GoalEditor } from '../components/GoalEditor'
-import { DailyOverview } from '../components/DailyOverview'
+import { WeekStrip } from '../components/nutrition-home/WeekStrip'
+import { HeroCard } from '../components/nutrition-home/HeroCard'
+import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
+import { RecentChips } from '../components/nutrition-home/RecentChips'
+import { MealCard } from '../components/nutrition-home/MealCard'
+import { WaterRow } from '../components/nutrition-home/WaterRow'
+import { stagger } from '../components/nutrition-home/motion'
+import { kcalByDate, mealRecommendation } from '../lib/nutritionHome'
+import { dayLabel } from '../lib/day'
 import type { FoodEntry } from '../types'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
@@ -221,6 +228,10 @@ export default function Nutrition() {
   })
 
   const [error, setError] = useState<string | null>(null)
+  // Über das „+" einer Mahlzeiten-Karte vorgewählte Mahlzeit für die nächsten
+  // Einträge; null = nach Uhrzeit (wie bisher).
+  const [mealOverride, setMealOverride] = useState<Meal | null>(null)
+  const addMeal = (): Meal => mealOverride ?? currentMeal()
   /** Sheet wechseln und alte Fehlermeldung verwerfen. */
   const go = (mode: typeof addMode) => {
     setError(null)
@@ -508,7 +519,7 @@ export default function Nutrition() {
         fat: r.nutrition.fat,
         ...micro(r.nutrition),
         barcode: null,
-        meal: currentMeal(),
+        meal: addMeal(),
       })
       setRecipe(null)
       setCraving('')
@@ -527,7 +538,7 @@ export default function Nutrition() {
     fat: it.fat,
     ...micro(it),
     barcode: null,
-    meal: currentMeal(),
+    meal: addMeal(),
   })
 
   /** Alle Schätzungen in einem Insert übernehmen. */
@@ -606,7 +617,7 @@ export default function Nutrition() {
         fat: m.fat,
         ...micro(m),
         barcode: pending.barcode,
-        meal: currentMeal(),
+        meal: addMeal(),
       })
       setPending(null)
       setAddMode(null)
@@ -640,7 +651,7 @@ export default function Nutrition() {
         sat_fat: v(manual.sat_fat),
         salt: v(manual.salt),
         barcode: null,
-        meal: currentMeal(),
+        meal: addMeal(),
       })
       setManual({ name: '', amount_g: 0, kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sat_fat: 0, salt: 0 })
       setAddMode(null)
@@ -653,175 +664,258 @@ export default function Nutrition() {
   // Gleiches Tagesziel wie Tagesüberblick/Auswertung (Trainingstag +250 kcal).
   const kcalTarget = kcalTargetFor(settings, trainedToday)
   const kcalLeft = hasTarget ? kcalTarget - totals.kcal : 0
+  const dayKcal = useMemo(() => kcalByDate(allEntries), [allEntries])
   const sheetOpen = addMode !== null || !!pending || !!aiResults || !!recipe || !!planItems || !!analysis
 
   return (
     <div className="space-y-4">
-      {isNew ? (
-        <header className="flex items-center justify-between gap-2">
-          <DayNav date={today} onChange={setDay} />
-          <button className="btn-ghost text-sm" onClick={openSetup}>
-            {hasTarget ? 'Ziel' : 'Ziel einstellen'}
-          </button>
-        </header>
-      ) : (
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">Ernährung</h1>
-            <p className="text-sm text-cocoa-light">
-              {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-          </div>
-          <button className="btn-ghost text-sm" onClick={openSetup}>
-            {hasTarget ? 'Ziel' : 'Ziel einstellen'}
-          </button>
-        </header>
-      )}
-
-      {isNew && !isToday && (
-        <p className="rounded-xl bg-sand px-3 py-2 text-sm text-cocoa-light">
-          Du bearbeitest einen vergangenen Tag — neue Einträge landen an diesem Datum.{' '}
-          <button className="font-semibold text-brand" onClick={() => setDay(realToday)}>
-            Zu heute
-          </button>
-        </p>
-      )}
-
-      {isNew && isToday && <DailyOverview />}
-
       {/* Fehler ohne offenes Sheet (sonst zeigt das Sheet ihn selbst) */}
-      {!sheetOpen && <ErrorLine error={error} />}
+      {isNew && !sheetOpen && <ErrorLine error={error} />}
 
-      {/* Tagesübersicht */}
-      <div className="card space-y-3">
-        {hasTarget ? (
-          <>
-            <div className="flex items-end justify-between">
-              <div>
-                <div className="tabular text-2xl font-bold text-cocoa">{totals.kcal}</div>
-                <div className="tabular text-xs text-cocoa-light">
-                  von {kcalTarget} kcal{trainedToday && ' · +Trainingstag'}
-                </div>
-              </div>
-              <div className="tabular text-right text-sm text-cocoa-light">
-                {kcalLeft >= 0 ? `${kcalLeft} kcal übrig` : `${-kcalLeft} kcal drüber`}
-              </div>
+      {isNew ? (
+        <>
+          <header className="flex items-start justify-between gap-2" style={stagger(0)}>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{isToday ? 'Heute' : dayLabel(today, realToday)}</h1>
+              <p className="text-sm text-cocoa-light">
+                {new Date(`${today}T12:00:00`).toLocaleDateString('de-DE', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })}
+              </p>
             </div>
-            <Bar value={totals.kcal} target={kcalTarget} />
-            <div className="tabular grid grid-cols-3 gap-2 text-center text-xs">
-              <div>
-                <div className="font-semibold text-cocoa">{totals.protein} g</div>
-                <div className="text-cocoa-light">Eiweiß / {settings!.protein_target} g</div>
-              </div>
-              <div>
-                <div className="font-semibold text-cocoa">{totals.carbs} g</div>
-                <div className="text-cocoa-light">Kohlh. / {settings!.carbs_target} g</div>
-              </div>
-              <div>
-                <div className="font-semibold text-cocoa">{totals.fat} g</div>
-                <div className="text-cocoa-light">Fett / {settings!.fat_target} g</div>
-              </div>
-            </div>
-            <div className="tabular grid grid-cols-4 gap-2 rounded-xl bg-sand-light p-2 text-center text-[11px] text-cocoa-light">
-              <div>
-                <div className="font-semibold text-cocoa">{totals.fiber} g</div>
-                Ballaststoffe
-              </div>
-              <div>
-                <div className="font-semibold text-cocoa">{totals.sugar} g</div>
-                Zucker
-              </div>
-              <div>
-                <div className="font-semibold text-cocoa">{totals.sat_fat} g</div>
-                ges. Fett
-              </div>
-              <div>
-                <div className="font-semibold text-cocoa">{totals.salt} g</div>
-                Salz
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="text-center text-sm text-cocoa-light">
-            Stell zuerst dein Kalorienziel ein, um deinen Tagesfortschritt zu sehen.
-          </div>
-        )}
-      </div>
+            <button
+              className="grid h-10 w-10 place-items-center rounded-full bg-cream text-cocoa transition active:scale-90"
+              onClick={openSetup}
+              aria-label={hasTarget ? 'Ziel bearbeiten' : 'Ziel festlegen'}
+              title="Ziel"
+            >
+              <Target size={20} />
+            </button>
+          </header>
 
-      {/* Erfassen */}
-      <button className="btn-primary w-full gap-1.5" onClick={() => go('menu')}>
-        <Plus size={18} strokeWidth={2.5} />
-        Lebensmittel hinzufügen
-      </button>
+          <WeekStrip
+            date={today}
+            today={realToday}
+            onChange={setDay}
+            kcalByDate={dayKcal}
+            targetFor={(d) => kcalTargetFor(settings, trainedOn(d, allSets))}
+          />
 
-      {/* Zuletzt gegessen — 1-Tap-Wiederholung */}
-      {recent.length > 0 && (
-        <div>
-          <p className="mb-1 text-xs font-medium text-cocoa-light">Zuletzt gegessen</p>
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            {recent.map((e) => (
-              <button
-                key={e.id}
-                onClick={() => quickAdd(e)}
-                className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-3 py-1.5 text-sm transition-colors duration-200 hover:bg-sand-dark/60"
-              >
-                <Plus size={14} className="text-cocoa-light" />
-                {e.name}
-                <span className="tabular text-cocoa-muted">{Math.round(e.kcal)}</span>
+          {!isToday && (
+            <div className="anim-fade flex items-center justify-between gap-2 rounded-full bg-sand px-3 py-1.5 text-xs text-cocoa-light">
+              <span className="truncate">Vergangener Tag — neue Einträge landen hier</span>
+              <button className="shrink-0 font-semibold text-brand" onClick={() => setDay(realToday)}>
+                Zu heute
               </button>
+            </div>
+          )}
+
+          <HeroCard
+            totals={totals}
+            targets={{
+              kcal: hasTarget ? kcalTarget : 0,
+              protein: settings?.protein_target ?? 0,
+              carbs: settings?.carbs_target ?? 0,
+              fat: settings?.fat_target ?? 0,
+            }}
+            trained={trainedToday}
+            onSetup={openSetup}
+            style={stagger(1)}
+          />
+
+          <QuickAddBar
+            aiOn={!!aiOn}
+            onPhoto={(file) => {
+              setMealOverride(null)
+              void handlePhoto(file)
+            }}
+            onScan={() => {
+              setMealOverride(null)
+              setError(null)
+              setScanning(true)
+            }}
+            onSearch={() => {
+              setMealOverride(null)
+              go('search')
+            }}
+            onMore={() => {
+              setMealOverride(null)
+              go('menu')
+            }}
+            style={stagger(2)}
+          />
+
+          <RecentChips items={recent} onAdd={quickAdd} style={stagger(3)} />
+
+          <div className="space-y-3">
+            {MEALS.map((meal, i) => (
+              <MealCard
+                key={meal}
+                meal={meal}
+                entries={(entries ?? []).filter((e) => (e.meal ?? 'snack') === meal)}
+                recommended={hasTarget ? mealRecommendation(meal, kcalTarget) : 0}
+                onAdd={() => {
+                  setMealOverride(meal)
+                  go('menu')
+                }}
+                onEdit={setEditEntry}
+                style={stagger(4 + i)}
+              />
             ))}
           </div>
-        </div>
-      )}
 
-      {/* Heutige Einträge, nach Mahlzeit gruppiert */}
-      <div className="space-y-3">
-        {MEALS.map((meal) => {
-          const group = (entries ?? []).filter((e) => (e.meal ?? 'snack') === meal)
-          if (group.length === 0) return null
-          const kcal = group.reduce((s, e) => s + e.kcal, 0)
-          return (
-            <div key={meal}>
-              <div className="mb-1 flex items-center justify-between px-1">
-                <span className="text-sm font-semibold">{MEAL_LABEL[meal as Meal]}</span>
-                <span className="tabular text-xs text-cocoa-light">{Math.round(kcal)} kcal</span>
-              </div>
-              <div className="space-y-2">
-                {group.map((e) => (
-                  <div key={e.id} className="card flex items-center justify-between">
-                    <button
-                      className="min-w-0 flex-1 text-left"
-                      onClick={() => isNew && setEditEntry(e)}
-                      disabled={!isNew}
-                    >
-                      <div className="font-medium">{e.name}</div>
-                      <div className="tabular text-xs text-cocoa-light">
-                        {e.amount_g ? `${e.amount_g} g · ` : ''}
-                        {Math.round(e.kcal)} kcal · E {e.protein} / K {e.carbs} / F {e.fat}
-                      </div>
-                    </button>
-                    <button
-                      className="ml-2 shrink-0 px-2 text-cocoa-muted transition-colors duration-200 hover:text-red-500 dark:hover:text-red-400"
-                      aria-label="Eintrag löschen"
-                      onClick={() => deleteEntry.mutate(e, { onError: (err) => setError(saveError(err, 'Löschen')) })}
-                    >
-                      <X size={18} />
-                    </button>
+          <WaterRow date={today} style={stagger(8)} />
+          {isToday && <BodyWeightCard />}
+        </>
+      ) : (
+        <>
+          <header className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold">Ernährung</h1>
+              <p className="text-sm text-cocoa-light">
+                {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+            </div>
+            <button className="btn-ghost text-sm" onClick={openSetup}>
+              {hasTarget ? 'Ziel' : 'Ziel einstellen'}
+            </button>
+          </header>
+
+          {/* Fehler ohne offenes Sheet (sonst zeigt das Sheet ihn selbst) */}
+          {!sheetOpen && <ErrorLine error={error} />}
+
+          {/* Tagesübersicht */}
+          <div className="card space-y-3">
+            {hasTarget ? (
+              <>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <div className="tabular text-2xl font-bold text-cocoa">{totals.kcal}</div>
+                    <div className="tabular text-xs text-cocoa-light">
+                      von {kcalTarget} kcal{trainedToday && ' · +Trainingstag'}
+                    </div>
                   </div>
+                  <div className="tabular text-right text-sm text-cocoa-light">
+                    {kcalLeft >= 0 ? `${kcalLeft} kcal übrig` : `${-kcalLeft} kcal drüber`}
+                  </div>
+                </div>
+                <Bar value={totals.kcal} target={kcalTarget} />
+                <div className="tabular grid grid-cols-3 gap-2 text-center text-xs">
+                  <div>
+                    <div className="font-semibold text-cocoa">{totals.protein} g</div>
+                    <div className="text-cocoa-light">Eiweiß / {settings!.protein_target} g</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-cocoa">{totals.carbs} g</div>
+                    <div className="text-cocoa-light">Kohlh. / {settings!.carbs_target} g</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-cocoa">{totals.fat} g</div>
+                    <div className="text-cocoa-light">Fett / {settings!.fat_target} g</div>
+                  </div>
+                </div>
+                <div className="tabular grid grid-cols-4 gap-2 rounded-xl bg-sand-light p-2 text-center text-[11px] text-cocoa-light">
+                  <div>
+                    <div className="font-semibold text-cocoa">{totals.fiber} g</div>
+                    Ballaststoffe
+                  </div>
+                  <div>
+                    <div className="font-semibold text-cocoa">{totals.sugar} g</div>
+                    Zucker
+                  </div>
+                  <div>
+                    <div className="font-semibold text-cocoa">{totals.sat_fat} g</div>
+                    ges. Fett
+                  </div>
+                  <div>
+                    <div className="font-semibold text-cocoa">{totals.salt} g</div>
+                    Salz
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-sm text-cocoa-light">
+                Stell zuerst dein Kalorienziel ein, um deinen Tagesfortschritt zu sehen.
+              </div>
+            )}
+          </div>
+
+          {/* Erfassen */}
+          <button className="btn-primary w-full gap-1.5" onClick={() => go('menu')}>
+            <Plus size={18} strokeWidth={2.5} />
+            Lebensmittel hinzufügen
+          </button>
+
+          {/* Zuletzt gegessen — 1-Tap-Wiederholung */}
+          {recent.length > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-medium text-cocoa-light">Zuletzt gegessen</p>
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {recent.map((e) => (
+                  <button
+                    key={e.id}
+                    onClick={() => quickAdd(e)}
+                    className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-3 py-1.5 text-sm transition-colors duration-200 hover:bg-sand-dark/60"
+                  >
+                    <Plus size={14} className="text-cocoa-light" />
+                    {e.name}
+                    <span className="tabular text-cocoa-muted">{Math.round(e.kcal)}</span>
+                  </button>
                 ))}
               </div>
             </div>
-          )
-        })}
-        {entries?.length === 0 && (
-          <p className="text-center text-sm text-cocoa-light">
-            {isToday ? 'Heute noch nichts erfasst.' : 'An diesem Tag nichts erfasst.'}
-          </p>
-        )}
-      </div>
+          )}
 
-      {isNew && <WaterCard date={today} />}
-      {isNew && isToday && <BodyWeightCard />}
+          {/* Heutige Einträge, nach Mahlzeit gruppiert */}
+          <div className="space-y-3">
+            {MEALS.map((meal) => {
+              const group = (entries ?? []).filter((e) => (e.meal ?? 'snack') === meal)
+              if (group.length === 0) return null
+              const kcal = group.reduce((s, e) => s + e.kcal, 0)
+              return (
+                <div key={meal}>
+                  <div className="mb-1 flex items-center justify-between px-1">
+                    <span className="text-sm font-semibold">{MEAL_LABEL[meal as Meal]}</span>
+                    <span className="tabular text-xs text-cocoa-light">{Math.round(kcal)} kcal</span>
+                  </div>
+                  <div className="space-y-2">
+                    {group.map((e) => (
+                      <div key={e.id} className="card flex items-center justify-between">
+                        <button
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => isNew && setEditEntry(e)}
+                          disabled={!isNew}
+                        >
+                          <div className="font-medium">{e.name}</div>
+                          <div className="tabular text-xs text-cocoa-light">
+                            {e.amount_g ? `${e.amount_g} g · ` : ''}
+                            {Math.round(e.kcal)} kcal · E {e.protein} / K {e.carbs} / F {e.fat}
+                          </div>
+                        </button>
+                        <button
+                          className="ml-2 shrink-0 px-2 text-cocoa-muted transition-colors duration-200 hover:text-red-500 dark:hover:text-red-400"
+                          aria-label="Eintrag löschen"
+                          onClick={() => deleteEntry.mutate(e, { onError: (err) => setError(saveError(err, 'Löschen')) })}
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+            {entries?.length === 0 && (
+              <p className="text-center text-sm text-cocoa-light">
+                {isToday ? 'Heute noch nichts erfasst.' : 'An diesem Tag nichts erfasst.'}
+              </p>
+            )}
+          </div>
+
+        </>
+      )}
 
       {editEntry && (
         <EditEntrySheet
@@ -1272,7 +1366,7 @@ export default function Nutrition() {
           onRetry={() => analysis.source && void runAnalysis(analysis.source)}
           onClose={closeAnalysis}
           onSave={saveAnalysis}
-          defaultMeal={currentMeal()}
+          defaultMeal={addMeal()}
           day={{
             kcalTarget,
             proteinTarget: settings?.protein_target ?? 0,
