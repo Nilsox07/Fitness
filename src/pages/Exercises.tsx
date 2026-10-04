@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Camera,
   Check,
@@ -38,6 +38,11 @@ import {
 } from '../components/ExerciseForm'
 import { ExerciseEmpty, ExerciseListNew } from '../components/exercises/ExerciseListNew'
 import { LibrarySheet } from '../components/library/LibrarySheet'
+import { LibraryBrowser } from '../components/library/LibraryBrowser'
+import { useLibrary, useLibraryLinks } from '../components/library/useLibrary'
+import { AutoLinkSheet, UnlinkedCard } from '../components/exercises/AutoLink'
+import { StarterSetCard } from '../components/exercises/StarterSet'
+import { SEG_TRACK, segBtn } from '../components/profile/ui'
 import { enter } from '../components/exercises/muscle'
 import { MUSCLE_GROUPS, type Exercise, type MuscleGroup, type SetWithDate } from '../types'
 
@@ -145,6 +150,17 @@ export default function Exercises() {
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [muscle, setMuscle] = useState<MuscleGroup | null>(null)
+  // „Meine Übungen | Alle Übungen" (per ?view=library → Zurück-Geste behält den Tab)
+  const [params, setParams] = useSearchParams()
+  const tab: 'mine' | 'library' = params.get('view') === 'library' ? 'library' : 'mine'
+  const setTab = (t: 'mine' | 'library') => setParams(t === 'library' ? { view: 'library' } : {}, { replace: true })
+  const { list: library } = useLibrary(isNew)
+  const { byExercise: thumbs } = useLibraryLinks(exercises, library)
+  const unlinked = useMemo(
+    () => (library && exercises ? exercises.filter((e) => !thumbs.has(e.id)) : []),
+    [library, exercises, thumbs],
+  )
+  const [autoLinkOpen, setAutoLinkOpen] = useState(false)
 
   const setsByExercise = useMemo(() => {
     const map = new Map<string, SetWithDate[]>()
@@ -571,8 +587,44 @@ export default function Exercises() {
 
       {isLoading && !isNew && <p className="text-cocoa-light">Lädt…</p>}
 
-      {isNew ? (
+      {isNew && (
+        <div className={`${SEG_TRACK} grid-cols-2`} style={enter(1)} role="tablist" aria-label="Ansicht">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'mine'}
+            onClick={() => setTab('mine')}
+            className={segBtn(tab === 'mine')}
+          >
+            Meine Übungen
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'library'}
+            onClick={() => setTab('library')}
+            className={segBtn(tab === 'library')}
+          >
+            Alle Übungen{library ? <span className="tabular font-medium opacity-70"> ({library.length})</span> : null}
+          </button>
+        </div>
+      )}
+
+      {isNew && tab === 'library' ? (
+        <div style={enter(2)}>
+          <LibraryBrowser
+            inline
+            backLabel="Alle Übungen"
+            existingAction={{ label: 'Übung öffnen', run: (ex) => navigate(`/exercises/${ex.id}`) }}
+          />
+        </div>
+      ) : isNew ? (
         <>
+          {exercises && exercises.length < 5 && <StarterSetCard style={enter(1)} tone="brand" />}
+          {library && unlinked.length > 0 && (
+            <UnlinkedCard count={unlinked.length} onOpen={() => setAutoLinkOpen(true)} style={enter(1)} />
+          )}
+
           <div className="relative" style={enter(1)}>
             <Search
               size={18}
@@ -629,6 +681,16 @@ export default function Exercises() {
               exercises={filtered}
               setsByExercise={setsByExercise}
               onOpen={(ex) => navigate(`/exercises/${ex.id}`)}
+              thumbs={thumbs}
+            />
+          )}
+
+          {autoLinkOpen && library && (
+            <AutoLinkSheet
+              exercises={unlinked}
+              list={library}
+              aiOn={aiOn}
+              onClose={() => setAutoLinkOpen(false)}
             />
           )}
         </>
