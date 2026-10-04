@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Bot,
@@ -27,6 +27,7 @@ import { BodyWeightCard } from '../components/BodyWeightCard'
 import { WaterCard } from '../components/WaterCard'
 import { MicButton } from '../components/MicButton'
 import { useAllSets } from '../hooks/useWorkouts'
+import { MealAnalysisSheet, type AnalysisStatus } from '../components/food/MealAnalysisSheet'
 import { MEALS, MEAL_LABEL, type Meal } from '../types'
 
 /** Standard-Mahlzeit nach Uhrzeit. */
@@ -54,10 +55,11 @@ import {
   useFoodEntries,
   useNutritionSettings,
 } from '../hooks/useNutrition'
-import { scalePer100, sumEntries } from '../lib/nutrition'
+import { GOAL_LABEL, scalePer100, sumEntries } from '../lib/nutrition'
 import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
 import {
+  analyzeMeal,
   estimateFoodFromImage,
   estimateFoodFromText,
   mealPlanForDay,
@@ -65,6 +67,7 @@ import {
   recipeFromText,
   suggestOrder,
   type FoodEstimate,
+  type MealAnalysis,
   type MealPlanItem,
   type Recipe,
 } from '../lib/ai'
@@ -231,8 +234,72 @@ export default function Nutrition() {
   const [aiBusy, setAiBusy] = useState(false)
   const [aiText, setAiText] = useState('')
   const [photoHint, setPhotoHint] = useState('')
+
+  // Neuer Modus: „Mahlzeit-Analyse"-Sheet (öffnet sofort, lädt im Sheet)
+  type AnalysisSource = { image: string; hint?: string } | { text: string }
+  const [analysis, setAnalysis] = useState<{
+    id: number
+    photo: string | null
+    source: AnalysisSource | null
+    status: AnalysisStatus
+    result: MealAnalysis | null
+    error: string | null
+  } | null>(null)
+  const analysisReq = useRef(0)
+
+  /** KI-Analyse starten; Ergebnisse eines inzwischen geschlossenen Sheets werden verworfen. */
+  async function runAnalysis(source: AnalysisSource) {
+    const id = ++analysisReq.current
+    const photo = 'image' in source ? source.image : null
+    setAnalysis({ id, photo, source, status: 'loading', result: null, error: null })
+    const finish = (patch: { status: AnalysisStatus; result?: MealAnalysis; error?: string }) =>
+      setAnalysis((a) => (a && a.id === id ? { ...a, result: null, error: null, ...patch } : a))
+    try {
+      const goal = settings?.goal ? GOAL_LABEL[settings.goal] : undefined
+      const res = await analyzeMeal({ ...source, goal })
+      if (analysisReq.current !== id) return
+      if (res.items.length === 0)
+        finish({
+          status: 'error',
+          error: photo ? 'Kein Essen erkannt. Versuch ein klareres Foto.' : 'Nichts erkannt. Formulier es anders.',
+        })
+      else finish({ status: 'ready', result: res })
+    } catch (e) {
+      if (analysisReq.current !== id) return
+      finish({ status: 'error', error: e instanceof Error ? e.message : 'KI-Fehler bei der Analyse' })
+    }
+  }
+
+  /** Fertige Schätzungen (z. B. Restaurant) direkt im Analyse-Sheet zeigen. */
+  function showAnalysis(items: FoodEstimate[], title: string, verdict = '') {
+    const id = ++analysisReq.current
+    setAnalysis({ id, photo: null, source: null, status: 'ready', result: { title, verdict, items }, error: null })
+  }
+
+  function closeAnalysis() {
+    analysisReq.current++
+    setAnalysis(null)
+  }
+
+  async function saveAnalysis(items: FoodEstimate[], meal: Meal) {
+    await addEntries.mutateAsync(items.map((it) => ({ ...estimateToEntry(it), meal })))
+  }
+
   async function handlePhoto(file: File | undefined) {
     if (!file) return
+    if (isNew) {
+      setError(null)
+      try {
+        const dataUrl = await fileToDataUrl(file)
+        const hint = photoHint.trim() || undefined
+        setAddMode(null)
+        setPhotoHint('')
+        void runAnalysis({ image: dataUrl, hint })
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Bild konnte nicht gelesen werden')
+      }
+      return
+    }
     setAiBusy(true)
     setError(null)
     try {
@@ -253,6 +320,13 @@ export default function Nutrition() {
 
   async function handleAiText() {
     if (!aiText.trim()) return
+    if (isNew) {
+      setError(null)
+      setAddMode(null)
+      setAiText('')
+      void runAnalysis({ text: aiText.trim() })
+      return
+    }
     setAiBusy(true)
     setError(null)
     try {
@@ -328,7 +402,8 @@ export default function Nutrition() {
       const items = await estimateFoodFromText(`${place ? place + ': ' : ''}${restItem.trim()}`)
       if (items.length === 0) setError('Nichts erkannt.')
       else {
-        setAiResults(items)
+        if (isNew) showAnalysis(items, restItem.trim() || place || 'Bestellung')
+        else setAiResults(items)
         setAddMode(null)
       }
     } catch (e) {
@@ -353,7 +428,8 @@ export default function Nutrition() {
       const res = await suggestOrder(place, remaining, restItem.trim())
       if (res.items.length === 0) setError('Kein Vorschlag möglich.')
       else {
-        setAiResults(res.items)
+        if (isNew) showAnalysis(res.items, `Vorschlag: ${place}`, res.note)
+        else setAiResults(res.items)
         setAddMode(null)
       }
     } catch (e) {
@@ -577,7 +653,7 @@ export default function Nutrition() {
   // Gleiches Tagesziel wie Tagesüberblick/Auswertung (Trainingstag +250 kcal).
   const kcalTarget = kcalTargetFor(settings, trainedToday)
   const kcalLeft = hasTarget ? kcalTarget - totals.kcal : 0
-  const sheetOpen = addMode !== null || !!pending || !!aiResults || !!recipe || !!planItems
+  const sheetOpen = addMode !== null || !!pending || !!aiResults || !!recipe || !!planItems || !!analysis
 
   return (
     <div className="space-y-4">
@@ -1076,7 +1152,10 @@ export default function Nutrition() {
                 accept="image/*"
                 capture="environment"
                 className="hidden"
-                onChange={(e) => handlePhoto(e.target.files?.[0])}
+                onChange={(e) => {
+                  void handlePhoto(e.target.files?.[0])
+                  e.target.value = ''
+                }}
               />
             </label>
             <ErrorLine error={error} />
@@ -1180,6 +1259,29 @@ export default function Nutrition() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ----- KI: Mahlzeit-Analyse (neuer Modus) ----- */}
+      {isNew && analysis && (
+        <MealAnalysisSheet
+          photo={analysis.photo}
+          status={analysis.status}
+          result={analysis.result}
+          resultId={String(analysis.id)}
+          error={analysis.error}
+          onRetry={() => analysis.source && void runAnalysis(analysis.source)}
+          onClose={closeAnalysis}
+          onSave={saveAnalysis}
+          defaultMeal={currentMeal()}
+          day={{
+            kcalTarget,
+            proteinTarget: settings?.protein_target ?? 0,
+            carbsTarget: settings?.carbs_target ?? 0,
+            fatTarget: settings?.fat_target ?? 0,
+            goal: settings?.goal ?? null,
+            eaten: { kcal: totals.kcal, protein: totals.protein },
+          }}
+        />
       )}
 
       {/* ----- KI: Kühlschrank-Rezept ----- */}

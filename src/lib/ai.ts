@@ -537,8 +537,11 @@ function micros(i: Partial<FoodEstimate>) {
 }
 
 function toEstimates(text: string): FoodEstimate[] {
-  const raw = parseJson<{ items?: Partial<FoodEstimate>[] }>(text)
-  return (raw.items ?? []).map((i) => ({
+  return toEstimateList(parseJson<{ items?: Partial<FoodEstimate>[] }>(text).items)
+}
+
+function toEstimateList(items: Partial<FoodEstimate>[] | undefined): FoodEstimate[] {
+  return (Array.isArray(items) ? items : []).map((i) => ({
     name: String(i.name ?? 'Lebensmittel'),
     amount_g: amountG(i.amount_g),
     kcal: Math.round(nn(i.kcal)),
@@ -562,6 +565,62 @@ export async function estimateFoodFromImage(image: string, hint?: string): Promi
 export async function estimateFoodFromText(text: string): Promise<FoodEstimate[]> {
   const prompt = `Beschreibung: "${text}".\n${NUTRITION_FORMAT}`
   return toEstimates(await complete({ system: NUTRITION_SYSTEM, prompt, json: true, temperature: 0.2 }))
+}
+
+/** Mahlzeit-Analyse: Bestandteile + kurzer Titel + Ein-Satz-Einschätzung. */
+export interface MealAnalysis {
+  title: string
+  verdict: string
+  items: FoodEstimate[]
+}
+
+/** Titel aus den Bestandteilen, falls die KI keinen liefert. */
+function fallbackTitle(items: FoodEstimate[]): string {
+  const names = items.slice(0, 3).map((i) => i.name)
+  return names.length ? names.join(' & ') : 'Mahlzeit'
+}
+
+/** Parst eine Analyse-Antwort ({title, verdict, items}) robust. */
+export function toMealAnalysis(text: string): MealAnalysis {
+  const raw = parseJson<{ title?: unknown; verdict?: unknown; items?: Partial<FoodEstimate>[] }>(text)
+  const items = toEstimateList(raw.items)
+  const title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim().slice(0, 60) : ''
+  const verdict = typeof raw.verdict === 'string' ? raw.verdict.trim().slice(0, 200) : ''
+  return { title: title || fallbackTitle(items), verdict, items }
+}
+
+/**
+ * Mahlzeit aus Foto (image = Data-URL, optional hint) ODER Text analysieren. Wie
+ * estimateFoodFromImage/-Text, liefert zusätzlich einen Titel und eine kurze
+ * Einschätzung. `goal` = Klartext-Ziel des Nutzers (z. B. „Abnehmen"), optional.
+ */
+export async function analyzeMeal(input: {
+  image?: string
+  hint?: string
+  text?: string
+  goal?: string
+}): Promise<MealAnalysis> {
+  const meta =
+    ' Zusätzlich: "title" = kurzer deutscher Name der ganzen Mahlzeit (max. 40 Zeichen, z. B. ' +
+    '"Hähnchen mit Reis & Brokkoli") und "verdict" = EIN kurzer, freundlicher deutscher Satz ' +
+    '(max. 110 Zeichen) mit ehrlicher Einschätzung und konkretem Tipp' +
+    (input.goal ? ` passend zum Ziel des Nutzers („${input.goal}")` : '') +
+    '. Gesamtformat: {"title":"...","verdict":"...","items":[...]}.'
+  const prompt = input.image
+    ? 'Erkenne das Essen auf dem Bild und schätze die Nährwerte der abgebildeten Portion. ' +
+      (input.hint ? `Zusatzinfo vom Nutzer (Zutaten/Mengen unbedingt berücksichtigen): "${input.hint}". ` : '') +
+      NUTRITION_FORMAT +
+      meta
+    : `Beschreibung: "${input.text ?? ''}".\n${NUTRITION_FORMAT}${meta}`
+  const text = await complete({
+    system: NUTRITION_SYSTEM,
+    prompt,
+    image: input.image,
+    json: true,
+    temperature: 0.2,
+    maxTokens: 1200,
+  })
+  return toMealAnalysis(text)
 }
 
 /** Empfiehlt eine konkrete Bestellung/Auswahl (Restaurant, Kette oder Supermarkt),
