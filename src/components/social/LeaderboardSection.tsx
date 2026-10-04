@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { ChevronDown, Flame, Hand, Medal, Trophy } from 'lucide-react'
 import type { UserStat } from '../../hooks/useSocial'
 import { seasonId } from '../../lib/season'
+import { effectiveMonthlyPrs, effectiveWeeklyVolume } from '../../lib/duel'
 import { Avatar } from './Avatar'
 import { avatarEmoji } from './format'
 
@@ -18,6 +19,9 @@ const METRIC_LABEL: Record<Metric, string> = {
 
 function metricValue(u: UserStat, m: Metric): number {
   if (m === 'season_xp') return u.season_id === seasonId() ? (u.season_xp ?? 0) : 0
+  // Wochen-/Monatswerte nur, wenn sie aus dem aktuellen Zeitraum stammen.
+  if (m === 'weekly_volume') return effectiveWeeklyVolume(u)
+  if (m === 'monthly_prs') return effectiveMonthlyPrs(u)
   return (u[m] as number) ?? 0
 }
 

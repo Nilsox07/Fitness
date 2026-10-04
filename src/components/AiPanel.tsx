@@ -60,7 +60,7 @@ function CoachChatModal({ context, onClose }: { context: unknown; onClose: () =>
   }
 
   return (
-    <div className="anim-fade fixed inset-0 z-30 flex flex-col bg-black/60 p-4">
+    <div className="anim-fade fixed inset-0 z-30 flex flex-col bg-black/60 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+1rem)]">
       <div className="card mx-auto flex h-full w-full max-w-md flex-col">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="flex items-center gap-1.5 font-bold">
@@ -88,7 +88,7 @@ function CoachChatModal({ context, onClose }: { context: unknown; onClose: () =>
               key={i}
               className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                 m.role === 'user'
-                  ? 'ml-auto bg-brand text-white'
+                  ? 'ml-auto bg-brand text-on-brand'
                   : 'bg-sand text-cocoa'
               }`}
             >

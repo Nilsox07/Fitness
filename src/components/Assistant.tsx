@@ -5,6 +5,7 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises, useCreateExercise } from '../hooks/useExercises'
 import { useAddFoodEntry, useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useSetGymStatus } from '../hooks/useSocial'
+import { usePrefs } from '../lib/prefs'
 import { assistant, type AssistantAction, type ChatMsg } from '../lib/ai'
 import { trainingSummary } from '../lib/analytics'
 import { sumEntries } from '../lib/nutrition'
@@ -37,6 +38,7 @@ export function Assistant() {
   const addEntry = useAddFoodEntry()
   const createEx = useCreateExercise()
   const setGym = useSetGymStatus()
+  const { showNutrition } = usePrefs()
 
   const [open, setOpen] = useState(false)
 
@@ -51,14 +53,24 @@ export function Assistant() {
   const [busy, setBusy] = useState(false)
 
   const context = useMemo(() => {
+    const base = {
+      uebungen: (exercises ?? []).map((e) => e.name),
+      training: trainingSummary(allSets ?? [], exercises ?? []),
+    }
+    // Ernährung ausgeblendet → keine kcal/Protein-Daten an die KI.
+    if (!showNutrition) {
+      return {
+        ...base,
+        hinweis: 'Ernährungstracking ist ausgeschaltet: keine Ernährungsdaten, kein log_food.',
+      }
+    }
     const totals = sumEntries(entries ?? [])
     return {
       ziel: settings ? { kcal: settings.kcal_target, eiweiss: settings.protein_target } : null,
       heute: { kcal: totals.kcal, eiweiss: totals.protein },
-      uebungen: (exercises ?? []).map((e) => e.name),
-      training: trainingSummary(allSets ?? [], exercises ?? []),
+      ...base,
     }
-  }, [entries, settings, exercises, allSets])
+  }, [entries, settings, exercises, allSets, showNutrition])
 
   if (!ai?.enabled) return null
 
@@ -120,8 +132,15 @@ export function Assistant() {
     setBusy(true)
     try {
       const res = await assistant(next, context)
-      const note = await runAction(res.action)
-      const content = note ? `${res.reply}\n\n✅ ${note}` : res.reply
+      let content: string
+      if (res.action.type === 'log_food' && !showNutrition) {
+        // Ernährungstracking ist aus → nichts loggen (auch wenn die KI es vorschlägt).
+        content =
+          'Ernährungstracking ist ausgeschaltet – ich habe nichts geloggt. Du kannst es im Profil unter „Ernährungstracking" einschalten.'
+      } else {
+        const note = await runAction(res.action)
+        content = note ? `${res.reply}\n\n✅ ${note}` : res.reply
+      }
       setMessages((m) => [...m, { role: 'assistant', content }])
     } catch (e) {
       setMessages((m) => [
@@ -136,7 +155,7 @@ export function Assistant() {
   return (
     <>
       {open && (
-        <div className="anim-fade fixed inset-0 z-40 flex flex-col bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-40 flex flex-col bg-black/60 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+1rem)]">
           <div className="card mx-auto flex h-full w-full max-w-md flex-col">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="flex items-center gap-1.5 font-bold">
@@ -157,8 +176,12 @@ export function Assistant() {
                 <div className="space-y-2 text-sm text-cocoa-light">
                   <p>Frag mich oder gib mir Anweisungen, z. B.:</p>
                   <ul className="list-disc space-y-1 pl-5">
-                    <li>„Logg 200 g Magerquark und eine Banane"</li>
-                    <li>„Wie viele Kalorien hab ich noch heute?"</li>
+                    {showNutrition && (
+                      <>
+                        <li>„Logg 200 g Magerquark und eine Banane"</li>
+                        <li>„Wie viele Kalorien hab ich noch heute?"</li>
+                      </>
+                    )}
                     <li>„Leg die Übung Kniebeugen an, 5er-Schritte 20–120"</li>
                     <li>„Bring mich zur Auswertung"</li>
                     <li>„Ich gehe heute um 18 Uhr ins Gym"</li>
@@ -170,7 +193,7 @@ export function Assistant() {
                   key={i}
                   className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${
                     m.role === 'user'
-                      ? 'ml-auto bg-brand text-white'
+                      ? 'ml-auto bg-brand text-on-brand'
                       : 'bg-sand text-cocoa'
                   }`}
                 >

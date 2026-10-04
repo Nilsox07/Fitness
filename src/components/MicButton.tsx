@@ -54,7 +54,7 @@ export function MicButton({ onResult }: { onResult: (text: string) => void }) {
       onClick={toggle}
       aria-label="Spracheingabe"
       className={`grid shrink-0 place-items-center rounded-xl px-3 transition-colors duration-200 ${
-        listening ? 'animate-pulse bg-ruby text-white' : 'bg-sand text-cocoa-light'
+        listening ? 'animate-pulse bg-ruby text-on-brand' : 'bg-sand text-cocoa-light'
       }`}
     >
       <Mic size={18} />

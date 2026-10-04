@@ -29,6 +29,8 @@ export default {
           DEFAULT: 'rgb(var(--c-ruby) / <alpha-value>)',
           dark: 'rgb(var(--c-ruby-dark) / <alpha-value>)',
         },
+        // Text auf Akzent-/Brand-Flächen (dunkel beim Gold-Akzent)
+        'on-brand': 'rgb(var(--c-on-brand) / <alpha-value>)',
       },
     },
   },

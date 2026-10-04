@@ -23,6 +23,16 @@ function timeAgo(iso: string): string {
   return `vor ${Math.floor(s / 86400)} Tg`
 }
 
+/** Zurück innerhalb der App; ohne App-Verlauf (Direktaufruf/Push) zur Startseite. */
+function useGoBack() {
+  const navigate = useNavigate()
+  return () => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
+    if (idx > 0) navigate(-1)
+    else navigate('/')
+  }
+}
+
 function ActivityItem({ a, authorLabel }: { a: Activity; authorLabel: string }) {
   const { user } = useAuth()
   const { data: profile } = useMyProfile()
@@ -63,6 +73,7 @@ function ActivityItem({ a, authorLabel }: { a: Activity; authorLabel: string }) 
             iLiked ? 'font-semibold text-brand' : 'text-cocoa-light'
           }`}
           onClick={() => toggleLike.mutate({ activity_id: a.id, liked: iLiked })}
+          disabled={toggleLike.isPending}
           aria-label="Applaus"
         >
           <Hand size={16} />
@@ -111,7 +122,7 @@ export default function Feed() {
 
 /** Neues Design: Aktivitäten nach Tagen gruppiert, gleiche Karten wie in der Community. */
 function FeedNew() {
-  const navigate = useNavigate()
+  const goBack = useGoBack()
   const { data: activities, isLoading } = useActivities()
   const authorOf = useAuthorLookup()
 
@@ -131,7 +142,7 @@ function FeedNew() {
       <header className="flex items-center gap-2">
         <button
           className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           aria-label="Zurück"
         >
           <ChevronLeft size={20} />
@@ -158,14 +169,14 @@ function FeedNew() {
 }
 
 function FeedClassic() {
-  const navigate = useNavigate()
+  const goBack = useGoBack()
   const { user } = useAuth()
   const { data: activities, isLoading } = useActivities()
 
   return (
     <div className="space-y-4">
       <header className="flex items-center gap-2">
-        <button className="btn-ghost px-3 text-base" onClick={() => navigate(-1)} aria-label="Zurück">
+        <button className="btn-ghost px-3 text-base" onClick={goBack} aria-label="Zurück">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-xl font-bold">Feed</h1>

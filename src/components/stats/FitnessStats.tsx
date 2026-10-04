@@ -8,12 +8,14 @@ import {
   frequencyStats,
   lastTrainedPerMuscle,
   muscleVolume,
+  onlyPerformed,
   onlyWorking,
   round1,
+  sessionDates,
   setVolume,
   totalVolume,
 } from '../../lib/analytics'
-import { localDate } from '../../lib/day'
+import { trainingDay } from '../../lib/day'
 import { inRange, pctChange, periodBuckets, periodRange, sumByBucket, type Period } from '../../lib/periods'
 import { computeXp, dailyQuests, levelInfo, weeklyQuests } from '../../lib/xp'
 import { rankForSessions } from '../../lib/gamification'
@@ -81,11 +83,14 @@ function Ratio({ a, b, labelA, labelB }: { a: number; b: number; labelA: string;
   )
 }
 
-export function FitnessStats({ sets, exercises }: { sets: SetWithDate[]; exercises: Exercise[] }) {
+export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]; exercises: Exercise[] }) {
   const navigate = useNavigate()
   const chart = useChartTheme()
   const [period, setPeriod] = useState<Period>('month')
-  const today = localDate()
+  // „Heute" = Trainings-Tag (Wechsel um 4 Uhr, wie im Training)
+  const today = trainingDay()
+  // Nur ausgeführte Sätze — leere Vorlagen-Sätze (0 Wdh) zählen nirgends.
+  const sets = useMemo(() => onlyPerformed(allSets), [allSets])
 
   const range = useMemo(() => periodRange(period, today), [period, today])
   const cur = useMemo(() => sets.filter((s) => inRange(s.date, range.start, range.end)), [sets, range])
@@ -166,9 +171,9 @@ export function FitnessStats({ sets, exercises }: { sets: SetWithDate[]; exercis
   // Gamification-Zusammenfassung
   const { data: streakState } = useStreakState()
   const game = useMemo(() => {
-    const dates = [...new Set(sets.map((s) => s.date))]
+    const dates = sessionDates(sets)
     const freq = frequencyStats(dates)
-    const quests = [...dailyQuests(sets, today), ...weeklyQuests(sets)]
+    const quests = [...dailyQuests(sets, today), ...weeklyQuests(sets, today)]
     return {
       xp: levelInfo(computeXp(sets)),
       rank: rankForSessions(freq.totalSessions),

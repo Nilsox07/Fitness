@@ -24,7 +24,7 @@ export function AiActivityBar() {
   if (active === 0) return null
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 mx-auto max-w-md px-3 pt-[env(safe-area-inset-top)]">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 mx-auto max-w-md px-3 pt-[env(safe-area-inset-top)]">
       <div className="mt-2 flex items-center gap-2 rounded-full bg-cream/95 px-3 py-1.5 shadow-lg backdrop-blur">
         <span className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-ruby border-t-transparent" />
         <span className="flex items-center gap-1.5 text-xs font-medium text-cocoa">

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { usePrefs } from './lib/prefs'
@@ -32,7 +32,14 @@ const FITNESS_ROUTES = ['/', '/plans', '/exercises']
 export default function App() {
   const { session, loading, recovery } = useAuth()
   const { isNew, world, setWorld, showNutrition } = usePrefs()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
+
+  // Gescrollt wird in <main>, nicht im Fenster → beim Seitenwechsel (auch
+  // Profil-Unterseiten per ?s=…) wieder oben anfangen.
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0
+  }, [pathname, search])
 
   // Top-Umschalter mit der aktuellen Seite synchron halten.
   useEffect(() => {
@@ -58,7 +65,7 @@ export default function App() {
       <AiActivityBar />
       <SaveStatus />
       {isNew && <TopBar />}
-      <main className="flex-1 overflow-y-auto px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
+      <main ref={mainRef} className="flex-1 overflow-y-auto px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />
           <Route path="/nutrition" element={showNutrition ? <Nutrition /> : <Navigate to="/" replace />} />

@@ -12,10 +12,28 @@ type PlanRow = {
   plan_exercises: { exercise_id: string; position: number }[]
 }
 
+/** Plan inkl. nächster freier Übungs-Position (max + 1, robust gegen Lücken). */
+export type PlanWithPositions = PlanWithExercises & { next_position: number }
+
+/**
+ * Position für eine neu hinzugefügte Übung: höchste vergebene Position + 1.
+ * (Nach dem Entfernen einer Übung hat die Liste Lücken — `length` würde dann
+ * eine schon vergebene Position doppelt vergeben.)
+ */
+export function nextExercisePosition(plan: PlanWithExercises): number {
+  const p = (plan as Partial<PlanWithPositions>).next_position
+  return typeof p === 'number' ? Math.max(p, plan.exercise_ids.length) : plan.exercise_ids.length
+}
+
+/** Position für einen neuen Plan: höchste vergebene Position + 1. */
+export function nextPlanPosition(plans: PlanWithExercises[] | undefined): number {
+  return (plans ?? []).reduce((m, p) => Math.max(m, p.position + 1), 0)
+}
+
 export function usePlans() {
   return useQuery({
     queryKey: ['plans'],
-    queryFn: async (): Promise<PlanWithExercises[]> => {
+    queryFn: async (): Promise<PlanWithPositions[]> => {
       const { data, error } = await supabase
         .from('plans')
         .select('*, plan_exercises(exercise_id, position)')
@@ -31,6 +49,7 @@ export function usePlans() {
         exercise_ids: [...(p.plan_exercises ?? [])]
           .sort((a, b) => a.position - b.position)
           .map((pe) => pe.exercise_id),
+        next_position: (p.plan_exercises ?? []).reduce((m, pe) => Math.max(m, pe.position + 1), 0),
       }))
     },
   })

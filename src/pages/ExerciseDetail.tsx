@@ -29,10 +29,11 @@ import { usePrefs } from "../lib/prefs";
 import { useTheme } from "../lib/theme";
 import { dayLabel } from "../lib/day";
 import {
-  estimate1RM,
+  isPerformed,
   onlyWorking,
   personalRecords,
   progressionSuggestion,
+  setBest1RM,
   summarizeSessions,
   totalVolume,
 } from "../lib/analytics";
@@ -113,21 +114,28 @@ export default function ExerciseDetail() {
     if (exercise) setForm(exerciseToInput(exercise));
   }, [exercise]);
 
+  // Nur ausgeführte Sätze — leere Vorlagen-Sätze (0 Wdh) zählen nicht.
   const sets = useMemo(
-    () => (allSets ?? []).filter((s) => s.exercise_id === id),
+    () => (allSets ?? []).filter((s) => s.exercise_id === id && isPerformed(s)),
     [allSets, id],
   );
   const working = useMemo(() => onlyWorking(sets), [sets]);
   const prs = useMemo(() => personalRecords(sets), [sets]);
 
+  // Bester Satz — bei einseitigen Übungen zählt die stärkere Seite (wie bei der Rekord-Feier).
   const bestSet = useMemo(() => {
-    let best: SetWithDate | null = null;
+    let best: { weight: number; reps: number; date: string } | null = null;
     let bestE1 = 0;
     for (const s of working) {
-      const e1 = estimate1RM(s.weight, s.reps);
-      if (e1 > bestE1 || (best && e1 === bestE1 && s.weight > best.weight)) {
-        best = s;
-        bestE1 = e1;
+      const left = { weight: s.weight, reps: s.reps, e1: setBest1RM({ weight: s.weight, reps: s.reps }) };
+      const right =
+        s.reps_right != null && s.weight_right != null
+          ? { weight: s.weight_right, reps: s.reps_right, e1: setBest1RM({ weight: s.weight_right, reps: s.reps_right }) }
+          : null;
+      const side = right && right.e1 > left.e1 ? right : left;
+      if (side.e1 > bestE1 || (best && side.e1 === bestE1 && side.weight > best.weight)) {
+        best = { weight: side.weight, reps: side.reps, date: s.date };
+        bestE1 = side.e1;
       }
     }
     return best;
@@ -165,7 +173,7 @@ export default function ExerciseDetail() {
         const work = onlyWorking(sorted);
         const bestE1 = Math.max(
           0,
-          ...work.map((s) => estimate1RM(s.weight, s.reps)),
+          ...work.map(setBest1RM),
         );
         return {
           date,

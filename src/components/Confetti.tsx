@@ -1,22 +1,23 @@
 import { useEffect, useMemo } from 'react'
+import { accentColor } from '../lib/cosmetics'
 
-const COLORS = ['#E11D48', '#F59E0B', '#10B981', '#3B82F6', '#A855F7', '#FB7185']
+const COLORS = ['#F59E0B', '#10B981', '#3B82F6', '#A855F7']
 
 /** Leichtgewichtiges Konfetti (ohne Abhängigkeit) für PR-Feiern. */
 export function Confetti({ show, onDone }: { show: boolean; onDone?: () => void }) {
-  const pieces = useMemo(
-    () =>
-      Array.from({ length: 60 }, (_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        delay: Math.random() * 0.5,
-        duration: 1.8 + Math.random() * 1.2,
-        bg: COLORS[i % COLORS.length],
-        rot: Math.random() * 360,
-        size: 6 + Math.random() * 6,
-      })),
-    [],
-  )
+  const pieces = useMemo(() => {
+    // Rot-Töne folgen der gewählten Akzentfarbe.
+    const colors = [accentColor(), ...COLORS, accentColor('light')]
+    return Array.from({ length: 60 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 0.5,
+      duration: 1.8 + Math.random() * 1.2,
+      bg: colors[i % colors.length],
+      rot: Math.random() * 360,
+      size: 6 + Math.random() * 6,
+    }))
+  }, [])
 
   useEffect(() => {
     if (!show) return

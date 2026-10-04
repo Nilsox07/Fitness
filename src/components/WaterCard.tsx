@@ -68,7 +68,7 @@ export function WaterCard({ date }: { date?: string } = {}) {
           <Minus size={18} />
         </button>
         <button
-          className="tabular flex h-10 items-center gap-1 rounded-full bg-brand px-4 font-semibold text-white"
+          className="tabular flex h-10 items-center gap-1 rounded-full bg-brand px-4 font-semibold text-on-brand"
           onClick={() => change(STEP)}
         >
           <Plus size={16} strokeWidth={2.5} />

@@ -13,6 +13,8 @@
   --c-ruby: 225 29 72;
   --c-ruby-dark: 190 18 60;
   --c-ruby-light: 251 113 133;
+  /* Text auf Akzentflächen (per applyAccent überschrieben, z. B. dunkel bei Gold) */
+  --c-on-brand: 255 255 255;
   --c-text: 11 15 25;
   --c-text-muted: 91 100 114;
   --c-text-dim: 138 146 160;
@@ -58,7 +60,7 @@ body {
     @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 font-semibold transition active:scale-95;
   }
   .btn-primary {
-    @apply btn bg-ruby text-white hover:bg-ruby-dark;
+    @apply btn bg-ruby text-on-brand hover:bg-ruby-dark;
   }
   .btn-ghost {
     @apply btn bg-sand-light text-cocoa ring-1 ring-sand-dark hover:bg-sand-dark;

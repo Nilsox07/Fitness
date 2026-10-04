@@ -22,7 +22,7 @@ import {
   Layers,
   ClipboardList,
 } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { signOut } from '../lib/userData'
 import { useAuth } from '../lib/auth'
 import { useTheme, type ThemeMode } from '../lib/theme'
 import { usePrefs } from '../lib/prefs'
@@ -134,6 +134,9 @@ export default function Profile() {
   }
 
   const tones: CoachTone[] = ['coach', 'sergeant', 'bro']
+  const reviewHint = `Dein persönliches Wochenfazit (${
+    showNutrition ? 'Training + Ernährung' : 'Training'
+  }) erscheint hier automatisch — jeden Montag früh, sobald du die App öffnest.`
 
   async function activatePush() {
     if (!user) return
@@ -169,17 +172,18 @@ export default function Profile() {
       ? rawSub
       : null
 
-  // Beim Wechsel zwischen Liste und Unterseite oben anfangen.
-  useEffect(() => {
-    if (isNew) window.scrollTo(0, 0)
-  }, [sub, isNew])
-
   /** Unterseite öffnen = neuer History-Eintrag → Browser-/Gesten-Zurück führt zur Liste. */
   const openSub = (s: Sub) => setParams({ s })
   const closeSub = () => {
     const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
     if (idx > 0) navigate(-1)
     else setParams({}, { replace: true })
+  }
+  /** Profil verlassen: zurück in der App, ohne Verlauf (Direktaufruf) zur Startseite. */
+  const goBack = () => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
+    if (idx > 0) navigate(-1)
+    else navigate('/')
   }
 
   if (isNew) {
@@ -204,10 +208,7 @@ export default function Profile() {
                 return r ? (
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{r.text}</p>
                 ) : (
-                  <p className="text-xs text-cocoa-light">
-                    Dein persönliches Gesamt-Fazit (Training + Ernährung) erscheint hier automatisch —
-                    jeden Montag früh, sobald du die App öffnest.
-                  </p>
+                  <p className="text-xs text-cocoa-light">{reviewHint}</p>
                 )
               })()}
             </div>
@@ -357,14 +358,16 @@ export default function Profile() {
                   <Dumbbell size={16} className="text-cocoa-light" />
                   Training
                 </button>
-                <button
-                  className={TILE}
-                  onClick={() => exportNutritionCsv(foodEntries ?? [])}
-                  disabled={!foodEntries?.length}
-                >
-                  <Apple size={16} className="text-cocoa-light" />
-                  Ernährung
-                </button>
+                {showNutrition && (
+                  <button
+                    className={TILE}
+                    onClick={() => exportNutritionCsv(foodEntries ?? [])}
+                    disabled={!foodEntries?.length}
+                  >
+                    <Apple size={16} className="text-cocoa-light" />
+                    Ernährung
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -424,7 +427,7 @@ export default function Profile() {
         <header className="flex items-center gap-2">
           <button
             className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             aria-label="Zurück"
           >
             <ChevronLeft size={20} />
@@ -511,21 +514,23 @@ export default function Profile() {
               />
             }
           />
-          <Row
-            icon={Flame}
-            label="Cheat-Meal-Alarm"
-            hint="Freunde sehen, wenn du dir was richtig Ungesundes gönnst (die KI entscheidet)."
-            trailing={
-              <Toggle
-                label="Cheat-Meal-Alarm"
-                checked={cheat}
-                onChange={(v) => {
-                  setCheat(v)
-                  setShareCheatEnabled(v)
-                }}
-              />
-            }
-          />
+          {showNutrition && (
+            <Row
+              icon={Flame}
+              label="Cheat-Meal-Alarm"
+              hint="Freunde sehen, wenn du dir was richtig Ungesundes gönnst (die KI entscheidet)."
+              trailing={
+                <Toggle
+                  label="Cheat-Meal-Alarm"
+                  checked={cheat}
+                  onChange={(v) => {
+                    setCheat(v)
+                    setShareCheatEnabled(v)
+                  }}
+                />
+              }
+            />
+          )}
           {ai?.enabled && (
             <Row
               icon={MessageSquare}
@@ -571,7 +576,7 @@ export default function Profile() {
             icon={LogOut}
             label="Abmelden"
             danger
-            onClick={() => supabase.auth.signOut()}
+            onClick={() => void signOut()}
           />
         </Group>
       </div>
@@ -583,7 +588,7 @@ export default function Profile() {
       <header className="flex items-center gap-2">
         <button
           className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           aria-label="Zurück"
         >
           <ChevronLeft size={20} />
@@ -659,10 +664,7 @@ export default function Profile() {
             return r ? (
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{r.text}</p>
             ) : (
-              <p className="text-xs text-cocoa-light">
-                Dein persönliches Gesamt-Fazit (Training + Ernährung) erscheint hier automatisch —
-                jeden Montag früh, sobald du die App öffnest.
-              </p>
+              <p className="text-xs text-cocoa-light">{reviewHint}</p>
             )
           })()}
         </div>
@@ -723,7 +725,7 @@ export default function Profile() {
         </div>
       )}
 
-      {isNew && (
+      {isNew && showNutrition && (
         <div className="card flex items-center justify-between gap-3">
           <div>
             <div className="font-medium">Cheat-Meal-Alarm</div>
@@ -852,14 +854,16 @@ export default function Profile() {
             <Dumbbell size={16} className="text-cocoa-light" />
             Training
           </button>
-          <button
-            className={TILE}
-            onClick={() => exportNutritionCsv(foodEntries ?? [])}
-            disabled={!foodEntries?.length}
-          >
-            <Apple size={16} className="text-cocoa-light" />
-            Ernährung
-          </button>
+          {showNutrition && (
+            <button
+              className={TILE}
+              onClick={() => exportNutritionCsv(foodEntries ?? [])}
+              disabled={!foodEntries?.length}
+            >
+              <Apple size={16} className="text-cocoa-light" />
+              Ernährung
+            </button>
+          )}
         </div>
       </div>
 
@@ -904,7 +908,7 @@ export default function Profile() {
         </div>
       )}
 
-      <button className="btn w-full gap-1.5 bg-sand text-cocoa" onClick={() => supabase.auth.signOut()}>
+      <button className="btn w-full gap-1.5 bg-sand text-cocoa" onClick={() => void signOut()}>
         <LogOut size={16} className="text-cocoa-light" />
         Abmelden
       </button>

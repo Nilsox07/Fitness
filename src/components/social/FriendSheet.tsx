@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Check, Hand, Send } from 'lucide-react'
 import { Sheet } from '../workout/Sheet'
 import { useGiveKudos, useSendPoke } from '../../hooks/useSocial'
-import { effectiveProteinDays, effectiveSessions } from '../../lib/duel'
+import { effectiveMonthlyPrs, effectiveProteinDays, effectiveSessions } from '../../lib/duel'
 import { RingAvatar } from './Avatar'
 import { avatarEmoji, firstName, proteinToday, statusLine, type Person } from './format'
 
@@ -38,7 +38,7 @@ export function FriendSheet({
     { label: 'Trainings diese Woche', get: (u) => effectiveSessions(u, today) },
     { label: 'Trainings gesamt', get: (u) => u.total_sessions ?? 0 },
     { label: 'Streak (Wochen)', get: (u) => u.week_streak ?? 0 },
-    { label: 'Rekorde diesen Monat', get: (u) => u.monthly_prs ?? 0 },
+    { label: 'Rekorde diesen Monat', get: (u) => effectiveMonthlyPrs(u, today) },
     ...(showNutrition
       ? [
           { label: 'Protein-Tage (Woche)', get: (u: Person) => effectiveProteinDays(u, today) },
@@ -153,7 +153,7 @@ export function FriendSheet({
                 aria-label="Eigene Nachricht"
               />
               <button
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand text-white disabled:opacity-40"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand text-on-brand disabled:opacity-40"
                 onClick={() => poke(text)}
                 disabled={!text.trim() || sendPoke.isPending}
                 aria-label="Senden"

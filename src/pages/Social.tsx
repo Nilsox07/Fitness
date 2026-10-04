@@ -24,13 +24,22 @@ import { TeamGoalCard } from '../components/social/TeamGoalCard'
 import { GymMeetCard } from '../components/social/GymMeetCard'
 import { FriendSheet } from '../components/social/FriendSheet'
 import { LeaderboardSection } from '../components/social/LeaderboardSection'
-import type { Person } from '../components/social/format'
+import { kcalToday as friendKcalToday, planToday, proteinToday as friendProteinToday, type Person } from '../components/social/format'
 import { useActivities } from '../hooks/useFeed'
 import { localDate } from '../lib/day'
-import { duelStandings, effectiveProteinDays, isThisWeek, teamGoal } from '../lib/duel'
+import {
+  duelStandings,
+  effectiveMonthlyPrs,
+  effectiveProteinDays,
+  effectiveSessions,
+  effectiveWeeklyVolume,
+  isThisWeek,
+  teamGoal,
+} from '../lib/duel'
 import { useAuth } from '../lib/auth'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useAllFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
+import type { UserStat } from '../hooks/useSocial'
 import { usePrefs } from '../lib/prefs'
 import {
   useAddFriend,
@@ -89,21 +98,24 @@ export default function Social() {
   const nameOf = (id: string) => board?.find((u) => u.user_id === id)?.display_name ?? 'Freund'
   const myRow = board?.find((u) => u.user_id === user?.id)
   const friends = useMemo(() => (board ?? []).filter((u) => u.user_id !== user?.id), [board, user?.id])
-  useEffect(() => {
-    if (!gymTouched && myRow?.gym_status) setGymInput(myRow.gym_status)
-  }, [myRow, gymTouched])
-
-  const daysLeft = 6 - ((new Date().getDay() + 6) % 7)
-  const podium = useMemo(
-    () => [...(board ?? [])].sort((a, b) => (b[chMetric] as number) - (a[chMetric] as number)).slice(0, 3),
-    [board, chMetric],
-  )
-
   // Eigene Aggregat-Statistik beim Öffnen teilen
   const todayStr = (() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   })()
+
+  useEffect(() => {
+    // Nur einen HEUTIGEN Plan vorbefüllen (ohne das kodierte Datum).
+    const plan = myRow ? planToday(myRow, todayStr) : null
+    if (!gymTouched && plan) setGymInput(plan)
+  }, [myRow, gymTouched, todayStr])
+
+  // Wochen-/Monatswerte nur, wenn sie aus dem aktuellen Zeitraum stammen
+  // (sonst würde eine veraltete Vorwochen-Zahl mitzählen).
+  const chValue = (u: UserStat) =>
+    chMetric === 'weekly_volume' ? effectiveWeeklyVolume(u, todayStr) : effectiveSessions(u, todayStr)
+  const daysLeft = 6 - ((new Date().getDay() + 6) % 7)
+  const podium = [...(board ?? [])].sort((a, b) => chValue(b) - chValue(a)).slice(0, 3)
 
   const myStats = useMemo(() => {
     const sets = allSets ?? []
@@ -144,16 +156,17 @@ export default function Social() {
       season_id: seasonId(),
       season_xp: seasonXp(sets),
       monthly_prs: monthlyPrCount(sets),
-      protein_today: proteinToday,
-      kcal_today: kcalToday,
-      protein_week: proteinWeek,
+      // Ernährung ausgeblendet → auch nichts davon teilen.
+      protein_today: showNutrition ? proteinToday : 0,
+      kcal_today: showNutrition ? kcalToday : 0,
+      protein_week: showNutrition ? proteinWeek : 0,
     }
-  }, [allSets, food, profile, user, todayStr, nutritionSettings])
+  }, [allSets, food, profile, user, todayStr, nutritionSettings, showNutrition])
 
   useEffect(() => {
     if (allSets) syncStats.mutate(myStats)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions, myStats.season_xp, myStats.monthly_prs, myStats.protein_today, myStats.protein_week])
+  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions, myStats.season_xp, myStats.monthly_prs, myStats.protein_today, myStats.kcal_today, myStats.protein_week])
 
   const kudosReceived = useMemo(() => {
     const map = new Map<string, number>()
@@ -162,10 +175,26 @@ export default function Social() {
   }, [kudos])
   const gaveToday = useMemo(() => new Set((kudos ?? []).map((k) => k.to_user)), [kudos])
 
-  const ranked = useMemo(
-    () => [...(board ?? [])].sort((a, b) => (b[metric] as number) - (a[metric] as number)),
-    [board, metric],
-  )
+  const metricValue = (u: UserStat, m: Metric): number =>
+    m === 'monthly_prs'
+      ? effectiveMonthlyPrs(u, todayStr)
+      : m === 'weekly_volume'
+        ? effectiveWeeklyVolume(u, todayStr)
+        : m === 'season_xp'
+          ? u.season_id === seasonId()
+            ? (u.season_xp ?? 0)
+            : 0
+          : ((u[m] as number) ?? 0)
+  const ranked = [...(board ?? [])].sort((a, b) => metricValue(b, metric) - metricValue(a, metric))
+
+  // Protein-Battle: eigene Zahlen lokal frisch, Freunde nur, wenn von heute.
+  const battle = (board ?? [])
+    .map((u) =>
+      u.user_id === user?.id
+        ? { u, protein: myStats.protein_today, kcal: myStats.kcal_today }
+        : { u, protein: friendProteinToday(u, todayStr), kcal: friendKcalToday(u, todayStr) },
+    )
+    .sort((a, b) => b.protein - a.protein)
 
   async function submitCode() {
     setMsg(null)
@@ -252,7 +281,7 @@ export default function Social() {
               <li key={u.user_id} className="flex items-center gap-2 text-sm">
                 <span className="flex-1">
                   <span className="font-medium">{u.display_name ?? 'Freund'}</span>{' '}
-                  <span className="text-cocoa-light">{u.gym_status || '– kein Plan –'}</span>
+                  <span className="text-cocoa-light">{planToday(u, todayStr) ?? '– kein Plan –'}</span>
                 </span>
                 <button
                   className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-2.5 py-1 text-xs font-semibold"
@@ -288,7 +317,7 @@ export default function Social() {
                 key={m}
                 onClick={() => setChMetric(m)}
                 className={`rounded-full px-3 py-1 text-xs transition-colors duration-200 ${
-                  chMetric === m ? 'bg-brand text-white' : 'bg-sand text-cocoa'
+                  chMetric === m ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa'
                 }`}
               >
                 {m === 'weekly_volume' ? 'Volumen' : 'Trainings'}
@@ -301,8 +330,8 @@ export default function Social() {
               if (!u) return <div key={rank} className="flex-1" />
               const val =
                 chMetric === 'weekly_volume'
-                  ? `${u.weekly_volume.toLocaleString('de-DE')} kg`
-                  : `${u.weekly_sessions}×`
+                  ? `${chValue(u).toLocaleString('de-DE')} kg`
+                  : `${chValue(u)}×`
               const h = rank === 0 ? 'h-20' : rank === 1 ? 'h-16' : 'h-12'
               return (
                 <div key={rank} className="flex flex-1 flex-col items-center">
@@ -333,9 +362,7 @@ export default function Social() {
             Protein-Battle (heute)
           </h2>
           <ul className="space-y-1.5">
-            {[...(board ?? [])]
-              .sort((a, b) => (b.protein_today ?? 0) - (a.protein_today ?? 0))
-              .map((u, i) => {
+            {battle.map(({ u, protein, kcal }, i) => {
                 const me = u.user_id === user?.id
                 return (
                   <li key={u.user_id} className="flex items-center gap-2 text-sm">
@@ -343,7 +370,7 @@ export default function Social() {
                     <span className="flex-1">
                       <span className="font-medium">{me ? 'Du' : u.display_name ?? 'Freund'}</span>{' '}
                       <span className="tabular text-cocoa-light">
-                        {u.protein_today ?? 0} g · {u.kcal_today ?? 0} kcal
+                        {protein} g · {kcal} kcal
                       </span>
                     </span>
                     {!me && (
@@ -354,7 +381,7 @@ export default function Social() {
                         onClick={() =>
                           sendPoke.mutate({
                             toUser: u.user_id,
-                            text: `😂 Nur ${u.protein_today ?? 0} g Protein heute? Schwach!`,
+                            text: `😂 Nur ${protein} g Protein heute? Schwach!`,
                           })
                         }
                       >
@@ -418,7 +445,7 @@ export default function Social() {
             key={m}
             onClick={() => setMetric(m)}
             className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ${
-              metric === m ? 'bg-brand text-white' : 'bg-sand text-cocoa'
+              metric === m ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa'
             }`}
           >
             {METRIC_LABEL[m]}
@@ -441,7 +468,7 @@ export default function Social() {
             metric === 'monthly_prs'
               ? (
                   <span className="inline-flex items-center gap-1">
-                    {u.monthly_prs ?? 0}
+                    {metricValue(u, 'monthly_prs')}
                     <Trophy size={14} className="text-cocoa-light" />
                   </span>
                 )
@@ -450,7 +477,7 @@ export default function Social() {
               : metric === 'level'
               ? `Lvl ${u.level ?? 1}`
               : metric === 'weekly_volume'
-                ? `${u.weekly_volume.toLocaleString('de-DE')} kg`
+                ? `${metricValue(u, 'weekly_volume').toLocaleString('de-DE')} kg`
                 : metric === 'total_sessions'
                   ? `${u.total_sessions}`
                   : (
@@ -527,9 +554,10 @@ export default function Social() {
     [myRow, myStats, user?.id],
   )
   const people = useMemo(() => [mePerson, ...(friends as Person[])], [mePerson, friends])
-  const includeProtein =
-    showNutrition &&
-    people.some((u) => effectiveProteinDays(u, today) > 0 || (u.protein_today ?? 0) > 0)
+  // Für alle Freunde gleich: nur geteilte Daten entscheiden (nicht die lokale
+  // Ernährungs-Einstellung des Betrachters) — sobald jemand diese Woche
+  // Protein-Tage hat, zählen sie für alle.
+  const includeProtein = people.some((u) => effectiveProteinDays(u, today) > 0)
   const standings = useMemo(
     () => duelStandings(people, { includeProtein, today }),
     [people, includeProtein, today],

@@ -176,14 +176,14 @@ function FloatingTabBar({ tabs, pathname }: { tabs: Tab[]; pathname: string }) {
                 to={t.to}
                 end={t.end}
                 aria-current={on ? 'page' : undefined}
-                className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10px] font-semibold transition-colors duration-200 active:scale-95 ${
-                  on ? 'text-white' : 'text-cocoa-muted hover:text-cocoa'
+                className={`flex h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10px] font-semibold transition-colors duration-200 active:scale-95 ${
+                  on ? 'text-on-brand' : 'text-cocoa-muted hover:text-cocoa'
                 }`}
               >
                 <span className={`transition-transform duration-300 ${on ? '-translate-y-px scale-110' : ''}`}>
                   <t.Icon />
                 </span>
-                <span className="max-w-full truncate px-1">{t.label}</span>
+                <span className="max-w-full truncate tracking-tight">{t.label}</span>
               </NavLink>
             )
           })}

@@ -68,18 +68,24 @@ export function useRestTimer(): RestTimer {
       return
     }
     beeped.current = false
+    // „Los!" kurz stehen lassen, dann ausblenden — aber nur, wenn inzwischen keine
+    // neue Pause gestartet wurde (Timeout wird beim Wechsel von endAt verworfen).
+    let hide: ReturnType<typeof setTimeout> | undefined
     const tick = () => {
       const l = Math.ceil((endAt - Date.now()) / 1000)
       setLeft(l)
       if (l <= 0 && !beeped.current) {
         beeped.current = true
         beep()
-        setTimeout(() => setEndAt(null), 1200)
+        hide = setTimeout(() => setEndAt((cur) => (cur === endAt ? null : cur)), 1200)
       }
     }
     tick()
     const id = setInterval(tick, 250)
-    return () => clearInterval(id)
+    return () => {
+      clearInterval(id)
+      if (hide) clearTimeout(hide)
+    }
   }, [endAt])
 
   const start = useCallback(
@@ -191,7 +197,7 @@ export function RestControl({
                   key={p}
                   onClick={() => timer.setTotal(p)}
                   className={`btn py-2 text-sm ${
-                    timer.total === p ? 'bg-brand text-white' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+                    timer.total === p ? 'bg-brand text-on-brand' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
                   }`}
                 >
                   {mmss(p)}
@@ -211,7 +217,7 @@ export function RestControl({
                       setExRestState(p)
                     }}
                     className={`btn py-2 text-sm ${
-                      exRest === p ? 'bg-brand text-white' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+                      exRest === p ? 'bg-brand text-on-brand' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
                     }`}
                   >
                     {p == null ? 'Standard' : mmss(p)}
@@ -232,7 +238,7 @@ export function RestControl({
                   key={m}
                   onClick={() => timer.setMode(m)}
                   className={`btn py-2 text-sm ${
-                    timer.mode === m ? 'bg-brand text-white' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+                    timer.mode === m ? 'bg-brand text-on-brand' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
                   }`}
                 >
                   {m === 'auto' ? 'Nach Satz' : 'Nur manuell'}

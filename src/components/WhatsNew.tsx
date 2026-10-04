@@ -19,7 +19,7 @@ export function WhatsNew() {
   }
 
   return (
-    <div className="anim-fade fixed inset-0 z-50 flex flex-col bg-black/60 p-4">
+    <div className="anim-fade fixed inset-0 z-50 flex flex-col bg-black/60 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+1rem)]">
       <div className="card mx-auto flex h-full w-full max-w-md flex-col">
         <div className="mb-2 text-center">
           <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-full bg-brand/10 text-brand">

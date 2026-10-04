@@ -135,7 +135,7 @@ export function GymMeetCard({
                 </span>
               ) : canJoin ? (
                 <button
-                  className="shrink-0 rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                  className="shrink-0 rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand disabled:opacity-50"
                   onClick={() => poke(u.user_id, JOIN_TEXT, 'gesendet')}
                   disabled={sendPoke.isPending}
                 >

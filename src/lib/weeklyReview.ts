@@ -1,6 +1,9 @@
 // Automatisches Gesamt-Wochenfazit: einmal pro Kalenderwoche (ab Montag) erzeugt,
 // als Popup beim Öffnen gezeigt und im Profil einsehbar.
 
+import { estimate1RM, onlyWorking } from './analytics'
+import type { SetWithDate } from '../types'
+
 const KEY = 'weekly_review'
 const SEEN_KEY = 'weekly_review_seen'
 
@@ -71,4 +74,41 @@ export function markSeen(weekId: string) {
   } catch {
     /* ignore */
   }
+}
+
+/**
+ * Anzahl Übungen mit neuem Rekord (bester geschätzter 1RM) in [start, end]
+ * gegenüber der gesamten Historie davor. Nur durchgeführte Arbeitssätze
+ * (Wdh > 0); Übungen ohne Vorgeschichte zählen nicht als Rekord.
+ */
+export function weekPrCount(sets: SetWithDate[], start: string, end: string): number {
+  const byEx = new Map<string, { before: number; cur: number }>()
+  for (const s of onlyWorking(sets)) {
+    if (s.date > end) continue
+    const e1 = Math.max(
+      s.reps > 0 ? estimate1RM(s.weight, s.reps) : 0,
+      (s.reps_right ?? 0) > 0 ? estimate1RM(s.weight_right ?? 0, s.reps_right ?? 0) : 0,
+    )
+    if (e1 <= 0) continue
+    const rec = byEx.get(s.exercise_id) ?? { before: 0, cur: 0 }
+    if (s.date >= start) rec.cur = Math.max(rec.cur, e1)
+    else rec.before = Math.max(rec.before, e1)
+    byEx.set(s.exercise_id, rec)
+  }
+  let n = 0
+  for (const r of byEx.values()) if (r.before > 0 && r.cur > r.before + 0.01) n++
+  return n
+}
+
+/** Gewichtsverlauf innerhalb der Woche: erste vs. letzte Messung (null bei < 2). */
+export function weekBodyweight(
+  weights: { date: string; weight_kg: number | string }[],
+  start: string,
+  end: string,
+): { start: number; current: number } | null {
+  const inRange = weights
+    .filter((w) => w.date >= start && w.date <= end)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  if (inRange.length < 2) return null
+  return { start: Number(inRange[0].weight_kg), current: Number(inRange[inRange.length - 1].weight_kg) }
 }

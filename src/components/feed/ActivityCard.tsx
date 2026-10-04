@@ -140,7 +140,7 @@ export function ActivityCard({
               aria-label="Kommentar"
             />
             <button
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand text-white disabled:opacity-40"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand text-on-brand disabled:opacity-40"
               onClick={submit}
               disabled={!text.trim() || addComment.isPending}
               aria-label="Senden"

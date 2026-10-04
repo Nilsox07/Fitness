@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
+import { usePrefs } from '../lib/prefs'
 
 export interface Activity {
   id: string
@@ -24,9 +25,14 @@ export interface ActivityLike {
   user_id: string
 }
 
+/** Cheat-Meal-Posts ausblenden (Ernährung ist aus). Stabil für `select`. */
+const withoutCheat = (list: Activity[]) => list.filter((a) => a.kind !== 'cheat')
+
 export function useActivities() {
+  const { showNutrition } = usePrefs()
   return useQuery({
     queryKey: ['activities'],
+    select: showNutrition ? undefined : withoutCheat,
     queryFn: async (): Promise<Activity[]> => {
       const { data, error } = await supabase
         .from('activities')
@@ -96,10 +102,13 @@ export function useAddComment() {
   })
 }
 
+type LikesSnapshot = [readonly unknown[], ActivityLike[] | undefined][]
+
+/** Applaus an/aus — optimistisch (sofort sichtbar), bei Fehler zurückgerollt. */
 export function useToggleLike() {
   const qc = useQueryClient()
   const { user } = useAuth()
-  return useMutation({
+  return useMutation<void, Error, { activity_id: string; liked: boolean }, { prev: LikesSnapshot }>({
     mutationFn: async ({ activity_id, liked }: { activity_id: string; liked: boolean }) => {
       if (liked) {
         const { error } = await supabase
@@ -115,6 +124,28 @@ export function useToggleLike() {
         if (error) throw error
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['activity_likes'] }),
+    onMutate: async ({ activity_id, liked }) => {
+      await qc.cancelQueries({ queryKey: ['activity_likes'] })
+      const prev = qc.getQueriesData<ActivityLike[]>({ queryKey: ['activity_likes'] })
+      const uid = user?.id
+      if (uid) {
+        // Nur Caches anfassen, die diese Aktivität enthalten (Schlüssel = ID-Liste).
+        const filters = {
+          queryKey: ['activity_likes'],
+          predicate: (q: { queryKey: readonly unknown[] }) =>
+            String(q.queryKey[1] ?? '').split(',').includes(activity_id),
+        }
+        qc.setQueriesData<ActivityLike[]>(filters, (old) => {
+          if (!old) return old
+          const without = old.filter((l) => !(l.activity_id === activity_id && l.user_id === uid))
+          return liked ? without : [...without, { activity_id, user_id: uid }]
+        })
+      }
+      return { prev }
+    },
+    onError: (_e, _v, ctx) => {
+      for (const [key, data] of ctx?.prev ?? []) qc.setQueryData(key, data)
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['activity_likes'] }),
   })
 }

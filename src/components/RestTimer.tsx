@@ -134,7 +134,7 @@ export const RestTimer = forwardRef<RestTimerHandle>(function RestTimer(_props, 
                     key={p}
                     onClick={() => setDuration(p)}
                     className={`rounded-full px-2 py-1 text-xs ${
-                      total === p ? 'bg-brand text-white' : 'bg-sand-light text-cocoa'
+                      total === p ? 'bg-brand text-on-brand' : 'bg-sand-light text-cocoa'
                     }`}
                   >
                     {p}s
@@ -143,7 +143,7 @@ export const RestTimer = forwardRef<RestTimerHandle>(function RestTimer(_props, 
               </div>
               <button onClick={toggleAuto} className="flex w-full items-center justify-between gap-2">
                 <span>Auto-Start nach Satz</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${auto ? 'bg-brand text-white' : 'bg-sand-dark text-cocoa-light'}`}>
+                <span className={`rounded-full px-2 py-0.5 text-xs ${auto ? 'bg-brand text-on-brand' : 'bg-sand-dark text-cocoa-light'}`}>
                   {auto ? 'an' : 'aus'}
                 </span>
               </button>
@@ -159,7 +159,7 @@ export const RestTimer = forwardRef<RestTimerHandle>(function RestTimer(_props, 
             </button>
             <button
               onClick={() => setLeft(total)}
-              className="h-11 rounded-full bg-brand px-4 font-semibold text-white shadow"
+              className="h-11 rounded-full bg-brand px-4 font-semibold text-on-brand shadow"
             >
               ⏱️ Pause
             </button>

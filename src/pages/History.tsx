@@ -2,12 +2,19 @@ import { useState } from 'react'
 import { CalendarPlus, Flame, Pencil, Check, Plus, Trash2 } from 'lucide-react'
 import { usePrefs } from '../lib/prefs'
 import { useExercises } from '../hooks/useExercises'
-import { useAddSet, useAllSets, useCreateWorkout, useDeleteWorkout, useWorkouts } from '../hooks/useWorkouts'
+import {
+  newId,
+  useAddSet,
+  useAllSets,
+  useCreateWorkout,
+  useDeleteWorkout,
+  useWorkouts,
+} from '../hooks/useWorkouts'
 import { ProgressSwitch } from '../components/ProgressSwitch'
 import { FoodDays } from '../components/FoodDays'
-import { localDate } from '../lib/day'
+import { trainingDay } from '../lib/day'
 import { EditableSetRow } from '../components/EditableSetRow'
-import { totalVolume } from '../lib/analytics'
+import { isPerformed, totalVolume } from '../lib/analytics'
 import type { Exercise, SetWithDate } from '../types'
 
 export default function History() {
@@ -21,7 +28,8 @@ export default function History() {
   const [editId, setEditId] = useState<string | null>(null)
   const createWorkout = useCreateWorkout()
   const [backfill, setBackfill] = useState(false)
-  const [backfillDate, setBackfillDate] = useState(() => localDate())
+  // Standard = heutiger Trainings-Tag (Wechsel um 4 Uhr, wie im Training)
+  const [backfillDate, setBackfillDate] = useState(() => trainingDay())
 
   /** Vergessenes Training nachtragen (oder bestehendes an dem Tag öffnen). */
   function startBackfill() {
@@ -32,15 +40,11 @@ export default function History() {
       setEditId(existing.id)
       return
     }
-    createWorkout.mutate(
-      { date: backfillDate },
-      {
-        onSuccess: (w) => {
-          setOpenId(w.id)
-          setEditId(w.id)
-        },
-      },
-    )
+    // ID im Client erzeugen → sofort öffnen (auch offline, ohne auf den Server zu warten)
+    const id = newId()
+    createWorkout.mutate({ id, date: backfillDate })
+    setOpenId(id)
+    setEditId(id)
   }
 
   const exName = (id: string) => exercises?.find((e) => e.id === id)?.name ?? 'Übung'
@@ -100,7 +104,7 @@ export default function History() {
                   type="date"
                   className="input"
                   value={backfillDate}
-                  max={localDate()}
+                  max={trainingDay()}
                   onChange={(e) => setBackfillDate(e.target.value)}
                 />
               </div>
@@ -125,6 +129,8 @@ export default function History() {
       <ul className="space-y-2">
         {workouts?.map((w) => {
           const sets = (allSets ?? []).filter((s) => s.workout_id === w.id)
+          // Für Zähler/Volumen nur ausgeführte Sätze (leere Vorlagen-Sätze mit 0 Wdh nicht)
+          const doneSets = sets.filter(isPerformed)
           const isOpen = openId === w.id
           const editing = editId === w.id
           const groups = Object.entries(
@@ -144,7 +150,7 @@ export default function History() {
                   }}
                 >
                   <div className="font-semibold">
-                    {new Date(w.date).toLocaleDateString('de-DE', {
+                    {new Date(w.date + 'T00:00:00').toLocaleDateString('de-DE', {
                       weekday: 'short',
                       day: 'numeric',
                       month: 'short',
@@ -152,7 +158,7 @@ export default function History() {
                     })}
                   </div>
                   <div className="tabular text-sm text-cocoa-light">
-                    {sets.length} Sätze · Volumen {Math.round(totalVolume(sets))} kg
+                    {doneSets.length} Sätze · Volumen {Math.round(totalVolume(doneSets))} kg
                   </div>
                 </button>
                 <button

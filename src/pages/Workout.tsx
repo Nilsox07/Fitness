@@ -9,8 +9,10 @@ import {
   useAllSets,
   useCreateWorkout,
   useDeleteSet,
+  useUpdateSet,
   useWorkoutSets,
   useWorkouts,
+  newId,
 } from '../hooks/useWorkouts'
 import { EditableSetRow } from '../components/EditableSetRow'
 import { DailyOverview } from '../components/DailyOverview'
@@ -18,13 +20,16 @@ import { Confetti } from '../components/Confetti'
 import { RestTimer, type RestTimerHandle } from '../components/RestTimer'
 import { parseLadder, snapToLadder } from '../lib/weights'
 import {
-  estimate1RM,
   frequencyStats,
+  isPerformed,
   onlyWorking,
+  sessionDates,
+  setBest1RM,
   progressionSuggestion,
   summarizeSessions,
   totalVolume,
 } from '../lib/analytics'
+import { trainingDay } from '../lib/day'
 import { mascotStage, rankForSessions } from '../lib/gamification'
 import { shareStatCard } from '../lib/statcard'
 import { alternativeExercise, hypeLine, warmupAdvice } from '../lib/ai'
@@ -67,25 +72,13 @@ import {
   appendOrder,
   getPairs,
   getPlanQueue,
+  typeOccurrence,
   setPlanQueue,
   pairOf,
   setPairs,
   sortByOrder,
   type Pair,
 } from '../lib/workoutSession'
-
-// Trainings-Tag: der Tag wechselt nicht um Mitternacht, sondern erst um DAY_CUTOFF_H
-// Uhr morgens. So bleibt eine Session, die vor 0 Uhr startet und danach weiterläuft,
-// als ein Training zusammen (statt beim Datumswechsel zu zerreißen).
-const DAY_CUTOFF_H = 4
-
-function todayLocal(): string {
-  const d = new Date()
-  d.setHours(d.getHours() - DAY_CUTOFF_H)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`
-}
 
 const roundHalf = (v: number) => Math.round(v * 2) / 2
 
@@ -138,11 +131,6 @@ function deriveSet(type: SetType, base: number): { reps: number; weight: number 
   }
 }
 
-/** Nächster Satz-Typ nach deinem Muster (Aufwärm, Arbeit, Arbeit, Drop, …). */
-function patternType(index: number): SetType {
-  return TEMPLATE[index] ?? 'working'
-}
-
 /** Gewicht auf die Geräte-Leiter einrasten (falls hinterlegt). */
 function snapWeight(ex: Exercise, w: number): number {
   const ladder = parseLadder(ex.weight_steps)
@@ -181,9 +169,35 @@ function baseFor(ex: Exercise, history: SetWithDate[]): number {
   return sug.suggestedWeight > 0 ? sug.suggestedWeight : 20
 }
 
+/** Gespeicherte „KI hat den Aufwärmsatz geprüft"-Übungen je Training (übersteht Reload). */
+function readWarmupChecked(workoutId: string): Set<string> {
+  try {
+    return new Set<string>(JSON.parse(localStorage.getItem(`wo_warmup_checked_${workoutId}`) || '[]'))
+  } catch {
+    return new Set<string>()
+  }
+}
+function writeWarmupChecked(workoutId: string, ids: Set<string>) {
+  try {
+    localStorage.setItem(`wo_warmup_checked_${workoutId}`, JSON.stringify([...ids]))
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function Workout() {
   const navigate = useNavigate()
-  const today = todayLocal()
+  // Trainings-Tag (Wechsel um 4 Uhr). Beim Zurückkehren in die App neu berechnen,
+  // damit eine über Nacht offene App nicht beim gestrigen Training hängen bleibt.
+  const [, setDayTick] = useState(0)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') setDayTick((t) => t + 1)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+  const today = trainingDay()
   const { data: workouts } = useWorkouts()
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
@@ -192,9 +206,42 @@ export default function Workout() {
   const addSet = useAddSet()
   const addSets = useAddSets()
   const deleteSet = useDeleteSet()
+  const updateSet = useUpdateSet()
+
+  // Kurze lokale Sperre gegen Doppel-Tipps. Bewusst NICHT an isPending gekoppelt:
+  // offline pausierte Schreibvorgänge bleiben „pending", die Knöpfe sollen aber
+  // weiter funktionieren (die Daten stehen dank optimistischer Updates sofort da).
+  const [busy, setBusy] = useState(false)
+  const busyRef = useRef(false)
+  function guarded(fn: () => void) {
+    if (busyRef.current) return
+    busyRef.current = true
+    setBusy(true)
+    try {
+      fn()
+    } finally {
+      window.setTimeout(() => {
+        busyRef.current = false
+        setBusy(false)
+      }, 400)
+    }
+  }
 
   const todaysWorkout = workouts?.find((w) => w.date === today)
   const { data: workoutSets } = useWorkoutSets(todaysWorkout?.id)
+  // Immer der neueste Stand (für asynchrone Entscheidungen, z. B. KI-Aufwärmcheck)
+  const latestSets = useRef(workoutSets)
+  latestSets.current = workoutSets
+
+  // Training für heute anlegen — höchstens eins pro Tag (auch wenn das Anlegen
+  // offline noch aussteht, steht es dank optimistischem Update schon im Cache).
+  const creatingFor = useRef('')
+  function startWorkout(): boolean {
+    if (todaysWorkout || (creatingFor.current === today && !createWorkout.isError)) return false
+    creatingFor.current = today
+    createWorkout.mutate({ id: newId(), date: today })
+    return true
+  }
 
   const [exerciseId, setExerciseId] = useState('')
   const selectedExercise = exercises?.find((e) => e.id === exerciseId)
@@ -280,7 +327,6 @@ export default function Workout() {
   const [excuse, setExcuse] = useState<string | null>(null)
   const [altAi, setAltAi] = useState<{ name: string | null; reason: string } | null>(null)
   const [altBusy, setAltBusy] = useState(false)
-  const warmupChecked = useRef<Set<string>>(new Set())
 
   async function findAltAi() {
     if (!selectedExercise || !exercises) return
@@ -317,17 +363,18 @@ export default function Workout() {
 
   async function shareToday() {
     if (!workoutSets) return
-    const exCount = new Set(workoutSets.map((s) => s.exercise_id)).size
-    const sessions = frequencyStats([...new Set((allSets ?? []).map((s) => s.date))]).totalSessions
+    const done = workoutSets.filter(isPerformed)
+    const exCount = new Set(done.map((s) => s.exercise_id)).size
+    const sessions = frequencyStats(sessionDates(allSets ?? [])).totalSessions
     await shareStatCard({
       title: 'Training abgeschlossen 💪',
-      dateLabel: new Date(today).toLocaleDateString('de-DE', {
+      dateLabel: new Date(today + 'T00:00:00').toLocaleDateString('de-DE', {
         weekday: 'long',
         day: 'numeric',
         month: 'long',
       }),
-      volume: Math.round(totalVolume(workoutSets)),
-      sets: workoutSets.length,
+      volume: Math.round(totalVolume(done)),
+      sets: done.length,
       exercises: exCount,
       highlight: prName ? `Rekord: ${prName}` : undefined,
       rank: rankForSessions(sessions).title,
@@ -336,7 +383,9 @@ export default function Workout() {
   }
 
   function finishWorkout() {
-    if (isNew && workoutSets && workoutSets.length) {
+    // Nur erledigte Sätze zählen; ohne einen einzigen erledigten Satz kein Feed-Post.
+    const done = (workoutSets ?? []).filter(isPerformed)
+    if (isNew && done.length) {
       const key = `feed_workout_${today}`
       let posted = false
       try {
@@ -345,11 +394,11 @@ export default function Workout() {
         /* ignore */
       }
       if (!posted) {
-        const exCount = new Set(workoutSets.map((s) => s.exercise_id)).size
+        const exCount = new Set(done.map((s) => s.exercise_id)).size
         postActivity.mutate({
           kind: 'workout',
           title: 'Training abgeschlossen 💪',
-          detail: `${workoutSets.length} Sätze · ${exCount} Übungen · ${Math.round(totalVolume(workoutSets))} kg`,
+          detail: `${done.length} Sätze · ${exCount} Übungen · ${Math.round(totalVolume(done))} kg`,
           author_name: authorName,
         })
         try {
@@ -366,13 +415,14 @@ export default function Workout() {
     if (!workoutSets) return
     setHypeBusy(true)
     try {
+      const done = workoutSets.filter(isPerformed)
       const perEx = new Map<string, number>()
-      workoutSets.forEach((s) => perEx.set(s.exercise_id, (perEx.get(s.exercise_id) ?? 0) + 1))
+      done.forEach((s) => perEx.set(s.exercise_id, (perEx.get(s.exercise_id) ?? 0) + 1))
       setHype(
         await hypeLine({
-          saetze: workoutSets.length,
+          saetze: done.length,
           uebungen: perEx.size,
-          volumen: Math.round(totalVolume(workoutSets)),
+          volumen: Math.round(totalVolume(done)),
           rekord: prName ?? null,
         }),
       )
@@ -385,8 +435,7 @@ export default function Workout() {
   useEffect(() => {
     if (!isNew) return // Rekord-Konfetti & Feed-Post nur im neuen Design
     if (!workoutSets || !allSets || !exercises) return
-    const best1RM = (s: { weight: number; reps: number; weight_right?: number | null; reps_right?: number | null }) =>
-      Math.max(estimate1RM(s.weight, s.reps), estimate1RM(s.weight_right ?? 0, s.reps_right ?? 0))
+    const best1RM = setBest1RM
     const prior = new Map<string, number>()
     for (const s of onlyWorking(allSets)) {
       if (s.date === today) continue
@@ -424,35 +473,52 @@ export default function Workout() {
       )
     : true
 
-  async function addWarmupSet() {
-    if (!todaysWorkout || !selectedExercise) return
-    const d = deriveSet('warmup', workingBase)
-    const weight = snapWeight(selectedExercise, d.weight)
-    await addSet.mutateAsync({
+  /**
+   * Aufwärmsatz VOR die bestehenden Sätze setzen. set_number muss laut DB > 0
+   * sein — ist vorne kein Platz, rücken die bestehenden Sätze eine Nummer nach
+   * hinten (die Updates laufen in derselben Warteschlange vor dem Einfügen).
+   */
+  function insertWarmupFirst(ex: Exercise, exSets: WorkoutSet[], base: number) {
+    if (!todaysWorkout) return
+    const d = deriveSet('warmup', base)
+    const weight = snapWeight(ex, d.weight)
+    const minNo = exSets.reduce((m, s) => Math.min(m, s.set_number), Infinity)
+    let setNumber = 1
+    if (exSets.length && minNo > 1) setNumber = minNo - 1
+    else if (exSets.length) {
+      for (const s of [...exSets].sort((a, b) => b.set_number - a.set_number)) {
+        updateSet.mutate({ id: s.id, set_number: s.set_number + 1 })
+      }
+    }
+    addSet.mutate({
       workout_id: todaysWorkout.id,
-      exercise_id: selectedExercise.id,
-      set_number: nextSetNumber,
+      exercise_id: ex.id,
+      set_number: setNumber,
       reps: d.reps,
       weight,
-      reps_right: selectedExercise.unilateral ? d.reps : null,
-      weight_right: selectedExercise.unilateral ? weight : null,
+      reps_right: ex.unilateral ? d.reps : null,
+      weight_right: ex.unilateral ? weight : null,
       set_type: 'warmup',
       to_failure: false,
     })
   }
 
-  async function removeWarmupSet() {
-    const w = setsForExercise.find((s) => s.set_type === 'warmup')
-    if (w) await deleteSet.mutateAsync(w)
-  }
-
-  // KI entscheidet im Hintergrund über den Aufwärmsatz und passt ihn still an.
+  // KI entscheidet im Hintergrund über den Aufwärmsatz und passt ihn still an —
+  // aber nur, solange bei der Übung noch kein Satz erledigt ist, und nur einmal
+  // pro Übung und Training (gemerkt in localStorage, übersteht also einen Reload).
+  const exNotStarted =
+    !!selectedExercise &&
+    setsForExercise.length > 0 &&
+    !setsForExercise.some((s) => isSetDone(s, selectedExercise.unilateral))
   useEffect(() => {
-    if (!isNew || !ai?.enabled || !selectedExercise || setsForExercise.length === 0) return
-    const key = `${today}:${selectedExercise.id}`
-    if (warmupChecked.current.has(key)) return
-    warmupChecked.current.add(key)
+    const wid = todaysWorkout?.id
+    if (!isNew || !ai?.enabled || !selectedExercise || !wid || !exNotStarted) return
+    const checked = readWarmupChecked(wid)
+    if (checked.has(selectedExercise.id)) return
+    checked.add(selectedExercise.id)
+    writeWarmupChecked(wid, checked)
     const ex = selectedExercise
+    const base = workingBase
     ;(async () => {
       try {
         const otherSets = (workoutSets ?? []).filter((s) => s.exercise_id !== ex.id)
@@ -462,17 +528,25 @@ export default function Workout() {
           secondary: ex.secondary_muscles ?? [],
           muscleAlreadyWarm: !willWarmup,
           firstOfSession: otherSets.length === 0,
-          base: workingBase,
+          base,
         })
-        const hasWarmup = setsForExercise.some((s) => s.set_type === 'warmup')
-        if (adv.warmup && !hasWarmup) await addWarmupSet()
-        else if (!adv.warmup && hasWarmup) await removeWarmupSet()
+        // Aktuellen Stand prüfen — inzwischen könnte schon ein Satz erledigt sein.
+        const exSets = (latestSets.current ?? [])
+          .filter((s) => s.exercise_id === ex.id && s.workout_id === wid)
+          .sort((a, b) => a.set_number - b.set_number)
+        if (exSets.length === 0 || exSets.some((s) => isSetDone(s, ex.unilateral))) return
+        const warmups = exSets.filter((s) => s.set_type === 'warmup')
+        if (adv.warmup && warmups.length === 0) insertWarmupFirst(ex, exSets, base)
+        else if (!adv.warmup) {
+          // Erledigte Aufwärmsätze werden nie gelöscht.
+          for (const w of warmups) if (!isSetDone(w, ex.unilateral)) deleteSet.mutate(w)
+        }
       } catch {
         /* still im Hintergrund – Standardregel bleibt */
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNew, ai?.enabled, selectedExercise?.id, setsForExercise.length, today])
+  }, [isNew, ai?.enabled, selectedExercise?.id, exNotStarted, todaysWorkout?.id])
 
   // Übung auswählen → bei leerem Stand automatisch die Standard-Sätze anlegen
   function selectExercise(id: string) {
@@ -508,41 +582,62 @@ export default function Workout() {
     if (inputs.length) addSets.mutate(inputs)
   }
 
-  async function addTemplate() {
-    if (!todaysWorkout || !selectedExercise) return
-    const warmed = warmedMuscleGroups(
-      (workoutSets ?? []).filter((s) => s.exercise_id !== selectedExercise.id),
-      exercises ?? [],
-    )
-    await addSets.mutateAsync(
-      templateInputs(
-        todaysWorkout.id,
-        selectedExercise,
-        workingBase,
-        nextSetNumber,
-        needsWarmup(selectedExercise, warmed),
-      ),
-    )
+  function addTemplate() {
+    guarded(() => {
+      if (!todaysWorkout || !selectedExercise) return
+      // Schon Sätze da (z. B. Doppel-Tipp, optimistisch eingetragen)? Dann nichts tun.
+      if ((latestSets.current ?? []).some((s) => s.exercise_id === selectedExercise.id)) return
+      const warmed = warmedMuscleGroups(
+        (workoutSets ?? []).filter((s) => s.exercise_id !== selectedExercise.id),
+        exercises ?? [],
+      )
+      addSets.mutate(
+        templateInputs(
+          todaysWorkout.id,
+          selectedExercise,
+          workingBase,
+          nextSetNumber,
+          needsWarmup(selectedExercise, warmed),
+        ),
+      )
+    })
   }
 
-  async function addOne() {
-    if (!todaysWorkout || !selectedExercise) return
-    const type = patternType(setsForExercise.length)
-    const d = deriveSet(type, workingBase)
-    const uni = selectedExercise.unilateral
-    const weight = snapWeight(selectedExercise, d.weight)
-    await addSet.mutateAsync({
-      workout_id: todaysWorkout.id,
-      exercise_id: exerciseId,
-      set_number: nextSetNumber,
-      reps: d.reps,
-      weight,
-      reps_right: uni ? d.reps : null,
-      weight_right: uni ? weight : null,
-      set_type: type,
-      to_failure: type !== 'warmup',
+  /**
+   * Einen Satz anhängen. Leere Übung → erster Satz der (aufwärm-bewussten) Vorlage.
+   * Sonst: Kopie des letzten ARBEITSsatzes (Typ + Gewicht) — nicht des Drops mit
+   * seinen 70 %.
+   */
+  function addOne() {
+    guarded(() => {
+      if (!todaysWorkout || !selectedExercise) return
+      const uni = selectedExercise.unilateral
+      const lastWorking = [...setsForExercise].reverse().find((s) => s.set_type === 'working')
+      let type: SetType
+      let weight: number
+      let weightRight: number | null
+      if (setsForExercise.length === 0) {
+        type = (willWarmup ? TEMPLATE : TEMPLATE_NO_WARMUP)[0]
+        weight = snapWeight(selectedExercise, deriveSet(type, workingBase).weight)
+        weightRight = uni ? weight : null
+      } else {
+        type = 'working'
+        weight = lastWorking?.weight ?? snapWeight(selectedExercise, workingBase)
+        weightRight = uni ? (lastWorking?.weight_right ?? weight) : null
+      }
+      addSet.mutate({
+        workout_id: todaysWorkout.id,
+        exercise_id: selectedExercise.id,
+        set_number: nextSetNumber,
+        reps: 0,
+        weight,
+        reps_right: uni ? 0 : null,
+        weight_right: weightRight,
+        set_type: type,
+        to_failure: type === 'working' && lastWorking ? lastWorking.to_failure : type !== 'warmup',
+      })
+      autoRest()
     })
-    autoRest()
   }
 
   // ======================================================================
@@ -620,17 +715,29 @@ export default function Workout() {
 
   function onSetDone(exId: string, s: WorkoutSet) {
     const list = setsOf(exId)
+    const idx = list.findIndex((x) => x.id === s.id)
+    // Der gerade abgehakte Satz gilt als erledigt, auch wenn das (optimistische)
+    // Update noch nicht im Cache angekommen ist.
+    const isDone = (id: string, x: WorkoutSet) => x.id === s.id || isSetDone(x, isUni(id))
+    // Runde = gleicher Satz-Typ an gleicher Position (k-ter Arbeitssatz ↔ k-ter Arbeitssatz)
     const decision = afterSetDone({
       exId,
-      setIndex: list.findIndex((x) => x.id === s.id),
+      setType: s.set_type,
+      occurrence: typeOccurrence(list, idx),
       pairs,
-      doneFlags: (id) => setsOf(id).map((x) => isSetDone(x, isUni(id))),
+      setsOf: (id) => setsOf(id).map((x) => ({ set_type: x.set_type, done: isDone(id, x) })),
     })
     if (decision.rest && rest.mode === 'auto') {
       // Pausenlänge nach Satztyp: vor Drop keine, nach Aufwärmen kurz, sonst Übungs-/Standardpause.
-      const idx = list.findIndex((x) => x.id === s.id)
       const nextEx = decision.next ?? exId
-      const nextSet = nextEx === exId ? list[idx + 1] : setsOf(nextEx)[idx + 1]
+      // Nächster Satz: bei derselben Übung der nächste offene dahinter, sonst der
+      // erste offene der nächsten Übung (Supersatz: nächste Runde von A1).
+      const nextList = setsOf(nextEx)
+      const nextSet =
+        nextEx === exId
+          ? (nextList.find((x) => x.set_number > s.set_number && !isDone(nextEx, x)) ??
+            nextList.find((x) => !isDone(nextEx, x)))
+          : nextList.find((x) => !isDone(nextEx, x))
       const base = getExerciseRest(nextEx) ?? rest.total
       const sec = restSecondsAfter(s.set_type, nextSet?.set_type ?? null, base)
       if (sec > 0) rest.start(sec)
@@ -644,7 +751,11 @@ export default function Workout() {
     }
   }
 
+  // Übungen, die gerade aus dem Training entfernt werden (Löschen läuft noch).
+  const removingIds = useRef<Set<string>>(new Set())
+
   function addExerciseToday(id: string) {
+    removingIds.current.delete(id)
     if (woId) appendOrder(woId, [id])
     selectExercise(id)
     setSheet(null)
@@ -718,16 +829,18 @@ export default function Workout() {
       loadPlanOrdered(p)
     } else {
       setPendingPlanId(p.id)
-      createWorkout.mutate({ date: today })
+      startWorkout()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew, location.key, location.state, workouts, plans, todaysWorkout, workoutSets])
 
   // Beim Öffnen automatisch die erste noch offene Übung wählen.
   useEffect(() => {
-    if (!isNew || exerciseId || todayExIds.length === 0) return
-    const firstOpen = todayExIds.find((id) => setsOf(id).some((s) => !isSetDone(s, isUni(id))))
-    setExerciseId(firstOpen ?? todayExIds[0])
+    if (!isNew || exerciseId) return
+    const ids = todayExIds.filter((id) => !removingIds.current.has(id))
+    if (ids.length === 0) return
+    const firstOpen = ids.find((id) => setsOf(id).some((s) => !isSetDone(s, isUni(id))))
+    setExerciseId(firstOpen ?? ids[0])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew, exerciseId, todayExIds])
 
@@ -735,13 +848,27 @@ export default function Workout() {
   const doneCount = (workoutSets?.length ?? 0) - openSets.length
 
   function finishNew() {
+    // finishWorkout zählt nur erledigte Sätze — offene werden hier ggf. entfernt.
     if (dropOpenSets) for (const s of openSets) deleteSet.mutate(s)
     setSheet(null)
     finishWorkout()
   }
 
+  /** Übung aus dem heutigen Training entfernen und direkt die nächste wählen. */
+  function removeExerciseToday(exId: string) {
+    const list = setsOf(exId)
+    removingIds.current.add(exId)
+    const remaining = todayExIds.filter((id) => !removingIds.current.has(id))
+    const idx = todayExIds.indexOf(exId)
+    const after = todayExIds.slice(idx + 1).find((id) => !removingIds.current.has(id))
+    list.forEach((s) => deleteSet.mutate(s))
+    unpair(exId)
+    setExerciseId(after ?? remaining[remaining.length - 1] ?? '')
+    setSheet(null)
+  }
+
   if (isNew) {
-    const dateLabel = new Date(today).toLocaleDateString('de-DE', {
+    const dateLabel = new Date(today + 'T00:00:00').toLocaleDateString('de-DE', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -764,11 +891,13 @@ export default function Workout() {
                   <button
                     key={p.id}
                     className="btn-ghost justify-start gap-2 py-3 text-left"
-                    disabled={createWorkout.isPending}
-                    onClick={() => {
-                      setPendingPlanId(p.id)
-                      createWorkout.mutate({ date: today })
-                    }}
+                    disabled={busy}
+                    onClick={() =>
+                      guarded(() => {
+                        setPendingPlanId(p.id)
+                        startWorkout()
+                      })
+                    }
                   >
                     <Play size={14} className="shrink-0 fill-brand text-brand" />
                     <span className="truncate">{p.name}</span>
@@ -778,8 +907,8 @@ export default function Workout() {
             )}
             <button
               className={plans?.length ? 'btn-ghost w-full' : 'btn-primary w-full'}
-              onClick={() => createWorkout.mutate({ date: today })}
-              disabled={createWorkout.isPending}
+              onClick={() => guarded(startWorkout)}
+              disabled={busy}
             >
               {plans?.length ? 'Freies Training' : 'Training starten'}
             </button>
@@ -822,7 +951,7 @@ export default function Workout() {
         {/* Rekord als schwebender Hinweis oben — verschiebt den Inhalt nicht */}
         {prName && confetti && (
           <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+10px)] z-30 mx-auto max-w-md px-4">
-            <div className="flex animate-[pop_0.35s_ease-out] items-center justify-center gap-2 rounded-full bg-gold px-4 py-2 text-sm font-bold text-white shadow-lg">
+            <div className="flex animate-[pop_0.35s_ease-out] items-center justify-center gap-2 rounded-full bg-gold px-4 py-2 text-sm font-bold text-white shadow-lg dark:text-bg">
               <Trophy size={16} strokeWidth={2.5} />
               Neuer Rekord: {prName}
             </div>
@@ -937,8 +1066,8 @@ export default function Workout() {
                     <button
                       key={p.id}
                       className="btn-ghost justify-start gap-2 py-3 text-left"
-                      onClick={() => loadPlanOrdered(p)}
-                      disabled={addSets.isPending}
+                      onClick={() => guarded(() => loadPlanOrdered(p))}
+                      disabled={busy}
                     >
                       <Play size={14} className="shrink-0 fill-brand text-brand" />
                       <span className="truncate">{p.name}</span>
@@ -1014,7 +1143,7 @@ export default function Workout() {
                 ))}
               </div>
             ) : (
-              <button className="btn-primary w-full" onClick={addTemplate} disabled={addSets.isPending}>
+              <button className="btn-primary w-full" onClick={addTemplate} disabled={busy}>
                 Standard-Sätze anlegen
               </button>
             )}
@@ -1034,7 +1163,7 @@ export default function Workout() {
                   <button
                     className="btn flex-1 gap-1 bg-sand px-2 py-2 text-sm text-cocoa"
                     onClick={addOne}
-                    disabled={addSet.isPending}
+                    disabled={busy}
                   >
                     <Plus size={16} /> Satz
                   </button>
@@ -1093,10 +1222,7 @@ export default function Workout() {
                   className="text-red-500"
                   onClick={() => {
                     if (!confirm(`„${active.name}" aus dem heutigen Training entfernen?`)) return
-                    activeSets.forEach((s) => deleteSet.mutate(s))
-                    unpair(active.id)
-                    setExerciseId('')
-                    setSheet(null)
+                    removeExerciseToday(active.id)
                   }}
                 >
                   <Trash2 size={18} /> Aus heutigem Training entfernen
@@ -1313,11 +1439,7 @@ export default function Workout() {
         {isNew && <DailyOverview />}
         <div className="card space-y-3 text-center">
           <p className="text-cocoa">Heute noch kein Training erfasst.</p>
-          <button
-            className="btn-primary w-full"
-            onClick={() => createWorkout.mutate({ date: today })}
-            disabled={createWorkout.isPending}
-          >
+          <button className="btn-primary w-full" onClick={() => guarded(startWorkout)} disabled={busy}>
             Training starten
           </button>
           {saveError && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {saveError.message}</p>}
@@ -1348,7 +1470,7 @@ export default function Workout() {
         <div>
           <h1 className="text-xl font-bold">Heute</h1>
           <p className="text-sm text-cocoa-light">
-            {new Date(today).toLocaleDateString('de-DE', {
+            {new Date(today + 'T00:00:00').toLocaleDateString('de-DE', {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
@@ -1425,8 +1547,8 @@ export default function Workout() {
           {activePlan && activePlan.exercise_ids.length > 0 && (
             <button
               className="btn-ghost w-full text-sm"
-              onClick={() => loadPlan(activePlan)}
-              disabled={addSets.isPending}
+              onClick={() => guarded(() => loadPlan(activePlan))}
+              disabled={busy}
             >
               ⬇️ Ganzen Plan laden ({activePlan.exercise_ids.length} Übungen)
             </button>
@@ -1537,7 +1659,7 @@ export default function Workout() {
                 {lastSession && (
                   <div className="mt-1 text-xs text-cocoa-muted">
                     Letztes Training (
-                    {new Date(lastSession.date).toLocaleDateString('de-DE')}):{' '}
+                    {new Date(lastSession.date + 'T00:00:00').toLocaleDateString('de-DE')}):{' '}
                     {lastSession.sets.map((s) => `${s.reps}×${s.weight}kg`).join(', ')}
                   </div>
                 )}
@@ -1557,11 +1679,7 @@ export default function Workout() {
             {/* Aktionen */}
             {setsForExercise.length === 0 ? (
               <div className="space-y-2">
-                <button
-                  className="btn-primary w-full"
-                  onClick={addTemplate}
-                  disabled={addSets.isPending}
-                >
+                <button className="btn-primary w-full" onClick={addTemplate} disabled={busy}>
                   Standard-Sätze anlegen
                 </button>
                 <p className="text-center text-xs text-cocoa-muted">
@@ -1570,12 +1688,12 @@ export default function Workout() {
                     : '2 Arbeitssätze · 1 Dropsatz (Muskel schon warm → kein Aufwärmsatz)'}{' '}
                   — danach nur noch Gewicht/Wdh anpassen
                 </p>
-                <button className="btn-ghost w-full" onClick={addOne} disabled={addSet.isPending}>
+                <button className="btn-ghost w-full" onClick={addOne} disabled={busy}>
                   + Einzelnen Satz
                 </button>
               </div>
             ) : (
-              <button className="btn-ghost w-full" onClick={addOne} disabled={addSet.isPending}>
+              <button className="btn-ghost w-full" onClick={addOne} disabled={busy}>
                 + Satz hinzufügen
               </button>
             )}
@@ -1602,7 +1720,7 @@ export default function Workout() {
           </ul>
 
           {hype && (
-            <p className="mt-3 rounded-lg bg-ruby/10 p-2 text-center text-sm font-semibold text-ruby dark:text-rose-300">
+            <p className="mt-3 rounded-lg bg-ruby/10 p-2 text-center text-sm font-semibold text-ruby dark:text-ruby-light">
               {hype}
             </p>
           )}

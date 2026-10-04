@@ -63,9 +63,9 @@ function fileToDataUrl(file: File, maxDim = 1280): Promise<string> {
 
 const kg = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 2 })
 
-/** „zuletzt 3×8 · 80 kg" aus der letzten Session (nur Arbeitssätze). */
+/** „zuletzt 3×8 · 80 kg" aus der letzten Session (nur ausgeführte Arbeitssätze). */
 function lastPerformance(sets: SetWithDate[]): string | null {
-  const working = onlyWorking(sets)
+  const working = onlyWorking(sets) // ohne leere Vorlagen-Sätze (0 Wdh)
   if (working.length === 0) return null
   const lastDate = working.reduce((d, s) => (s.date > d ? s.date : d), '')
   const day = working.filter((s) => s.date === lastDate)
@@ -137,6 +137,7 @@ export default function Exercises() {
   const [editing, setEditing] = useState<Exercise | null>(null)
   const [form, setForm] = useState<ExerciseInput>(EMPTY_EXERCISE)
   const [open, setOpen] = useState(false)
+  const [saveErr, setSaveErr] = useState<string | null>(null)
   const [assistOpen, setAssistOpen] = useState(false)
   const [assistText, setAssistText] = useState('')
   const [assistBusy, setAssistBusy] = useState(false)
@@ -256,24 +257,40 @@ export default function Exercises() {
   function startNew() {
     setEditing(null)
     setForm(EMPTY_EXERCISE)
+    setSaveErr(null)
     setOpen(true)
   }
 
   function startEdit(ex: Exercise) {
     setEditing(ex)
     setForm(exerciseToInput(ex))
+    setSaveErr(null)
     setOpen(true)
   }
 
+  const saving = createEx.isPending || updateEx.isPending
+
   async function save() {
-    if (!form.name.trim()) return
+    if (!form.name.trim() || saving) return
+    setSaveErr(null)
     const clean = cleanExerciseInput(form)
-    if (editing) {
-      await updateEx.mutateAsync({ id: editing.id, ...clean })
-    } else {
-      await createEx.mutateAsync(clean)
+    try {
+      if (editing) {
+        await updateEx.mutateAsync({ id: editing.id, ...clean })
+      } else {
+        await createEx.mutateAsync(clean)
+      }
+      setOpen(false)
+    } catch (e) {
+      setSaveErr(
+        `Konnte nicht speichern: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}. Bitte Verbindung prüfen und erneut versuchen.`,
+      )
     }
+  }
+
+  function closeForm() {
     setOpen(false)
+    setSaveErr(null)
   }
 
   const selectedCount = equipDrafts ? equipDrafts.filter((_, i) => equipSel.has(i)).length : 0
@@ -437,7 +454,7 @@ export default function Exercises() {
                           >
                             <span
                               className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border ${
-                                on ? 'border-brand bg-brand text-white' : 'border-sand-dark bg-cream'
+                                on ? 'border-brand bg-brand text-on-brand' : 'border-sand-dark bg-cream'
                               }`}
                             >
                               {on && <Check size={14} strokeWidth={3} />}
@@ -614,16 +631,25 @@ export default function Exercises() {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
-          <div className="card w-full max-w-md space-y-3">
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 p-4">
+          <div className="card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">{editing ? 'Übung bearbeiten' : 'Neue Übung'}</h2>
             <ExerciseForm form={form} setForm={setForm} aiOn={aiOn} autoFocus />
+            {saveErr && (
+              <p className="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400">
+                <TriangleAlert size={16} className="shrink-0" /> {saveErr}
+              </p>
+            )}
             <div className="flex gap-2 pt-2">
-              <button className="btn-ghost flex-1" onClick={() => setOpen(false)}>
+              <button className="btn-ghost flex-1" onClick={closeForm}>
                 Abbrechen
               </button>
-              <button className="btn-primary flex-1" onClick={save}>
-                Speichern
+              <button
+                className="btn-primary flex-1"
+                onClick={save}
+                disabled={saving || !form.name.trim()}
+              >
+                {saving ? 'Speichere…' : 'Speichern'}
               </button>
             </div>
           </div>

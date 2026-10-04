@@ -10,6 +10,8 @@ export interface Accent {
   light: string
   /** Vorschau-Farbe */
   swatch: string
+  /** Textfarbe auf der Akzentfläche ("r g b"); Standard Weiß. */
+  onAccent?: string
 }
 
 export const ACCENTS: Accent[] = [
@@ -17,7 +19,7 @@ export const ACCENTS: Accent[] = [
   { id: 'ocean', label: 'Ozean', minLevel: 3, base: '14 165 233', dark: '2 132 199', light: '56 189 248', swatch: '#0EA5E9' },
   { id: 'forest', label: 'Wald', minLevel: 5, base: '16 185 129', dark: '5 150 105', light: '52 211 153', swatch: '#10B981' },
   { id: 'violet', label: 'Violett', minLevel: 8, base: '139 92 246', dark: '124 58 237', light: '167 139 250', swatch: '#8B5CF6' },
-  { id: 'amber', label: 'Gold', minLevel: 12, base: '245 158 11', dark: '217 119 6', light: '251 191 36', swatch: '#F59E0B' },
+  { id: 'amber', label: 'Gold', minLevel: 12, base: '245 158 11', dark: '217 119 6', light: '251 191 36', swatch: '#F59E0B', onAccent: '11 15 25' },
   { id: 'slate', label: 'Stahl', minLevel: 16, base: '100 116 139', dark: '71 85 105', light: '148 163 184', swatch: '#64748B' },
 ]
 
@@ -71,6 +73,8 @@ export function applyAccent(id: string) {
   root.style.setProperty('--c-ruby', a.base)
   root.style.setProperty('--c-ruby-dark', a.dark)
   root.style.setProperty('--c-ruby-light', a.light)
+  // Lesbarer Text auf Akzentflächen (Gold braucht dunkle Schrift).
+  root.style.setProperty('--c-on-brand', a.onAccent ?? '255 255 255')
 }
 
 /** Aktuelle Akzentfarbe als CSS-Farbe (für Diagramme/Canvas, die keine CSS-Variablen können). */

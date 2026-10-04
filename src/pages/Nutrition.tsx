@@ -1010,7 +1010,7 @@ export default function Nutrition() {
                   key={p}
                   onClick={() => setPlace(p)}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ${
-                    place === p ? 'bg-brand text-white' : 'bg-sand text-cocoa'
+                    place === p ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa'
                   }`}
                 >
                   {p}
@@ -1148,7 +1148,7 @@ export default function Nutrition() {
                     </div>
                   </div>
                   <button
-                    className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white disabled:opacity-40"
+                    className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-on-brand disabled:opacity-40"
                     onClick={() => addEstimate(it)}
                     disabled={saving}
                     aria-label="Übernehmen"

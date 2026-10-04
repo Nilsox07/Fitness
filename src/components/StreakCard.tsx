@@ -8,13 +8,15 @@ import {
   trainedThisWeek,
   weekStreakWithFreezes,
 } from '../lib/streaks'
+import { sessionDates } from '../lib/analytics'
 import type { SetWithDate } from '../types'
 
 export function StreakCard({ sets }: { sets: SetWithDate[] }) {
   const { data: state, isLoading } = useStreakState()
   const update = useUpdateStreakState()
 
-  const dates = useMemo(() => sets.map((s) => s.date), [sets])
+  // Nur Tage mit tatsächlich ausgeführten Sätzen (leere Vorlagen zählen nicht)
+  const dates = useMemo(() => sessionDates(sets), [sets])
   const frozen = state?.frozen_weeks ?? []
   const streak = weekStreakWithFreezes(dates, frozen)
   const perfect = perfectWeeksCount(dates)

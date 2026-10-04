@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Check, ChevronRight, Star, Target } from 'lucide-react'
-import { balanceStats, frequencyStats, onlyWorking, totalVolume } from '../lib/analytics'
+import { balanceStats, frequencyStats, onlyPerformed, onlyWorking, sessionDates, totalVolume } from '../lib/analytics'
+import { trainingDay } from '../lib/day'
 import { achievements, rankForSessions } from '../lib/gamification'
 import { mascotEmoji } from '../lib/cosmetics'
 import { computeXp, dailyQuests, levelInfo, weeklyQuests, type Quest } from '../lib/xp'
@@ -9,13 +10,6 @@ import { Confetti } from './Confetti'
 import { playChime, playLevelUp } from '../lib/sound'
 import { shareStatCard } from '../lib/statcard'
 import type { Exercise, SetWithDate } from '../types'
-
-function todayLocal(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`
-}
 
 function QuestRow({ q }: { q: Quest }) {
   return (
@@ -43,11 +37,14 @@ function QuestRow({ q }: { q: Quest }) {
   )
 }
 
-export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises: Exercise[] }) {
+export function GamePanel({ sets: allSets, exercises }: { sets: SetWithDate[]; exercises: Exercise[] }) {
   const navigate = useNavigate()
-  const today = todayLocal()
+  // Quests nach Trainings-Tag (Wechsel um 4 Uhr, wie im Training)
+  const today = trainingDay()
   const g = useMemo(() => {
-    const freq = frequencyStats([...new Set(sets.map((s) => s.date))])
+    // Nur ausgeführte Sätze (leere Vorlagen-Sätze mit 0 Wdh zählen nicht)
+    const sets = onlyPerformed(allSets)
+    const freq = frequencyStats(sessionDates(sets))
     const tonnage = Math.round(totalVolume(sets))
     const working = onlyWorking(sets)
     const maxWeight = working.reduce((m, s) => Math.max(m, s.weight, s.weight_right ?? 0), 0)
@@ -60,7 +57,7 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
       mascot: mascotEmoji(freq.totalSessions),
       xp: levelInfo(computeXp(sets)),
       daily: dailyQuests(sets, today),
-      weekly: weeklyQuests(sets),
+      weekly: weeklyQuests(sets, today),
       list: achievements({
         sessions: freq.totalSessions,
         weekStreak: freq.weekStreak,
@@ -69,7 +66,7 @@ export function GamePanel({ sets, exercises }: { sets: SetWithDate[]; exercises:
         muscleCategoriesTrained: cats,
       }),
     }
-  }, [sets, exercises, today])
+  }, [allSets, exercises, today])
 
   // Level-up-Feier
   const [celebrate, setCelebrate] = useState(false)

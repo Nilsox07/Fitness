@@ -6,6 +6,8 @@ import { usePrefs } from '../lib/prefs'
 import { useAiStatus } from '../hooks/useAi'
 import { generatePlan, type PlanSuggestion } from '../lib/ai'
 import {
+  nextExercisePosition,
+  nextPlanPosition,
   useAddPlanExercise,
   useCreatePlan,
   useDeletePlan,
@@ -16,6 +18,7 @@ import {
 } from '../hooks/usePlans'
 import type { PlanWithExercises } from '../types'
 import PlansNew from '../components/plans/PlansNew'
+import { useApplyPlanSuggestions } from '../components/plans/AiPlanGenerator'
 
 export default function Plans() {
   const { isNew } = usePrefs()
@@ -30,7 +33,7 @@ function ClassicPlans() {
   const { data: exercises } = useExercises()
   const { data: ai } = useAiStatus()
   const createPlan = useCreatePlan()
-  const addPlanEx = useAddPlanExercise()
+  const applier = useApplyPlanSuggestions()
   const [newName, setNewName] = useState('')
 
   // KI-Plangenerator
@@ -45,7 +48,7 @@ function ClassicPlans() {
   async function addPlan() {
     const name = newName.trim()
     if (!name) return
-    await createPlan.mutateAsync({ name, position: plans?.length ?? 0 })
+    await createPlan.mutateAsync({ name, position: nextPlanPosition(plans) })
     setNewName('')
   }
 
@@ -68,17 +71,10 @@ function ClassicPlans() {
   }
 
   async function applySuggestions(list: PlanSuggestion[]) {
-    let pos = plans?.length ?? 0
-    for (const s of list) {
-      const plan = await createPlan.mutateAsync({ name: s.name, position: pos++ })
-      let exPos = 0
-      for (const name of s.exercises) {
-        const ex = exercises?.find((e) => e.name.toLowerCase() === name.toLowerCase())
-        if (ex) await addPlanEx.mutateAsync({ plan_id: plan.id, exercise_id: ex.id, position: exPos++ })
-      }
+    if (await applier.apply(list)) {
+      setSuggestions(null)
+      setGenOpen(false)
     }
-    setSuggestions(null)
-    setGenOpen(false)
   }
 
   return (
@@ -194,16 +190,25 @@ function ClassicPlans() {
                     </li>
                   ))}
                 </ul>
+                {applier.error && (
+                  <p className="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400">
+                    <TriangleAlert size={16} className="shrink-0" /> {applier.error}
+                  </p>
+                )}
                 <div className="flex gap-2 pt-1">
-                  <button className="btn-ghost flex-1" onClick={() => setSuggestions(null)}>
+                  <button
+                    className="btn-ghost flex-1"
+                    onClick={() => setSuggestions(null)}
+                    disabled={applier.busy}
+                  >
                     Zurück
                   </button>
                   <button
                     className="btn-primary flex-1"
                     onClick={() => applySuggestions(suggestions)}
-                    disabled={createPlan.isPending || addPlanEx.isPending}
+                    disabled={applier.busy}
                   >
-                    Übernehmen
+                    {applier.busy ? 'Lege an…' : 'Übernehmen'}
                   </button>
                 </div>
               </>
@@ -311,7 +316,7 @@ function PlanCard({
               addEx.mutate({
                 plan_id: plan.id,
                 exercise_id: e.target.value,
-                position: plan.exercise_ids.length,
+                position: nextExercisePosition(plan),
               })
           }}
         >

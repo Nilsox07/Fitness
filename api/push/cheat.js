@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     .select('*')
     .in('user_id', friendIds)
 
-  const payload = JSON.stringify({ title, body: text })
+  const payload = JSON.stringify({ title, body: text, tag: 'fitness-cheat', url: '/social' })
   let sent = 0
   for (const sub of subs || []) {
     try {

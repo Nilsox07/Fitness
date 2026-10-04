@@ -20,6 +20,8 @@ import { useExercises } from '../../hooks/useExercises'
 import { useWorkouts } from '../../hooks/useWorkouts'
 import { useAiStatus } from '../../hooks/useAi'
 import {
+  nextExercisePosition,
+  nextPlanPosition,
   useAddPlanExercise,
   useCreatePlan,
   useDeletePlan,
@@ -83,7 +85,7 @@ export default function PlansNew() {
   async function submitCreate() {
     const name = newName.trim()
     if (!name || createPlan.isPending) return
-    const plan = await createPlan.mutateAsync({ name, position: plans?.length ?? 0 })
+    const plan = await createPlan.mutateAsync({ name, position: nextPlanPosition(plans) })
     setNewName('')
     setSheet(null)
     openEditor(plan.id)
@@ -429,7 +431,7 @@ function ExercisePickerSheet({
   const [group, setGroup] = useState<string | null>(null)
   const [pending, setPending] = useState<Set<string>>(new Set())
   // Positionen fortlaufend vergeben, auch wenn mehrere Übungen schnell hintereinander kommen.
-  const nextPos = useRef(plan.exercise_ids.length)
+  const nextPos = useRef(nextExercisePosition(plan))
 
   const groups = useMemo(
     () => MUSCLE_GROUPS.filter((g) => exercises.some((e) => e.muscle_group === g)),
@@ -459,7 +461,7 @@ function ExercisePickerSheet({
       if (plan.exercise_ids.includes(ex.id)) {
         await removeEx.mutateAsync({ plan_id: plan.id, exercise_id: ex.id })
       } else {
-        const position = Math.max(nextPos.current, plan.exercise_ids.length)
+        const position = Math.max(nextPos.current, nextExercisePosition(plan))
         nextPos.current = position + 1
         await addEx.mutateAsync({ plan_id: plan.id, exercise_id: ex.id, position })
       }
