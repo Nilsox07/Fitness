@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Check, Clock, HandFist, X } from 'lucide-react'
 import { useDismissPoke, usePokes, useSendPoke, useSetGymStatus } from '../../hooks/useSocial'
 import { Avatar } from './Avatar'
-import { avatarEmoji, firstName, isNotToday, NOT_TODAY, planToday, timeAgo, type Person } from './format'
+import { buddyLook, firstName, isNotToday, NOT_TODAY, planToday, timeAgo, type Person } from './format'
 
 const PRESETS = ['Heute früh', 'Heute Mittag', 'Heute Abend', 'Morgen', NOT_TODAY]
 const JOIN_TEXT = 'Bin dabei! 👊'
@@ -121,7 +121,7 @@ export function GymMeetCard({
           return (
             <li key={u.user_id} className="flex items-center gap-2.5">
               <button className="shrink-0" onClick={() => onOpenFriend(u)} aria-label={firstName(u)}>
-                <Avatar emoji={avatarEmoji(u, false)} name={u.display_name} size={32} />
+                <Avatar buddy={buddyLook(u, false, 'classic', today)} name={u.display_name} size={32} />
               </button>
               <div className="min-w-0 flex-1 text-sm">
                 <span className="font-semibold">{firstName(u)}</span>
@@ -164,7 +164,7 @@ export function GymMeetCard({
             return (
               <div key={p.id} className="anim-fade flex gap-2.5">
                 <Avatar
-                  emoji={from ? avatarEmoji(from, false) : undefined}
+                  buddy={from ? buddyLook(from, false, 'classic', today) : undefined}
                   name={from?.display_name}
                   size={32}
                 />

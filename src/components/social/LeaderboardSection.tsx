@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { ChevronDown, Flame, Hand, Medal, Trophy } from 'lucide-react'
 import type { UserStat } from '../../hooks/useSocial'
 import { effectiveMonthlyPrs, effectiveWeeklyVolume } from '../../lib/duel'
+import { useBuddySkin } from '../buddy/useBuddy'
 import { Avatar } from './Avatar'
-import { avatarEmoji } from './format'
+import { buddyLook } from './format'
 
 // Reihenfolge = faire Kennzahlen zuerst; Volumen (kraftabhängig) zuletzt.
 type Metric = 'monthly_prs' | 'total_sessions' | 'week_streak' | 'level' | 'weekly_volume'
@@ -37,6 +38,7 @@ export function LeaderboardSection({
   onKudos: (userId: string) => void
 }) {
   const [open, setOpen] = useState(false)
+  const mySkin = useBuddySkin()
   const [metric, setMetric] = useState<Metric>('monthly_prs')
   const ranked = useMemo(
     () => [...board].sort((a, b) => metricValue(b, metric) - metricValue(a, metric)),
@@ -117,7 +119,7 @@ export function LeaderboardSection({
               return (
                 <li key={u.user_id} className="flex items-center gap-3 px-4 py-3">
                   <span className="tabular w-5 text-center text-sm font-bold text-cocoa-muted">{i + 1}</span>
-                  <Avatar emoji={avatarEmoji(u, me)} name={u.display_name} size={32} />
+                  <Avatar buddy={buddyLook(u, me, mySkin)} name={u.display_name} size={32} />
                   <div className="min-w-0 flex-1">
                     <div className={`truncate text-sm font-semibold ${me ? 'text-brand' : ''}`}>
                       {me ? 'Du' : (u.display_name ?? 'Athlet')}

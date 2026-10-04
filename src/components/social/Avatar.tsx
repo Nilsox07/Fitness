@@ -1,14 +1,15 @@
 import { WEEKLY_GOAL } from '../../lib/duel'
-import { Buddy, type BuddyMood } from '../buddy/Buddy'
+import { Buddy } from '../buddy/Buddy'
+import type { BuddyLook } from './format'
 
-/** Rundes Avatar (Maskottchen-Emoji oder Initiale). */
+/** Rundes Avatar: Buddy-Figur (aus den geteilten Stats) oder Initiale. */
 export function Avatar({
-  emoji,
+  buddy,
   name,
   size = 32,
   className = 'bg-sand',
 }: {
-  emoji?: string
+  buddy?: BuddyLook
   name?: string | null
   size?: number
   className?: string
@@ -16,30 +17,33 @@ export function Avatar({
   const initial = (name?.trim()?.[0] ?? '?').toUpperCase()
   return (
     <span
-      className={`grid shrink-0 place-items-center rounded-full font-semibold text-cocoa ${className}`}
-      style={{ width: size, height: size, fontSize: emoji ? size * 0.5 : size * 0.42 }}
+      className={`grid shrink-0 place-items-center overflow-hidden rounded-full font-semibold text-cocoa ${className}`}
+      style={{ width: size, height: size, fontSize: size * 0.42 }}
       aria-hidden
     >
-      {emoji || initial}
+      {buddy ? (
+        // Kleine Avatare in Listen: statisch (keine Animation)
+        <Buddy size={size + 2} stage={buddy.stage} mood={buddy.mood} skin={buddy.skin} animate={false} />
+      ) : (
+        initial
+      )}
     </span>
   )
 }
 
 /** Avatar mit Wochenring (Trainings / Wochenziel); voll → grün. Mit `buddy` als Buddy-Figur. */
 export function RingAvatar({
-  emoji,
   name,
   sessions,
   size = 64,
   innerClassName = 'bg-cream',
   buddy,
 }: {
-  emoji?: string
   name?: string | null
   sessions: number
   size?: number
   innerClassName?: string
-  buddy?: { stage: number; mood: BuddyMood; skin: string }
+  buddy?: BuddyLook
 }) {
   const stroke = Math.max(3, Math.round(size / 20))
   const r = (size - stroke) / 2
@@ -79,7 +83,7 @@ export function RingAvatar({
           <Buddy size={size - stroke * 2 - 4} stage={buddy.stage} mood={buddy.mood} skin={buddy.skin} />
         </span>
       ) : (
-        <Avatar emoji={emoji} name={name} size={size - stroke * 2 - 6} className={innerClassName} />
+        <Avatar name={name} size={size - stroke * 2 - 6} className={innerClassName} />
       )}
     </span>
   )

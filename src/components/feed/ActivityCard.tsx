@@ -22,12 +22,12 @@ import {
   type ActivityLike,
 } from '../../hooks/useFeed'
 import { Avatar } from '../social/Avatar'
-import { timeAgo } from '../social/format'
+import { timeAgo, type BuddyLook } from '../social/format'
 
-/** Autor-Anzeige: Name + Maskottchen (falls bekannt). */
+/** Autor-Anzeige: Name + Buddy (falls die Stats bekannt sind). */
 export interface AuthorInfo {
   label: string
-  emoji?: string
+  buddy?: BuddyLook
 }
 
 function kindIcon(kind: string): { Icon: LucideIcon; className: string } {
@@ -78,7 +78,7 @@ export function ActivityCard({
   return (
     <li className="card space-y-3">
       <div className="flex items-center gap-2.5">
-        <Avatar emoji={author.emoji} name={author.label} size={36} />
+        <Avatar buddy={author.buddy} name={author.label} size={36} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{author.label}</div>
           <div className="text-xs text-cocoa-muted">{timeAgo(a.created_at)}</div>

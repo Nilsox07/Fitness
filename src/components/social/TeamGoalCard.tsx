@@ -1,11 +1,13 @@
 import { Check, Users } from 'lucide-react'
 import type { TeamGoal } from '../../lib/duel'
+import { useBuddySkin } from '../buddy/useBuddy'
 import { Avatar } from './Avatar'
-import { avatarEmoji, firstName, type Person } from './format'
+import { buddyLook, firstName, type Person } from './format'
 
 /** Kooperatives Wochenziel: alle Trainings zusammen gegen ein gemeinsames Ziel. */
 export function TeamGoalCard({ goal, people, meId }: { goal: TeamGoal; people: Person[]; meId: string }) {
   const byId = new Map(people.map((u) => [u.user_id, u]))
+  const mySkin = useBuddySkin()
   return (
     <div className="card space-y-3">
       <div className="flex items-center gap-2">
@@ -45,7 +47,7 @@ export function TeamGoalCard({ goal, people, meId }: { goal: TeamGoal; people: P
               key={p.user_id}
               className="flex items-center gap-1.5 rounded-full bg-sand py-0.5 pl-0.5 pr-2.5 text-xs"
             >
-              <Avatar emoji={avatarEmoji(u, isMe)} name={u.display_name} size={22} className="bg-cream" />
+              <Avatar buddy={buddyLook(u, isMe, mySkin)} name={u.display_name} size={22} className="bg-cream" />
               <span className="font-medium">{isMe ? 'Du' : firstName(u)}</span>
               <span className="tabular font-semibold text-cocoa-light">{p.sessions}</span>
             </span>

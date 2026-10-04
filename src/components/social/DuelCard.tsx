@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Crown, Info } from 'lucide-react'
 import { DUEL_POINTS, WEEKLY_GOAL, type DuelStandings } from '../../lib/duel'
+import { useBuddySkin } from '../buddy/useBuddy'
 import { Avatar } from './Avatar'
-import { avatarEmoji, firstName, type Person } from './format'
+import { buddyLook, firstName, type Person } from './format'
 
 /** Wochen-Duell (Apple-Fitness-Wettkampf-Stil): Punkte, Verhältnis-Balken, Aufschlüsselung. */
 export function DuelCard({
@@ -18,6 +19,7 @@ export function DuelCard({
   includeProtein: boolean
 }) {
   const [info, setInfo] = useState(false)
+  const mySkin = useBuddySkin()
   const { scores, leaderId, lead, sum } = standings
   const name = (u: Person) => (u.user_id === meId ? 'Du' : firstName(u))
   const leader = people.find((u) => u.user_id === leaderId)
@@ -91,7 +93,7 @@ export function DuelCard({
               style={cols === 2 ? { gridColumn: i === 0 ? 1 : 3, gridRow: 1 } : undefined}
             >
               <div className="relative">
-                <Avatar emoji={avatarEmoji(u, isMe)} name={u.display_name} size={40} />
+                <Avatar buddy={buddyLook(u, isMe, mySkin)} name={u.display_name} size={40} />
                 {u.user_id === leaderId && (
                   <Crown
                     size={18}

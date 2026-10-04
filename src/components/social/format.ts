@@ -2,8 +2,8 @@
 
 import type { UserStat } from '../../hooks/useSocial'
 import { localDate } from '../../lib/day'
-import { mascotStage } from '../../lib/gamification'
-import { mascotEmoji } from '../../lib/cosmetics'
+import { mascotStageIndex } from '../../lib/cosmetics'
+import { friendBuddyMood, type BuddyMood } from '../../lib/buddyMood'
 import { parseGymStatus } from '../../lib/gymStatus'
 
 /** `UserStat` inkl. `updated_at`, das per `select *` mitkommt (nicht im Typ deklariert). */
@@ -29,9 +29,29 @@ export function firstName(u: Pick<UserStat, 'display_name'> | undefined): string
   return u?.display_name?.trim() || 'Freund'
 }
 
-/** Maskottchen-Emoji: eigenes mit gewähltem Skin, Freunde im Standard-Skin. */
-export function avatarEmoji(u: Pick<UserStat, 'total_sessions'>, isMe: boolean): string {
-  return isMe ? mascotEmoji(u.total_sessions ?? 0) : mascotStage(u.total_sessions ?? 0).emoji
+/** Aussehen eines Buddy-Avatars. */
+export interface BuddyLook {
+  stage: number
+  mood: BuddyMood
+  skin: string
+}
+
+/**
+ * Buddy einer Person aus den geteilten Stats: Stufe = Trainings gesamt, Stimmung =
+ * letztes Training. Eigener Buddy mit gewähltem Skin; Skins der Freunde werden nicht
+ * geteilt → Standard-Skin.
+ */
+export function buddyLook(
+  u: Pick<UserStat, 'total_sessions' | 'last_workout'>,
+  isMe: boolean,
+  mySkin: string,
+  today = localDate(),
+): BuddyLook {
+  return {
+    stage: mascotStageIndex(u.total_sessions ?? 0),
+    mood: friendBuddyMood(u.last_workout, today),
+    skin: isMe ? mySkin : 'classic',
+  }
 }
 
 /** Wurde die Zeile heute (lokal) aktualisiert? */

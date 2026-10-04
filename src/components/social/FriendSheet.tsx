@@ -3,8 +3,9 @@ import { Check, Hand, Send } from 'lucide-react'
 import { Sheet } from '../workout/Sheet'
 import { useGiveKudos, useSendPoke } from '../../hooks/useSocial'
 import { effectiveMonthlyPrs, effectiveProteinDays, effectiveSessions } from '../../lib/duel'
+import { useBuddySkin } from '../buddy/useBuddy'
 import { RingAvatar } from './Avatar'
-import { avatarEmoji, firstName, proteinToday, statusLine, type Person } from './format'
+import { buddyLook, firstName, proteinToday, statusLine, type Person } from './format'
 
 const PRESETS = ['Heute Gym? 💪', 'Kommst du mit?', 'Wo bleibst du? 😄']
 
@@ -31,6 +32,7 @@ export function FriendSheet({
   const [text, setText] = useState('')
   const [sent, setSent] = useState<string | null>(null)
   const st = statusLine(person, today)
+  const mySkin = useBuddySkin()
   // Eigene Zahl ist lokal frisch; bei Freunden nur, wenn sie von heute stammt.
   const protein = (u: Person) => (u.user_id === me.user_id ? Math.round(u.protein_today ?? 0) : proteinToday(u, today))
 
@@ -70,8 +72,8 @@ export function FriendSheet({
     <Sheet title={isMe ? 'Deine Woche' : name} onClose={onClose}>
       <div className="flex flex-col items-center gap-2 pb-1 text-center">
         <RingAvatar
-          emoji={avatarEmoji(person, isMe)}
           name={person.display_name}
+          buddy={buddyLook(person, isMe, mySkin, today)}
           sessions={effectiveSessions(person, today)}
           size={96}
           innerClassName="bg-sand"
