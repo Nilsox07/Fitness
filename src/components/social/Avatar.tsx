@@ -1,4 +1,5 @@
 import { WEEKLY_GOAL } from '../../lib/duel'
+import { Buddy, type BuddyMood } from '../buddy/Buddy'
 
 /** Rundes Avatar (Maskottchen-Emoji oder Initiale). */
 export function Avatar({
@@ -24,19 +25,21 @@ export function Avatar({
   )
 }
 
-/** Avatar mit Wochenring (Trainings / Wochenziel); voll → grün. */
+/** Avatar mit Wochenring (Trainings / Wochenziel); voll → grün. Mit `buddy` als Buddy-Figur. */
 export function RingAvatar({
   emoji,
   name,
   sessions,
   size = 64,
   innerClassName = 'bg-cream',
+  buddy,
 }: {
   emoji?: string
   name?: string | null
   sessions: number
   size?: number
   innerClassName?: string
+  buddy?: { stage: number; mood: BuddyMood; skin: string }
 }) {
   const stroke = Math.max(3, Math.round(size / 20))
   const r = (size - stroke) / 2
@@ -68,7 +71,16 @@ export function RingAvatar({
           />
         )}
       </svg>
-      <Avatar emoji={emoji} name={name} size={size - stroke * 2 - 6} className={innerClassName} />
+      {buddy ? (
+        <span
+          className={`grid shrink-0 place-items-center rounded-full ${innerClassName}`}
+          style={{ width: size - stroke * 2 - 6, height: size - stroke * 2 - 6 }}
+        >
+          <Buddy size={size - stroke * 2 - 4} stage={buddy.stage} mood={buddy.mood} skin={buddy.skin} />
+        </span>
+      ) : (
+        <Avatar emoji={emoji} name={name} size={size - stroke * 2 - 6} className={innerClassName} />
+      )}
     </span>
   )
 }

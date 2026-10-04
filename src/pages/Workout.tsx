@@ -48,6 +48,7 @@ import { CompactSetRow, SetTableHeader, isSetDone, type PrevSet } from '../compo
 import { RestControl, useRestTimer } from '../components/workout/RestControl'
 import { Sheet } from '../components/workout/Sheet'
 import { HomeStart } from '../components/home/HomeStart'
+import { MyBuddy } from '../components/buddy/MyBuddy'
 import {
   AlertTriangle,
   Check,
@@ -916,8 +917,8 @@ export default function Workout() {
         {/* Rekord als schwebender Hinweis oben — verschiebt den Inhalt nicht */}
         {prName && confetti && (
           <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+10px)] z-30 mx-auto max-w-md px-4">
-            <div className="flex animate-[pop_0.35s_ease-out] items-center justify-center gap-2 rounded-full bg-gold px-4 py-2 text-sm font-bold text-white shadow-lg dark:text-bg">
-              <Trophy size={16} strokeWidth={2.5} />
+            <div className="flex animate-[pop_0.35s_ease-out] items-center justify-center gap-2 rounded-full bg-gold py-2 pl-2.5 pr-4 text-sm font-bold text-white shadow-lg dark:text-bg">
+              <MyBuddy size={26} mood="proud" animate={false} className="-my-1.5" />
               Neuer Rekord: {prName}
             </div>
           </div>
@@ -925,7 +926,8 @@ export default function Workout() {
 
         <header className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
+            <MyBuddy size={44} mood={prName && confetti ? 'cheer' : 'focus'} className="-my-1 -ml-1 shrink-0" />
+            <div className="min-w-0 flex-1">
               <h1 className="text-xl font-bold">Heute</h1>
               <p className="tabular truncate text-xs text-cocoa-light">
                 {hasSets
@@ -1339,6 +1341,16 @@ export default function Workout() {
 
         {sheet === 'finish' && (
           <Sheet title="Training beenden" onClose={() => setSheet(null)}>
+            <div className="flex flex-col items-center gap-1 text-center">
+              <MyBuddy size={96} mood={prName ? 'proud' : doneCount > 0 ? 'cheer' : 'happy'} />
+              <p className="text-sm font-semibold text-cocoa">
+                {prName
+                  ? 'Neuer Rekord – ich bin so stolz auf dich!'
+                  : doneCount > 0
+                    ? 'Geschafft! Das war richtig stark.'
+                    : 'Noch kein Satz abgehakt – weiter geht’s?'}
+              </p>
+            </div>
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
                 [String(doneCount), 'Sätze'],

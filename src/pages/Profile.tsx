@@ -53,6 +53,8 @@ import { useNutritionSettings } from '../hooks/useNutrition'
 import { GOAL_LABEL } from '../lib/nutrition'
 import { Group, Row, SEG_TRACK, SubHeader, TILE, Toggle, segBtn } from '../components/profile/ui'
 import { ProfileHeader } from '../components/profile/ProfileHeader'
+import { Buddy } from '../components/buddy/Buddy'
+import { BUDDY_SKIN_EVENT, useBuddyLook } from '../components/buddy/useBuddy'
 import { NameSheet } from '../components/profile/NameSheet'
 import { useMyProfile } from '../hooks/useSocial'
 
@@ -92,6 +94,7 @@ export default function Profile() {
   const [pushBusy, setPushBusy] = useState(false)
   const [accent, setAccent] = useState(getAccentId())
   const [skin, setSkin] = useState(getSkinId())
+  const buddyLook = useBuddyLook()
   const [sound, setSound] = useState(soundEnabled())
   const [cheat, setCheat] = useState(shareCheatEnabled())
   const { data: fitbit } = useFitbitStatus()
@@ -136,6 +139,7 @@ export default function Profile() {
     if (level < min) return
     setSkin(id)
     setSkinId(id)
+    window.dispatchEvent(new Event(BUDDY_SKIN_EVENT))
   }
 
   const tones: CoachTone[] = ['coach', 'sergeant', 'bro']
@@ -328,8 +332,8 @@ export default function Profile() {
                 </div>
               </div>
               <div>
-                <div className="mb-1 text-xs text-cocoa-light">Maskottchen-Skin</div>
-                <div className="flex flex-wrap gap-2">
+                <div className="mb-1 text-xs text-cocoa-light">Buddy-Skins</div>
+                <div className="grid grid-cols-4 gap-2">
                   {SKINS.map((s) => {
                     const locked = level < s.minLevel
                     return (
@@ -338,11 +342,22 @@ export default function Profile() {
                         onClick={() => chooseSkin(s.id, s.minLevel)}
                         disabled={locked}
                         title={locked ? `Ab Level ${s.minLevel}` : s.label}
-                        className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-lg transition-colors duration-200 ${
+                        aria-label={locked ? `${s.label} – ab Level ${s.minLevel}` : s.label}
+                        className={`relative flex flex-col items-center rounded-2xl px-1 pb-1.5 pt-1 transition-colors duration-200 ${
                           skin === s.id ? 'bg-sand-light ring-2 ring-cocoa dark:bg-sand-dark' : 'bg-sand'
-                        } ${locked ? 'opacity-40' : ''}`}
+                        }`}
                       >
-                        {s.stages[3]} {locked && <Lock size={14} className="text-cocoa-light" />}
+                        <Buddy
+                          size={56}
+                          stage={Math.max(2, buddyLook.stage)}
+                          skin={s.id}
+                          animate={skin === s.id}
+                          className={locked ? 'opacity-45 saturate-[.6]' : ''}
+                        />
+                        <span className="text-[11px] font-medium text-cocoa-light">
+                          {locked ? `Lv ${s.minLevel}` : s.label}
+                        </span>
+                        {locked && <Lock size={13} className="absolute right-1.5 top-1.5 text-cocoa-light" />}
                       </button>
                     )
                   })}
@@ -550,7 +565,7 @@ export default function Profile() {
           <Row
             icon={Palette}
             label="Freischaltungen"
-            value={[currentAccent?.label, currentSkin?.stages[3]].filter(Boolean).join(' · ')}
+            value={[currentAccent?.label, currentSkin && `Buddy ${currentSkin.label}`].filter(Boolean).join(' · ')}
             onClick={() => openSub('unlock')}
           />
         </Group>

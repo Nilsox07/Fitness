@@ -5,6 +5,7 @@ import { TRAINING_BONUS } from '../../lib/dayTarget'
 import { fmtInt } from '../../lib/nutritionHome'
 import type { Nutrients } from '../../lib/nutrition'
 import { Ring } from './Ring'
+import { MyBuddy } from '../buddy/MyBuddy'
 
 type Targets = { kcal: number; protein: number; carbs: number; fat: number }
 
@@ -33,9 +34,7 @@ export function HeroCard({
   if (!hasTarget) {
     return (
       <section className="card flex flex-col items-center gap-3 py-6 text-center" style={style}>
-        <div className="grid h-14 w-14 place-items-center rounded-full bg-sand text-brand">
-          <Target size={26} />
-        </div>
+        <MyBuddy size={76} mood="hungry" className="-my-1" />
         <div>
           <h2 className="font-semibold">Wie viel brauchst du am Tag?</h2>
           <p className="mt-1 text-sm text-cocoa-light">

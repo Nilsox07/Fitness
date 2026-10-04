@@ -11,6 +11,7 @@ import { WEEKLY_GOAL } from '../../lib/duel'
 import { lastDoneByPlan, lastSessionStats, recoveryLevel, suggestNextPlan, type RecoveryLevel } from '../../lib/home'
 import { MUSCLE_GROUPS, type MuscleGroup, type PlanWithExercises } from '../../types'
 import { HomeHeader } from './HomeHeader'
+import { useBuddy } from '../buddy/useBuddy'
 import { WeekStrip } from './WeekStrip'
 import { NextWorkoutCard } from './NextWorkoutCard'
 import { RecoveryCard, type MuscleState } from './RecoveryCard'
@@ -44,6 +45,7 @@ export function HomeStart({
   const { data: plans } = usePlans()
   const { data: profile } = useMyProfile()
   const { data: streakState } = useStreakState()
+  const buddy = useBuddy()
 
   const dates = useMemo(() => sessionDates(allSets ?? []), [allSets])
   const trainedDates = useMemo(() => new Set(dates), [dates])
@@ -95,7 +97,7 @@ export function HomeStart({
   let i = 0
   return (
     <div className="space-y-4">
-      <HomeHeader name={profile?.display_name ?? null} dateLabel={dateLabel} streak={streak} />
+      <HomeHeader name={profile?.display_name ?? null} dateLabel={dateLabel} streak={streak} buddy={buddy} />
       <WeekStrip today={today} trainedDates={trainedDates} goal={WEEKLY_GOAL} index={++i} />
       {plans === undefined ? (
         <div className="h-72 animate-pulse rounded-3xl bg-sand" aria-hidden />

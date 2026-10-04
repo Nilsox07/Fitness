@@ -3,7 +3,8 @@ import { ChevronRight } from 'lucide-react'
 import type { FoodEntry, SetWithDate } from '../../types'
 import { frequencyStats } from '../../lib/analytics'
 import { rankForSessions } from '../../lib/gamification'
-import { mascotEmoji } from '../../lib/cosmetics'
+import { mascotStageIndex } from '../../lib/cosmetics'
+import { Buddy } from '../buddy/Buddy'
 import { computeXp, levelInfo } from '../../lib/xp'
 import { computeNutritionXp } from '../../lib/nutritionXp'
 import { useNutritionSettings } from '../../hooks/useNutrition'
@@ -16,7 +17,7 @@ function todayLocal(): string {
   ).padStart(2, '0')}`
 }
 
-/** Profil-Kopf: Maskottchen, Name, Level/Rang und ein paar Kennzahlen. Tippen → Sammlung. */
+/** Profil-Kopf: Buddy, Name, Level/Rang und ein paar Kennzahlen. Tippen → Sammlung. */
 export function ProfileHeader({
   sets,
   foodEntries,
@@ -67,9 +68,13 @@ export function ProfileHeader({
       aria-label="Sammlung öffnen"
     >
       <div className="flex items-center gap-3">
-        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-sand text-3xl">
-          {mascotEmoji(g.sessions, skin)}
-        </div>
+        <Buddy
+          size={64}
+          stage={mascotStageIndex(g.sessions)}
+          skin={skin}
+          mood={g.weekStreak >= 2 ? 'proud' : 'happy'}
+          className="-my-2 -ml-1 shrink-0"
+        />
         <div className="min-w-0 flex-1">
           <div className="truncate text-lg font-bold text-cocoa">{name}</div>
           {email && <div className="truncate text-xs text-cocoa-light">{email}</div>}

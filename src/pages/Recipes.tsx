@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Check, ChefHat, ChevronDown, PenLine, Plus, Search, Share2, Sparkles, X } from 'lucide-react'
+import { Check, ChevronDown, PenLine, Plus, Search, Share2, Sparkles, X } from 'lucide-react'
+import { MyBuddy } from '../components/buddy/MyBuddy'
 import { useAuth } from '../lib/auth'
 import { usePrefs } from '../lib/prefs'
 import { useAiStatus } from '../hooks/useAi'
@@ -435,8 +436,9 @@ function EmptyState({ aiOn, onCreate }: { aiOn: boolean; onCreate: (m: CreateMod
   return (
     <div className="space-y-6 pt-6" style={stagger(1)}>
       <div className="flex flex-col items-center gap-3 text-center">
-        <div className="grid h-24 w-24 place-items-center rounded-full bg-brand/10 text-brand">
-          <ChefHat size={44} strokeWidth={1.6} />
+        <div className="relative grid h-24 w-24 place-items-center">
+          <span className="absolute inset-0 rounded-full bg-brand/10 blur-xl" aria-hidden />
+          <MyBuddy size={96} mood="hungry" className="relative" />
         </div>
         <div>
           <p className="text-lg font-bold text-cocoa">Noch keine Rezepte</p>

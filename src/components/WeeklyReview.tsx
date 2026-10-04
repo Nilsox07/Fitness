@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { BarChart3, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { X } from 'lucide-react'
 import { useAiStatus } from '../hooks/useAi'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
@@ -7,7 +7,9 @@ import { useAllFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useBodyWeights } from '../hooks/useBodyWeight'
 import { combinedWeeklyReview } from '../lib/ai'
 import { GOAL_LABEL } from '../lib/nutrition'
-import { totalVolume } from '../lib/analytics'
+import { sessionDates, totalVolume } from '../lib/analytics'
+import { WEEKLY_GOAL } from '../lib/duel'
+import { MyBuddy } from './buddy/MyBuddy'
 import { usePrefs } from '../lib/prefs'
 import {
   getSeenWeekId,
@@ -122,6 +124,12 @@ export function WeeklyReview() {
     })()
   }, [ai?.enabled, allSets, foodEntries, exercises, settings, weights, weightsLoading, showNutrition])
 
+  // Buddy ist stolz, wenn die Vorwoche das Wochenziel erreicht hat.
+  const goalReached = useMemo(() => {
+    const { start, end } = lastWeekRange()
+    return sessionDates((allSets ?? []).filter((s) => s.date >= start && s.date <= end)).length >= WEEKLY_GOAL
+  }, [allSets])
+
   function close() {
     markSeen(isoWeekId())
     setOpen(false)
@@ -132,11 +140,14 @@ export function WeeklyReview() {
   return (
     <div className="anim-fade fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+1rem)]">
       <div className="card max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto">
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-1.5 text-lg font-bold">
-            <BarChart3 size={20} className="text-cocoa-light" />
-            Dein Wochenfazit
-          </h2>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <MyBuddy size={56} mood={goalReached ? 'proud' : 'happy'} className="-my-1 shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold leading-tight">Dein Wochenfazit</h2>
+              <p className="text-xs text-cocoa-light">von deinem Buddy</p>
+            </div>
+          </div>
           <button
             className="grid h-8 w-8 place-items-center rounded-full bg-sand text-cocoa-light"
             onClick={close}

@@ -1,5 +1,9 @@
 import { Plus } from 'lucide-react'
 import { effectiveSessions } from '../../lib/duel'
+import { mascotStageIndex } from '../../lib/cosmetics'
+import { friendBuddyMood } from '../../lib/buddyMood'
+import { usePrefs } from '../../lib/prefs'
+import { useBuddySkin } from '../buddy/useBuddy'
 import { RingAvatar } from './Avatar'
 import { avatarEmoji, firstName, statusLine, type Person } from './format'
 
@@ -18,6 +22,8 @@ export function FriendsRow({
   onInvite: () => void
 }) {
   const people = [me, ...friends]
+  const { isNew } = usePrefs()
+  const mySkin = useBuddySkin()
   return (
     <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
       {people.map((u) => {
@@ -34,6 +40,16 @@ export function FriendsRow({
               emoji={avatarEmoji(u, isMe)}
               name={u.display_name}
               sessions={effectiveSessions(u, today)}
+              buddy={
+                isNew
+                  ? {
+                      stage: mascotStageIndex(u.total_sessions ?? 0),
+                      mood: friendBuddyMood(u.last_workout, today),
+                      // Skins der Freunde werden nicht geteilt → Standard-Skin
+                      skin: isMe ? mySkin : 'classic',
+                    }
+                  : undefined
+              }
             />
             <span className="w-full min-w-0">
               <span className="block truncate text-sm font-semibold">{isMe ? 'Du' : firstName(u)}</span>

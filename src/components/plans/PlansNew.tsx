@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronRight, ClipboardList, Dumbbell, List, PenLine, Plus, Sparkles } from 'lucide-react'
+import { ChevronRight, Dumbbell, List, PenLine, Plus, Sparkles } from 'lucide-react'
 import { useExercises } from '../../hooks/useExercises'
 import { useAllSets, useWorkouts } from '../../hooks/useWorkouts'
 import { useAiStatus } from '../../hooks/useAi'
@@ -11,6 +11,7 @@ import { trainingDay } from '../../lib/day'
 import type { PlanWithExercises } from '../../types'
 import { Sheet } from '../workout/Sheet'
 import { agoLong, enter } from '../exercises/muscle'
+import { MyBuddy } from '../buddy/MyBuddy'
 import { AiPlanGeneratorBody } from './AiPlanGenerator'
 import { PlanCard } from './PlanCard'
 import { PlanEditor } from './PlanEditor'
@@ -191,9 +192,7 @@ export default function PlansNew() {
           <div className="flex flex-col items-center text-center">
             <div className="relative grid h-24 w-24 place-items-center">
               <span className="absolute inset-0 rounded-full bg-brand/10 blur-xl" aria-hidden />
-              <span className="absolute inset-2 rounded-full bg-sand" aria-hidden />
-              <span className="absolute inset-5 rounded-full bg-cream" aria-hidden />
-              <ClipboardList size={30} className="relative text-brand" />
+              <MyBuddy size={96} mood="happy" className="relative" />
             </div>
             <h2 className="mt-3 text-xl font-bold tracking-tight">Noch keine Pläne</h2>
             <p className="mt-1 max-w-xs text-sm text-cocoa-light">

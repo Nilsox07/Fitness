@@ -9,8 +9,10 @@ import { usePrefs } from '../lib/prefs'
 import { assistant, type AssistantAction, type ChatMsg } from '../lib/ai'
 import { trainingSummary } from '../lib/analytics'
 import { sumEntries } from '../lib/nutrition'
-import { Send, Sparkles, X } from 'lucide-react'
+import { Send, X } from 'lucide-react'
 import { MicButton } from './MicButton'
+import { Buddy } from './buddy/Buddy'
+import { useBuddyLook } from './buddy/useBuddy'
 import type { Meal } from '../types'
 
 function todayLocal(): string {
@@ -39,6 +41,7 @@ export function Assistant() {
   const createEx = useCreateExercise()
   const setGym = useSetGymStatus()
   const { showNutrition } = usePrefs()
+  const look = useBuddyLook()
 
   const [open, setOpen] = useState(false)
 
@@ -158,9 +161,10 @@ export function Assistant() {
         <div className="anim-fade fixed inset-0 z-40 flex flex-col bg-black/60 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+1rem)]">
           <div className="card mx-auto flex h-full w-full max-w-md flex-col">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="flex items-center gap-1.5 font-bold">
-                <Sparkles size={18} className="text-brand" />
-                Assistent
+              <h3 className="flex items-center gap-2 font-bold">
+                <Buddy size={36} mood={busy ? 'focus' : 'happy'} stage={look.stage} skin={look.skin} className="-my-1.5" />
+                Buddy
+                <span className="text-xs font-medium text-cocoa-muted">Assistent</span>
               </h3>
               <button
                 className="grid h-8 w-8 place-items-center rounded-full bg-sand text-cocoa-light"
@@ -188,19 +192,36 @@ export function Assistant() {
                   </ul>
                 </div>
               )}
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${
-                    m.role === 'user'
-                      ? 'ml-auto bg-brand text-on-brand'
-                      : 'bg-sand text-cocoa'
-                  }`}
-                >
-                  {m.content}
+              {messages.map((m, i) =>
+                m.role === 'user' ? (
+                  <div
+                    key={i}
+                    className="ml-auto max-w-[85%] whitespace-pre-wrap rounded-2xl bg-brand px-3 py-2 text-sm text-on-brand"
+                  >
+                    {m.content}
+                  </div>
+                ) : (
+                  <div key={i} className="flex items-end gap-1.5">
+                    <Buddy
+                      size={28}
+                      mood={m.content.startsWith('⚠️') ? 'sad' : 'happy'}
+                      stage={look.stage}
+                      skin={look.skin}
+                      animate={false}
+                      className="mb-0.5 shrink-0"
+                    />
+                    <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-sand px-3 py-2 text-sm text-cocoa">
+                      {m.content}
+                    </div>
+                  </div>
+                ),
+              )}
+              {busy && (
+                <div className="flex items-center gap-1.5 text-sm text-cocoa-muted">
+                  <Buddy size={28} mood="focus" stage={look.stage} skin={look.skin} className="shrink-0" />
+                  Denke nach…
                 </div>
-              ))}
-              {busy && <p className="text-sm text-cocoa-muted">Denke nach…</p>}
+              )}
             </div>
 
             <div className="mt-2 flex gap-2">
