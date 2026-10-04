@@ -1,10 +1,12 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   Bot,
   Camera,
   ChefHat,
   ClipboardList,
+  History,
+  Loader2,
   MessageSquare,
   PenLine,
   Plus,
@@ -13,12 +15,17 @@ import {
   ScanBarcode,
   Search,
   Share2,
+  Sparkles,
   Store,
   Target,
   Trash2,
+  UtensilsCrossed,
   X,
+  type LucideIcon,
 } from 'lucide-react'
 import { Sheet } from '../components/workout/Sheet'
+import { PremiumSheet } from '../components/ui/PremiumSheet'
+import { BIG_INPUT, ErrorNote, GroupLabel, GroupList, GroupRow } from '../components/ui/GroupList'
 import { useAuth } from '../lib/auth'
 import { useAddRecipe } from '../hooks/useRecipes'
 import { Stepper } from '../components/Stepper'
@@ -142,6 +149,197 @@ function Bar({ value, target }: { value: number; target: number }) {
   )
 }
 
+/** Anbieter-Chips im Restaurant-Sheet. */
+const PLACES = [
+  "McDonald's",
+  'Burger King',
+  'KFC',
+  'Subway',
+  'Döner',
+  'Italienisch',
+  'Indisch',
+  'Mexikanisch',
+  'Asiatisch',
+  'Chinesisch',
+  'Thai',
+  'Vietnamesisch',
+  'Sushi',
+  'Griechisch',
+  'Türkisch',
+  'Libanesisch',
+  'Burger',
+  'Pizza',
+  'Café',
+  'Bäckerei',
+  'Supermarkt',
+]
+
+/** Felder der manuellen Eingabe (die ersten fünf sind die Hauptwerte). */
+const MANUAL_FIELDS = [
+  ['kcal', 'kcal'],
+  ['amount_g', 'Menge (g)'],
+  ['protein', 'Eiweiß (g)'],
+  ['carbs', 'Kohlenhydrate (g)'],
+  ['fat', 'Fett (g)'],
+  ['fiber', 'Ballaststoffe (g)'],
+  ['sugar', 'Zucker (g)'],
+  ['sat_fat', 'ges. Fett (g)'],
+  ['salt', 'Salz (g)'],
+] as const
+
+const fmtNum = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 1 })
+
+/**
+ * Sheet der Hinzufügen-Abläufe: im neuen Modus als Premium-Sheet (Griff, Titel,
+ * runder Schließen-Knopf, feste Primäraktion unten), im klassischen Modus
+ * unverändert als Karte über dem abgedunkelten Hintergrund.
+ */
+function FlowSheet({
+  premium,
+  title,
+  subtitle,
+  icon: Icon,
+  classicIcon = false,
+  onClose,
+  onBack,
+  busy = false,
+  footer,
+  classicBack,
+  z = 'z-20',
+  scroll = false,
+  dense = false,
+  children,
+}: {
+  premium: boolean
+  title: string
+  subtitle?: string
+  icon?: LucideIcon
+  /** Icon auch im klassischen Titel zeigen */
+  classicIcon?: boolean
+  onClose: () => void
+  onBack?: () => void
+  busy?: boolean
+  footer?: ReactNode
+  /** Nur klassisch: unterstrichener Zurück-/Abbrechen-Link am Ende */
+  classicBack?: ReactNode
+  z?: 'z-20' | 'z-30'
+  scroll?: boolean
+  dense?: boolean
+  children: ReactNode
+}) {
+  if (premium) {
+    return (
+      <PremiumSheet
+        title={title}
+        subtitle={subtitle}
+        leading={Icon ? <IconTile icon={Icon} /> : undefined}
+        onClose={onClose}
+        onBack={onBack}
+        busy={busy}
+        footer={footer}
+        bodyClassName="space-y-4"
+      >
+        {children}
+      </PremiumSheet>
+    )
+  }
+  return (
+    <div
+      className={`anim-fade fixed inset-0 ${z} flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]`}
+    >
+      <div
+        className={`anim-sheet card w-full max-w-md ${dense ? 'space-y-2' : 'space-y-3'} ${
+          scroll ? 'max-h-[90vh] overflow-y-auto' : ''
+        }`}
+      >
+        {Icon && classicIcon ? (
+          <h2 className="flex items-center gap-2 text-lg font-bold">
+            <Icon size={20} className="text-cocoa-light" />
+            {title}
+          </h2>
+        ) : (
+          <h2 className="text-lg font-bold">{title}</h2>
+        )}
+        {children}
+        {footer}
+        {classicBack}
+      </div>
+    </div>
+  )
+}
+
+function IconTile({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10 text-brand">
+      <Icon size={18} />
+    </span>
+  )
+}
+
+/** Große Primäraktion für die feste Fußzeile. */
+function PrimaryButton({
+  onClick,
+  disabled,
+  busy,
+  children,
+}: {
+  onClick: () => void
+  disabled?: boolean
+  busy?: boolean
+  children: ReactNode
+}) {
+  return (
+    <button
+      className="btn-primary w-full gap-2 rounded-2xl py-3.5 text-base shadow-lg shadow-brand/25 disabled:shadow-none"
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {busy && <Loader2 size={18} className="animate-spin" />}
+      {children}
+    </button>
+  )
+}
+
+function KcalBadge({ kcal }: { kcal: number }) {
+  return (
+    <span className="tabular shrink-0 text-right text-sm font-semibold text-cocoa">
+      {Math.round(kcal)}
+      <span className="ml-0.5 text-xs font-normal text-cocoa-light">kcal</span>
+    </span>
+  )
+}
+
+function MacroCell({ label, value, dot }: { label: string; value: number; dot: string }) {
+  return (
+    <div className="rounded-xl bg-sand-light px-2 py-2">
+      <div className="tabular text-base font-bold text-cocoa">
+        {fmtNum(value)}
+        <span className="ml-0.5 text-xs font-normal text-cocoa-light">g</span>
+      </div>
+      <div className="flex items-center justify-center gap-1 text-[11px] text-cocoa-light">
+        <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+        {label}
+      </div>
+    </div>
+  )
+}
+
+function ManualField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <label className="block min-w-0">
+      <span className="label text-xs">{label}</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        className="input tabular rounded-2xl py-3 text-base"
+        value={value}
+        onFocus={(e) => e.currentTarget.select()}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+    </label>
+  )
+}
+
 export default function Nutrition() {
   const { kcalBonus, mealSplit } = useNutritionPrefs()
   const { user } = useAuth()
@@ -192,6 +390,47 @@ export default function Nutrition() {
         meal: currentMeal(),
       },
       { onError: (err) => setError(saveError(err)) },
+    )
+  }
+  /** Suche (neu): „Zuletzt gegessen" antippen → mit Gramm zur Mengen-Bestätigung, sonst direkt loggen. */
+  function pickRecent(e: FoodEntry) {
+    const g = e.amount_g ?? 0
+    if (g > 0) {
+      const k = 100 / g
+      const r1 = (v: number | null | undefined) => Math.round((v ?? 0) * k * 10) / 10
+      setPending({
+        barcode: e.barcode,
+        name: e.name,
+        brand: null,
+        per100: {
+          kcal: Math.round(e.kcal * k),
+          protein: r1(e.protein),
+          carbs: r1(e.carbs),
+          fat: r1(e.fat),
+          fiber: r1(e.fiber),
+          sugar: r1(e.sugar),
+          sat_fat: r1(e.sat_fat),
+          salt: Math.round((e.salt ?? 0) * k * 100) / 100,
+        },
+      })
+      setAmount(Math.round(g))
+      return
+    }
+    setError(null)
+    addEntry.mutate(
+      {
+        date: today,
+        name: e.name,
+        amount_g: e.amount_g,
+        kcal: e.kcal,
+        protein: e.protein,
+        carbs: e.carbs,
+        fat: e.fat,
+        ...micro(e),
+        barcode: e.barcode,
+        meal: addMeal(),
+      },
+      { onSuccess: () => go(null), onError: (err) => setError(saveError(err)) },
     )
   }
   const addEntry = useAddFoodEntry()
@@ -955,260 +1194,557 @@ export default function Nutrition() {
       )}
 
       {/* ----- Ziel-Setup ----- */}
-      {setupOpen && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-            <h2 className="text-lg font-bold">Ziel & Körperdaten</h2>
+      {setupOpen &&
+        (isNew ? (
+          <PremiumSheet
+            title="Ziel & Körperdaten"
+            subtitle="Nährwerte werden automatisch berechnet"
+            leading={<IconTile icon={Target} />}
+            onClose={() => setSetupOpen(false)}
+          >
             <GoalEditor onSaved={() => setSetupOpen(false)} onCancel={() => setSetupOpen(false)} />
+          </PremiumSheet>
+        ) : (
+          <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
+              <h2 className="text-lg font-bold">Ziel & Körperdaten</h2>
+              <GoalEditor onSaved={() => setSetupOpen(false)} onCancel={() => setSetupOpen(false)} />
+            </div>
           </div>
-        </div>
-      )}
+        ))}
 
       {/* ----- Hinzufügen: Menü ----- */}
-      {addMode === 'menu' && !pending && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card w-full max-w-md space-y-2">
-            <h2 className="text-lg font-bold">Hinzufügen</h2>
-            <ErrorLine error={error} />
-            {aiOn && (
-              <>
-                <button className="btn-primary w-full gap-2" onClick={() => go('photo')}>
-                  <Camera size={18} />
-                  Foto (KI)
-                </button>
-                <button className="btn-ghost w-full gap-2" onClick={() => go('aitext')}>
-                  <MessageSquare size={18} className="text-cocoa-light" />
-                  Text beschreiben (KI)
-                </button>
-                <button className="btn-ghost w-full gap-2" onClick={() => go('recipe')}>
-                  <ChefHat size={18} className="text-cocoa-light" />
-                  Rezept (Foto/Text, KI)
-                </button>
-                <button className="btn-ghost w-full gap-2" onClick={() => go('plan')}>
-                  <ClipboardList size={18} className="text-cocoa-light" />
-                  Tagesplan für heute (KI)
-                </button>
-                <button className="btn-ghost w-full gap-2" onClick={() => go('restaurant')}>
-                  <Store size={18} className="text-cocoa-light" />
-                  Restaurant / unterwegs (KI)
-                </button>
-              </>
-            )}
-            <button
-              className={aiOn ? 'btn-ghost w-full gap-2' : 'btn-primary w-full gap-2'}
-              onClick={() => {
-                setError(null)
-                setScanning(true)
-              }}
-            >
-              <ScanBarcode size={18} className={aiOn ? 'text-cocoa-light' : undefined} />
-              Barcode scannen
-            </button>
-            <button className="btn-ghost w-full gap-2" onClick={() => go('search')}>
-              <Search size={18} className="text-cocoa-light" />
-              In Datenbank suchen
-            </button>
-            <button className="btn-ghost w-full gap-2" onClick={() => go('manual')}>
-              <PenLine size={18} className="text-cocoa-light" />
-              Manuell eingeben
-            </button>
-            <button
-              className="w-full pt-1 text-center text-sm text-cocoa-light underline"
-              onClick={() => go(null)}
-            >
+      {addMode === 'menu' && !pending && !(isNew && scanning) && (
+        <FlowSheet
+          premium={isNew}
+          title="Hinzufügen"
+          subtitle={mealOverride ? `zu ${MEAL_LABEL[mealOverride]}` : undefined}
+          onClose={() => go(null)}
+          dense
+          classicBack={
+            <button className="w-full pt-1 text-center text-sm text-cocoa-light underline" onClick={() => go(null)}>
               Abbrechen
             </button>
-          </div>
-        </div>
+          }
+        >
+          {isNew ? (
+            <>
+              <ErrorNote error={error} />
+              {aiOn && (
+                <div>
+                  <GroupLabel>Mit Buddy (KI)</GroupLabel>
+                  <GroupList>
+                    <GroupRow
+                      accent
+                      icon={<Camera size={18} />}
+                      title="Foto"
+                      subtitle="Essen fotografieren, Buddy schätzt"
+                      onClick={() => go('photo')}
+                    />
+                    <GroupRow
+                      icon={<MessageSquare size={18} />}
+                      title="Beschreiben"
+                      subtitle="z. B. „2 Eier und ein Brot"
+                      onClick={() => go('aitext')}
+                    />
+                    <GroupRow
+                      icon={<Store size={18} />}
+                      title="Restaurant / unterwegs"
+                      subtitle="Bestellung schätzen oder Vorschlag"
+                      onClick={() => go('restaurant')}
+                    />
+                    <GroupRow
+                      icon={<ChefHat size={18} />}
+                      title="Rezept"
+                      subtitle="Aus Kühlschrank-Foto oder Wunsch"
+                      onClick={() => go('recipe')}
+                    />
+                    <GroupRow
+                      icon={<ClipboardList size={18} />}
+                      title="Tagesplan für heute"
+                      subtitle="Passend zu deinem Ziel"
+                      onClick={() => go('plan')}
+                    />
+                  </GroupList>
+                </div>
+              )}
+              <div>
+                <GroupLabel>Erfassen</GroupLabel>
+                <GroupList>
+                  <GroupRow
+                    accent={!aiOn}
+                    icon={<ScanBarcode size={18} />}
+                    title="Barcode scannen"
+                    subtitle="Produkt per Kamera"
+                    onClick={() => {
+                      setError(null)
+                      setScanning(true)
+                    }}
+                  />
+                  <GroupRow
+                    icon={<Search size={18} />}
+                    title="Suchen"
+                    subtitle="In der Lebensmittel-Datenbank"
+                    onClick={() => go('search')}
+                  />
+                  <GroupRow
+                    icon={<PenLine size={18} />}
+                    title="Manuell eingeben"
+                    subtitle="Eigene Nährwerte"
+                    onClick={() => go('manual')}
+                  />
+                </GroupList>
+              </div>
+            </>
+          ) : (
+            <>
+              <ErrorLine error={error} />
+              {aiOn && (
+                <>
+                  <button className="btn-primary w-full gap-2" onClick={() => go('photo')}>
+                    <Camera size={18} />
+                    Foto (KI)
+                  </button>
+                  <button className="btn-ghost w-full gap-2" onClick={() => go('aitext')}>
+                    <MessageSquare size={18} className="text-cocoa-light" />
+                    Text beschreiben (KI)
+                  </button>
+                  <button className="btn-ghost w-full gap-2" onClick={() => go('recipe')}>
+                    <ChefHat size={18} className="text-cocoa-light" />
+                    Rezept (Foto/Text, KI)
+                  </button>
+                  <button className="btn-ghost w-full gap-2" onClick={() => go('plan')}>
+                    <ClipboardList size={18} className="text-cocoa-light" />
+                    Tagesplan für heute (KI)
+                  </button>
+                  <button className="btn-ghost w-full gap-2" onClick={() => go('restaurant')}>
+                    <Store size={18} className="text-cocoa-light" />
+                    Restaurant / unterwegs (KI)
+                  </button>
+                </>
+              )}
+              <button
+                className={aiOn ? 'btn-ghost w-full gap-2' : 'btn-primary w-full gap-2'}
+                onClick={() => {
+                  setError(null)
+                  setScanning(true)
+                }}
+              >
+                <ScanBarcode size={18} className={aiOn ? 'text-cocoa-light' : undefined} />
+                Barcode scannen
+              </button>
+              <button className="btn-ghost w-full gap-2" onClick={() => go('search')}>
+                <Search size={18} className="text-cocoa-light" />
+                In Datenbank suchen
+              </button>
+              <button className="btn-ghost w-full gap-2" onClick={() => go('manual')}>
+                <PenLine size={18} className="text-cocoa-light" />
+                Manuell eingeben
+              </button>
+            </>
+          )}
+        </FlowSheet>
       )}
 
       {/* ----- Suche ----- */}
-      {addMode === 'search' && !pending && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-            <h2 className="text-lg font-bold">Suchen</h2>
-            <div className="flex gap-2">
-              <input
-                className="input"
-                placeholder="z. B. Magerquark"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-              />
-              <button className="btn-primary" onClick={runSearch} disabled={searching}>
-                {searching ? '…' : 'Los'}
-              </button>
-            </div>
-            <ul className="space-y-1">
-              {results.map((p, i) => (
-                <li key={i}>
-                  <button
-                    className="w-full rounded-lg bg-sand px-3 py-2 text-left transition-colors duration-200 hover:bg-sand-dark/60"
-                    onClick={() => {
-                      setPending(p)
-                      setAmount(100)
-                    }}
-                  >
-                    <div className="text-sm font-medium">{p.name}</div>
-                    <div className="tabular text-xs text-cocoa-light">
-                      {p.brand ? `${p.brand} · ` : ''}
-                      {p.per100.kcal} kcal /100 g
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <ErrorLine error={error} />
-            <button
-              className="w-full text-center text-sm text-cocoa-light underline"
-              onClick={() => go('menu')}
-            >
+      {addMode === 'search' && !pending && !(isNew && scanning) && (
+        <FlowSheet
+          premium={isNew}
+          title="Suchen"
+          icon={Search}
+          onClose={() => go(null)}
+          onBack={() => go('menu')}
+          scroll
+          classicBack={
+            <button className="w-full text-center text-sm text-cocoa-light underline" onClick={() => go('menu')}>
               Zurück
             </button>
-          </div>
-        </div>
+          }
+        >
+          {isNew ? (
+            <>
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  void runSearch()
+                }}
+              >
+                <div className="relative min-w-0 flex-1">
+                  <Search
+                    size={18}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-cocoa-muted"
+                  />
+                  <input
+                    className={`${BIG_INPUT} pl-10`}
+                    type="search"
+                    enterKeyHint="search"
+                    autoFocus
+                    aria-label="Lebensmittel suchen"
+                    placeholder="z. B. Magerquark"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="btn-primary shrink-0 rounded-2xl px-5"
+                  disabled={searching || !query.trim()}
+                >
+                  {searching ? <Loader2 size={18} className="animate-spin" /> : 'Los'}
+                </button>
+              </form>
+              <ErrorNote error={error} />
+
+              {searching && results.length === 0 && (
+                <GroupList>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-2/3 animate-pulse rounded-full bg-sand" />
+                        <div className="h-2.5 w-1/3 animate-pulse rounded-full bg-sand" />
+                      </div>
+                      <div className="h-3 w-10 animate-pulse rounded-full bg-sand" />
+                    </div>
+                  ))}
+                </GroupList>
+              )}
+
+              {results.length > 0 && (
+                <div>
+                  <GroupLabel right="pro 100 g">Ergebnisse</GroupLabel>
+                  <GroupList>
+                    {results.map((p, i) => (
+                      <GroupRow
+                        key={i}
+                        title={p.name}
+                        subtitle={`${p.brand ? `${p.brand} · ` : ''}${fmtNum(p.per100.protein)} g Eiweiß`}
+                        right={<KcalBadge kcal={p.per100.kcal} />}
+                        onClick={() => {
+                          setPending(p)
+                          setAmount(100)
+                        }}
+                      />
+                    ))}
+                  </GroupList>
+                </div>
+              )}
+
+              {results.length === 0 && !searching && recent.length > 0 && (
+                <div>
+                  <GroupLabel>Zuletzt gegessen</GroupLabel>
+                  <GroupList>
+                    {recent.map((e) => (
+                      <GroupRow
+                        key={e.id}
+                        icon={<History size={16} />}
+                        title={e.name}
+                        subtitle={`${e.amount_g ? `${fmtNum(e.amount_g)} g · ` : ''}${fmtNum(e.protein)} g Eiweiß`}
+                        right={<KcalBadge kcal={e.kcal} />}
+                        disabled={saving}
+                        onClick={() => pickRecent(e)}
+                      />
+                    ))}
+                  </GroupList>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <input
+                  className="input"
+                  placeholder="z. B. Magerquark"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+                />
+                <button className="btn-primary" onClick={runSearch} disabled={searching}>
+                  {searching ? '…' : 'Los'}
+                </button>
+              </div>
+              <ul className="space-y-1">
+                {results.map((p, i) => (
+                  <li key={i}>
+                    <button
+                      className="w-full rounded-lg bg-sand px-3 py-2 text-left transition-colors duration-200 hover:bg-sand-dark/60"
+                      onClick={() => {
+                        setPending(p)
+                        setAmount(100)
+                      }}
+                    >
+                      <div className="text-sm font-medium">{p.name}</div>
+                      <div className="tabular text-xs text-cocoa-light">
+                        {p.brand ? `${p.brand} · ` : ''}
+                        {p.per100.kcal} kcal /100 g
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <ErrorLine error={error} />
+            </>
+          )}
+        </FlowSheet>
       )}
 
       {/* ----- Mengen-Bestätigung (Barcode/Suche) ----- */}
-      {pending && (
-        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card w-full max-w-md space-y-3">
-            <h2 className="text-lg font-bold">{pending.name}</h2>
-            <p className="tabular text-xs text-cocoa-light">
-              {pending.brand ? `${pending.brand} · ` : ''}
-              pro 100 g: {pending.per100.kcal} kcal · E {pending.per100.protein} / K{' '}
-              {pending.per100.carbs} / F {pending.per100.fat}
-            </p>
-            <Stepper label="Menge (g)" value={amount} onChange={setAmount} step={10} min={0} suffix="g" />
-            <p className="tabular text-sm">
-              = <strong>{scalePer100(pending.per100, amount).kcal} kcal</strong>, Eiweiß{' '}
-              {scalePer100(pending.per100, amount).protein} g
-            </p>
-            <ErrorLine error={error} />
-            <div className="flex gap-2 pt-1">
-              <button
-                className="btn-ghost flex-1"
-                onClick={() => {
-                  setError(null)
-                  setPending(null)
-                }}
-              >
-                Abbrechen
-              </button>
-              <button className="btn-primary flex-1" onClick={confirmPending} disabled={saving}>
-                {addEntry.isPending ? 'Speichert…' : 'Hinzufügen'}
-              </button>
+      {pending &&
+        (isNew ? (
+          <PremiumSheet
+            title={pending.name}
+            subtitle={pending.brand ?? 'pro 100 g'}
+            leading={<IconTile icon={UtensilsCrossed} />}
+            onBack={() => {
+              setError(null)
+              setPending(null)
+            }}
+            onClose={() => {
+              setPending(null)
+              go(null)
+            }}
+            busy={saving}
+            footer={
+              <PrimaryButton onClick={confirmPending} disabled={saving} busy={addEntry.isPending}>
+                {mealOverride ? `Zu ${MEAL_LABEL[mealOverride]} hinzufügen` : 'Hinzufügen'}
+              </PrimaryButton>
+            }
+          >
+            {(() => {
+              const m = scalePer100(pending.per100, amount)
+              return (
+                <>
+                  <div className="relative overflow-hidden rounded-3xl bg-cream p-4 text-center">
+                    <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand/15 blur-3xl" />
+                    <div className="relative">
+                      <div className="flex items-baseline justify-center gap-1.5">
+                        <span className="tabular text-4xl font-bold tracking-tight text-cocoa">{m.kcal}</span>
+                        <span className="text-sm text-cocoa-light">kcal</span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        <MacroCell label="Eiweiß" value={m.protein} dot="bg-brand" />
+                        <MacroCell label="Kohlenh." value={m.carbs} dot="bg-gold" />
+                        <MacroCell label="Fett" value={m.fat} dot="bg-cocoa-light" />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <Stepper label="Menge (g)" value={amount} onChange={setAmount} step={10} min={0} suffix="g" />
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {[50, 100, 150, 200, 250].map((g) => (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => setAmount(g)}
+                          className={`tabular rounded-full px-3 py-1.5 text-sm font-semibold transition active:scale-95 ${
+                            amount === g ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa-light'
+                          }`}
+                        >
+                          {g} g
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="tabular px-1 text-xs text-cocoa-muted">
+                    pro 100 g: {pending.per100.kcal} kcal · E {pending.per100.protein} / K {pending.per100.carbs} / F{' '}
+                    {pending.per100.fat}
+                  </p>
+                  <ErrorNote error={error} />
+                </>
+              )
+            })()}
+          </PremiumSheet>
+        ) : (
+          <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <div className="anim-sheet card w-full max-w-md space-y-3">
+              <h2 className="text-lg font-bold">{pending.name}</h2>
+              <p className="tabular text-xs text-cocoa-light">
+                {pending.brand ? `${pending.brand} · ` : ''}
+                pro 100 g: {pending.per100.kcal} kcal · E {pending.per100.protein} / K{' '}
+                {pending.per100.carbs} / F {pending.per100.fat}
+              </p>
+              <Stepper label="Menge (g)" value={amount} onChange={setAmount} step={10} min={0} suffix="g" />
+              <p className="tabular text-sm">
+                = <strong>{scalePer100(pending.per100, amount).kcal} kcal</strong>, Eiweiß{' '}
+                {scalePer100(pending.per100, amount).protein} g
+              </p>
+              <ErrorLine error={error} />
+              <div className="flex gap-2 pt-1">
+                <button
+                  className="btn-ghost flex-1"
+                  onClick={() => {
+                    setError(null)
+                    setPending(null)
+                  }}
+                >
+                  Abbrechen
+                </button>
+                <button className="btn-primary flex-1" onClick={confirmPending} disabled={saving}>
+                  {addEntry.isPending ? 'Speichert…' : 'Hinzufügen'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
 
       {/* ----- Manuelle Eingabe ----- */}
       {addMode === 'manual' && !pending && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-            <h2 className="text-lg font-bold">Manuell eingeben</h2>
-            <div>
-              <label className="label">Name</label>
-              <input
-                className="input"
-                autoFocus
-                value={manual.name}
-                onChange={(e) => setManual({ ...manual, name: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  ['kcal', 'kcal'],
-                  ['amount_g', 'Menge (g)'],
-                  ['protein', 'Eiweiß (g)'],
-                  ['carbs', 'Kohlenhydrate (g)'],
-                  ['fat', 'Fett (g)'],
-                  ['fiber', 'Ballaststoffe (g)'],
-                  ['sugar', 'Zucker (g)'],
-                  ['sat_fat', 'ges. Fett (g)'],
-                  ['salt', 'Salz (g)'],
-                ] as const
-              ).map(([key, lbl]) => (
-                <div key={key}>
-                  <label className="label">{lbl}</label>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    className="input"
-                    value={manual[key]}
-                    onFocus={(e) => e.currentTarget.select()}
-                    onChange={(e) => setManual({ ...manual, [key]: Number(e.target.value) })}
-                  />
-                </div>
-              ))}
-            </div>
-            <ErrorLine error={error} />
-            <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => go('menu')}>
-                Zurück
-              </button>
-              <button className="btn-primary flex-1" onClick={addManual} disabled={saving}>
-                {addEntry.isPending ? 'Speichert…' : 'Hinzufügen'}
-              </button>
-            </div>
+        <FlowSheet
+          premium={isNew}
+          title="Manuell eingeben"
+          icon={PenLine}
+          onClose={() => go(null)}
+          onBack={() => go('menu')}
+          busy={saving}
+          scroll
+          footer={
+            isNew ? (
+              <PrimaryButton onClick={addManual} disabled={saving} busy={addEntry.isPending}>
+                Hinzufügen
+              </PrimaryButton>
+            ) : (
+              <div className="flex gap-2 pt-1">
+                <button className="btn-ghost flex-1" onClick={() => go('menu')}>
+                  Zurück
+                </button>
+                <button className="btn-primary flex-1" onClick={addManual} disabled={saving}>
+                  {addEntry.isPending ? 'Speichert…' : 'Hinzufügen'}
+                </button>
+              </div>
+            )
+          }
+        >
+          <div>
+            <label className="label" htmlFor="manual-name">
+              Name
+            </label>
+            <input
+              id="manual-name"
+              className={isNew ? BIG_INPUT : 'input'}
+              autoFocus
+              placeholder={isNew ? 'z. B. Proteinriegel' : undefined}
+              value={manual.name}
+              onChange={(e) => setManual({ ...manual, name: e.target.value })}
+            />
           </div>
-        </div>
+          {isNew ? (
+            <>
+              <div>
+                <GroupLabel>Hauptwerte</GroupLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  {MANUAL_FIELDS.slice(0, 5).map(([key, lbl]) => (
+                    <ManualField key={key} label={lbl} value={manual[key]} onChange={(v) => setManual({ ...manual, [key]: v })} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <GroupLabel>Optional</GroupLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  {MANUAL_FIELDS.slice(5).map(([key, lbl]) => (
+                    <ManualField key={key} label={lbl} value={manual[key]} onChange={(v) => setManual({ ...manual, [key]: v })} />
+                  ))}
+                </div>
+              </div>
+              <ErrorNote error={error} />
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                {MANUAL_FIELDS.map(([key, lbl]) => (
+                  <div key={key}>
+                    <label className="label">{lbl}</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      className="input"
+                      value={manual[key]}
+                      onFocus={(e) => e.currentTarget.select()}
+                      onChange={(e) => setManual({ ...manual, [key]: Number(e.target.value) })}
+                    />
+                  </div>
+                ))}
+              </div>
+              <ErrorLine error={error} />
+            </>
+          )}
+        </FlowSheet>
       )}
 
       {/* ----- KI: Restaurant / unterwegs ----- */}
       {addMode === 'restaurant' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card w-full max-w-md space-y-3">
-            <h2 className="flex items-center gap-2 text-lg font-bold">
-              <Store size={20} className="text-cocoa-light" />
-              Restaurant / unterwegs
-            </h2>
-            {hasTarget && (
-              <p className="tabular text-xs text-cocoa-light">
-                Noch offen heute: {Math.max(0, kcalTarget - totals.kcal)} kcal ·{' '}
-                {Math.max(0, (settings?.protein_target ?? 0) - totals.protein)} g Eiweiß
-              </p>
-            )}
-            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-              {[
-                "McDonald's",
-                'Burger King',
-                'KFC',
-                'Subway',
-                'Döner',
-                'Italienisch',
-                'Indisch',
-                'Mexikanisch',
-                'Asiatisch',
-                'Chinesisch',
-                'Thai',
-                'Vietnamesisch',
-                'Sushi',
-                'Griechisch',
-                'Türkisch',
-                'Libanesisch',
-                'Burger',
-                'Pizza',
-                'Café',
-                'Bäckerei',
-                'Supermarkt',
-              ].map((p) => (
+        <FlowSheet
+          premium={isNew}
+          title="Restaurant / unterwegs"
+          icon={Store}
+          classicIcon
+          subtitle={
+            isNew && hasTarget
+              ? `Noch offen: ${Math.max(0, kcalTarget - totals.kcal)} kcal · ${Math.max(
+                  0,
+                  (settings?.protein_target ?? 0) - totals.protein,
+                )} g Eiweiß`
+              : undefined
+          }
+          onClose={() => go(null)}
+          onBack={() => go('menu')}
+          busy={aiBusy}
+          footer={
+            isNew ? (
+              <>
+                <PrimaryButton onClick={estimateOrder} disabled={aiBusy} busy={aiBusy}>
+                  Bestellung schätzen
+                </PrimaryButton>
+                <button className="btn-ghost w-full gap-1.5 rounded-2xl py-3" onClick={suggestForBudget} disabled={aiBusy}>
+                  <Bot size={16} className="text-brand" />
+                  Was passt zu meinem Budget?
+                </button>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button className="btn-primary" onClick={estimateOrder} disabled={aiBusy}>
+                  {aiBusy ? '…' : 'Bestellung schätzen'}
+                </button>
+                <button className="btn-ghost gap-1.5" onClick={suggestForBudget} disabled={aiBusy}>
+                  <Bot size={16} className="text-cocoa-light" />
+                  Passt zum Budget
+                </button>
+              </div>
+            )
+          }
+          classicBack={
+            <button className="w-full text-center text-sm text-cocoa-light underline" onClick={() => go('menu')}>
+              Zurück
+            </button>
+          }
+        >
+          {!isNew && hasTarget && (
+            <p className="tabular text-xs text-cocoa-light">
+              Noch offen heute: {Math.max(0, kcalTarget - totals.kcal)} kcal ·{' '}
+              {Math.max(0, (settings?.protein_target ?? 0) - totals.protein)} g Eiweiß
+            </p>
+          )}
+          <div>
+            {isNew && <GroupLabel>Wo isst du?</GroupLabel>}
+            <div className={isNew ? '-mx-5 flex gap-2 overflow-x-auto px-5 pb-1' : '-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1'}>
+              {PLACES.map((p) => (
                 <button
                   key={p}
                   onClick={() => setPlace(p)}
+                  aria-pressed={place === p}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ${
-                    place === p ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa'
-                  }`}
+                    place === p ? 'bg-brand text-on-brand' : isNew ? 'bg-cream text-cocoa' : 'bg-sand text-cocoa'
+                  } ${isNew ? 'font-medium' : ''}`}
                 >
                   {p}
                 </button>
               ))}
             </div>
+          </div>
+          <div>
+            {isNew && <GroupLabel>Was bestellst du?</GroupLabel>}
             <div className="flex gap-2">
               <input
-                className="input"
+                className={isNew ? BIG_INPUT : 'input'}
                 placeholder="Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis"
                 value={restItem}
                 onChange={(e) => setRestItem(e.target.value)}
@@ -1216,47 +1752,63 @@ export default function Nutrition() {
               />
               <MicButton onResult={(t) => setRestItem((v) => (v ? v + ' ' + t : t))} />
             </div>
-            <ErrorLine error={error} />
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button className="btn-primary" onClick={estimateOrder} disabled={aiBusy}>
-                {aiBusy ? '…' : 'Bestellung schätzen'}
-              </button>
-              <button className="btn-ghost gap-1.5" onClick={suggestForBudget} disabled={aiBusy}>
-                <Bot size={16} className="text-cocoa-light" />
-                Passt zum Budget
-              </button>
-            </div>
-            <button
-              className="w-full text-center text-sm text-cocoa-light underline"
-              onClick={() => go('menu')}
-            >
-              Zurück
-            </button>
           </div>
-        </div>
+          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+        </FlowSheet>
       )}
 
       {/* ----- KI: Foto + optionale Notiz ----- */}
       {addMode === 'photo' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card w-full max-w-md space-y-3">
-            <h2 className="flex items-center gap-2 text-lg font-bold">
-              <Camera size={20} className="text-cocoa-light" />
-              Essen fotografieren
-            </h2>
-            <p className="text-xs text-cocoa-light">
-              Optional dazu schreiben oder diktieren, was drin ist oder wie viel — macht die
-              Schätzung genauer.
-            </p>
-            <div className="flex gap-2">
-              <input
-                className="input"
-                placeholder="z. B. mit extra Käse, ca. 300 g, dazu Reis"
-                value={photoHint}
-                onChange={(e) => setPhotoHint(e.target.value)}
-              />
-              <MicButton onResult={(t) => setPhotoHint((v) => (v ? v + ' ' + t : t))} />
-            </div>
+        <FlowSheet
+          premium={isNew}
+          title={isNew ? 'Foto' : 'Essen fotografieren'}
+          icon={Camera}
+          classicIcon
+          onClose={() => go(null)}
+          onBack={() => go('menu')}
+          busy={aiBusy}
+          footer={
+            isNew ? (
+              <label
+                className={`btn-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl py-3.5 text-base shadow-lg shadow-brand/25 ${
+                  aiBusy ? 'pointer-events-none opacity-60' : ''
+                }`}
+              >
+                {aiBusy ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+                {aiBusy ? 'Analysiere…' : 'Foto aufnehmen'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    void handlePhoto(e.target.files?.[0])
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+            ) : undefined
+          }
+          classicBack={
+            <button className="w-full text-center text-sm text-cocoa-light underline" onClick={() => go('menu')}>
+              Zurück
+            </button>
+          }
+        >
+          <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>
+            Optional dazu schreiben oder diktieren, was drin ist oder wie viel — macht die
+            Schätzung genauer.
+          </p>
+          <div className="flex gap-2">
+            <input
+              className={isNew ? BIG_INPUT : 'input'}
+              placeholder="z. B. mit extra Käse, ca. 300 g, dazu Reis"
+              value={photoHint}
+              onChange={(e) => setPhotoHint(e.target.value)}
+            />
+            <MicButton onResult={(t) => setPhotoHint((v) => (v ? v + ' ' + t : t))} />
+          </div>
+          {!isNew && (
             <label className="btn-primary flex w-full cursor-pointer items-center justify-center gap-2">
               {!aiBusy && <Camera size={18} />}
               {aiBusy ? '… analysiere' : 'Foto aufnehmen'}
@@ -1271,67 +1823,118 @@ export default function Nutrition() {
                 }}
               />
             </label>
-            <ErrorLine error={error} />
-            <button
-              className="w-full text-center text-sm text-cocoa-light underline"
-              onClick={() => go('menu')}
-            >
-              Zurück
-            </button>
-          </div>
-        </div>
+          )}
+          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+        </FlowSheet>
       )}
 
       {/* ----- KI: Text beschreiben ----- */}
       {addMode === 'aitext' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card w-full max-w-md space-y-3">
-            <h2 className="flex items-center gap-2 text-lg font-bold">
-              <MessageSquare size={20} className="text-cocoa-light" />
-              Mahlzeit beschreiben
-            </h2>
-            <p className="text-xs text-cocoa-light">
-              Schreib einfach, was du gegessen hast — die KI schätzt die Nährwerte.
-            </p>
-            <div className="flex gap-2">
-              <input
-                className="input"
-                autoFocus
-                placeholder="z. B. 2 Eier, 80 g Haferflocken, 1 Banane"
-                value={aiText}
-                onChange={(e) => setAiText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAiText()}
-              />
-              <MicButton onResult={(t) => setAiText((v) => (v ? v + ' ' + t : t))} />
-            </div>
-            <ErrorLine error={error} />
-            <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => go('menu')}>
-                Zurück
-              </button>
-              <button className="btn-primary flex-1" onClick={handleAiText} disabled={aiBusy}>
-                {aiBusy ? '…' : 'Schätzen'}
-              </button>
-            </div>
+        <FlowSheet
+          premium={isNew}
+          title="Mahlzeit beschreiben"
+          icon={MessageSquare}
+          classicIcon
+          onClose={() => go(null)}
+          onBack={() => go('menu')}
+          busy={aiBusy}
+          footer={
+            isNew ? (
+              <PrimaryButton onClick={handleAiText} disabled={aiBusy || !aiText.trim()} busy={aiBusy}>
+                Schätzen
+              </PrimaryButton>
+            ) : (
+              <div className="flex gap-2 pt-1">
+                <button className="btn-ghost flex-1" onClick={() => go('menu')}>
+                  Zurück
+                </button>
+                <button className="btn-primary flex-1" onClick={handleAiText} disabled={aiBusy}>
+                  {aiBusy ? '…' : 'Schätzen'}
+                </button>
+              </div>
+            )
+          }
+        >
+          <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>
+            Schreib einfach, was du gegessen hast — die KI schätzt die Nährwerte.
+          </p>
+          <div className="flex gap-2">
+            <input
+              className={isNew ? BIG_INPUT : 'input'}
+              autoFocus
+              placeholder="z. B. 2 Eier, 80 g Haferflocken, 1 Banane"
+              value={aiText}
+              onChange={(e) => setAiText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAiText()}
+            />
+            <MicButton onResult={(t) => setAiText((v) => (v ? v + ' ' + t : t))} />
           </div>
-        </div>
+          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+        </FlowSheet>
       )}
 
       {/* ----- KI: Ergebnis prüfen & übernehmen ----- */}
       {aiResults && (
-        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-            <h2 className="text-lg font-bold">KI-Schätzung</h2>
-            <p className="text-xs text-cocoa-light">
-              Schätzwerte — vor dem Übernehmen kurz prüfen. Zum Feinjustieren einzeln übernehmen und
-              danach bearbeiten.
-            </p>
+        <FlowSheet
+          premium={isNew}
+          title="KI-Schätzung"
+          icon={Sparkles}
+          z="z-30"
+          onClose={() => {
+            setError(null)
+            setAiResults(null)
+          }}
+          busy={saving}
+          scroll
+          footer={
+            isNew ? (
+              <PrimaryButton onClick={() => addEstimates(aiResults)} disabled={saving} busy={addEntries.isPending}>
+                Alle übernehmen
+              </PrimaryButton>
+            ) : (
+              <div className="flex gap-2 pt-1">
+                <button
+                  className="btn-ghost flex-1"
+                  onClick={() => {
+                    setError(null)
+                    setAiResults(null)
+                  }}
+                  disabled={saving}
+                >
+                  Verwerfen
+                </button>
+                <button className="btn-primary flex-1" onClick={() => addEstimates(aiResults)} disabled={saving}>
+                  {addEntries.isPending ? 'Speichert…' : 'Alle übernehmen'}
+                </button>
+              </div>
+            )
+          }
+        >
+          <p className="text-xs text-cocoa-light">
+            Schätzwerte — vor dem Übernehmen kurz prüfen. Zum Feinjustieren einzeln übernehmen und
+            danach bearbeiten.
+          </p>
+          {isNew ? (
+            <GroupList>
+              {aiResults.map((it, i) => (
+                <GroupRow
+                  key={i}
+                  title={it.name}
+                  subtitle={`${it.amount_g ? `${it.amount_g} g · ` : ''}${it.kcal} kcal · E ${it.protein} / K ${it.carbs} / F ${it.fat}`}
+                  right={
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-on-brand">
+                      <Plus size={16} strokeWidth={2.5} />
+                    </span>
+                  }
+                  disabled={saving}
+                  onClick={() => addEstimate(it)}
+                />
+              ))}
+            </GroupList>
+          ) : (
             <ul className="space-y-2">
               {aiResults.map((it, i) => (
-                <li
-                  key={i}
-                  className="flex items-center justify-between rounded-lg bg-sand px-3 py-2"
-                >
+                <li key={i} className="flex items-center justify-between rounded-lg bg-sand px-3 py-2">
                   <div className="min-w-0">
                     <div className="text-sm font-medium">{it.name}</div>
                     <div className="tabular text-xs text-cocoa-light">
@@ -1350,28 +1953,9 @@ export default function Nutrition() {
                 </li>
               ))}
             </ul>
-            <ErrorLine error={error} />
-            <div className="flex gap-2 pt-1">
-              <button
-                className="btn-ghost flex-1"
-                onClick={() => {
-                  setError(null)
-                  setAiResults(null)
-                }}
-                disabled={saving}
-              >
-                Verwerfen
-              </button>
-              <button
-                className="btn-primary flex-1"
-                onClick={() => addEstimates(aiResults)}
-                disabled={saving}
-              >
-                {addEntries.isPending ? 'Speichert…' : 'Alle übernehmen'}
-              </button>
-            </div>
-          </div>
-        </div>
+          )}
+          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+        </FlowSheet>
       )}
 
       {/* ----- KI: Mahlzeit-Analyse (neuer Modus) ----- */}
@@ -1399,203 +1983,393 @@ export default function Nutrition() {
 
       {/* ----- KI: Kühlschrank-Rezept ----- */}
       {addMode === 'recipe' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card w-full max-w-md space-y-3">
-            <h2 className="flex items-center gap-2 text-lg font-bold">
-              <ChefHat size={20} className="text-cocoa-light" />
-              Rezept aus Kühlschrank
-            </h2>
-            <p className="text-xs text-cocoa-light">
-              Worauf hast du Lust? Dann den Kühlschrank/die Zutaten fotografieren — die KI macht dir
-              ein passendes Rezept.
-            </p>
-            <input
-              className="input"
-              placeholder="z. B. was Herzhaftes, proteinreich, schnell"
-              value={craving}
-              onChange={(e) => setCraving(e.target.value)}
-            />
-            <label className="btn-primary flex w-full cursor-pointer items-center justify-center gap-2">
-              {!aiBusy && <Refrigerator size={18} />}
-              {aiBusy ? '… koche' : 'Kühlschrank fotografieren'}
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => handleFridge(e.target.files?.[0])}
-              />
-            </label>
-            <ErrorLine error={error} />
-            <div className="flex items-center gap-2 text-xs text-cocoa-muted">
-              <span className="h-px flex-1 bg-sand-dark" /> oder ohne Foto{' '}
-              <span className="h-px flex-1 bg-sand-dark" />
-            </div>
-            <div className="flex gap-2">
-              <input
-                className="input"
-                placeholder="z. B. veganes Frühstück, 40 g Eiweiß"
-                value={recipeText}
-                onChange={(e) => setRecipeText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && genRecipeText()}
-              />
-              <MicButton onResult={(t) => setRecipeText((v) => (v ? v + ' ' + t : t))} />
-              <button className="btn-ghost shrink-0" onClick={genRecipeText} disabled={aiBusy}>
-                Los
-              </button>
-            </div>
-            <button
-              className="w-full text-center text-sm text-cocoa-light underline"
-              onClick={() => go('menu')}
-            >
+        <FlowSheet
+          premium={isNew}
+          title={isNew ? 'Rezept' : 'Rezept aus Kühlschrank'}
+          icon={ChefHat}
+          classicIcon
+          onClose={() => go(null)}
+          onBack={() => go('menu')}
+          busy={aiBusy}
+          classicBack={
+            <button className="w-full text-center text-sm text-cocoa-light underline" onClick={() => go('menu')}>
               Zurück
             </button>
-          </div>
-        </div>
+          }
+        >
+          <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>
+            Worauf hast du Lust? Dann den Kühlschrank/die Zutaten fotografieren — die KI macht dir
+            ein passendes Rezept.
+          </p>
+          {isNew ? (
+            <>
+              <div className="space-y-2">
+                <GroupLabel>Aus dem Kühlschrank</GroupLabel>
+                <input
+                  className={BIG_INPUT}
+                  placeholder="z. B. was Herzhaftes, proteinreich, schnell"
+                  value={craving}
+                  onChange={(e) => setCraving(e.target.value)}
+                />
+                <label
+                  className={`btn-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl py-3.5 text-base ${
+                    aiBusy ? 'pointer-events-none opacity-60' : ''
+                  }`}
+                >
+                  {aiBusy ? <Loader2 size={18} className="animate-spin" /> : <Refrigerator size={18} />}
+                  {aiBusy ? 'Buddy kocht…' : 'Kühlschrank fotografieren'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => handleFridge(e.target.files?.[0])}
+                  />
+                </label>
+              </div>
+              <ErrorNote error={error} />
+              <div className="flex items-center gap-3 text-xs font-medium text-cocoa-muted">
+                <span className="h-px flex-1 bg-sand-dark/60" /> oder ohne Foto
+                <span className="h-px flex-1 bg-sand-dark/60" />
+              </div>
+              <div className="space-y-2">
+                <GroupLabel>Nach Wunsch</GroupLabel>
+                <div className="flex gap-2">
+                  <input
+                    className={BIG_INPUT}
+                    placeholder="z. B. veganes Frühstück, 40 g Eiweiß"
+                    value={recipeText}
+                    onChange={(e) => setRecipeText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && genRecipeText()}
+                  />
+                  <MicButton onResult={(t) => setRecipeText((v) => (v ? v + ' ' + t : t))} />
+                </div>
+                <button
+                  className="btn-ghost w-full gap-1.5 rounded-2xl py-3"
+                  onClick={genRecipeText}
+                  disabled={aiBusy || !recipeText.trim()}
+                >
+                  <Sparkles size={16} className="text-brand" />
+                  Rezept erstellen
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <input
+                className="input"
+                placeholder="z. B. was Herzhaftes, proteinreich, schnell"
+                value={craving}
+                onChange={(e) => setCraving(e.target.value)}
+              />
+              <label className="btn-primary flex w-full cursor-pointer items-center justify-center gap-2">
+                {!aiBusy && <Refrigerator size={18} />}
+                {aiBusy ? '… koche' : 'Kühlschrank fotografieren'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => handleFridge(e.target.files?.[0])}
+                />
+              </label>
+              <ErrorLine error={error} />
+              <div className="flex items-center gap-2 text-xs text-cocoa-muted">
+                <span className="h-px flex-1 bg-sand-dark" /> oder ohne Foto{' '}
+                <span className="h-px flex-1 bg-sand-dark" />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  className="input"
+                  placeholder="z. B. veganes Frühstück, 40 g Eiweiß"
+                  value={recipeText}
+                  onChange={(e) => setRecipeText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && genRecipeText()}
+                />
+                <MicButton onResult={(t) => setRecipeText((v) => (v ? v + ' ' + t : t))} />
+                <button className="btn-ghost shrink-0" onClick={genRecipeText} disabled={aiBusy}>
+                  Los
+                </button>
+              </div>
+            </>
+          )}
+        </FlowSheet>
       )}
 
       {/* ----- Rezept-Ergebnis ----- */}
       {recipe && (
-        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-            <h2 className="text-lg font-bold">{recipe.title}</h2>
-            <p className="tabular text-xs text-cocoa-light">
-              {recipe.servings} Portion(en) · pro Portion {recipe.nutrition.kcal} kcal · E{' '}
-              {recipe.nutrition.protein} / K {recipe.nutrition.carbs} / F {recipe.nutrition.fat}
-            </p>
-            <div>
-              <div className="mb-1 text-sm font-semibold">Zutaten</div>
-              <ul className="list-disc pl-5 text-sm text-cocoa">
-                {recipe.ingredients.map((it, i) => (
-                  <li key={i}>{it}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <div className="mb-1 text-sm font-semibold">Zubereitung</div>
-              <ol className="list-decimal space-y-1 pl-5 text-sm text-cocoa">
-                {recipe.steps.map((st, i) => (
-                  <li key={i}>{st}</li>
-                ))}
-              </ol>
-            </div>
-            <ErrorLine error={error} />
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                className="btn-ghost gap-1.5"
-                onClick={() => saveRecipe(recipe, false)}
-                disabled={addRecipe.isPending || saving}
-              >
-                <Save size={16} className="text-cocoa-light" />
-                Speichern
-              </button>
-              <button
-                className="btn-ghost gap-1.5"
-                onClick={() => saveRecipe(recipe, true)}
-                disabled={addRecipe.isPending || saving}
-              >
-                <Share2 size={16} className="text-cocoa-light" />
-                Speichern & teilen
-              </button>
-              <button
-                className="btn-ghost"
-                onClick={() => {
-                  setError(null)
-                  setRecipe(null)
-                }}
-                disabled={addRecipe.isPending || saving}
-              >
-                Schließen
-              </button>
-              <button
-                className="btn-primary"
-                onClick={() => logRecipe(recipe)}
-                disabled={addRecipe.isPending || saving}
-              >
-                {addEntry.isPending ? 'Speichert…' : 'Loggen'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <FlowSheet
+          premium={isNew}
+          title={recipe.title}
+          icon={ChefHat}
+          subtitle={isNew ? `${recipe.servings} Portion(en)` : undefined}
+          z="z-30"
+          onClose={() => {
+            setError(null)
+            setRecipe(null)
+          }}
+          busy={addRecipe.isPending || saving}
+          scroll
+          footer={
+            isNew ? (
+              <>
+                <PrimaryButton onClick={() => logRecipe(recipe)} disabled={addRecipe.isPending || saving} busy={addEntry.isPending}>
+                  {mealOverride ? `Zu ${MEAL_LABEL[mealOverride]} loggen` : 'Loggen'}
+                </PrimaryButton>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    className="btn-ghost gap-1.5 rounded-2xl"
+                    onClick={() => saveRecipe(recipe, false)}
+                    disabled={addRecipe.isPending || saving}
+                  >
+                    <Save size={16} className="text-cocoa-light" />
+                    Speichern
+                  </button>
+                  <button
+                    className="btn-ghost gap-1.5 rounded-2xl"
+                    onClick={() => saveRecipe(recipe, true)}
+                    disabled={addRecipe.isPending || saving}
+                  >
+                    <Share2 size={16} className="text-cocoa-light" />
+                    & teilen
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  className="btn-ghost gap-1.5"
+                  onClick={() => saveRecipe(recipe, false)}
+                  disabled={addRecipe.isPending || saving}
+                >
+                  <Save size={16} className="text-cocoa-light" />
+                  Speichern
+                </button>
+                <button
+                  className="btn-ghost gap-1.5"
+                  onClick={() => saveRecipe(recipe, true)}
+                  disabled={addRecipe.isPending || saving}
+                >
+                  <Share2 size={16} className="text-cocoa-light" />
+                  Speichern & teilen
+                </button>
+                <button
+                  className="btn-ghost"
+                  onClick={() => {
+                    setError(null)
+                    setRecipe(null)
+                  }}
+                  disabled={addRecipe.isPending || saving}
+                >
+                  Schließen
+                </button>
+                <button className="btn-primary" onClick={() => logRecipe(recipe)} disabled={addRecipe.isPending || saving}>
+                  {addEntry.isPending ? 'Speichert…' : 'Loggen'}
+                </button>
+              </div>
+            )
+          }
+        >
+          {isNew ? (
+            <>
+              <div className="rounded-2xl bg-cream p-4">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="tabular text-3xl font-bold tracking-tight text-cocoa">{recipe.nutrition.kcal}</span>
+                  <span className="text-sm text-cocoa-light">kcal pro Portion</span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <MacroCell label="Eiweiß" value={recipe.nutrition.protein} dot="bg-brand" />
+                  <MacroCell label="Kohlenh." value={recipe.nutrition.carbs} dot="bg-gold" />
+                  <MacroCell label="Fett" value={recipe.nutrition.fat} dot="bg-cocoa-light" />
+                </div>
+              </div>
+              <div>
+                <GroupLabel right={recipe.ingredients.length}>Zutaten</GroupLabel>
+                <GroupList>
+                  {recipe.ingredients.map((it, i) => (
+                    <div key={i} className="px-4 py-2.5 text-[15px] text-cocoa">
+                      {it}
+                    </div>
+                  ))}
+                </GroupList>
+              </div>
+              <div>
+                <GroupLabel>Zubereitung</GroupLabel>
+                <ol className="space-y-3">
+                  {recipe.steps.map((st, i) => (
+                    <li key={i} className="flex gap-3 text-[15px] leading-relaxed text-cocoa">
+                      <span className="tabular mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand/10 text-xs font-bold text-brand">
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0">{st}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <ErrorNote error={error} />
+            </>
+          ) : (
+            <>
+              <p className="tabular text-xs text-cocoa-light">
+                {recipe.servings} Portion(en) · pro Portion {recipe.nutrition.kcal} kcal · E{' '}
+                {recipe.nutrition.protein} / K {recipe.nutrition.carbs} / F {recipe.nutrition.fat}
+              </p>
+              <div>
+                <div className="mb-1 text-sm font-semibold">Zutaten</div>
+                <ul className="list-disc pl-5 text-sm text-cocoa">
+                  {recipe.ingredients.map((it, i) => (
+                    <li key={i}>{it}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="mb-1 text-sm font-semibold">Zubereitung</div>
+                <ol className="list-decimal space-y-1 pl-5 text-sm text-cocoa">
+                  {recipe.steps.map((st, i) => (
+                    <li key={i}>{st}</li>
+                  ))}
+                </ol>
+              </div>
+              <ErrorLine error={error} />
+            </>
+          )}
+        </FlowSheet>
       )}
 
       {/* ----- KI: Essensplan Eingabe ----- */}
       {addMode === 'plan' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card w-full max-w-md space-y-3">
-            <h2 className="flex items-center gap-2 text-lg font-bold">
-              <ClipboardList size={20} className="text-cocoa-light" />
-              Tagesplan für heute
-            </h2>
+        <FlowSheet
+          premium={isNew}
+          title="Tagesplan für heute"
+          icon={ClipboardList}
+          classicIcon
+          subtitle={
+            isNew
+              ? `Ziel: ~${settings?.kcal_target || 2000} kcal · ${settings?.protein_target || 130} g Eiweiß`
+              : undefined
+          }
+          onClose={() => go(null)}
+          onBack={() => go('menu')}
+          busy={aiBusy}
+          footer={
+            isNew ? (
+              <PrimaryButton onClick={genPlan} disabled={aiBusy} busy={aiBusy}>
+                {aiBusy ? 'Erstelle…' : 'Plan erstellen'}
+              </PrimaryButton>
+            ) : (
+              <div className="flex gap-2 pt-1">
+                <button className="btn-ghost flex-1" onClick={() => go('menu')}>
+                  Zurück
+                </button>
+                <button className="btn-primary flex-1" onClick={genPlan} disabled={aiBusy}>
+                  {aiBusy ? 'Erstelle…' : 'Plan erstellen'}
+                </button>
+              </div>
+            )
+          }
+        >
+          {isNew ? (
+            <p className="text-sm text-cocoa-light">Wünsche? Buddy plant Frühstück bis Snack passend zu deinem Ziel.</p>
+          ) : (
             <p className="tabular text-xs text-cocoa-light">
               Ziel: ~{settings?.kcal_target || 2000} kcal · {settings?.protein_target || 130} g Eiweiß.
               Wünsche?
             </p>
-            <div className="flex gap-2">
-              <input
-                className="input"
-                placeholder="z. B. high protein, kein Schwein, schnell"
-                value={planWish}
-                onChange={(e) => setPlanWish(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && genPlan()}
-              />
-              <MicButton onResult={(t) => setPlanWish((v) => (v ? v + ' ' + t : t))} />
-            </div>
-            <ErrorLine error={error} />
-            <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => go('menu')}>
-                Zurück
-              </button>
-              <button className="btn-primary flex-1" onClick={genPlan} disabled={aiBusy}>
-                {aiBusy ? 'Erstelle…' : 'Plan erstellen'}
-              </button>
-            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              className={isNew ? BIG_INPUT : 'input'}
+              placeholder="z. B. high protein, kein Schwein, schnell"
+              value={planWish}
+              onChange={(e) => setPlanWish(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && genPlan()}
+            />
+            <MicButton onResult={(t) => setPlanWish((v) => (v ? v + ' ' + t : t))} />
           </div>
-        </div>
+          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+        </FlowSheet>
       )}
 
       {/* ----- Essensplan Ergebnis ----- */}
       {planItems && (
-        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-            <h2 className="text-lg font-bold">Essensplan</h2>
-            {planNote && <p className="text-xs text-cocoa-light">{planNote}</p>}
-            <ul className="space-y-1.5">
+        <FlowSheet
+          premium={isNew}
+          title="Essensplan"
+          icon={ClipboardList}
+          subtitle={
+            isNew
+              ? `${planItems.reduce((s, i) => s + i.kcal, 0)} kcal · ${planItems.reduce((s, i) => s + i.protein, 0)} g Eiweiß`
+              : undefined
+          }
+          z="z-30"
+          onClose={() => {
+            setError(null)
+            setPlanItems(null)
+          }}
+          busy={saving}
+          scroll
+          footer={
+            isNew ? (
+              <PrimaryButton onClick={() => logPlan(planItems)} disabled={saving} busy={addEntries.isPending}>
+                Alle loggen
+              </PrimaryButton>
+            ) : (
+              <div className="flex gap-2 pt-1">
+                <button
+                  className="btn-ghost flex-1"
+                  onClick={() => {
+                    setError(null)
+                    setPlanItems(null)
+                  }}
+                  disabled={saving}
+                >
+                  Verwerfen
+                </button>
+                <button className="btn-primary flex-1" onClick={() => logPlan(planItems)} disabled={saving}>
+                  {addEntries.isPending ? 'Speichert…' : 'Alle loggen'}
+                </button>
+              </div>
+            )
+          }
+        >
+          {planNote && <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>{planNote}</p>}
+          {isNew ? (
+            <GroupList>
               {planItems.map((it, i) => (
-                <li key={i} className="rounded-lg bg-sand px-3 py-2">
-                  <div className="text-sm font-medium">{it.name}</div>
-                  <div className="tabular text-xs text-cocoa-light">
-                    {MEAL_LABEL[it.meal]} · {it.kcal} kcal · E {it.protein} / K {it.carbs} / F {it.fat}
-                  </div>
-                </li>
+                <div key={i} className="flex min-h-[3.5rem] items-center gap-3 px-4 py-2.5">
+                  <span className="w-[4.5rem] shrink-0 text-[11px] font-semibold uppercase tracking-wide text-cocoa-muted">
+                    {MEAL_LABEL[it.meal]}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold text-cocoa">{it.name}</span>
+                    <span className="tabular block truncate text-xs text-cocoa-light">
+                      E {it.protein} / K {it.carbs} / F {it.fat}
+                    </span>
+                  </span>
+                  <KcalBadge kcal={it.kcal} />
+                </div>
               ))}
-            </ul>
-            <div className="tabular text-xs text-cocoa-muted">
-              Summe: {planItems.reduce((s, i) => s + i.kcal, 0)} kcal ·{' '}
-              {planItems.reduce((s, i) => s + i.protein, 0)} g Eiweiß
-            </div>
-            <ErrorLine error={error} />
-            <div className="flex gap-2 pt-1">
-              <button
-                className="btn-ghost flex-1"
-                onClick={() => {
-                  setError(null)
-                  setPlanItems(null)
-                }}
-                disabled={saving}
-              >
-                Verwerfen
-              </button>
-              <button
-                className="btn-primary flex-1"
-                onClick={() => logPlan(planItems)}
-                disabled={saving}
-              >
-                {addEntries.isPending ? 'Speichert…' : 'Alle loggen'}
-              </button>
-            </div>
-          </div>
-        </div>
+            </GroupList>
+          ) : (
+            <>
+              <ul className="space-y-1.5">
+                {planItems.map((it, i) => (
+                  <li key={i} className="rounded-lg bg-sand px-3 py-2">
+                    <div className="text-sm font-medium">{it.name}</div>
+                    <div className="tabular text-xs text-cocoa-light">
+                      {MEAL_LABEL[it.meal]} · {it.kcal} kcal · E {it.protein} / K {it.carbs} / F {it.fat}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="tabular text-xs text-cocoa-muted">
+                Summe: {planItems.reduce((s, i) => s + i.kcal, 0)} kcal ·{' '}
+                {planItems.reduce((s, i) => s + i.protein, 0)} g Eiweiß
+              </div>
+            </>
+          )}
+          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+        </FlowSheet>
       )}
 
       {/* ----- Kamera-Scanner ----- */}

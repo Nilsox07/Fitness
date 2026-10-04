@@ -8,13 +8,11 @@ import { useWater } from '../hooks/useWater'
 import { sumEntries } from '../lib/nutrition'
 import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
 import { useNutritionPrefs } from '../hooks/usePrefsSync'
+import { trainingDay } from '../lib/day'
 
-const DAY_CUTOFF_H = 4
-
+/** Trainings-Tag (Wechsel um die eingestellte Stunde, Standard 4 Uhr). */
 function trainingToday(): string {
-  const d = new Date()
-  d.setHours(d.getHours() - DAY_CUTOFF_H)
-  return ymd(d)
+  return trainingDay()
 }
 function today(): string {
   return ymd(new Date())

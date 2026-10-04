@@ -56,8 +56,7 @@ import { useNutritionSettings } from '../hooks/useNutrition'
 import { GOAL_LABEL } from '../lib/nutrition'
 import { Group, Row, SEG_TRACK, SubHeader, TILE, Toggle, segBtn } from '../components/profile/ui'
 import { ProfileHeader } from '../components/profile/ProfileHeader'
-import { Buddy } from '../components/buddy/Buddy'
-import { BUDDY_SKIN_EVENT, useBuddyLook } from '../components/buddy/useBuddy'
+import { BUDDY_SKIN_EVENT } from '../components/buddy/useBuddy'
 import { NameSheet } from '../components/profile/NameSheet'
 import { useMyProfile } from '../hooks/useSocial'
 import { useUserPrefs } from '../hooks/usePrefsSync'
@@ -102,7 +101,6 @@ export default function Profile() {
   const [pushBusy, setPushBusy] = useState(false)
   const [accent, setAccent] = useState(getAccentId())
   const [skin, setSkin] = useState(getSkinId())
-  const buddyLook = useBuddyLook()
   const [sound, setSound] = useState(soundEnabled())
   const [cheat, setCheat] = useState(shareCheatEnabled())
   const { data: fitbit } = useFitbitStatus()
