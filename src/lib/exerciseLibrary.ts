@@ -194,12 +194,39 @@ export function getLinks(): LibraryLinks {
   }
 }
 
+// Änderungen an den Verknüpfungen melden (z. B. Thumbnails/Detailseite neu berechnen).
+const linkListeners = new Set<() => void>()
+let linksVersion = 0
+
+/** Zähler, der sich bei jeder gespeicherten Verknüpfung erhöht. */
+export function getLinksVersion(): number {
+  return linksVersion
+}
+
+export function subscribeLinks(fn: () => void): () => void {
+  linkListeners.add(fn)
+  return () => {
+    linkListeners.delete(fn)
+  }
+}
+
+function notifyLinks() {
+  linksVersion++
+  for (const fn of linkListeners) fn()
+}
+
 export function setLink(userExerciseId: string, libraryId: string) {
+  setLinks({ [userExerciseId]: libraryId })
+}
+
+/** Mehrere Verknüpfungen auf einmal speichern (ein Schreibvorgang, eine Meldung). */
+export function setLinks(patch: LibraryLinks) {
   try {
-    localStorage.setItem(LINKS_KEY, JSON.stringify({ ...getLinks(), [userExerciseId]: libraryId }))
+    localStorage.setItem(LINKS_KEY, JSON.stringify({ ...getLinks(), ...patch }))
   } catch {
     /* ignore */
   }
+  notifyLinks()
 }
 
 export function removeLink(userExerciseId: string) {
@@ -210,6 +237,7 @@ export function removeLink(userExerciseId: string) {
   } catch {
     /* ignore */
   }
+  notifyLinks()
 }
 
 /** Gängige Kurznamen → Bibliotheks-ID (für den Namensabgleich). */
@@ -294,6 +322,169 @@ export function findLibraryMatch(
     .filter((e) => baseName(e.name_de) === b)
     .sort((x, y) => (EQUIP_RANK[x.equipment] ?? 9) - (EQUIP_RANK[y.equipment] ?? 9))
   return close[0] ?? byId(ALIASES[b])
+}
+
+// ---------------------------------------------------------------------------
+// Unscharfe Zuordnungs-Vorschläge (eigene Übung → Bibliothek)
+// ---------------------------------------------------------------------------
+
+/**
+ * Synonym-Gruppen (bereits normalisiert). Deutsche Begriffe ab 6 Zeichen
+ * passen auch mitten in Komposita („Kurzhantelrudern"), kurze/englische nur
+ * am Wortanfang („row" ≠ „throw").
+ */
+const CONCEPTS: Record<string, string[]> = {
+  bench: ['bankdrucken', 'bench press', 'brustdrucken', 'brustpresse', 'chest press'],
+  incline: ['schragbank', 'incline'],
+  decline: ['negativbank', 'decline'],
+  pulldown: ['latzug', 'latziehen', 'lat pulldown', 'pulldown', 'pull down'],
+  row: ['rudern', 'row', 'rows'],
+  squat: ['kniebeuge', 'squat', 'squats'],
+  deadlift: ['kreuzheben', 'deadlift'],
+  ohp: ['schulterdrucken', 'nackendrucken', 'shoulder press', 'military press', 'overhead press'],
+  legpress: ['beinpresse', 'leg press'],
+  legext: ['beinstrecker', 'beinstrecken', 'leg extension'],
+  legcurl: ['beinbeuger', 'beinbeugen', 'leg curl'],
+  fly: ['butterfly', 'pec deck', 'fly', 'flys', 'flyes', 'fliegende', 'crossover'],
+  pushdown: ['trizepsdrucken', 'pushdown', 'push down', 'pressdown'],
+  curl: ['curl', 'curls', 'bizepscurl', 'hammercurl'],
+  lateral: ['seitheben', 'seitenheben', 'lateral raise'],
+  calf: ['wadenheben', 'waden', 'calf'],
+  hipthrust: ['hip thrust', 'hipthrust', 'huftheben', 'glute bridge'],
+  lunge: ['ausfallschritt', 'lunge', 'lunges'],
+  dips: ['dips', 'dip'],
+  pullup: ['klimmzug', 'klimmzuge', 'pullup', 'pullups', 'pull up', 'chin up', 'chinup'],
+  facepull: ['face pull'],
+  crunch: ['crunch', 'crunches'],
+  plank: ['plank', 'unterarmstutz'],
+  pushup: ['liegestutz', 'pushup', 'pushups', 'push up'],
+  shrug: ['shrug', 'shrugs', 'schulterheben'],
+  reverse: ['reverse'],
+  upright: ['aufrecht', 'upright'],
+  oneside: ['einarmig', 'einbeinig', 'one arm', 'single leg', 'one leg'],
+  hammer: ['hammer'],
+  romanian: ['rumanisch', 'romanian', 'rdl'],
+  extension: ['extension', 'strecken'],
+}
+
+/** Equipment-Hinweise im Namen → Equipment der Bibliothek. */
+const EQUIP_CONCEPTS: Record<string, string[]> = {
+  Langhantel: ['langhantel', 'barbell'],
+  Kurzhantel: ['kurzhantel', 'dumbbell', 'kh'],
+  Kabelzug: ['kabelzug', 'kabel', 'cable', 'seilzug'],
+  Maschine: ['maschine', 'machine', 'gerat'],
+  'SZ-Stange': ['sz', 'ez bar', 'ez'],
+  Kettlebell: ['kettlebell'],
+  Körpergewicht: ['korpergewicht', 'bodyweight'],
+  Band: ['band', 'theraband'],
+}
+
+const STOP = new Set([
+  'mit', 'am', 'an', 'auf', 'der', 'die', 'das', 'den', 'und', 'fur', 'im', 'in', 'zur', 'zum', 'von',
+  'the', 'with', 'on', 'to', 'of', 'and', 'a',
+  // Equipment zählt separat (sonst wären reine Equipment-Treffer Vorschläge)
+  'langhantel', 'kurzhantel', 'kabelzug', 'kabel', 'maschine', 'barbell', 'dumbbell', 'cable', 'machine',
+])
+
+function hasTerm(text: string, term: string): boolean {
+  return (' ' + text).includes(' ' + term) || (term.length >= 6 && !term.includes(' ') && text.includes(term))
+}
+
+function conceptsOf(text: string): Set<string> {
+  const out = new Set<string>()
+  for (const [k, terms] of Object.entries(CONCEPTS)) if (terms.some((t) => hasTerm(text, t))) out.add(k)
+  return out
+}
+
+function equipOf(text: string): string | null {
+  for (const [eq, terms] of Object.entries(EQUIP_CONCEPTS)) {
+    if (terms.some((t) => (' ' + text + ' ').includes(' ' + t + ' ') || (t.length >= 6 && text.includes(t)))) return eq
+  }
+  return null
+}
+
+function tokensOf(text: string): string[] {
+  return text.split(' ').filter((t) => t.length >= 3 && !STOP.has(t))
+}
+
+interface Features {
+  text: string
+  tokens: string[]
+  concepts: Set<string>
+}
+
+const featureCache = new WeakMap<LibraryExercise[], Map<string, Features>>()
+
+function featuresFor(list: LibraryExercise[]): Map<string, Features> {
+  let map = featureCache.get(list)
+  if (!map) {
+    map = new Map()
+    for (const ex of list) {
+      const text = `${normalize(ex.name_de)} ${normalize(ex.name_en)}`
+      map.set(ex.id, { text, tokens: tokensOf(text), concepts: conceptsOf(text) })
+    }
+    featureCache.set(list, map)
+  }
+  return map
+}
+
+/**
+ * Bis zu `n` Bibliotheks-Vorschläge für eine eigene Übung (beste zuerst):
+ * gemeinsame Begriffe inkl. Synonymen (Bankdrücken ↔ Bench Press …),
+ * Wortüberlappung deutsch/englisch, gleiche Muskelgruppe und passendes
+ * Equipment werden bevorzugt. Ohne inhaltlichen Treffer → leere Liste.
+ */
+export function suggestLinks(
+  name: string,
+  muscle: MuscleGroup | string | null | undefined,
+  list: LibraryExercise[],
+  n = 3,
+): LibraryExercise[] {
+  const q = normalize(name)
+  if (!q || list.length === 0) return []
+  const qBase = baseName(name)
+  const qConcepts = conceptsOf(q)
+  const qTokens = tokensOf(q)
+  const qEquip = equipOf(q)
+  const direct = findLibraryMatch({ id: '', name }, list, {})
+  const feats = featuresFor(list)
+
+  const scored: { ex: LibraryExercise; score: number }[] = []
+  for (const ex of list) {
+    const f = feats.get(ex.id)!
+    let shared = 0
+    for (const c of qConcepts) if (f.concepts.has(c)) shared++
+    let overlap = 0
+    for (const t of qTokens) {
+      if (f.tokens.some((u) => u === t || (t.length >= 5 && u.length >= 5 && (u.includes(t) || t.includes(u))))) overlap++
+    }
+    const isDirect = direct?.id === ex.id
+    if (!isDirect && shared === 0 && overlap === 0) continue
+
+    let score = shared * 3 + overlap
+    if (isDirect) score += 100
+    if (normalize(ex.name_de) === q || baseName(ex.name_de) === qBase) score += 5
+    // Zusatzbegriffe des Kandidaten, die im Namen fehlen (z. B. „Schrägbank")
+    let extra = 0
+    for (const c of f.concepts) if (!qConcepts.has(c)) extra++
+    score -= Math.min(extra, 3) * 0.75
+    if (muscle && ex.muscle === muscle) score += 1.5
+    else if (muscle && (ex.secondary as string[]).includes(muscle)) score += 0.4
+    if (qEquip) score += ex.equipment === qEquip ? 2.5 : -1.5
+    // Kürzere, „klassischere" Namen leicht bevorzugen
+    score -= Math.max(0, f.tokens.length - qTokens.length) * 0.05
+    if (score <= 0.5) continue
+    scored.push({ ex, score })
+  }
+  return scored
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        (EQUIP_RANK[a.ex.equipment] ?? 9) - (EQUIP_RANK[b.ex.equipment] ?? 9) ||
+        a.ex.name_de.length - b.ex.name_de.length,
+    )
+    .slice(0, n)
+    .map((s) => s.ex)
 }
 
 // ---------------------------------------------------------------------------
