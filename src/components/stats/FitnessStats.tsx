@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { ChevronRight, Flame, Target, Trophy } from 'lucide-react'
 import {
   balanceStats,
@@ -15,8 +14,8 @@ import {
   setVolume,
   totalVolume,
 } from '../../lib/analytics'
-import { trainingDay } from '../../lib/day'
-import { inRange, pctChange, periodBuckets, periodRange, sumByBucket, type Period } from '../../lib/periods'
+import { shiftDate, trainingDay } from '../../lib/day'
+import { inRange, pctChange, periodRange, PERIOD_LABELS, type Period } from '../../lib/periods'
 import { computeXp, dailyQuests, levelInfo, weeklyQuests } from '../../lib/xp'
 import { rankForSessions } from '../../lib/gamification'
 import { mascotEmoji } from '../../lib/cosmetics'
@@ -27,21 +26,15 @@ import { StreakCard } from '../StreakCard'
 import { SeasonCard } from '../SeasonCard'
 import { Heatmap } from '../Heatmap'
 import { AiPanel } from '../AiPanel'
+import { enter } from '../home/motion'
+import { ProgressHeader, SectionLabel, Segmented } from '../progress/ProgressHeader'
+import { StatsHero } from '../progress/StatsHero'
+import { MuscleBalance } from '../progress/MuscleBalance'
+import { MiniSpark } from '../progress/Sparklines'
+import { GameCard, MetaChip } from '../progress/GameCard'
+import { isoWeekNumber, MONTHS_LONG } from '../progress/progressUtils'
 import type { Exercise, SetWithDate } from '../../types'
-import {
-  GameSummaryCard,
-  KpiTile,
-  PeriodSwitch,
-  Trend,
-  nf,
-  useChartTheme,
-  useGameToggle,
-} from './shared'
-
-/** Volumen als „12,4 t" bzw. „850 kg". */
-function volumeParts(kg: number): { value: string; unit: string } {
-  return kg >= 10000 ? { value: nf(kg / 1000, 1), unit: 't' } : { value: nf(Math.round(kg)), unit: 'kg' }
-}
+import { nf, useGameToggle } from './shared'
 
 /** Bester Wert eines Satzes (bei einseitigen Übungen die stärkere Seite). */
 function setBest(s: SetWithDate) {
@@ -51,8 +44,13 @@ function setBest(s: SetWithDate) {
   return right.e1 > left.e1 ? right : left
 }
 
-/** YYYY-MM-DD → „01.09.2026" */
-const dmy = (d: string) => d.split('-').reverse().join('.')
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+const COMPARE: Record<Period, string> = { week: 'Vorwoche', month: 'Vormonat', year: 'Vorjahr' }
+
+/** Anzahl Tage von a bis b (inkl.). */
+function daysBetween(a: string, b: string): number {
+  return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000) + 1
+}
 
 interface ExerciseRow {
   id: string
@@ -60,32 +58,13 @@ interface ExerciseRow {
   sessions: number
   best: { weight: number; reps: number; e1: number }
   pr: boolean
-}
-
-function Ratio({ a, b, labelA, labelB }: { a: number; b: number; labelA: string; labelB: string }) {
-  const total = a + b
-  const pct = total > 0 ? Math.round((a / total) * 100) : 50
-  return (
-    <div>
-      <div className="tabular mb-1 flex justify-between text-xs text-cocoa-light">
-        <span>
-          {labelA} · {pct} %
-        </span>
-        <span>
-          {100 - pct} % · {labelB}
-        </span>
-      </div>
-      <div className="flex h-2 overflow-hidden rounded-full bg-sand-dark/40">
-        <div className="h-full bg-brand" style={{ width: `${pct}%` }} />
-        <div className="h-full bg-sand-dark" style={{ width: `${100 - pct}%` }} />
-      </div>
-    </div>
-  )
+  count: number
+  /** bester Satz je Session (chronologisch, letzte 8) */
+  trend: number[]
 }
 
 export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]; exercises: Exercise[] }) {
   const navigate = useNavigate()
-  const chart = useChartTheme()
   const [period, setPeriod] = useState<Period>('month')
   // „Heute" = Trainings-Tag (Wechsel um 4 Uhr, wie im Training)
   const today = trainingDay()
@@ -102,29 +81,46 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
   const kpi = useMemo(() => {
     const sessions = (list: SetWithDate[]) => new Set(list.map((s) => s.date)).size
     const c = { sessions: sessions(cur), volume: totalVolume(cur), sets: onlyWorking(cur).length }
-    const p = { sessions: sessions(prev), volume: totalVolume(prev), sets: onlyWorking(prev).length }
-    return {
-      c,
-      trend: {
-        sessions: pctChange(c.sessions, p.sessions),
-        volume: pctChange(c.volume, p.volume),
-        sets: pctChange(c.sets, p.sets),
-      },
-    }
+    const p = { volume: totalVolume(prev) }
+    return { c, volumeTrend: pctChange(c.volume, p.volume) }
   }, [cur, prev])
 
-  const volumeChart = useMemo(() => {
-    const data = sumByBucket(
-      cur.map((s) => ({ date: s.date, value: setVolume(s) })),
-      periodBuckets(period, today),
-    )
-    const max = Math.max(0, ...data.map((d) => d.value))
-    return { data, inTons: max >= 10000 }
-  }, [cur, period, today])
+  // Kumulierte Volumen-Kurve: laufender Zeitraum bis heute vs. ganzer Vorzeitraum
+  const spark = useMemo(() => {
+    const byDay = new Map<string, number>()
+    for (const s of sets) byDay.set(s.date, (byDay.get(s.date) ?? 0) + setVolume(s))
+    const cumulative = (start: string, days: number) => {
+      const out: number[] = []
+      let acc = 0
+      for (let i = 0; i < days; i++) {
+        acc += byDay.get(shiftDate(start, i)) ?? 0
+        out.push(acc)
+      }
+      return out
+    }
+    const length = daysBetween(range.start, range.periodEnd)
+    const values = cumulative(range.start, daysBetween(range.start, range.end))
+    const ghost = cumulative(range.prevStart, Math.min(length, daysBetween(range.prevStart, shiftDate(range.start, -1))))
+    return { length, values, ghost }
+  }, [sets, range])
+
+  const [, sm, sd] = range.start.split('-').map(Number)
+  const [, em, ed] = range.periodEnd.split('-').map(Number)
+  const periodName =
+    period === 'week'
+      ? `KW ${isoWeekNumber(range.start)}`
+      : period === 'month'
+        ? MONTHS_LONG[sm - 1]
+        : range.start.slice(0, 4)
+  const axis: [string, string] =
+    period === 'week'
+      ? ['Mo', 'So']
+      : period === 'month'
+        ? [`${sd}. ${MONTHS_SHORT[sm - 1]}`, `${ed}. ${MONTHS_SHORT[em - 1]}`]
+        : ['Jan', 'Dez']
 
   const balance = useMemo(() => balanceStats(cur, exercises), [cur, exercises])
   const byMuscle = useMemo(() => muscleVolume(cur, exercises).filter((m) => m.value > 0), [cur, exercises])
-  const maxMuscle = Math.max(1, ...byMuscle.map((m) => m.value))
   const stale = useMemo(
     () => lastTrainedPerMuscle(sets, exercises).filter((r) => r.daysAgo >= 5).slice(0, 3),
     [sets, exercises],
@@ -132,7 +128,10 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
 
   const exerciseRows = useMemo<ExerciseRow[]>(() => {
     const byId = new Map(exercises.map((e) => [e.id, e]))
-    const acc = new Map<string, { dates: Set<string>; count: number; best: ExerciseRow['best']; before: number }>()
+    const acc = new Map<
+      string,
+      { dates: Set<string>; count: number; best: ExerciseRow['best']; before: number; perDay: Map<string, number> }
+    >()
     for (const s of onlyWorking(sets)) {
       if (s.date > range.end) continue
       const b = setBest(s)
@@ -141,7 +140,11 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
         count: 0,
         best: { weight: 0, reps: 0, e1: -1 },
         before: 0,
+        perDay: new Map<string, number>(),
       }
+      // Kurve: bestes 1RM je Session (Körpergewicht: Wdh)
+      const metric = b.e1 > 0 ? b.e1 : b.reps
+      row.perDay.set(s.date, Math.max(row.perDay.get(s.date) ?? 0, metric))
       if (s.date < range.start) {
         row.before = Math.max(row.before, b.e1)
       } else {
@@ -161,6 +164,10 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
         best: r.best,
         pr: r.before > 0 && r.best.e1 > r.before + 0.01,
         count: r.count,
+        trend: [...r.perDay.entries()]
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .slice(-8)
+          .map(([, v]) => v),
       }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
   }, [sets, exercises, range])
@@ -184,127 +191,90 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
   }, [sets, today, streakState])
   const gameToggle = useGameToggle(game.xp.level, 'seen_level')
 
-  const vol = volumeParts(kpi.c.volume)
-
   return (
     <>
-      <PeriodSwitch value={period} onChange={setPeriod} />
+      <ProgressHeader
+        title="Fortschritt"
+        subtitle={`${periodName} · ${nf(kpi.c.sessions)} ${kpi.c.sessions === 1 ? 'Training' : 'Trainings'}`}
+        action={
+          <Segmented
+            label="Zeitraum"
+            value={period}
+            onChange={setPeriod}
+            options={(Object.keys(PERIOD_LABELS) as Period[]).map((p) => ({ value: p, label: PERIOD_LABELS[p] }))}
+          />
+        }
+      />
 
-      {/* Kennzahlen */}
-      <section>
-        <div className="grid grid-cols-3 gap-2">
-          <KpiTile label="Trainings" value={nf(kpi.c.sessions)} footer={<Trend pct={kpi.trend.sessions} />} />
-          <KpiTile label="Volumen" value={vol.value} unit={vol.unit} footer={<Trend pct={kpi.trend.volume} />} />
-          <KpiTile label="Sätze" value={nf(kpi.c.sets)} footer={<Trend pct={kpi.trend.sets} />} />
-        </div>
-        <p className="mt-1.5 text-[11px] text-cocoa-muted">
-          {dmy(range.start)} – {dmy(range.end)} · verglichen mit dem gleichen Zeitraum{' '}
-          {period === 'week' ? 'der Vorwoche' : period === 'month' ? 'im Vormonat' : 'im Vorjahr'}
-        </p>
-      </section>
+      <StatsHero
+        label={periodName}
+        volumeKg={kpi.c.volume}
+        trend={kpi.volumeTrend}
+        compare={COMPARE[period]}
+        spark={spark.values}
+        ghost={spark.ghost}
+        length={spark.length}
+        axis={axis}
+        sessions={kpi.c.sessions}
+        sets={kpi.c.sets}
+        prs={prCount}
+        index={1}
+      />
 
-      {/* Volumen-Verlauf */}
-      <section className="card">
-        <h2 className="mb-2 font-semibold">
-          Volumen pro {period === 'week' ? 'Tag' : period === 'month' ? 'Woche' : 'Monat'}
-          <span className="ml-1 text-xs font-normal text-cocoa-muted">({volumeChart.inTons ? 't' : 'kg'})</span>
-        </h2>
-        <ResponsiveContainer width="100%" height={170}>
-          <BarChart data={volumeChart.data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-            <XAxis dataKey="label" tick={chart.axisStyle} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={4} />
-            <YAxis
-              tick={chart.axisStyle}
-              width={48}
-              tickLine={false}
-              axisLine={false}
-              allowDecimals={false}
-              tickFormatter={(v: number) => (volumeChart.inTons ? nf(v / 1000, 1) : nf(v))}
-            />
-            <Tooltip
-              {...chart.tooltip}
-              formatter={(v: number) => {
-                const p = volumeParts(v)
-                return [`${p.value} ${p.unit}`, 'Volumen']
-              }}
-            />
-            <Bar dataKey="value" fill={chart.primary} radius={[4, 4, 0, 0]} maxBarSize={36} />
-          </BarChart>
-        </ResponsiveContainer>
-      </section>
-
-      {/* Muskel-Balance */}
-      {byMuscle.length > 0 && (
-        <section className="card space-y-3">
-          <h2 className="font-semibold">Muskelbalance</h2>
-          <Ratio a={balance.push} b={balance.pull} labelA="Drücken" labelB="Ziehen" />
-          <Ratio a={balance.upper} b={balance.lower} labelA="Oberkörper" labelB="Beine" />
-          <ul className="space-y-1.5 pt-1">
-            {byMuscle.slice(0, 8).map((m) => (
-              <li key={m.muscle} className="flex items-center gap-2">
-                <span className="w-24 shrink-0 truncate text-sm">{m.muscle}</span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-sand-dark/40">
-                  <div className="h-full bg-brand" style={{ width: `${(m.value / maxMuscle) * 100}%` }} />
-                </div>
-                <span className="tabular w-14 shrink-0 text-right text-xs text-cocoa-light">
-                  {(() => {
-                    const p = volumeParts(m.value)
-                    return `${p.value} ${p.unit}`
-                  })()}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {stale.length > 0 && (
-            <p className="border-t border-sand-dark/40 pt-2 text-xs text-cocoa-light">
-              Länger nicht trainiert:{' '}
-              {stale.map((r, i) => (
-                <span key={r.muscle}>
-                  {i > 0 && ', '}
-                  <span className="text-cocoa">{r.muscle}</span>{' '}
-                  <span className="tabular">({r.daysAgo} T.)</span>
-                </span>
-              ))}
-            </p>
-          )}
-        </section>
-      )}
+      <MuscleBalance
+        muscles={byMuscle}
+        push={balance.push}
+        pull={balance.pull}
+        upper={balance.upper}
+        lower={balance.lower}
+        stale={stale}
+        index={2}
+      />
 
       {/* Übungen */}
-      <section className="space-y-2">
-        <div className="flex items-baseline justify-between px-1">
-          <h2 className="font-semibold">Übungen</h2>
-          {prCount > 0 && (
-            <span className="tabular flex items-center gap-1 text-xs text-cocoa-light">
-              <Trophy size={13} className="text-gold" />
-              {prCount} {prCount === 1 ? 'Rekord' : 'Rekorde'}
-            </span>
-          )}
-        </div>
+      <section style={enter(3)}>
+        <SectionLabel
+          right={
+            prCount > 0 && (
+              <span className="tabular flex items-center gap-1 text-xs font-semibold text-gold">
+                <Trophy size={13} strokeWidth={2.5} />
+                {prCount} {prCount === 1 ? 'Rekord' : 'Rekorde'}
+              </span>
+            )
+          }
+        >
+          Übungen
+        </SectionLabel>
         <div className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
           {exerciseRows.length === 0 && (
-            <p className="px-4 py-3 text-sm text-cocoa-light">
-              In diesem Zeitraum noch keine Arbeitssätze.
-            </p>
+            <p className="px-4 py-3 text-sm text-cocoa-light">In diesem Zeitraum noch keine Arbeitssätze.</p>
           )}
           {visibleRows.map((r) => (
             <button
               key={r.id}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-sand/60"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-sand/60"
               onClick={() => navigate(`/exercises/${r.id}`)}
             >
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
                   <span className="truncate text-sm font-semibold text-cocoa">{r.name}</span>
-                  {r.pr && <Trophy size={14} className="shrink-0 text-gold" aria-label="Neuer Rekord" />}
+                  {r.pr && <Trophy size={14} strokeWidth={2.5} className="shrink-0 text-gold" aria-label="Neuer Rekord" />}
                 </span>
-                <span className="tabular block text-xs text-cocoa-light">
-                  {r.best.weight > 0
-                    ? `${nf(r.best.weight, 1)} kg × ${r.best.reps} · 1RM ≈ ${nf(round1(r.best.e1), 1)} kg`
-                    : `${r.best.reps} Wdh.`}
-                  <span className="text-cocoa-muted"> · {r.sessions}× trainiert</span>
+                <span className="tabular block truncate text-xs text-cocoa-light">
+                  {r.best.weight > 0 ? (
+                    <>
+                      <span className="font-semibold text-cocoa">
+                        {nf(r.best.weight, 1)} kg × {r.best.reps}
+                      </span>
+                      {' · '}1RM ≈ {nf(round1(r.best.e1), 1)} kg
+                    </>
+                  ) : (
+                    <span className="font-semibold text-cocoa">{r.best.reps} Wdh.</span>
+                  )}
+                  <span className="text-cocoa-muted"> · {r.sessions}×</span>
                 </span>
               </span>
+              <MiniSpark values={r.trend} highlight={r.pr} />
               <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
             </button>
           ))}
@@ -326,24 +296,27 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
         </div>
       </section>
 
+      <div style={enter(4)}>
+        <AiPanel sets={sets} exercises={exercises} />
+      </div>
+
       {/* Gamification (kompakt, aufklappbar) */}
-      <GameSummaryCard
+      <GameCard
+        style={enter(5)}
         mascot={game.mascot}
-        title={`Level ${game.xp.level} · ${game.rank.title}`}
+        title={`Level ${game.xp.level}`}
+        subtitle={`${game.rank.title} · ${nf(game.xp.xpInLevel)} / ${nf(game.xp.xpForLevel)} XP`}
         progress={game.xp.progress}
         meta={
           <>
-            <span>
-              {nf(game.xp.xpInLevel)} / {nf(game.xp.xpForLevel)} XP
-            </span>
-            <span className="flex items-center gap-0.5">
-              <Flame size={12} />
+            <MetaChip>
+              <Flame size={12} className="text-brand" />
               {game.streak} {game.streak === 1 ? 'Woche' : 'Wochen'}
-            </span>
-            <span className="flex items-center gap-0.5">
-              <Target size={12} />
-              {game.open === 0 ? 'Alle Quests erledigt' : `${game.open} Quests offen`}
-            </span>
+            </MetaChip>
+            <MetaChip>
+              <Target size={12} className={game.open === 0 ? 'text-success' : 'text-cocoa-muted'} />
+              {game.open === 0 ? 'Quests erledigt' : `${game.open} Quests offen`}
+            </MetaChip>
           </>
         }
         open={gameToggle.open}
@@ -353,9 +326,7 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
         <StreakCard sets={sets} />
         <SeasonCard sets={sets} />
         <Heatmap dates={sets.map((s) => s.date)} />
-      </GameSummaryCard>
-
-      <AiPanel sets={sets} exercises={exercises} />
+      </GameCard>
     </>
   )
 }

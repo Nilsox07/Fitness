@@ -25,6 +25,7 @@ import { SeasonCard } from '../components/SeasonCard'
 import { Heatmap } from '../components/Heatmap'
 import { FitnessStats } from '../components/stats/FitnessStats'
 import { FoodStats } from '../components/stats/FoodStats'
+import { ProgressHeader } from '../components/progress/ProgressHeader'
 import {
   balanceStats,
   frequencyStats,
@@ -417,15 +418,25 @@ function NewAnalytics() {
   const { data: allSets } = useAllSets()
   const sets = allSets ?? []
 
-  return (
-    <div className="space-y-5">
-      <ProgressSwitch />
-      {world === 'food' ? (
+  if (world === 'food') {
+    return (
+      <div className="space-y-5">
+        <ProgressSwitch />
         <FoodStats />
-      ) : sets.length > 0 ? (
+      </div>
+    )
+  }
+
+  // Fitness: Kopf (Titel, Zeitraum, Umschalter) rendert FitnessStats selbst.
+  return (
+    <div className="space-y-6">
+      {sets.length > 0 ? (
         <FitnessStats sets={sets} exercises={exercises ?? []} />
       ) : (
-        <p className="text-cocoa-light">Noch keine Daten — erfasse dein erstes Training.</p>
+        <>
+          <ProgressHeader title="Fortschritt" subtitle="Noch keine Trainings" />
+          <p className="text-cocoa-light">Noch keine Daten — erfasse dein erstes Training.</p>
+        </>
       )}
     </div>
   )

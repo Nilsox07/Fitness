@@ -1,11 +1,25 @@
 import { useMemo, useState } from 'react'
-import { Check, ChevronDown, PenLine, Plus, Search, Share2, Sparkles, X } from 'lucide-react'
+import { Check, ChefHat, ChevronDown, PenLine, Plus, Search, Share2, Sparkles, X } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { usePrefs } from '../lib/prefs'
 import { useAiStatus } from '../hooks/useAi'
 import { useRecipes, useToggleRecipeShared, useDeleteRecipe } from '../hooks/useRecipes'
-import { useAddFoodEntry } from '../hooks/useNutrition'
+import { useAddFoodEntry, useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
+import { useAllSets } from '../hooks/useWorkouts'
+import { localDate } from '../lib/day'
+import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
+import { scoreMeal, type MealScore } from '../lib/mealScore'
+import { stagger } from '../components/nutrition-home/motion'
 import { RecipeCreateSheet, type CreateMode } from '../components/recipes/RecipeCreateSheet'
+import { ForYouCard, RecipeGridCard } from '../components/recipes/RecipeCards'
+import { RecipeDetailSheet, type RecipeDayContext } from '../components/recipes/RecipeDetailSheet'
+import {
+  currentMeal,
+  isHighProtein,
+  recipeLogEntry,
+  recipeTotals,
+  recipesForToday,
+} from '../components/recipes/recipeUtils'
 import type { Meal, SavedRecipe } from '../types'
 
 function today(): string {
@@ -13,13 +27,6 @@ function today(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
     d.getDate(),
   ).padStart(2, '0')}`
-}
-function currentMeal(): Meal {
-  const h = new Date().getHours()
-  if (h < 11) return 'breakfast'
-  if (h < 15) return 'lunch'
-  if (h < 21) return 'dinner'
-  return 'snack'
 }
 
 /** Eine Portion als Ernährungseintrag (für die aktuelle Mahlzeit). */
@@ -177,129 +184,69 @@ function ClassicRecipes() {
 }
 
 // ---------------------------------------------------------------------------
-// Neuer Modus: Suche, Filter-Chips, 1-Tap-Loggen, Erstellen per Sheet
+// Neuer Modus: „Für dich"-Karussell, Suche, Filter-Chips, 2-Spalten-Raster,
+// Detail-Sheet mit Score/Makros/Nährwerten und Loggen; Erstellen per Sheet
 // ---------------------------------------------------------------------------
 
 type Filter = 'all' | 'protein' | 'friends'
-
-/** Proteinreich: ≥ 30 g pro Portion oder ≥ 30 % der kcal aus Eiweiß. */
-function isHighProtein(r: SavedRecipe): boolean {
-  return r.protein >= 30 || (r.kcal > 0 && (r.protein * 4) / r.kcal >= 0.3)
-}
-
-function NewRecipeCard({ r, mine }: { r: SavedRecipe; mine: boolean }) {
-  const [open, setOpen] = useState(false)
-  const [logged, setLogged] = useState(false)
-  const toggle = useToggleRecipeShared()
-  const del = useDeleteRecipe()
-  const addEntry = useAddFoodEntry()
-
-  function log() {
-    addEntry.mutate(logEntry(r), {
-      onSuccess: () => {
-        setLogged(true)
-        setTimeout(() => setLogged(false), 1500)
-      },
-    })
-  }
-
-  return (
-    <li className="card space-y-2">
-      <div className="flex items-center gap-3">
-        <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setOpen((o) => !o)}>
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-semibold">{r.title}</div>
-            <div className="tabular text-xs text-cocoa-light">
-              {r.kcal} kcal · E {r.protein} g pro Portion
-              {!mine && r.author_name ? ` · von ${r.author_name}` : ''}
-            </div>
-          </div>
-          <ChevronDown
-            size={18}
-            className={`shrink-0 text-cocoa-light transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          />
-        </button>
-        <button
-          className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-white transition-colors duration-200 ${
-            logged ? 'bg-success' : 'bg-brand'
-          }`}
-          onClick={log}
-          disabled={addEntry.isPending}
-          aria-label={`1 Portion „${r.title}" loggen`}
-        >
-          {logged ? <Check size={20} strokeWidth={2.5} /> : <Plus size={20} strokeWidth={2.5} />}
-        </button>
-      </div>
-
-      {open && (
-        <div className="anim-fade space-y-2 rounded-xl bg-sand-light p-3">
-          <div className="tabular text-xs text-cocoa-light">
-            E {r.protein} / K {r.carbs} / F {r.fat} g · {r.servings} Portion(en)
-          </div>
-          {r.ingredients.length > 0 && (
-            <div>
-              <div className="text-sm font-semibold">Zutaten</div>
-              <ul className="list-disc pl-5 text-sm text-cocoa">
-                {r.ingredients.map((it, i) => (
-                  <li key={i}>{it}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {r.steps.length > 0 && (
-            <div>
-              <div className="text-sm font-semibold">Zubereitung</div>
-              <ol className="list-decimal space-y-1 pl-5 text-sm text-cocoa">
-                {r.steps.map((st, i) => (
-                  <li key={i}>{st}</li>
-                ))}
-              </ol>
-            </div>
-          )}
-          {mine && (
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200 ${
-                  r.shared ? 'bg-success/10 text-success' : 'bg-sand text-cocoa-light'
-                }`}
-                onClick={() => toggle.mutate({ id: r.id, shared: !r.shared })}
-              >
-                {r.shared ? <Check size={14} strokeWidth={2.5} /> : <Share2 size={14} />}
-                {r.shared ? 'geteilt' : 'Teilen'}
-              </button>
-              <button
-                className="ml-auto flex items-center gap-1 px-2 text-xs text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
-                onClick={() => {
-                  if (confirm(`„${r.title}" löschen?`)) del.mutate(r.id)
-                }}
-              >
-                <X size={14} />
-                Löschen
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </li>
-  )
-}
 
 function NewRecipes() {
   const { user } = useAuth()
   const { data: recipes, isLoading } = useRecipes()
   const { data: ai } = useAiStatus()
   const aiOn = !!ai?.enabled
+  const { data: settings } = useNutritionSettings()
+  const date = localDate()
+  const { data: entries } = useFoodEntries(date)
+  const { data: allSets } = useAllSets()
+  const addEntry = useAddFoodEntry()
+  const toggle = useToggleRecipeShared()
+  const del = useDeleteRecipe()
+
   const [sheet, setSheet] = useState<CreateMode | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
+  const [openId, setOpenId] = useState<string | null>(null)
 
-  const all = recipes ?? []
-  const hasFriends = all.some((r) => r.user_id !== user?.id)
+  const all = useMemo(() => recipes ?? [], [recipes])
+  const mineCount = all.filter((r) => r.user_id === user?.id).length
+  const friendsCount = all.length - mineCount
+  const hasFriends = friendsCount > 0
   const activeFilter: Filter = filter === 'friends' && !hasFriends ? 'all' : filter
+
+  // Tageskontext: Rest-kcal/-Eiweiß für „Für dich" und den Score
+  const day = useMemo<RecipeDayContext & { remainingProtein: number }>(() => {
+    const eaten = (entries ?? []).reduce(
+      (s, e) => ({ kcal: s.kcal + (Number(e.kcal) || 0), protein: s.protein + (Number(e.protein) || 0) }),
+      { kcal: 0, protein: 0 },
+    )
+    const target = kcalTargetFor(settings, trainedOn(date, allSets))
+    const proteinTarget = settings?.protein_target ?? 0
+    return {
+      goal: settings?.goal ?? null,
+      remainingKcal: target > 0 ? Math.round(target - eaten.kcal) : null,
+      remainingProtein: Math.max(0, proteinTarget - eaten.protein),
+      proteinTarget,
+      carbsTarget: settings?.carbs_target ?? 0,
+      fatTarget: settings?.fat_target ?? 0,
+    }
+  }, [entries, settings, allSets, date])
+
+  const scores = useMemo(() => {
+    const m = new Map<string, MealScore>()
+    for (const r of all) m.set(r.id, scoreMeal(recipeTotals(r), { goal: day.goal, remainingKcal: day.remainingKcal }))
+    return m
+  }, [all, day.goal, day.remainingKcal])
+
+  const forYou = useMemo(
+    () => (all.length >= 3 ? recipesForToday(all, day.remainingKcal, day.remainingProtein) : []),
+    [all, day.remainingKcal, day.remainingProtein],
+  )
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return (recipes ?? []).filter((r) => {
+    return all.filter((r) => {
       if (activeFilter === 'protein' && !isHighProtein(r)) return false
       if (activeFilter === 'friends' && r.user_id === user?.id) return false
       if (!q) return true
@@ -309,7 +256,7 @@ function NewRecipes() {
         (r.author_name ?? '').toLowerCase().includes(q)
       )
     })
-  }, [recipes, query, activeFilter, user])
+  }, [all, query, activeFilter, user])
 
   const chips: { id: Filter; label: string }[] = [
     { id: 'all', label: 'Alle' },
@@ -317,44 +264,71 @@ function NewRecipes() {
     ...(hasFriends ? [{ id: 'friends' as const, label: 'Von Freunden' }] : []),
   ]
 
+  const openRecipe = openId ? all.find((r) => r.id === openId) ?? null : null
+  const searching = query.trim().length > 0
+  const subtitle = [
+    `${mineCount} ${mineCount === 1 ? 'eigenes' : 'eigene'}`,
+    ...(hasFriends ? [`${friendsCount} von Freunden`] : []),
+  ].join(' · ')
+
+  const log = (r: SavedRecipe, portions: number, meal: Meal) =>
+    addEntry.mutateAsync(recipeLogEntry(r, portions, meal, localDate()))
+
+  const iconBtn = 'grid h-10 w-10 place-items-center rounded-full transition active:scale-90'
+
   return (
-    <div className="space-y-4">
-      <header className="flex items-center gap-2">
-        <h1 className="flex-1 text-xl font-bold">Rezepte</h1>
-        <button className="btn-primary flex items-center gap-1.5 text-sm" onClick={() => setSheet('menu')}>
-          <Plus size={16} strokeWidth={2.5} />
-          Rezept
-        </button>
+    <div className="space-y-5">
+      <header className="flex items-start justify-between gap-2" style={stagger(0)}>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight">Rezepte</h1>
+          <p className="text-sm text-cocoa-light">{isLoading ? 'Lädt…' : subtitle}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {all.length > 0 && (
+            <button
+              className={`${iconBtn} ${searchOpen ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa'}`}
+              onClick={() => {
+                if (searchOpen) setQuery('')
+                setSearchOpen((o) => !o)
+              }}
+              aria-label={searchOpen ? 'Suche schließen' : 'Rezepte suchen'}
+              aria-expanded={searchOpen}
+            >
+              {searchOpen ? <X size={20} /> : <Search size={20} />}
+            </button>
+          )}
+          <button
+            className={`${iconBtn} bg-brand text-on-brand shadow-sm`}
+            onClick={() => setSheet('menu')}
+            aria-label="Neues Rezept"
+          >
+            <Plus size={22} strokeWidth={2.5} />
+          </button>
+        </div>
       </header>
 
-      {isLoading && <p className="text-cocoa-light">Lädt…</p>}
-
-      {!isLoading && all.length === 0 ? (
-        <div className="card space-y-3 text-center">
-          <p className="text-sm text-cocoa-light">Noch keine Rezepte — leg dein erstes an.</p>
-          <div className="flex flex-col gap-2">
-            {aiOn && (
-              <button
-                className="btn-primary flex items-center justify-center gap-1.5"
-                onClick={() => setSheet('ai')}
-              >
-                <Sparkles size={16} />
-                Mit KI erstellen
-              </button>
-            )}
-            <button
-              className={`${aiOn ? 'btn-ghost' : 'btn-primary'} flex items-center justify-center gap-1.5`}
-              onClick={() => setSheet('manual')}
-            >
-              <PenLine size={16} />
-              Selbst eintragen
-            </button>
-          </div>
+      {isLoading && (
+        <div className="grid grid-cols-2 gap-3" aria-hidden="true">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="overflow-hidden rounded-2xl bg-cream">
+              <div className="aspect-[4/3] animate-pulse bg-sand" />
+              <div className="space-y-2 p-3">
+                <div className="h-3 w-4/5 animate-pulse rounded-full bg-sand" />
+                <div className="h-3 w-1/2 animate-pulse rounded-full bg-sand" />
+              </div>
+            </div>
+          ))}
         </div>
-      ) : (
-        all.length > 0 && (
-          <>
-            <div className="relative">
+      )}
+
+      {!isLoading && all.length === 0 && (
+        <EmptyState aiOn={aiOn} onCreate={(m) => setSheet(m)} />
+      )}
+
+      {!isLoading && all.length > 0 && (
+        <>
+          {searchOpen && (
+            <div className="anim-fade relative">
               <Search
                 size={18}
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cocoa-muted"
@@ -362,37 +336,130 @@ function NewRecipes() {
               <input
                 className="input pl-10"
                 type="search"
+                autoFocus
                 placeholder="Rezepte oder Zutaten suchen"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setQuery('')
+                    setSearchOpen(false)
+                  }
+                }}
               />
             </div>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1">
-              {chips.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setFilter(c.id)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                    activeFilter === c.id ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-            <ul className="space-y-2">
-              {visible.map((r) => (
-                <NewRecipeCard key={r.id} r={r} mine={r.user_id === user?.id} />
+          )}
+
+          {forYou.length > 0 && !searching && activeFilter === 'all' && (
+            <section className="space-y-2.5" style={stagger(1)}>
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-[13px] font-semibold uppercase tracking-wide text-cocoa-muted">Für dich</h2>
+                {day.remainingKcal != null && (
+                  <span className="tabular text-xs text-cocoa-muted">noch {day.remainingKcal} kcal heute</span>
+                )}
+              </div>
+              <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {forYou.map((r, i) => (
+                  <ForYouCard key={r.id} recipe={r} onOpen={() => setOpenId(r.id)} style={stagger(i + 1, 50)} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]" style={stagger(2)}>
+            {chips.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setFilter(c.id)}
+                aria-pressed={activeFilter === c.id}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                  activeFilter === c.id ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+
+          {visible.length > 0 ? (
+            <ul className="grid grid-cols-2 gap-3">
+              {visible.map((r, i) => (
+                <RecipeGridCard
+                  key={r.id}
+                  recipe={r}
+                  score={scores.get(r.id)!}
+                  mine={r.user_id === user?.id}
+                  onOpen={() => setOpenId(r.id)}
+                  onQuickLog={() => log(r, 1, currentMeal())}
+                  style={stagger(Math.min(i, 8) + 3, 45)}
+                />
               ))}
             </ul>
-            {visible.length === 0 && (
-              <p className="text-center text-sm text-cocoa-light">Keine Treffer.</p>
-            )}
-          </>
-        )
+          ) : (
+            <div className="anim-fade flex flex-col items-center gap-2 rounded-2xl bg-cream px-5 py-8 text-center">
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-sand text-cocoa-light">
+                <Search size={22} />
+              </div>
+              <p className="text-sm font-semibold text-cocoa">Keine Treffer</p>
+              <p className="text-xs text-cocoa-light">Anderen Suchbegriff oder Filter probieren.</p>
+            </div>
+          )}
+        </>
       )}
 
+      {openRecipe && (
+        <RecipeDetailSheet
+          key={openRecipe.id}
+          recipe={openRecipe}
+          mine={openRecipe.user_id === user?.id}
+          day={day}
+          defaultMeal={currentMeal()}
+          onLog={(p, m) => log(openRecipe, p, m)}
+          onToggleShared={() => toggle.mutate({ id: openRecipe.id, shared: !openRecipe.shared })}
+          onDelete={() => {
+            del.mutate(openRecipe.id)
+            setOpenId(null)
+          }}
+          onClose={() => setOpenId(null)}
+        />
+      )}
       {sheet && <RecipeCreateSheet initial={sheet} aiEnabled={aiOn} onClose={() => setSheet(null)} />}
+    </div>
+  )
+}
+
+/** Leerer Zustand: großes Icon + zwei Kacheln (KI / selbst). */
+function EmptyState({ aiOn, onCreate }: { aiOn: boolean; onCreate: (m: CreateMode) => void }) {
+  const tile =
+    'flex flex-col items-center justify-center gap-1.5 rounded-2xl px-3 py-5 text-sm font-semibold transition active:scale-95'
+  return (
+    <div className="space-y-6 pt-6" style={stagger(1)}>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="grid h-24 w-24 place-items-center rounded-full bg-brand/10 text-brand">
+          <ChefHat size={44} strokeWidth={1.6} />
+        </div>
+        <div>
+          <p className="text-lg font-bold text-cocoa">Noch keine Rezepte</p>
+          <p className="mx-auto mt-1 max-w-[16rem] text-sm text-cocoa-light">
+            Leg dein erstes Rezept an — mit Nährwerten, Zutaten und Zubereitung.
+          </p>
+        </div>
+      </div>
+      <div className={`grid gap-3 ${aiOn ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {aiOn && (
+          <button className={`${tile} bg-brand text-on-brand`} onClick={() => onCreate('ai')}>
+            <Sparkles size={24} />
+            Mit KI erstellen
+          </button>
+        )}
+        <button
+          className={`${tile} ${aiOn ? 'bg-cream text-cocoa hover:bg-sand-light' : 'bg-brand text-on-brand'}`}
+          onClick={() => onCreate('manual')}
+        >
+          <PenLine size={24} className={aiOn ? 'text-brand' : ''} />
+          Selbst eintragen
+        </button>
+      </div>
     </div>
   )
 }

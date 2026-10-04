@@ -1,41 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import {
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  ClipboardList,
-  Dumbbell,
-  List,
-  Play,
-  Plus,
-  Search,
-  Sparkles,
-  Trash2,
-  X,
-} from 'lucide-react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { ChevronRight, ClipboardList, Dumbbell, List, PenLine, Plus, Sparkles } from 'lucide-react'
 import { useExercises } from '../../hooks/useExercises'
-import { useWorkouts } from '../../hooks/useWorkouts'
+import { useAllSets, useWorkouts } from '../../hooks/useWorkouts'
 import { useAiStatus } from '../../hooks/useAi'
-import {
-  nextExercisePosition,
-  nextPlanPosition,
-  useAddPlanExercise,
-  useCreatePlan,
-  useDeletePlan,
-  usePlans,
-  useRemovePlanExercise,
-  useRenamePlan,
-  useReorderPlanExercises,
-} from '../../hooks/usePlans'
+import { nextPlanPosition, useCreatePlan, usePlans } from '../../hooks/usePlans'
 import { getPlanQueue } from '../../lib/workoutSession'
-import { MUSCLE_GROUPS, type Exercise, type PlanWithExercises } from '../../types'
+import { lastDoneByPlan, suggestNextPlan } from '../../lib/home'
+import { trainingDay } from '../../lib/day'
+import type { PlanWithExercises } from '../../types'
 import { Sheet } from '../workout/Sheet'
+import { agoLong, enter } from '../exercises/muscle'
 import { AiPlanGeneratorBody } from './AiPlanGenerator'
+import { PlanCard } from './PlanCard'
+import { PlanEditor } from './PlanEditor'
 
-/** Pläne im Hevy-„Routines"-Stil: Liste mit Starten-Button, Editor per ?edit=<id>. */
+/** Pläne im Routine-Stil (Neu-Modus): Liste mit Play-Knopf, Editor per ?edit=<id>. */
 export default function PlansNew() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -44,29 +24,52 @@ export default function PlansNew() {
   const { data: plans, isLoading, isFetching } = usePlans()
   const { data: exercises } = useExercises()
   const { data: workouts } = useWorkouts()
+  const { data: allSets } = useAllSets()
   const { data: ai } = useAiStatus()
   const createPlan = useCreatePlan()
 
   const [sheet, setSheet] = useState<null | 'create' | 'ai'>(null)
   const [newName, setNewName] = useState('')
   const aiAvailable = !!ai?.enabled && (exercises?.length ?? 0) > 0
+  const today = trainingDay()
 
-  const exName = useMemo(() => {
-    const m = new Map((exercises ?? []).map((e) => [e.id, e.name]))
-    return (id: string) => m.get(id) ?? 'Übung'
-  }, [exercises])
+  const exById = useMemo(() => new Map((exercises ?? []).map((e) => [e.id, e])), [exercises])
 
-  // Letztes Training je Plan: über die lokal gemerkte Plan-Vorlage je Workout.
-  const lastByPlan = useMemo(() => {
-    const m = new Map<string, string>()
+  // Wann lief welcher Plan zuletzt? Vorschlag wie auf dem Start-Screen (Plan-Zuordnung nur vor heute).
+  const { suggested, lastDone } = useMemo(() => {
+    const list = plans ?? []
+    const sets = allSets ?? []
+    const before = new Map<string, string>()
+    const all = new Map<string, string>()
     for (const w of workouts ?? []) {
       const q = getPlanQueue(w.id)
       if (!q?.planId) continue
-      const prev = m.get(q.planId)
-      if (!prev || w.date > prev) m.set(q.planId, w.date)
+      if ((all.get(q.planId) ?? '') < w.date) all.set(q.planId, w.date)
+      if (w.date < today && (before.get(q.planId) ?? '') < w.date) before.set(q.planId, w.date)
     }
-    return m
-  }, [workouts])
+    const anyFilled = list.some((p) => p.exercise_ids.length > 0)
+    return {
+      suggested: anyFilled ? suggestNextPlan(list, sets, before) : null,
+      lastDone: lastDoneByPlan(list, sets, all),
+    }
+  }, [plans, workouts, allSets, today])
+
+  // Untertitel: „3 Pläne · zuletzt: Push vor 3 Tagen"
+  const subtitle = useMemo(() => {
+    if (!plans) return 'Lädt…'
+    const n = plans.length
+    const head = `${n} ${n === 1 ? 'Plan' : 'Pläne'}`
+    let recent: PlanWithExercises | null = null
+    let recentDate = ''
+    for (const p of plans) {
+      const d = lastDone.get(p.id)
+      if (d && d > recentDate) {
+        recent = p
+        recentDate = d
+      }
+    }
+    return recent ? `${head} · zuletzt: ${recent.name} ${agoLong(recentDate, today)}` : head
+  }, [plans, lastDone, today])
 
   function openEditor(id: string) {
     setParams({ edit: id })
@@ -110,31 +113,57 @@ export default function PlansNew() {
   }
 
   const hasPlans = (plans?.length ?? 0) > 0
+  const hasExercises = (exercises?.length ?? 0) > 0
+  let idx = 1
 
   return (
     <div className="space-y-4">
-      <header className="flex items-center gap-2">
-        <h1 className="flex-1 text-xl font-bold">Pläne</h1>
-        <Link to="/exercises" className="btn-ghost flex items-center gap-1.5 text-sm">
-          <List size={16} /> Übungen
-        </Link>
-        <button className="btn-primary flex items-center gap-1 text-sm" onClick={() => setSheet('create')}>
-          <Plus size={16} strokeWidth={2.5} /> Plan
-        </button>
+      <header className="flex items-start justify-between gap-3" style={enter(0)}>
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold tracking-tight">Pläne</h1>
+          <p className="tabular mt-0.5 truncate text-sm text-cocoa-light">{subtitle}</p>
+        </div>
+        <div className="mt-1 flex shrink-0 gap-2">
+          <button
+            className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-95"
+            onClick={() => navigate('/exercises')}
+            aria-label="Übungen"
+            title="Übungen"
+          >
+            <List size={18} />
+          </button>
+          <button
+            className="grid h-10 w-10 place-items-center rounded-full bg-brand text-on-brand shadow-md shadow-brand/25 transition active:scale-95"
+            onClick={() => setSheet('create')}
+            aria-label="Neuer Plan"
+            title="Neuer Plan"
+          >
+            <Plus size={20} strokeWidth={2.5} />
+          </button>
+        </div>
       </header>
 
-      {isLoading && <p className="text-cocoa-light">Lädt…</p>}
+      {isLoading && (
+        <div className="space-y-3" aria-hidden>
+          <div className="h-36 animate-pulse rounded-3xl bg-sand" />
+          <div className="h-28 animate-pulse rounded-3xl bg-sand" />
+          <div className="h-28 animate-pulse rounded-3xl bg-sand" />
+        </div>
+      )}
 
       {hasPlans && (
         <ul className="space-y-3">
           {plans!.map((plan) => (
-            <PlanListCard
+            <PlanCard
               key={plan.id}
               plan={plan}
-              exName={exName}
-              lastDate={lastByPlan.get(plan.id)}
+              exById={exById}
+              lastDone={lastDone.get(plan.id)}
+              today={today}
+              suggested={suggested?.id === plan.id}
               onOpen={() => openEditor(plan.id)}
               onStart={() => startPlan(plan)}
+              style={enter(idx++)}
             />
           ))}
         </ul>
@@ -142,37 +171,60 @@ export default function PlansNew() {
 
       {hasPlans && aiAvailable && (
         <button
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-cocoa-light"
+          className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left transition active:scale-[0.99]"
           onClick={() => setSheet('ai')}
+          style={enter(idx++)}
         >
-          <Sparkles size={18} className="shrink-0 text-cocoa-muted" />
-          <span className="flex-1">Plan von der KI erstellen</span>
-          <ChevronRight size={16} className="text-cocoa-muted" />
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/15 text-brand">
+            <Sparkles size={17} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">Plan mit KI erstellen</span>
+            <span className="block truncate text-xs text-cocoa-light">Wunsch eingeben, Vorschlag übernehmen</span>
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
         </button>
       )}
 
       {!isLoading && plans && !hasPlans && (
-        <div className="card anim-fade space-y-4 py-8 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sand text-cocoa-light">
-            <ClipboardList size={26} />
-          </div>
-          <div className="space-y-1">
-            <h2 className="font-semibold">Noch keine Pläne</h2>
-            <p className="text-sm text-cocoa-light">
+        <section className="space-y-4 pt-2" style={enter(1)}>
+          <div className="flex flex-col items-center text-center">
+            <div className="relative grid h-24 w-24 place-items-center">
+              <span className="absolute inset-0 rounded-full bg-brand/10 blur-xl" aria-hidden />
+              <span className="absolute inset-2 rounded-full bg-sand" aria-hidden />
+              <span className="absolute inset-5 rounded-full bg-cream" aria-hidden />
+              <ClipboardList size={30} className="relative text-brand" />
+            </div>
+            <h2 className="mt-3 text-xl font-bold tracking-tight">Noch keine Pläne</h2>
+            <p className="mt-1 max-w-xs text-sm text-cocoa-light">
               Stell dir Routinen wie „Push" oder „Beine" zusammen und starte sie mit einem Tipp.
             </p>
           </div>
-          <div className="mx-auto flex max-w-xs flex-col gap-2">
-            <button className="btn-primary flex items-center justify-center gap-1.5" onClick={() => setSheet('create')}>
-              <Plus size={16} strokeWidth={2.5} /> Neuen Plan anlegen
-            </button>
-            {aiAvailable && (
-              <button className="btn-ghost flex items-center justify-center gap-1.5" onClick={() => setSheet('ai')}>
-                <Sparkles size={16} className="text-cocoa-light" /> Plan von der KI erstellen
-              </button>
+          <div className="grid grid-cols-2 gap-3">
+            <EmptyTile
+              primary
+              icon={<PenLine size={22} />}
+              title="Selbst erstellen"
+              desc="Übungen frei wählen"
+              onClick={() => setSheet('create')}
+            />
+            {aiAvailable ? (
+              <EmptyTile
+                icon={<Sparkles size={22} />}
+                title="Mit KI erstellen"
+                desc="Aus deinem Wunsch"
+                onClick={() => setSheet('ai')}
+              />
+            ) : (
+              <EmptyTile
+                icon={<Dumbbell size={22} />}
+                title={hasExercises ? 'Übungen' : 'Übungen anlegen'}
+                desc={hasExercises ? 'Deine Übungsliste' : 'Zuerst die Grundlage'}
+                onClick={() => navigate('/exercises')}
+              />
             )}
           </div>
-        </div>
+        </section>
       )}
 
       {sheet === 'create' && (
@@ -191,6 +243,18 @@ export default function PlansNew() {
               if (e.key === 'Enter') submitCreate()
             }}
           />
+          <div className="flex flex-wrap gap-1.5">
+            {['Push', 'Pull', 'Beine', 'Oberkörper', 'Ganzkörper'].map((n) => (
+              <button
+                key={n}
+                type="button"
+                className="rounded-full bg-sand px-3 py-1 text-xs font-medium text-cocoa-light"
+                onClick={() => setNewName(n)}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
           <button
             className="btn-primary w-full"
             onClick={submitCreate}
@@ -203,7 +267,7 @@ export default function PlansNew() {
               className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
               onClick={() => setSheet('ai')}
             >
-              <Sparkles size={16} className="text-cocoa-light" /> Plan von der KI erstellen
+              <Sparkles size={16} className="text-brand" /> Plan mit KI erstellen
             </button>
           )}
         </Sheet>
@@ -218,331 +282,40 @@ export default function PlansNew() {
   )
 }
 
-// ---------------------------------------------------------------------------
-
-function daysAgoLabel(date: string): string {
-  const [y, m, d] = date.split('-').map(Number)
-  const then = new Date(y, m - 1, d)
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const days = Math.round((today.getTime() - then.getTime()) / 86_400_000)
-  if (days <= 0) return 'zuletzt heute'
-  if (days === 1) return 'zuletzt gestern'
-  return `zuletzt vor ${days} Tagen`
-}
-
-function PlanListCard({
-  plan,
-  exName,
-  lastDate,
-  onOpen,
-  onStart,
+function EmptyTile({
+  icon,
+  title,
+  desc,
+  onClick,
+  primary = false,
 }: {
-  plan: PlanWithExercises
-  exName: (id: string) => string
-  lastDate: string | undefined
-  onOpen: () => void
-  onStart: () => void
+  icon: ReactNode
+  title: string
+  desc: string
+  onClick: () => void
+  primary?: boolean
 }) {
-  const names = plan.exercise_ids.map(exName)
-  const summary =
-    names.length === 0
-      ? 'Noch keine Übungen'
-      : names.slice(0, 2).join(', ') + (names.length > 2 ? ` +${names.length - 2}` : '')
-
   return (
-    <li className="card flex items-center gap-3">
-      <button className="min-w-0 flex-1 text-left" onClick={onOpen}>
-        <div className="truncate font-bold">{plan.name}</div>
-        <div className="truncate text-sm text-cocoa-light">{summary}</div>
-        {lastDate && <div className="mt-0.5 text-xs text-cocoa-muted">{daysAgoLabel(lastDate)}</div>}
-      </button>
-      <button
-        className="btn-primary flex shrink-0 items-center gap-1.5 text-sm"
-        onClick={onStart}
-        disabled={plan.exercise_ids.length === 0}
-      >
-        <Play size={14} className="fill-current" /> Starten
-      </button>
-    </li>
-  )
-}
-
-// ---------------------------------------------------------------------------
-
-function PlanEditor({
-  plan,
-  exercises,
-  onBack,
-  onStart,
-}: {
-  plan: PlanWithExercises
-  exercises: Exercise[]
-  onBack: () => void
-  onStart: () => void
-}) {
-  const renamePlan = useRenamePlan()
-  const deletePlan = useDeletePlan()
-  const removeEx = useRemovePlanExercise()
-  const reorder = useReorderPlanExercises()
-  const [name, setName] = useState(plan.name)
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const exById = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises])
-
-  useEffect(() => setName(plan.name), [plan.name])
-
-  function commitName() {
-    const n = name.trim()
-    if (n && n !== plan.name) renamePlan.mutate({ id: plan.id, name: n })
-    else setName(plan.name)
-  }
-
-  function move(index: number, dir: -1 | 1) {
-    const next = index + dir
-    if (next < 0 || next >= plan.exercise_ids.length) return
-    const ids = [...plan.exercise_ids]
-    ;[ids[index], ids[next]] = [ids[next], ids[index]]
-    reorder.mutate({ plan_id: plan.id, exercise_ids: ids })
-  }
-
-  function removePlan() {
-    if (!confirm(`Plan „${plan.name}" löschen? (Übungen bleiben erhalten)`)) return
-    // Erst Editor schließen, dann löschen — sonst konkurriert das Aufräumen des
-    // ?edit-Parameters mit dem Zurück-Navigieren.
-    onBack()
-    deletePlan.mutate(plan.id)
-  }
-
-  return (
-    <div className="anim-fade space-y-4">
-      <header className="flex items-center gap-1">
-        <button
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-cocoa-light"
-          onClick={onBack}
-          aria-label="Zurück zu Plänen"
-        >
-          <ChevronLeft size={22} />
-        </button>
-        <input
-          className="input min-w-0 flex-1 font-bold"
-          aria-label="Planname"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={commitName}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur()
-          }}
-        />
-        <button
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
-          aria-label="Plan löschen"
-          onClick={removePlan}
-          disabled={deletePlan.isPending}
-        >
-          <Trash2 size={18} />
-        </button>
-      </header>
-
-      <section className="card space-y-2">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-semibold">Übungen</h2>
-          <span className="tabular text-xs text-cocoa-muted">{plan.exercise_ids.length}</span>
-        </div>
-
-        {plan.exercise_ids.length > 0 ? (
-          <ul className="divide-y divide-sand">
-            {plan.exercise_ids.map((exId, i) => {
-              const ex = exById.get(exId)
-              return (
-                <li key={exId} className="flex items-center gap-2 py-2">
-                  <span className="tabular w-5 shrink-0 text-center text-xs text-cocoa-muted">{i + 1}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{ex?.name ?? 'Übung'}</div>
-                    {ex && <div className="text-xs text-cocoa-muted">{ex.muscle_group}</div>}
-                  </div>
-                  <button
-                    className="grid h-7 w-6 place-items-center text-cocoa-muted disabled:opacity-30"
-                    aria-label="Nach oben"
-                    disabled={i === 0}
-                    onClick={() => move(i, -1)}
-                  >
-                    <ChevronUp size={15} />
-                  </button>
-                  <button
-                    className="grid h-7 w-6 place-items-center text-cocoa-muted disabled:opacity-30"
-                    aria-label="Nach unten"
-                    disabled={i === plan.exercise_ids.length - 1}
-                    onClick={() => move(i, 1)}
-                  >
-                    <ChevronDown size={15} />
-                  </button>
-                  <button
-                    className="grid h-7 w-6 place-items-center text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
-                    aria-label="Aus Plan entfernen"
-                    onClick={() => removeEx.mutate({ plan_id: plan.id, exercise_id: exId })}
-                  >
-                    <X size={15} />
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        ) : (
-          <p className="py-2 text-sm text-cocoa-muted">Noch keine Übungen in diesem Plan.</p>
-        )}
-
-        <button
-          className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
-          onClick={() => setPickerOpen(true)}
-        >
-          <Plus size={16} /> Übung hinzufügen
-        </button>
-      </section>
-
-      <button
-        className="btn-primary flex w-full items-center justify-center gap-1.5"
-        onClick={onStart}
-        disabled={plan.exercise_ids.length === 0}
-      >
-        <Play size={16} className="fill-current" /> Training starten
-      </button>
-
-      {pickerOpen && (
-        <ExercisePickerSheet plan={plan} exercises={exercises} onClose={() => setPickerOpen(false)} />
+    <button
+      className={`relative flex h-36 flex-col justify-between overflow-hidden rounded-3xl p-4 text-left transition active:scale-[0.97] ${
+        primary ? 'bg-brand text-on-brand shadow-lg shadow-brand/25' : 'bg-cream text-cocoa'
+      }`}
+      onClick={onClick}
+    >
+      {primary && (
+        <span className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/15 blur-2xl" />
       )}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-
-function ExercisePickerSheet({
-  plan,
-  exercises,
-  onClose,
-}: {
-  plan: PlanWithExercises
-  exercises: Exercise[]
-  onClose: () => void
-}) {
-  const addEx = useAddPlanExercise()
-  const removeEx = useRemovePlanExercise()
-  const [query, setQuery] = useState('')
-  const [group, setGroup] = useState<string | null>(null)
-  const [pending, setPending] = useState<Set<string>>(new Set())
-  // Positionen fortlaufend vergeben, auch wenn mehrere Übungen schnell hintereinander kommen.
-  const nextPos = useRef(nextExercisePosition(plan))
-
-  const groups = useMemo(
-    () => MUSCLE_GROUPS.filter((g) => exercises.some((e) => e.muscle_group === g)),
-    [exercises],
-  )
-
-  const list = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return exercises
-      .filter((e) => (!group || e.muscle_group === group) && (!q || e.name.toLowerCase().includes(q)))
-      .sort((a, b) => a.name.localeCompare(b.name, 'de'))
-  }, [exercises, query, group])
-
-  function mark(id: string, on: boolean) {
-    setPending((prev) => {
-      const next = new Set(prev)
-      if (on) next.add(id)
-      else next.delete(id)
-      return next
-    })
-  }
-
-  async function toggle(ex: Exercise) {
-    if (pending.has(ex.id)) return
-    mark(ex.id, true)
-    try {
-      if (plan.exercise_ids.includes(ex.id)) {
-        await removeEx.mutateAsync({ plan_id: plan.id, exercise_id: ex.id })
-      } else {
-        const position = Math.max(nextPos.current, nextExercisePosition(plan))
-        nextPos.current = position + 1
-        await addEx.mutateAsync({ plan_id: plan.id, exercise_id: ex.id, position })
-      }
-    } finally {
-      mark(ex.id, false)
-    }
-  }
-
-  const chip = (active: boolean) =>
-    `shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
-      active ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-    }`
-
-  return (
-    <Sheet title="Übung hinzufügen" onClose={onClose}>
-      <div className="relative">
-        <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cocoa-muted" />
-        <input
-          className="input pl-9"
-          placeholder="Übung suchen"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-        <button className={chip(group === null)} onClick={() => setGroup(null)}>
-          Alle
-        </button>
-        {groups.map((g) => (
-          <button key={g} className={chip(group === g)} onClick={() => setGroup(g)}>
-            {g}
-          </button>
-        ))}
-      </div>
-
-      {list.length > 0 ? (
-        <ul className="divide-y divide-sand">
-          {list.map((ex) => {
-            const inPlan = plan.exercise_ids.includes(ex.id)
-            const busy = pending.has(ex.id)
-            return (
-              <li key={ex.id}>
-                <button
-                  className="flex w-full items-center gap-3 py-2.5 text-left disabled:opacity-60"
-                  onClick={() => toggle(ex)}
-                  disabled={busy}
-                  aria-pressed={inPlan}
-                >
-                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sand text-cocoa-light">
-                    <Dumbbell size={15} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{ex.name}</div>
-                    <div className="text-xs text-cocoa-muted">{ex.muscle_group}</div>
-                  </div>
-                  {inPlan ? (
-                    <span className="flex items-center gap-1 text-xs font-medium text-success">
-                      <Check size={16} strokeWidth={2.5} /> im Plan
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs font-medium text-brand">
-                      <Plus size={14} strokeWidth={2.5} /> hinzufügen
-                    </span>
-                  )}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        <p className="py-4 text-center text-sm text-cocoa-muted">
-          Keine Übung gefunden.{' '}
-          <Link to="/exercises" className="underline">
-            Übungen verwalten
-          </Link>
-        </p>
-      )}
-
-      <button className="btn-primary w-full" onClick={onClose}>
-        Fertig
-      </button>
-    </Sheet>
+      <span
+        className={`relative grid h-11 w-11 place-items-center rounded-full ${
+          primary ? 'bg-white/20' : 'bg-brand/15 text-brand'
+        }`}
+      >
+        {icon}
+      </span>
+      <span className="relative">
+        <span className="block font-bold leading-tight">{title}</span>
+        <span className={`mt-0.5 block text-xs ${primary ? 'opacity-80' : 'text-cocoa-light'}`}>{desc}</span>
+      </span>
+    </button>
   )
 }
