@@ -35,10 +35,10 @@ type PickTarget = { kind: 'weekday'; i: number } | { kind: 'step'; i: number } |
 
 /** Editor für den Trainingsrhythmus (Profil → Trainingsrhythmus). */
 export function RhythmEditor() {
-  const { isLoading } = useUserPrefs()
+  const { ready } = useUserPrefs()
   const { data: plans } = usePlans()
   // Entwürfe erst anlegen, wenn Einstellungen und Pläne geladen sind
-  if (isLoading || plans === undefined) {
+  if (!ready || plans === undefined) {
     return <div className="h-64 animate-pulse rounded-2xl bg-sand" aria-hidden />
   }
   return <RhythmEditorInner />

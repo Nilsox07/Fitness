@@ -21,6 +21,8 @@ import {
   Flame,
   Layers,
   ClipboardList,
+  CalendarDays,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { signOut } from '../lib/userData'
 import { useAuth } from '../lib/auth'
@@ -58,17 +60,22 @@ import { Buddy } from '../components/buddy/Buddy'
 import { BUDDY_SKIN_EVENT, useBuddyLook } from '../components/buddy/useBuddy'
 import { NameSheet } from '../components/profile/NameSheet'
 import { useMyProfile } from '../hooks/useSocial'
+import { useUserPrefs } from '../hooks/usePrefsSync'
+import { describeSchedule } from '../lib/schedule'
+import { RhythmEditor } from '../components/profile/RhythmEditor'
+import { SettingsEditor } from '../components/profile/SettingsEditor'
 
 /** Unterseiten des Profils (neue Version), per ?s=… in der URL → Zurück-Geste funktioniert. */
-type Sub = 'goal' | 'review' | 'version' | 'coach' | 'push' | 'unlock' | 'export'
+type Sub = 'rhythm' | 'settings' | 'goal' | 'review' | 'version' | 'coach' | 'push' | 'export'
 
 const SUB_TITLE: Record<Sub, string> = {
+  rhythm: 'Trainingsrhythmus',
+  settings: 'Meine Einstellungen',
   goal: 'Ziel & Körperdaten',
   review: 'Wochenfazit',
   version: 'App-Version',
-  coach: 'KI-Coach-Ton',
+  coach: 'Buddy-Ton',
   push: 'Trainings-Erinnerungen',
-  unlock: 'Freischaltungen',
   export: 'Daten exportieren',
 }
 
@@ -82,6 +89,7 @@ export default function Profile() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { data: myProfile } = useMyProfile()
+  const { prefs: userPrefs } = useUserPrefs()
   const [nameOpen, setNameOpen] = useState(false)
   const { mode, setMode } = useTheme()
   const { showNutrition, setShowNutrition, appMode, setAppMode, isNew } = usePrefs()
@@ -176,12 +184,13 @@ export default function Profile() {
   const [params, setParams] = useSearchParams()
 
   const available: Record<Sub, boolean> = {
+    rhythm: true,
+    settings: true,
     goal: showNutrition,
     review: true,
     version: true,
     coach: Boolean(ai?.enabled),
     push: pushSupported,
-    unlock: true,
     export: true,
     // Fitbit ist in der neuen App ausgeblendet (Code bleibt für die klassische Version).
   }
@@ -210,6 +219,15 @@ export default function Profile() {
       return (
         <div className="anim-fade space-y-4">
           <SubHeader title={SUB_TITLE[sub]} onBack={closeSub} />
+
+          {sub === 'rhythm' && <RhythmEditor />}
+
+          {sub === 'settings' && (
+            <SettingsEditor
+              onOpenRhythm={() => setParams({ s: 'rhythm' }, { replace: true })}
+              onOpenGoal={showNutrition ? () => openSub('goal') : undefined}
+            />
+          )}
 
           {sub === 'goal' && (
             <div className="card space-y-3">
@@ -265,7 +283,7 @@ export default function Profile() {
 
           {sub === 'coach' && (
             <div className="card space-y-2">
-              <p className="text-xs text-cocoa-light">So spricht der KI-Coach mit dir.</p>
+              <p className="text-xs text-cocoa-light">So spricht dein Buddy mit dir.</p>
               <div className={`${SEG_TRACK} grid-cols-3`}>
                 {tones.map((t) => (
                   <button
@@ -305,74 +323,6 @@ export default function Profile() {
                 )}
               </button>
               {pushMsg && <p className="text-sm text-cocoa-light">{pushMsg}</p>}
-            </div>
-          )}
-
-          {sub === 'unlock' && (
-            <div className="card space-y-3">
-              <p className="text-xs text-cocoa-light">
-                Mit jedem Buddy-Level schaltest du mehr frei — du bist auf{' '}
-                <span className="tabular font-semibold text-cocoa">Level {level}</span>.
-              </p>
-              <div>
-                <div className="mb-1 text-xs text-cocoa-light">Akzentfarbe</div>
-                <div className="flex flex-wrap gap-2">
-                  {ACCENTS.map((a) => {
-                    const locked = level < a.minLevel
-                    return (
-                      <button
-                        key={a.id}
-                        onClick={() => chooseAccent(a.id, a.minLevel)}
-                        disabled={locked}
-                        title={locked ? `Ab Level ${a.minLevel}` : a.label}
-                        aria-label={locked ? `${a.label} – ab Level ${a.minLevel}` : a.label}
-                        className={`relative h-9 w-9 rounded-full ring-2 ${
-                          accent === a.id ? 'ring-cocoa' : 'ring-transparent'
-                        } ${locked ? 'opacity-40' : ''}`}
-                        style={{ background: a.swatch }}
-                      >
-                        {locked && (
-                          <span className="absolute inset-0 grid place-items-center text-white">
-                            <Lock size={14} />
-                          </span>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-              <div>
-                <div className="mb-1 text-xs text-cocoa-light">Buddy-Skins</div>
-                <div className="grid grid-cols-4 gap-2">
-                  {SKINS.map((s) => {
-                    const locked = level < s.minLevel
-                    return (
-                      <button
-                        key={s.id}
-                        onClick={() => chooseSkin(s.id, s.minLevel)}
-                        disabled={locked}
-                        title={locked ? `Ab Level ${s.minLevel}` : s.label}
-                        aria-label={locked ? `${s.label} – ab Level ${s.minLevel}` : s.label}
-                        className={`relative flex flex-col items-center rounded-2xl px-1 pb-1.5 pt-1 transition-colors duration-200 ${
-                          skin === s.id ? 'bg-sand-light ring-2 ring-cocoa dark:bg-sand-dark' : 'bg-sand'
-                        }`}
-                      >
-                        <Buddy
-                          size={56}
-                          stage={Math.max(2, buddyLook.stage)}
-                          skin={s.id}
-                          animate={skin === s.id}
-                          className={locked ? 'opacity-45 saturate-[.6]' : ''}
-                        />
-                        <span className="text-[11px] font-medium text-cocoa-light">
-                          {locked ? `Lv ${s.minLevel}` : s.label}
-                        </span>
-                        {locked && <Lock size={13} className="absolute right-1.5 top-1.5 text-cocoa-light" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
             </div>
           )}
 
@@ -435,6 +385,16 @@ export default function Profile() {
           showNutrition={showNutrition}
           onOpen={() => navigate('/badges')}
         />
+
+        <Group title="Training">
+          <Row
+            icon={CalendarDays}
+            label="Trainingsrhythmus"
+            value={userPrefs.schedule ? describeSchedule(userPrefs.schedule) : 'Festlegen'}
+            onClick={() => openSub('rhythm')}
+          />
+          <Row icon={SlidersHorizontal} label="Meine Einstellungen" onClick={() => openSub('settings')} />
+        </Group>
 
         <Group title="Ziele">
           {showNutrition && (
@@ -526,7 +486,7 @@ export default function Profile() {
           {ai?.enabled && (
             <Row
               icon={MessageSquare}
-              label="KI-Coach-Ton"
+              label="Buddy-Ton"
               value={COACH_TONE_LABEL[tone]}
               onClick={() => openSub('coach')}
             />
@@ -538,7 +498,7 @@ export default function Profile() {
             icon={Palette}
             label="Freischaltungen"
             value={[currentAccent?.label, currentSkin && `Buddy ${currentSkin.label}`].filter(Boolean).join(' · ')}
-            onClick={() => openSub('unlock')}
+            onClick={() => navigate('/badges')}
           />
         </Group>
 

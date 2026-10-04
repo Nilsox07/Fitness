@@ -112,6 +112,8 @@ export function useUserPrefs(): {
   save: (patch: Partial<UserPrefs>) => Promise<void>
   source: PrefsSource | null
   isLoading: boolean
+  /** Erster Abruf abgeschlossen (Erfolg oder Fehler) — erst dann Formulare befüllen. */
+  ready: boolean
 } {
   const { user } = useAuth()
   const qc = useQueryClient()
@@ -158,6 +160,7 @@ export function useUserPrefs(): {
     save,
     source: query.isPlaceholderData ? null : (query.data?.source ?? null),
     isLoading: query.isLoading,
+    ready: query.isFetched || !uid,
   }
 }
 
