@@ -83,6 +83,7 @@ import {
 import {
   afterSetDone,
   getExerciseRest,
+  getRestRules,
   restSecondsAfter,
   appendOrder,
   getPairs,
@@ -808,7 +809,7 @@ export default function Workout() {
             nextList.find((x) => !isDone(nextEx, x)))
           : nextList.find((x) => !isDone(nextEx, x))
       const base = getExerciseRest(nextEx) ?? rest.total
-      const sec = restSecondsAfter(s.set_type, nextSet?.set_type ?? null, base)
+      const sec = restSecondsAfter(s.set_type, nextSet?.set_type ?? null, base, getRestRules())
       if (sec > 0) rest.start(sec)
       else rest.stop()
     }

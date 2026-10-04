@@ -94,7 +94,13 @@ describe('restSecondsAfter', () => {
   it('kurze Pause nach dem Aufwärmen', () => {
     expect(restSecondsAfter('warmup', 'warmup', 180)).toBe(45)
     expect(restSecondsAfter('warmup', 'working', 180)).toBe(90)
-    expect(restSecondsAfter('warmup', 'working', 60)).toBe(60)
+  })
+  it('eigene Regeln werden genutzt', () => {
+    const rules = { warmupToWarmup: 30, warmupToWorking: 120, beforeDrop: 10 }
+    expect(restSecondsAfter('warmup', 'warmup', 180, rules)).toBe(30)
+    expect(restSecondsAfter('warmup', 'working', 180, rules)).toBe(120)
+    expect(restSecondsAfter('working', 'drop', 180, rules)).toBe(10)
+    expect(restSecondsAfter('working', 'working', 150, rules)).toBe(150)
   })
   it('sonst die eingestellte Pause', () => {
     expect(restSecondsAfter('working', 'working', 180)).toBe(180)

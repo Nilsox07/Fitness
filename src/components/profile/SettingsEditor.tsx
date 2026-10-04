@@ -3,7 +3,7 @@ import { Check, ChevronRight, Minus, Plus } from 'lucide-react'
 import { useUserPrefs } from '../../hooks/usePrefsSync'
 import { useNutritionSettings } from '../../hooks/useNutrition'
 import { usePrefs } from '../../lib/prefs'
-import { getRestSeconds, setRestSeconds } from '../../lib/workoutSession'
+import { getRestRules, getRestSeconds, setRestRules, setRestSeconds, type RestRules } from '../../lib/workoutSession'
 import { definesDays, describeSchedule, weeklyGoal } from '../../lib/schedule'
 import {
   DEFAULT_KCAL_BONUS,
@@ -40,6 +40,8 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
   const [bonus, setBonus] = useState(prefs.kcalBonus)
   const [split, setSplit] = useState<MealSplit>(prefs.mealSplit)
   const [rest, setRest] = useState(getRestSeconds())
+  const [rules, setRules] = useState<RestRules>(getRestRules())
+  const savedRules = getRestRules()
   const [cutoff, setCutoff] = useState(prefs.dayCutoff)
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -51,6 +53,9 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
     bonus !== prefs.kcalBonus ||
     MEALS.some((m) => split[m] !== prefs.mealSplit[m]) ||
     rest !== getRestSeconds() ||
+    rules.warmupToWarmup !== savedRules.warmupToWarmup ||
+    rules.warmupToWorking !== savedRules.warmupToWorking ||
+    rules.beforeDrop !== savedRules.beforeDrop ||
     cutoff !== prefs.dayCutoff
 
   const change = <T,>(set: (v: T) => void) => (v: T) => {
@@ -63,6 +68,7 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
     setBusy(true)
     try {
       setRestSeconds(rest)
+      setRestRules(rules)
       await save({
         kcalBonus: bonus,
         mealSplit: split,
@@ -110,16 +116,61 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
         )}
         <Line
           label="Standard-Pause"
-          hint="Pausentimer zwischen Sätzen · nur auf diesem Gerät"
+          hint="Zwischen Arbeitssätzen · pro Übung im Timer änderbar · nur auf diesem Gerät"
           trailing={
             <Counter
               value={rest}
-              min={30}
+              min={15}
               max={600}
               step={15}
               label="Standard-Pause"
               format={fmtRest}
               onChange={change(setRest)}
+            />
+          }
+        />
+        <Line
+          label="Zwischen Aufwärmsätzen"
+          hint="Aufwärmsatz → nächster Aufwärmsatz"
+          trailing={
+            <Counter
+              value={rules.warmupToWarmup}
+              min={0}
+              max={300}
+              step={15}
+              label="Pause zwischen Aufwärmsätzen"
+              format={fmtRest}
+              onChange={change((v: number) => setRules((r) => ({ ...r, warmupToWarmup: v })))}
+            />
+          }
+        />
+        <Line
+          label="Nach dem Aufwärmen"
+          hint="Letzter Aufwärmsatz → erster Arbeitssatz"
+          trailing={
+            <Counter
+              value={rules.warmupToWorking}
+              min={0}
+              max={300}
+              step={15}
+              label="Pause nach dem Aufwärmen"
+              format={fmtRest}
+              onChange={change((v: number) => setRules((r) => ({ ...r, warmupToWorking: v })))}
+            />
+          }
+        />
+        <Line
+          label="Vor einem Dropsatz"
+          hint="0:00 = sofort weiter (empfohlen)"
+          trailing={
+            <Counter
+              value={rules.beforeDrop}
+              min={0}
+              max={120}
+              step={5}
+              label="Pause vor Dropsatz"
+              format={fmtRest}
+              onChange={change((v: number) => setRules((r) => ({ ...r, beforeDrop: v })))}
             />
           }
         />

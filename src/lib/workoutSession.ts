@@ -175,15 +175,54 @@ export function setRestSeconds(sec: number) {
 
 type SetKind = 'warmup' | 'working' | 'drop'
 
+/** Pausen-Regeln nach Satztyp (selbst einstellbar, Sekunden). */
+export interface RestRules {
+  /** Aufwärmsatz → nächster Aufwärmsatz */
+  warmupToWarmup: number
+  /** Letzter Aufwärmsatz → erster Arbeitssatz */
+  warmupToWorking: number
+  /** Pause direkt vor einem Dropsatz (0 = sofort weiter) */
+  beforeDrop: number
+}
+
+export const DEFAULT_REST_RULES: RestRules = { warmupToWarmup: 45, warmupToWorking: 90, beforeDrop: 0 }
+
+export function getRestRules(): RestRules {
+  try {
+    const raw = JSON.parse(localStorage.getItem('rest_rules') || '{}') as Partial<RestRules>
+    const pick = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : d)
+    return {
+      warmupToWarmup: pick(raw.warmupToWarmup, DEFAULT_REST_RULES.warmupToWarmup),
+      warmupToWorking: pick(raw.warmupToWorking, DEFAULT_REST_RULES.warmupToWorking),
+      beforeDrop: pick(raw.beforeDrop, DEFAULT_REST_RULES.beforeDrop),
+    }
+  } catch {
+    return { ...DEFAULT_REST_RULES }
+  }
+}
+
+export function setRestRules(rules: RestRules) {
+  try {
+    localStorage.setItem('rest_rules', JSON.stringify(rules))
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Wie lange nach einem Satz pausieren?
- * - Vor einem Dropsatz: gar nicht (das ist der Sinn des Drops).
- * - Nach dem Aufwärmen: kurz (45 s bis zum nächsten Aufwärmsatz, max. 90 s vor dem ersten Arbeitssatz).
+ * - Vor einem Dropsatz: Regel „beforeDrop" (Standard 0 = sofort weiter).
+ * - Nach dem Aufwärmen: Regeln für Aufwärm→Aufwärm bzw. Aufwärm→Arbeitssatz.
  * - Sonst: die eingestellte Pause (Übung oder global).
  */
-export function restSecondsAfter(done: SetKind, next: SetKind | null, base: number): number {
-  if (next === 'drop') return 0
-  if (done === 'warmup') return next === 'warmup' ? Math.min(base, 45) : Math.min(base, 90)
+export function restSecondsAfter(
+  done: SetKind,
+  next: SetKind | null,
+  base: number,
+  rules: RestRules = DEFAULT_REST_RULES,
+): number {
+  if (next === 'drop') return rules.beforeDrop
+  if (done === 'warmup') return next === 'warmup' ? rules.warmupToWarmup : rules.warmupToWorking
   return base
 }
 

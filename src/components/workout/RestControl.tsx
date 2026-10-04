@@ -200,6 +200,25 @@ export function RestControl({
         >
           <div>
             <div className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">Dauer</div>
+            <div className="mb-2 flex items-center justify-between rounded-2xl bg-cream p-1">
+              <button
+                className="grid h-9 w-9 place-items-center rounded-xl bg-sand text-cocoa disabled:opacity-30"
+                aria-label="Standard-Pause verringern"
+                disabled={timer.total <= 15}
+                onClick={() => timer.setTotal(Math.max(15, timer.total - 15))}
+              >
+                −
+              </button>
+              <span className="tabular text-base font-bold">{mmss(timer.total)}</span>
+              <button
+                className="grid h-9 w-9 place-items-center rounded-xl bg-sand text-cocoa disabled:opacity-30"
+                aria-label="Standard-Pause erhöhen"
+                disabled={timer.total >= 600}
+                onClick={() => timer.setTotal(Math.min(600, timer.total + 15))}
+              >
+                +
+              </button>
+            </div>
             <div className="grid grid-cols-4 gap-2">
               {PRESETS.map((p) => (
                 <button
@@ -217,21 +236,47 @@ export function RestControl({
           {exercise && (
             <div>
               <div className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">Nur für {exercise.name}</div>
-              <div className="grid grid-cols-4 gap-2">
-                {[null, 90, 120, 180].map((p) => (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setExerciseRest(exercise.id, null)
+                    setExRestState(null)
+                  }}
+                  className={`btn shrink-0 rounded-2xl px-3 py-2.5 text-sm ${
+                    exRest == null ? 'bg-brand text-on-brand' : 'bg-cream text-cocoa'
+                  }`}
+                >
+                  Standard
+                </button>
+                <div className="flex flex-1 items-center justify-between rounded-2xl bg-cream p-1">
                   <button
-                    key={p ?? 'std'}
+                    className="grid h-9 w-9 place-items-center rounded-xl bg-sand text-cocoa disabled:opacity-30"
+                    aria-label="Übungs-Pause verringern"
+                    disabled={(exRest ?? timer.total) <= 15}
                     onClick={() => {
-                      setExerciseRest(exercise.id, p)
-                      setExRestState(p)
+                      const v = Math.max(15, (exRest ?? timer.total) - 15)
+                      setExerciseRest(exercise.id, v)
+                      setExRestState(v)
                     }}
-                    className={`btn rounded-2xl py-2.5 text-sm ${
-                      exRest === p ? 'bg-brand text-on-brand' : 'bg-cream text-cocoa'
-                    }`}
                   >
-                    {p == null ? 'Standard' : mmss(p)}
+                    −
                   </button>
-                ))}
+                  <span className={`tabular text-base font-bold ${exRest == null ? 'text-cocoa-light' : 'text-cocoa'}`}>
+                    {mmss(exRest ?? timer.total)}
+                  </span>
+                  <button
+                    className="grid h-9 w-9 place-items-center rounded-xl bg-sand text-cocoa disabled:opacity-30"
+                    aria-label="Übungs-Pause erhöhen"
+                    disabled={(exRest ?? timer.total) >= 600}
+                    onClick={() => {
+                      const v = Math.min(600, (exRest ?? timer.total) + 15)
+                      setExerciseRest(exercise.id, v)
+                      setExRestState(v)
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <p className="mt-2 px-1 text-xs leading-relaxed text-cocoa-light">
                 Schwere Grundübungen (Kniebeuge, Bankdrücken, Kreuzheben) brauchen 2–3 Min, Isolationsübungen
@@ -257,8 +302,8 @@ export function RestControl({
             <p className="mt-2 px-1 text-xs leading-relaxed text-cocoa-light">
               „Nach Satz" startet beim Abhaken ✓. Bei <strong>Supersätzen</strong> erst, wenn die
               Runde aus beiden Übungen erledigt ist — dazwischen springt die App direkt zur
-              Partner-Übung. Vor einem <strong>Dropsatz</strong> gibt es keine Pause, nach dem{' '}
-              <strong>Aufwärmen</strong> nur eine kurze (45–90 s).
+              Partner-Übung. Pausen vor <strong>Dropsätzen</strong> und nach dem <strong>Aufwärmen</strong>{' '}
+              stellst du unter Profil → Meine Einstellungen ein.
             </p>
           </div>
         </PremiumSheet>
