@@ -1,92 +1,106 @@
-import { useEffect, useState } from 'react'
-import { Dumbbell } from 'lucide-react'
-import { imageUrl } from '../../lib/exerciseLibrary'
+import { useMemo } from 'react'
+import { figureForLibraryId, figureForName } from '../../lib/figure/catalog'
+import type { FigureEntry } from '../../lib/figure/types'
+import type { MuscleGroup } from '../../types'
+import { ExerciseFigure } from '../figure/ExerciseFigure'
+import { MuscleChip } from '../exercises/MuscleBits'
+import { muscleAbbr, muscleTint } from '../exercises/muscle'
 
-const FRAME_MS = 1200
-
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(
-    () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
-  )
-  useEffect(() => {
-    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)')
-    if (!mq) return
-    const on = () => setReduced(mq.matches)
-    mq.addEventListener?.('change', on)
-    return () => mq.removeEventListener?.('change', on)
-  }, [])
-  return reduced
+/** Was die Anzeige von einem Bibliotheks-Eintrag braucht. */
+export interface AnimationItem {
+  id: string
+  name_de: string
+  muscle: MuscleGroup
+  secondary?: MuscleGroup[]
 }
 
 /**
- * Einfache Übungs-Animation: die zwei Fotos (Start-/Endposition) blenden im
- * Wechsel ineinander über. `still` zeigt nur das erste Bild (z. B. Listen-Thumbnail).
- * Bei „Bewegung reduzieren" bleibt die Animation stehen.
+ * Übungs-Darstellung: stilisierte, animierte Figur (falls im Katalog), sonst
+ * ein ruhiger Platzhalter mit Muskel-Chips („Animation folgt"). Fotos werden
+ * nicht mehr gezeigt. `still` = kleines Vorschaubild (Standbild der Hauptpose,
+ * ohne Figur: Muskel-Avatar).
+ *
+ * `images` bleibt aus Kompatibilitätsgründen erhalten, wird aber ignoriert.
  */
 export function ExerciseAnimation({
-  images,
+  item,
+  figure,
+  libraryId,
+  name,
+  muscle,
+  secondary,
   alt,
   still = false,
   className = '',
 }: {
-  images: string[]
+  /** @deprecated Fotos werden nicht mehr angezeigt. */
+  images?: string[]
+  item?: AnimationItem | null
+  /** Bereits aufgelöste Figur (überschreibt die Suche). */
+  figure?: FigureEntry | null
+  libraryId?: string | null
+  name?: string | null
+  muscle?: MuscleGroup | null
+  secondary?: MuscleGroup[]
   alt: string
   still?: boolean
   className?: string
 }) {
-  const frames = still ? images.slice(0, 1) : images.slice(0, 2)
-  const reduced = usePrefersReducedMotion()
-  const [loaded, setLoaded] = useState<boolean[]>([])
-  const [failed, setFailed] = useState(frames.length === 0)
-  const [frame, setFrame] = useState(0)
-  const key = frames.join('|')
+  const libId = libraryId ?? item?.id ?? null
+  const label = name ?? item?.name_de ?? null
+  const fig = useMemo(
+    () => (figure !== undefined ? figure : figureForLibraryId(libId) ?? figureForName(label)),
+    [figure, libId, label],
+  )
+  const main = muscle ?? item?.muscle ?? null
+  const extra = secondary ?? item?.secondary ?? []
 
-  // Neue Übung → Zustand zurücksetzen
-  useEffect(() => {
-    setLoaded([])
-    setFailed(frames.length === 0)
-    setFrame(0)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
+  if (still) {
+    if (fig) {
+      return (
+        <span className={`block overflow-hidden bg-sand-light ring-1 ring-sand-dark/30 ${className}`} role="img" aria-label={alt || fig.name}>
+          <ExerciseFigure entry={fig} thumb label={alt || fig.name} className="p-0.5" />
+        </span>
+      )
+    }
+    const t = main ? muscleTint(main) : null
+    return (
+      <span
+        className={`grid place-items-center text-[13px] font-bold tracking-tight ${t ? `${t.soft} ${t.text}` : 'bg-sand text-cocoa-muted'} ${className}`}
+        role="img"
+        aria-label={alt || main || 'Übung'}
+        title={main ?? undefined}
+      >
+        {main ? muscleAbbr(main) : '·'}
+      </span>
+    )
+  }
 
-  const allLoaded = frames.length > 0 && frames.every((_, i) => loaded[i])
-  const animate = !still && !reduced && frames.length > 1 && allLoaded && !failed
-
-  useEffect(() => {
-    if (!animate) return
-    const t = window.setInterval(() => setFrame((f) => (f + 1) % frames.length), FRAME_MS)
-    return () => window.clearInterval(t)
-  }, [animate, frames.length])
+  if (fig) {
+    return (
+      <div className={`relative overflow-hidden rounded-2xl bg-sand-light ${className}`}>
+        <ExerciseFigure entry={fig} label={alt || `Animation: ${fig.name}`} className="absolute inset-0" />
+      </div>
+    )
+  }
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-white ${className}`}
+      className={`relative flex flex-col items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-sand-light p-4 ${className}`}
       role="img"
-      aria-label={alt}
+      aria-label={alt || 'Animation folgt'}
     >
-      {!failed && !loaded[0] && <div className="absolute inset-0 animate-pulse bg-sand" aria-hidden />}
-      {failed ? (
-        <div className="absolute inset-0 grid place-items-center bg-sand text-cocoa-muted" aria-hidden>
-          <Dumbbell size={still ? 18 : 32} />
+      {main && (
+        <div className="flex flex-wrap justify-center gap-1.5">
+          <MuscleChip muscle={main} />
+          {extra.map((m) => (
+            <span key={m} className="opacity-70">
+              <MuscleChip muscle={m} size="xs" />
+            </span>
+          ))}
         </div>
-      ) : (
-        frames.map((src, i) => (
-          <img
-            key={src}
-            src={imageUrl(src)}
-            alt=""
-            aria-hidden
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            onLoad={() => setLoaded((l) => Object.assign([...l], { [i]: true }))}
-            onError={() => setFailed(true)}
-            className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-500 ease-in-out ${
-              loaded[i] && (i === frame || (i === 0 && !allLoaded)) ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
-        ))
       )}
+      <p className="text-xs text-cocoa-muted">Animation folgt</p>
     </div>
   )
 }

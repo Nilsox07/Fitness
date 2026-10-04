@@ -11,6 +11,7 @@ import {
   type LibraryExercise,
 } from '../../lib/exerciseLibrary'
 import type { Exercise, MuscleGroup } from '../../types'
+import { figureForLibraryId } from '../../lib/figure/catalog'
 import { ExerciseAnimation } from './ExerciseAnimation'
 import { Steps } from './ExerciseHowTo'
 import { useAddFromLibrary, useLibrary, useLibraryLinks } from './useLibrary'
@@ -92,10 +93,14 @@ export function LibraryBrowser({
   const listScroll = useRef(0)
 
   const muscles = useMemo(() => (list ? libraryMuscles(list) : []), [list])
-  const results = useMemo(
-    () => (list ? searchLibrary(list, { query, muscle, equipment, home }) : []),
-    [list, query, muscle, equipment, home],
-  )
+  const results = useMemo(() => {
+    if (!list) return []
+    const found = searchLibrary(list, { query, muscle, equipment, home })
+    // Ohne Suchbegriff: Übungen mit Animation (die gängigen) zuerst, dann alphabetisch
+    if (query.trim().length >= 2) return found
+    const has = (id: string) => (figureForLibraryId(id) ? 0 : 1)
+    return [...found].sort((a, b) => has(a.id) - has(b.id))
+  }, [list, query, muscle, equipment, home])
   const { byLibrary } = useLibraryLinks(mine, list)
   const ownedOf = (id: string) => byLibrary.get(id) ?? justAdded.get(id)
 
@@ -153,7 +158,7 @@ export function LibraryBrowser({
         {inline && <h2 className="text-2xl font-bold leading-tight tracking-tight">{selected.name_de}</h2>}
 
         <ExerciseAnimation
-          images={selected.images}
+          item={selected}
           alt={`Animation: ${selected.name_de}`}
           className="aspect-[4/3] w-full"
         />
@@ -237,7 +242,7 @@ export function LibraryBrowser({
           onClick={() => open(item)}
           className="flex min-w-0 flex-1 items-center gap-3 px-2.5 py-2 text-left"
         >
-          <ExerciseAnimation images={item.images} alt="" still className="h-14 w-14 shrink-0 rounded-xl" />
+          <ExerciseAnimation item={item} alt="" still className="h-14 w-14 shrink-0 rounded-xl" />
           <span className="min-w-0 flex-1">
             <span className="block truncate font-semibold text-cocoa">{item.name_de}</span>
             <span className="block truncate text-xs text-cocoa-light">

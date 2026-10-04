@@ -1,13 +1,17 @@
 /**
  * Typen des Übungsfiguren-Systems (reines SVG, keine Abhängigkeiten).
  *
- * Koordinaten: Welt in „Figur-Pixeln" (viewBox 400 × 300, Boden bei y = FLOOR).
- * x = nach vorn (Blickrichtung der Figur in der Seitenansicht), y = nach unten,
- * z = seitlich zur Kamera hin (nahe Körperseite +z, ferne −z).
- * Winkel in Grad, gemessen in der x/y-Ebene (Sagittalebene) mit y nach unten:
- *   0 = nach vorn/rechts, 90 = nach unten, −90 = nach oben, 180 = nach hinten/links.
- * Positive relative Drehungen (Rumpfbeugung, Kopf) kippen „nach vorn" (zur Brust).
+ * Welt: viewBox 400 × 300, Boden bei y = FLOOR. Die Figur blickt nach +x.
+ * x = nach vorn, y = nach unten, z = seitlich (nahe Körperseite +z, ferne −z).
+ * Winkel in Grad in der x/y-Ebene (Sagittalebene) mit y nach unten:
+ *   0 = nach vorn, 90 = nach unten, −90 = nach oben, 180 = nach hinten.
+ * Rumpf: positive Beugung (`bend`) rollt den oberen Rumpf zur Brust hin ein.
+ *
+ * Die Gelenkpositionen werden pro Frame aus Winkeln/Zielpunkten berechnet
+ * (Vorwärts- bzw. 2-Knochen-IK), daher bleiben die Segmentlängen konstant.
  */
+
+export type Vec2 = [number, number]
 
 export type MuscleRegion =
   | 'chest'
@@ -28,53 +32,46 @@ export type MuscleRegion =
   | 'calves'
   | 'adductors'
 
-/** Gliedmaße über Winkel (Vorwärtskinematik). */
+/** Gliedmaße über absolute Winkel (Vorwärtskinematik). */
 export interface AngleLimb {
-  /** Winkel [Oberarm/Oberschenkel, Unterarm/Unterschenkel] in der Sagittalebene. */
-  a: [number, number]
-  /** Abspreizen aus der Ebene heraus (Grad, + = vom Körper weg zur Seite). */
-  out?: [number, number]
-  /** Winkel relativ zum Rumpf (Arme: oberer Rumpf, Beine: Becken) statt absolut. */
-  rel?: boolean
+  /** Sagittalwinkel [Oberarm/Oberschenkel, Unterarm/Unterschenkel]. */
+  a: Vec2
+  /** Abspreizen aus der Ebene (Grad, + = vom Körper weg zur Seite). */
+  out?: Vec2
 }
 
 /** Gliedmaße über Zielpunkt (2-Knochen-IK mit festen Längen). */
 export interface TargetLimb {
-  /** Weltziel [x, y, zusätzliche Breite nach außen]. Endpunkt = Griffpunkt (Arm) bzw. Knöchel (Bein). */
-  to: [number, number, number?]
-  /** Beugerichtung in der Ebene: Arme +1 (Ellbogen nach hinten), Beine −1 (Knie nach vorn). */
-  bend?: 1 | -1
-  /** Dreht die Beugeebene zur Seite (0 = in der Ebene, 90 = Ellbogen/Knie ganz nach außen). */
+  /** Weltziel des Endpunkts: Griffpunkt (Arm) bzw. Knöchel (Bein). */
+  to: Vec2
+  /** Seitlicher Abstand des Ziels von der Körpermitte (wird für die ferne Seite gespiegelt). */
+  z?: number
+  /** Absolute Welt-z des Ziels (nicht gespiegelt, z. B. beide Hände an einem Punkt). */
+  zw?: number
+  /** Beugerichtung des Ellbogens/Knies (absoluter Winkel). Standard: aus der Rumpflage. */
+  pole?: number
+  /** Beugeebene zur Seite drehen (Grad, 90 = Ellbogen/Knie ganz nach außen). */
   splay?: number
 }
 
-/** Zielpunkt relativ zum Rumpf: [entlang Rumpf ab Schulter, nach vorn, Breite nach außen]. */
-export interface LocalLimb {
-  at: [number, number, number?]
-  bend?: 1 | -1
-  splay?: number
-}
-
-export type LimbSpec = AngleLimb | TargetLimb | LocalLimb
+export type LimbSpec = AngleLimb | TargetLimb
 
 export interface PoseSpec {
   /** Hüftmittelpunkt (Welt). */
-  hip: [number, number]
-  /** Rumpfwinkel Hüfte → Schulter (unterer Rumpfabschnitt). */
+  hip: Vec2
+  /** Rumpfwinkel Hüfte → Taille. */
   torso: number
-  /** Wirbelsäulenbeugung (+ = einrollen/Crunch, − = Überstreckung). */
+  /** Wirbelsäulenbeugung (+ = einrollen, − = Hohlkreuz). */
   bend?: number
-  /** Rotation des Schultergürtels um die Rumpfachse (Grad). */
+  /** Rotation des Schultergürtels (+ = nahe Schulter nach vorn). */
   twist?: number
-  /** Schulterheben (px entlang Rumpf). */
-  shrug?: number
   /** Kopfneigung relativ zum oberen Rumpf (+ = Kinn zur Brust). */
   head?: number
   arm: LimbSpec
   armFar?: LimbSpec
   leg: LimbSpec
   legFar?: LimbSpec
-  /** Fußwinkel absolut (Ferse → Zehen). Standard: flach bei Zielbein, sonst 90° zum Schienbein. */
+  /** Fußwinkel absolut (Ferse → Zehen). Standard: flach bei Zielbein, sonst ⟂ Schienbein. */
   foot?: number
   footFar?: number
 }
@@ -83,45 +80,52 @@ export interface TimelineKey {
   /** Zeitpunkt im Zyklus (0..1). */
   at: number
   pose: string
-  /** Segment, das hier ENDET, ist konzentrisch (Muskel arbeitet → stärkeres Leuchten). */
+  /** Der Abschnitt, der hier ENDET, ist konzentrisch (Muskel arbeitet → stärkeres Leuchten). */
   c?: boolean
-  /** Grundspannung in dieser Pose (0..1). */
-  load?: number
 }
+
+export type PropLayer = 'back' | 'far' | 'mid' | 'front'
 
 export type PropSpec =
   | { kind: 'bench'; x: number; w: number; top?: number }
-  | { kind: 'incline'; x: number; angle: number; seat?: number; len?: number; top?: number }
+  | { kind: 'incline'; x: number; angle: number; top?: number; len?: number }
   | { kind: 'rack'; x: number; y: number }
-  | { kind: 'barbell'; plate?: number; ez?: boolean }
-  | { kind: 'dumbbell'; style?: 'end' | 'side'; one?: boolean; both?: boolean }
-  | { kind: 'kettlebell'; hang?: 'gravity' | 'arm'; both?: boolean }
-  | { kind: 'cable'; from: [number, number]; column?: number; handle?: 'bar' | 'rope' | 'handle' }
-  | { kind: 'pullupBar'; x: number; y: number }
+  | { kind: 'barbell'; plate?: number; hand?: 'near' | 'far' }
+  | { kind: 'dumbbell'; one?: boolean; style?: 'end' | 'hammer' }
+  | { kind: 'kettlebell'; hand?: 'near' | 'far'; along?: boolean }
+  | { kind: 'cable'; from: Vec2; column?: number; stackTop?: number; handle?: 'bar' | 'rope' | 'handle'; hand?: 'near' | 'far' | 'both'; layer?: PropLayer }
+  | { kind: 'pullupBar'; x: number; y: number; post?: number }
   | { kind: 'dipBars'; y: number; x1: number; x2: number }
-  | { kind: 'latMachine'; x: number; seat: number; top: number }
-  | { kind: 'legPress'; angle: number; seat: [number, number]; back: number }
-  | { kind: 'legMachine'; variant: 'extension' | 'lyingCurl'; seat: [number, number] }
+  | { kind: 'latMachine'; x: number; seat: Vec2; pulley: Vec2; pad?: Vec2 }
+  | { kind: 'legPress'; angle: number; seat: Vec2; back: number }
+  | { kind: 'legExtension'; seat: Vec2; pivot: Vec2 }
+  | { kind: 'legCurl'; top: number; x: number; w: number; pivot: Vec2 }
   | { kind: 'mat'; x: number; w: number }
   | { kind: 'box'; x: number; w: number; h: number }
-  | { kind: 'band'; anchor?: [number, number]; between?: boolean }
+  | { kind: 'band'; anchor?: Vec2; foot?: boolean }
   | { kind: 'wall'; x: number }
   | { kind: 'seat'; x: number; w: number; top: number; back?: number }
-  | { kind: 'plate'; x: number; y: number; angle: number }
+  | { kind: 'calfBlock'; x: number; h: number }
 
 export interface FigureDef {
   view?: 'side' | 'front'
   /** Spiegeln (z. B. Kopf rechts beim Bankdrücken). */
   mirror?: boolean
-  /** Drehung der Figur um einen Punkt (Grad, z. B. Seitstütz). */
+  /** Ganze Figur drehen (Grad) um einen Punkt — z. B. Seitstütz in der Frontansicht. */
   roll?: { deg: number; cx: number; cy: number }
   /** Zyklusdauer in ms (Standard 3200). */
   duration?: number
   poses: Record<string, PoseSpec>
   timeline: TimelineKey[]
-  /** Zeitpunkt für das Standbild (reduzierte Bewegung / außerhalb des Sichtbereichs). */
-  peak?: number
+  /** Pose für das Standbild (reduzierte Bewegung, Thumbnails). */
+  peak?: string
   props?: PropSpec[]
+  /** Bodenschatten-Mitte (Standard: aus Hüfte/Füßen). */
+  shadowX?: number
+  /** Verkleinern um den Bodenmittelpunkt (z. B. Überkopf-Übungen), Standard 1. */
+  zoom?: number
+  /** Boden ausblenden (z. B. hängend über der Bildkante). */
+  noFloor?: boolean
 }
 
 export interface FigureEntry {

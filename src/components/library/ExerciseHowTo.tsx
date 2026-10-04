@@ -5,7 +5,7 @@ import { ExerciseAnimation } from './ExerciseAnimation'
 export function ExerciseHowTo({ item }: { item: LibraryExercise }) {
   return (
     <div className="space-y-3">
-      <ExerciseAnimation images={item.images} alt={`Animation: ${item.name_de}`} className="aspect-[4/3] w-full" />
+      <ExerciseAnimation item={item} alt={`Animation: ${item.name_de}`} className="aspect-[4/3] w-full" />
       <Steps steps={item.steps_de} />
     </div>
   )

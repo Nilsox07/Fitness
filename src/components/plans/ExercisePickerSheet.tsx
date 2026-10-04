@@ -6,6 +6,7 @@ import { MUSCLE_GROUPS, type Exercise, type PlanWithExercises } from '../../type
 import { Sheet } from '../workout/Sheet'
 import { MuscleAvatar } from '../exercises/MuscleBits'
 import { ExerciseAnimation } from '../library/ExerciseAnimation'
+import { figureForExercise, figureForLibraryId } from '../../lib/figure/catalog'
 import { LibraryResults } from '../library/LibraryResults'
 import { LibrarySheet } from '../library/LibrarySheet'
 import { useLibrary, useLibraryLinks } from '../library/useLibrary'
@@ -32,6 +33,8 @@ export function ExercisePickerSheet({
   const [libOpen, setLibOpen] = useState(false)
   const { list: library } = useLibrary()
   const { byExercise } = useLibraryLinks(exercises, library)
+  // Figur über die Verknüpfung, sonst über den Namen (keine Fotos mehr).
+  const figOf = (ex: Exercise) => figureForLibraryId(byExercise.get(ex.id)?.id) ?? figureForExercise(ex)
   // Positionen fortlaufend vergeben, auch wenn mehrere Übungen schnell hintereinander kommen.
   const nextPos = useRef(nextExercisePosition(plan))
 
@@ -147,9 +150,9 @@ export function ExercisePickerSheet({
                   disabled={busy}
                   aria-pressed={inPlan}
                 >
-                  {byExercise.get(ex.id) ? (
+                  {figOf(ex) ? (
                     <ExerciseAnimation
-                      images={byExercise.get(ex.id)!.images}
+                      figure={figOf(ex)}
                       alt=""
                       still
                       className="h-[34px] w-[34px] shrink-0 rounded-lg"

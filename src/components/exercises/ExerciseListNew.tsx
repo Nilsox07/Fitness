@@ -4,6 +4,7 @@ import { onlyWorking, summarizeSessions } from '../../lib/analytics'
 import type { Exercise, SetWithDate } from '../../types'
 import type { LibraryExercise } from '../../lib/exerciseLibrary'
 import { ExerciseAnimation } from '../library/ExerciseAnimation'
+import { figureForExercise, figureForLibraryId } from '../../lib/figure/catalog'
 import { MuscleAvatar, Sparkline } from './MuscleBits'
 import { enter, muscleTint } from './muscle'
 
@@ -53,6 +54,9 @@ export function ExerciseListNew({
     [exercises, setsByExercise],
   )
 
+  // Figur über die Bibliotheks-Verknüpfung, sonst über den Namen (keine Fotos mehr).
+  const figOf = (ex: Exercise) => figureForLibraryId(thumbs?.get(ex.id)?.id) ?? figureForExercise(ex)
+
   return (
     <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream" style={enter(2)}>
       {rows.map(({ ex, perf, trend }) => {
@@ -64,9 +68,9 @@ export function ExerciseListNew({
               className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-sand-light"
               onClick={() => onOpen(ex)}
             >
-              {thumbs?.get(ex.id) ? (
+              {figOf(ex) ? (
                 <ExerciseAnimation
-                  images={thumbs.get(ex.id)!.images}
+                  figure={figOf(ex)}
                   alt=""
                   still
                   className="h-10 w-10 shrink-0 rounded-xl ring-1 ring-sand-dark/40"

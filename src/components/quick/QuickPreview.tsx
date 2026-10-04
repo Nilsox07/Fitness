@@ -82,7 +82,7 @@ export function QuickPreview({
           <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
             {warm && (
               <li className="flex items-center gap-3 px-2.5 py-2">
-                <ExerciseAnimation images={warm.images} alt="" still className="h-12 w-12 shrink-0 rounded-xl" />
+                <ExerciseAnimation item={warm} alt="" still className="h-12 w-12 shrink-0 rounded-xl" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-cocoa">{warm.name_de}</span>
                   <span className="block text-xs text-cocoa-light">Aufwärmen · 30 s</span>
@@ -96,7 +96,7 @@ export function QuickPreview({
                   <span className="tabular grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sand text-[10px] font-bold text-cocoa-light">
                     {i + 1}
                   </span>
-                  <ExerciseAnimation images={ex?.images ?? []} alt="" still className="h-12 w-12 shrink-0 rounded-xl" />
+                  <ExerciseAnimation item={ex ?? null} alt="" still className="h-12 w-12 shrink-0 rounded-xl" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-cocoa">{ex?.name_de ?? id}</span>
                     <span className="block truncate text-xs text-cocoa-light">
@@ -211,7 +211,7 @@ function SwapSheet({
                   onClick={() => onPick(item.id)}
                   className="flex w-full items-center gap-3 px-2.5 py-2 text-left"
                 >
-                  <ExerciseAnimation images={item.images} alt="" still className="h-14 w-14 shrink-0 rounded-xl" />
+                  <ExerciseAnimation item={item} alt="" still className="h-14 w-14 shrink-0 rounded-xl" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold text-cocoa">{item.name_de}</span>
                     <span className="block truncate text-xs text-cocoa-light">

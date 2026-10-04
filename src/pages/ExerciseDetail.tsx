@@ -51,6 +51,7 @@ import {
 import type { SetWithDate } from "../types";
 import { ExerciseHowTo, Steps } from "../components/library/ExerciseHowTo";
 import { ExerciseAnimation } from "../components/library/ExerciseAnimation";
+import { figureForExercise, figureForLibraryId } from "../lib/figure/catalog";
 import { GroupLabel, GroupList } from "../components/ui/GroupList";
 import { MuscleChip } from "../components/exercises/MuscleBits";
 import { enter } from "../components/home/motion";
@@ -373,7 +374,8 @@ export default function ExerciseDetail() {
           {howTo ? (
             <>
               <ExerciseAnimation
-                images={howTo.images}
+                figure={figureForLibraryId(howTo.id) ?? figureForExercise(exercise)}
+                item={howTo}
                 alt={`Animation: ${howTo.name_de}`}
                 className="relative mt-4 aspect-[4/3] w-full shadow-inner"
               />

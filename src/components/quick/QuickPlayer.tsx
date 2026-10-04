@@ -354,7 +354,7 @@ export function QuickPlayer({
         <div className="mt-3 flex min-h-0 flex-1 justify-center">
           {focusEx && (
             <ExerciseAnimation
-              images={focusEx.images}
+              item={focusEx}
               alt={`Animation: ${focusEx.name_de}`}
               className={`aspect-[4/3] h-full max-h-60 max-w-full ${isRest ? 'opacity-70' : ''}`}
             />
@@ -366,7 +366,7 @@ export function QuickPlayer({
           {previewId ? (
             <>
               <ExerciseAnimation
-                images={byId.get(previewId)?.images ?? []}
+                item={byId.get(previewId) ?? null}
                 alt=""
                 still
                 className="h-9 w-9 shrink-0 rounded-lg"

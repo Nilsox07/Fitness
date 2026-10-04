@@ -14,6 +14,8 @@ export default defineConfig({
       filename: 'sw.js',
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // App-Paket ist > 2 MiB (Übungsfiguren, Bibliothek, Charts) – trotzdem offline cachen
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       includeAssets: ['favicon.svg', 'icon.svg'],
       manifest: {

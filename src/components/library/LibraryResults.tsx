@@ -85,7 +85,7 @@ export function LibraryResults({
                   onClick={() => pick(item)}
                   disabled={busy}
                 >
-                  <ExerciseAnimation images={item.images} alt="" still className="h-11 w-11 shrink-0 rounded-xl" />
+                  <ExerciseAnimation item={item} alt="" still className="h-11 w-11 shrink-0 rounded-xl" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-cocoa">{item.name_de}</span>
                     <span className="block truncate text-xs text-cocoa-light">

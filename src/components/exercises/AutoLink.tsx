@@ -204,7 +204,7 @@ export function AutoLinkSheet({
             <li key={ex.id} className={`rounded-2xl bg-sand-light p-2.5 transition-opacity ${on ? '' : 'opacity-70'}`}>
               <div className="flex items-center gap-3">
                 {sel ? (
-                  <ExerciseAnimation images={sel.images} alt="" still className="h-14 w-14 shrink-0 rounded-xl" />
+                  <ExerciseAnimation item={sel} alt="" still className="h-14 w-14 shrink-0 rounded-xl" />
                 ) : (
                   <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-sand text-cocoa-muted">
                     <Search size={18} />
