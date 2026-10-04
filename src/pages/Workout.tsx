@@ -1025,7 +1025,7 @@ export default function Workout() {
         {active && (
           <div
             className="fixed inset-x-0 z-10 mx-auto max-w-md px-3"
-            style={{ bottom: 'calc(62px + env(safe-area-inset-bottom))' }}
+            style={{ bottom: isNew ? 'calc(82px + env(safe-area-inset-bottom))' : 'calc(62px + env(safe-area-inset-bottom))' }}
           >
             <div className="flex items-center gap-2 rounded-2xl bg-cream/95 p-2 shadow-[0_4px_24px_rgb(0_0_0/0.12)] backdrop-blur">
               <RestControl timer={rest} exercise={active ? { id: active.id, name: active.name } : undefined} />

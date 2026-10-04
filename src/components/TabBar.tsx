@@ -117,6 +117,8 @@ export function TabBar() {
 
   const tabs = !isNew ? classicTabs : world === 'food' ? FOOD_TABS : FITNESS_TABS
 
+  if (isNew) return <FloatingTabBar tabs={tabs} pathname={pathname} />
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-md border-t border-sand-dark bg-cream/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <div
@@ -138,6 +140,54 @@ export function TabBar() {
             {t.label}
           </NavLink>
         ))}
+      </div>
+    </nav>
+  )
+}
+
+function isTabActive(t: Tab, pathname: string): boolean {
+  if (t.also?.includes(pathname)) return true
+  if (t.end) return pathname === t.to
+  return pathname === t.to || pathname.startsWith(t.to + '/')
+}
+
+/** Neue App: schwebende Pillen-Leiste mit gleitendem Aktiv-Indikator. */
+function FloatingTabBar({ tabs, pathname }: { tabs: Tab[]; pathname: string }) {
+  const active = tabs.findIndex((t) => isTabActive(t, pathname))
+  const n = tabs.length
+
+  return (
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-10 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)]">
+      <div className="pointer-events-auto relative mx-auto max-w-md rounded-[28px] bg-cream/80 p-1.5 shadow-[0_12px_32px_-10px_rgb(0_0_0/0.35)] ring-1 ring-black/5 backdrop-blur-xl dark:bg-sand-light/90 dark:ring-white/10">
+        {/* Gleitende Pille hinter dem aktiven Tab */}
+        {active >= 0 && (
+          <div
+            aria-hidden
+            className="absolute inset-y-1.5 left-1.5 rounded-[22px] bg-brand shadow-[0_6px_16px_-4px_rgb(var(--c-ruby)/0.6)] transition-transform duration-300 ease-[cubic-bezier(0.3,1.35,0.5,1)]"
+            style={{ width: `calc((100% - 12px) / ${n})`, transform: `translateX(${active * 100}%)` }}
+          />
+        )}
+        <div className="relative grid" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+          {tabs.map((t, i) => {
+            const on = i === active
+            return (
+              <NavLink
+                key={t.to + t.label}
+                to={t.to}
+                end={t.end}
+                aria-current={on ? 'page' : undefined}
+                className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10px] font-semibold transition-colors duration-200 active:scale-95 ${
+                  on ? 'text-white' : 'text-cocoa-muted hover:text-cocoa'
+                }`}
+              >
+                <span className={`transition-transform duration-300 ${on ? '-translate-y-px scale-110' : ''}`}>
+                  <t.Icon />
+                </span>
+                <span className="max-w-full truncate px-1">{t.label}</span>
+              </NavLink>
+            )
+          })}
+        </div>
       </div>
     </nav>
   )

@@ -58,7 +58,7 @@ export default function App() {
       <AiActivityBar />
       <SaveStatus />
       {isNew && <TopBar />}
-      <main className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
+      <main className="flex-1 overflow-y-auto px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />
           <Route path="/nutrition" element={<Nutrition />} />
