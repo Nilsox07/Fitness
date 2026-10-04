@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAllSets } from '../../hooks/useWorkouts'
 import { useExercises } from '../../hooks/useExercises'
-import { useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
+import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
 import { useStreakState } from '../../hooks/useStreak'
 import { usePrefs } from '../../lib/prefs'
 import { getSkinId, mascotStageIndex } from '../../lib/cosmetics'
@@ -12,6 +12,9 @@ import { recoveryLevel, sessionsInWeek } from '../../lib/home'
 import { WEEKLY_GOAL } from '../../lib/duel'
 import { localDate, trainingDay } from '../../lib/day'
 import { buddyMood, type BuddyState } from '../../lib/buddyMood'
+import { buddyXpParts, checkBuddyLevelUp } from '../../lib/buddyLevel'
+import { levelInfo, type LevelInfo } from '../../lib/xp'
+import { playLevelUp } from '../../lib/sound'
 
 /** Event, das Profil/Sammlung nach einem Skin-Wechsel feuern. */
 export const BUDDY_SKIN_EVENT = 'buddy-skin-change'
@@ -100,4 +103,62 @@ export function useBuddy(opts: { activeWorkout?: boolean } = {}): BuddyState & {
   })
 
   return { ...state, stage: mascotStageIndex(facts.sessions), skin }
+}
+
+/**
+ * Das eine Buddy-Level der neuen App: XP aus Training (+ Ernährung, wenn aktiv).
+ * `ready` = alle nötigen Daten geladen (vorher nicht für Level-up-Vergleiche nutzen).
+ */
+export function useBuddyLevel(): LevelInfo & {
+  ready: boolean
+  sessions: number
+  fitnessXp: number
+  nutritionXp: number
+} {
+  const { data: sets } = useAllSets()
+  const { data: food } = useAllFoodEntries()
+  const { data: settings } = useNutritionSettings()
+  const { showNutrition } = usePrefs()
+  const proteinTarget = settings?.protein_target ?? 0
+  const today = localDate()
+  const parts = useMemo(
+    () =>
+      buddyXpParts({
+        sets: sets ?? [],
+        foodEntries: food ?? [],
+        proteinTarget,
+        showNutrition,
+        today,
+      }),
+    [sets, food, proteinTarget, showNutrition, today],
+  )
+  const sessions = useMemo(() => sessionDates(sets ?? []).length, [sets])
+  // settings: undefined = lädt noch, null = keine Einstellungen gespeichert
+  const ready = Boolean(sets) && (!showNutrition || (Boolean(food) && settings !== undefined))
+  return {
+    ...levelInfo(parts.total),
+    ready,
+    sessions,
+    fitnessXp: parts.fitness,
+    nutritionXp: parts.nutrition,
+  }
+}
+
+/**
+ * Level-up-Feier des Buddy-Levels (einzige Quelle in der neuen App). Merkt sich den
+ * gefeierten Level unter `seen_buddy_level`; beim ersten Start wird der aktuelle
+ * Level übernommen, ohne zu feiern.
+ */
+export function useBuddyLevelUp() {
+  const info = useBuddyLevel()
+  const [celebrate, setCelebrate] = useState(false)
+  useEffect(() => {
+    if (!info.ready) return
+    if (checkBuddyLevelUp(info.level)) {
+      setCelebrate(true)
+      playLevelUp()
+    }
+  }, [info.level, info.ready])
+  const dismiss = useCallback(() => setCelebrate(false), [])
+  return { info, celebrate, dismiss }
 }

@@ -17,6 +17,7 @@ const USER_KEYS = [
   'pr_celebrated',
   'seen_level',
   'seen_nutrition_level',
+  'seen_buddy_level',
   'shopping_checked',
   'diet_avoid',
 ]

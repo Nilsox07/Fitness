@@ -1,4 +1,5 @@
 import type { ActivityLevel, NutritionGoal, Sex } from '../types'
+import type { DietMacro } from './dietStyle'
 
 export const ACTIVITY_FACTORS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
@@ -43,6 +44,8 @@ export interface TargetInput {
   weight_kg: number
   activity: ActivityLevel
   goal: NutritionGoal
+  /** Makro-Stil der Ernährungsweise (Standard: ausgewogen = bisheriges Verhalten). */
+  diet?: DietMacro | null
 }
 
 export interface MacroTargets {
@@ -66,11 +69,31 @@ export function computeTargets(input: TargetInput): MacroTargets {
   const kcal = Math.max(1200, Math.round(tdee + adjust)) // Sicherheits-Untergrenze
 
   // Eiweiß je nach Ziel: im Defizit/Recomp mehr, um Muskeln zu schützen.
-  const proteinPerKg = goal === 'lose' || goal === 'recomp' ? 2.2 : goal === 'gain' ? 2.0 : 1.8
-  const fatPerKg = goal === 'gain' ? 0.9 : 0.8
+  const diet = input.diet ?? 'balanced'
+  let proteinPerKg = goal === 'lose' || goal === 'recomp' ? 2.2 : goal === 'gain' ? 2.0 : 1.8
+  if (diet === 'high_protein') proteinPerKg = Math.max(proteinPerKg, 2.2)
   const protein = Math.round(proteinPerKg * weight_kg) // g
-  const fat = Math.round(fatPerKg * weight_kg) // g
-  const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4)) // Rest
+  const rest = (k: number) => Math.max(0, k)
+
+  let fat: number
+  let carbs: number
+  if (diet === 'keto') {
+    // Keto: KH ≤ 30 g, Fett füllt den Rest
+    carbs = Math.min(30, rest(Math.round((kcal - protein * 4) / 4)))
+    fat = rest(Math.round((kcal - protein * 4 - carbs * 4) / 9))
+  } else if (diet === 'low_carb') {
+    // Low Carb: ~22 % der kcal aus KH, Fett füllt den Rest
+    carbs = Math.min(rest(Math.round((kcal * 0.22) / 4)), rest(Math.round((kcal - protein * 4) / 4)))
+    fat = rest(Math.round((kcal - protein * 4 - carbs * 4) / 9))
+  } else if (diet === 'mediterranean') {
+    // Mediterran: ~35 % der kcal aus (v. a. ungesättigtem) Fett, KH = Rest
+    fat = Math.min(Math.round((kcal * 0.35) / 9), rest(Math.round((kcal - protein * 4) / 9)))
+    carbs = rest(Math.round((kcal - protein * 4 - fat * 9) / 4))
+  } else {
+    const fatPerKg = goal === 'gain' ? 0.9 : 0.8
+    fat = Math.round(fatPerKg * weight_kg) // g
+    carbs = rest(Math.round((kcal - protein * 4 - fat * 9) / 4)) // Rest
+  }
 
   return { kcal, protein, carbs, fat }
 }

@@ -37,7 +37,20 @@ function QuestRow({ q }: { q: Quest }) {
   )
 }
 
-export function GamePanel({ sets: allSets, exercises }: { sets: SetWithDate[]; exercises: Exercise[] }) {
+/**
+ * Quests, Level & Badges (Fitness). `compact` (neue App, unter der Buddy-Level-Karte):
+ * nur Quests + Kennzahlen — Level, Level-up-Feier und Badges übernimmt dort das
+ * Buddy-Level bzw. die Buddy-Seite.
+ */
+export function GamePanel({
+  sets: allSets,
+  exercises,
+  compact = false,
+}: {
+  sets: SetWithDate[]
+  exercises: Exercise[]
+  compact?: boolean
+}) {
   const navigate = useNavigate()
   // Quests nach Trainings-Tag (Wechsel um 4 Uhr, wie im Training)
   const today = trainingDay()
@@ -71,6 +84,7 @@ export function GamePanel({ sets: allSets, exercises }: { sets: SetWithDate[]; e
   // Level-up-Feier
   const [celebrate, setCelebrate] = useState(false)
   useEffect(() => {
+    if (compact) return // neue App: einzige Feier ist das Buddy-Level
     try {
       const seen = Number(localStorage.getItem('seen_level') || '1')
       if (g.xp.level > seen) {
@@ -83,7 +97,7 @@ export function GamePanel({ sets: allSets, exercises }: { sets: SetWithDate[]; e
     } catch {
       /* ignore */
     }
-  }, [g.xp.level])
+  }, [g.xp.level, compact])
 
   // Quest-Abschluss-Sound: nur wenn eine Quest während der Session neu fertig wird
   useEffect(() => {
@@ -136,21 +150,23 @@ export function GamePanel({ sets: allSets, exercises }: { sets: SetWithDate[]; e
       )}
 
       {/* Level + Maskottchen + Rang */}
-      <div className="flex items-center gap-3">
-        <div className="text-4xl">{g.mascot}</div>
-        <div className="flex-1">
-          <div className="flex items-baseline justify-between">
-            <span className="tabular font-bold">Level {g.xp.level}</span>
-            <span className="text-xs text-cocoa-light">{g.rank.title}</span>
-          </div>
-          <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-sand-dark/40">
-            <div className="h-full bg-brand" style={{ width: `${g.xp.progress}%` }} />
-          </div>
-          <div className="tabular mt-0.5 text-[11px] text-cocoa-muted">
-            {g.xp.xpInLevel} / {g.xp.xpForLevel} XP · gesamt {g.xp.xp.toLocaleString('de-DE')} XP
+      {!compact && (
+        <div className="flex items-center gap-3">
+          <div className="text-4xl">{g.mascot}</div>
+          <div className="flex-1">
+            <div className="flex items-baseline justify-between">
+              <span className="tabular font-bold">Level {g.xp.level}</span>
+              <span className="text-xs text-cocoa-light">{g.rank.title}</span>
+            </div>
+            <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-sand-dark/40">
+              <div className="h-full bg-brand" style={{ width: `${g.xp.progress}%` }} />
+            </div>
+            <div className="tabular mt-0.5 text-[11px] text-cocoa-muted">
+              {g.xp.xpInLevel} / {g.xp.xpForLevel} XP · gesamt {g.xp.xp.toLocaleString('de-DE')} XP
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="tabular text-xs text-cocoa-light">
         {g.freq.totalSessions} Trainings · {g.tonnage.toLocaleString('de-DE')} kg bewegt
@@ -174,31 +190,35 @@ export function GamePanel({ sets: allSets, exercises }: { sets: SetWithDate[]; e
         ))}
       </div>
 
-      {/* Achievements */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold">Badges</span>
-        <button
-          className="flex items-center gap-0.5 text-xs font-semibold text-brand"
-          onClick={() => navigate('/badges')}
-        >
-          Alle ansehen
-          <ChevronRight size={14} />
-        </button>
-      </div>
-      <div className="grid grid-cols-5 gap-2">
-        {g.list.slice(0, 10).map((a) => (
-          <div
-            key={a.id}
-            title={a.label}
-            className={`flex flex-col items-center rounded-xl p-2 text-center ${
-              a.done ? 'bg-gold/15' : 'bg-sand opacity-35'
-            }`}
-          >
-            <span className="text-xl">{a.icon}</span>
-            <span className="mt-0.5 text-[10px] leading-tight text-cocoa-light">{a.label}</span>
+      {/* Achievements (neue App: Meilensteine auf der Buddy-Seite) */}
+      {!compact && (
+        <>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold">Badges</span>
+            <button
+              className="flex items-center gap-0.5 text-xs font-semibold text-brand"
+              onClick={() => navigate('/badges')}
+            >
+              Alle ansehen
+              <ChevronRight size={14} />
+            </button>
           </div>
-        ))}
-      </div>
+          <div className="grid grid-cols-5 gap-2">
+            {g.list.slice(0, 10).map((a) => (
+              <div
+                key={a.id}
+                title={a.label}
+                className={`flex flex-col items-center rounded-xl p-2 text-center ${
+                  a.done ? 'bg-gold/15' : 'bg-sand opacity-35'
+                }`}
+              >
+                <span className="text-xl">{a.icon}</span>
+                <span className="mt-0.5 text-[10px] leading-tight text-cocoa-light">{a.label}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </section>
   )
 }

@@ -95,3 +95,52 @@ describe('scoreMeal', () => {
     expect(r.score).toBeLessThanOrEqual(100)
   })
 })
+
+describe('scoreMeal — Ernährungsweise', () => {
+  const bowl = meal({ kcal: 500, protein: 30, carbs: 40, fat: 20, fiber: 6, sugar: 5, sat_fat: 3, salt: 1 })
+  const steak = meal({ kcal: 500, protein: 45, carbs: 5, fat: 34, fiber: 1, sugar: 1, sat_fat: 4, salt: 1 })
+
+  it('ohne diet unverändert', () => {
+    expect(scoreMeal(bowl, { diet: { macro: 'balanced', restrictions: [] } })).toEqual(scoreMeal(bowl))
+  })
+
+  it('Keto bestraft > 15 g KH je Mahlzeit', () => {
+    const base = scoreMeal(bowl)
+    const keto = scoreMeal(bowl, { diet: { macro: 'keto' } })
+    expect(keto.score).toBe(base.score - 12)
+    expect(texts(keto)).toContain('Zu viele KH für Keto')
+    const ok = scoreMeal(steak, { diet: { macro: 'keto' } })
+    expect(ok.score).toBe(scoreMeal(steak).score)
+    expect(texts(ok)).toContain('Keto-tauglich')
+  })
+
+  it('Low Carb bestraft erst > 30 g KH', () => {
+    expect(scoreMeal(bowl, { diet: { macro: 'low_carb' } }).score).toBe(scoreMeal(bowl).score - 8)
+    const small = meal({ ...bowl, carbs: 25 })
+    expect(scoreMeal(small, { diet: { macro: 'low_carb' } }).score).toBe(scoreMeal(small).score)
+  })
+
+  it('vegan/vegetarisch/pescetarisch: Warnung + Abzug bei tierischen Zutaten', () => {
+    const base = scoreMeal(steak).score
+    const vegan = scoreMeal(steak, { diet: { restrictions: ['vegan'] }, flags: { animal: 'dairy_egg' } })
+    expect(vegan.score).toBe(base - 25)
+    expect(vegan.highlights).toContainEqual({ kind: 'warn', text: 'Nicht vegan' })
+    // Ei/Milch ist vegetarisch ok, Fisch pescetarisch ok
+    expect(texts(scoreMeal(steak, { diet: { restrictions: ['vegetarian'] }, flags: { animal: 'dairy_egg' } }))).not.toContain('Nicht vegetarisch')
+    expect(texts(scoreMeal(steak, { diet: { restrictions: ['vegetarian'] }, flags: { animal: 'fish' } }))).toContain('Nicht vegetarisch')
+    expect(texts(scoreMeal(steak, { diet: { restrictions: ['pescetarian'] }, flags: { animal: 'fish' } }))).not.toContain('Nicht pescetarisch')
+    expect(texts(scoreMeal(steak, { diet: { restrictions: ['pescetarian'] }, flags: { animal: 'meat' } }))).toContain('Nicht pescetarisch')
+    // ohne Flags keine Warnung
+    expect(scoreMeal(steak, { diet: { restrictions: ['vegan'] } }).score).toBe(base)
+  })
+
+  it('Unverarbeitet: Abzug bei starkem Verarbeitungsgrad', () => {
+    const base = scoreMeal(bowl).score
+    const r = scoreMeal(bowl, { diet: { restrictions: ['unprocessed'] }, flags: { processing: 4 } })
+    expect(r.score).toBe(base - 10)
+    expect(texts(r)).toContain('Stark verarbeitet')
+    expect(scoreMeal(bowl, { diet: { restrictions: ['unprocessed'] }, flags: { processing: 3 } }).score).toBe(base - 4)
+    // ohne die Einschränkung zählt die Verarbeitung nicht
+    expect(scoreMeal(bowl, { flags: { processing: 4 } }).score).toBe(base)
+  })
+})

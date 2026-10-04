@@ -3,6 +3,14 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { judgeCheatMeal } from '../lib/ai'
 import { notifyFriendsCheat, shareCheatEnabled } from '../lib/push'
+import {
+  dietToColumns,
+  resolveDiet,
+  rowHasDietColumns,
+  setActiveDiet,
+  writeDietFallback,
+  type DietStyle,
+} from '../lib/dietStyle'
 import type { FoodEntry, NutritionSettings } from '../types'
 
 /** Prüft ein geloggtes Lebensmittel und postet bei echten „Cheats" einen
@@ -36,24 +44,65 @@ export function useNutritionSettings() {
     queryFn: async (): Promise<NutritionSettings | null> => {
       const { data, error } = await supabase.from('nutrition_settings').select('*').maybeSingle()
       if (error) throw error
-      return (data as NutritionSettings | null) ?? null
+      const row = (data as NutritionSettings | null) ?? null
+      // Feature-Erkennung: hat die Zeile die Spalten aus Migration 0027?
+      if (row) dietColumnsKnown = rowHasDietColumns(row)
+      setActiveDiet(resolveDiet(row))
+      return row
     },
   })
 }
 
+/** Aktive Ernährungsweise (DB oder localStorage-Fallback vor Migration 0027). */
+export function useDietStyle(): DietStyle {
+  const { data } = useNutritionSettings()
+  return resolveDiet(data)
+}
+
+// null = unbekannt (noch keine Zeile gelesen) → beim Speichern ausprobieren.
+let dietColumnsKnown: boolean | null = null
+
+/** Fehler „Spalte existiert nicht" (Migration 0027 noch nicht ausgeführt)? */
+function isMissingDietColumn(e: { code?: string; message?: string } | null): boolean {
+  if (!e) return false
+  const msg = e.message ?? ''
+  return e.code === 'PGRST204' || e.code === '42703' || /diet_macro|diet_restrictions|fasting/.test(msg)
+}
+
 export type NutritionSettingsInput = Omit<NutritionSettings, 'user_id' | 'updated_at'>
+
+/** Eingabe plus optionale Ernährungsweise (wird je nach DB-Stand gespeichert). */
+export type NutritionSettingsSave = NutritionSettingsInput & { diet?: DietStyle }
 
 export function useUpsertNutritionSettings() {
   const qc = useQueryClient()
   const { user } = useAuth()
   return useMutation({
-    mutationFn: async (input: NutritionSettingsInput) => {
-      const { data, error } = await supabase
-        .from('nutrition_settings')
-        .upsert({ ...input, user_id: user!.id, updated_at: new Date().toISOString() })
-        .select()
-        .single()
+    mutationFn: async ({ diet, ...input }: NutritionSettingsSave) => {
+      // Diät-Spalten aus der Basiseingabe entfernen; sie werden unten gezielt gesetzt.
+      const { diet_macro: _m, diet_restrictions: _r, fasting: _f, fasting_start: _s, ...base } = input
+      const row = { ...base, user_id: user!.id, updated_at: new Date().toISOString() }
+      const save = (payload: object) =>
+        supabase.from('nutrition_settings').upsert(payload).select().single()
+
+      if (diet && dietColumnsKnown !== false) {
+        const res = await save({ ...row, ...dietToColumns(diet) })
+        if (!res.error) {
+          dietColumnsKnown = true
+          writeDietFallback(null)
+          setActiveDiet(diet)
+          return res.data as NutritionSettings
+        }
+        if (!isMissingDietColumn(res.error)) throw res.error
+        dietColumnsKnown = false
+      }
+      const { data, error } = await save(row)
       if (error) throw error
+      if (diet) {
+        // Migration 0027 fehlt noch → lokal merken
+        writeDietFallback(diet)
+        setActiveDiet(diet)
+      }
       return data as NutritionSettings
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['nutrition_settings'] }),

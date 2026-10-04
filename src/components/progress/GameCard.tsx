@@ -3,11 +3,12 @@ import { ChevronDown } from 'lucide-react'
 import { Ring } from '../nutrition-home/Ring'
 
 /**
- * Kompakte Gamification-Karte im Premium-Stil: Maskottchen im XP-Ring, Level
+ * Kompakte Gamification-Karte im Premium-Stil: Buddy im XP-Ring, Buddy-Level
  * und Kennzahlen; aufgeklappt folgen die bestehenden Panels.
  */
 export function GameCard({
-  mascot,
+  buddy,
+  banner,
   title,
   subtitle,
   progress,
@@ -17,7 +18,10 @@ export function GameCard({
   style,
   children,
 }: {
-  mascot: string
+  /** Figur im Ring (Buddy) */
+  buddy: ReactNode
+  /** Optional über der Karte, z. B. die Level-up-Feier */
+  banner?: ReactNode
   title: string
   subtitle: string
   /** 0…100 */
@@ -30,14 +34,15 @@ export function GameCard({
 }) {
   return (
     <section className="space-y-5" style={style}>
+      {banner}
       <button
         className="card flex w-full items-center gap-3.5 text-left transition active:scale-[0.99]"
         onClick={onToggle}
         aria-expanded={open}
       >
         <Ring size={56} stroke={4} progress={progress / 100} trackClass="stroke-sand-dark/45">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-sand text-2xl leading-none">
-            {mascot}
+          <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-sand">
+            {buddy}
           </span>
         </Ring>
         <span className="min-w-0 flex-1">

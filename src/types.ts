@@ -128,6 +128,11 @@ export interface NutritionSettings {
   carbs_target: number
   fat_target: number
   water_target_ml: number
+  /** Ernährungsweise (Migration 0027) — fehlen, solange die Migration nicht läuft. */
+  diet_macro?: string | null
+  diet_restrictions?: string[] | null
+  fasting?: string | null
+  fasting_start?: string | null
   updated_at: string
 }
 

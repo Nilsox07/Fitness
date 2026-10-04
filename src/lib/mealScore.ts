@@ -14,12 +14,25 @@
 //     (bei „Abnehmen"/„Recomp" −15, bei „Aufbauen" kein Abzug).
 //   • Energiedichte (nur „Abnehmen"/„Recomp", wenn Gramm bekannt):
 //     > 2,5 kcal/g → −5 · < 1,2 kcal/g → +5 (sättigt bei wenig Energie).
+//   • Ernährungsweise (optional `diet`):
+//     Keto: > 15 g KH je Mahlzeit → −12 · Low Carb: > 30 g KH → −8
+//     Vegan/Vegetarisch/Pescetarisch: KI meldet passende tierische Zutat → −25
+//     Unverarbeitet: KI-Verarbeitungsgrad 4 (NOVA-ähnlich) → −10 · 3 → −4
 //   Ergebnis auf 0–100 begrenzt und gerundet.
 //
 // Salz wird auf mindestens 100 kcal bezogen, damit sehr kleine Portionen
 // (z. B. ein Salat mit 40 kcal) nicht künstlich „salzig" wirken.
 
 import type { NutritionGoal } from '../types'
+import type { DietMacro, DietRestriction } from './dietStyle'
+
+/** Von der KI erkannte Eigenschaften der Mahlzeit (optional). */
+export interface MealFlags {
+  /** Strengste enthaltene tierische Kategorie. */
+  animal?: 'meat' | 'fish' | 'dairy_egg' | 'none'
+  /** Verarbeitungsgrad 1 (unverarbeitet) … 4 (stark verarbeitet), NOVA-ähnlich. */
+  processing?: number
+}
 
 export interface MealTotals {
   kcal: number
@@ -53,6 +66,22 @@ export interface MealScoreOptions {
   remainingKcal?: number | null
   /** Gesamtgewicht der Mahlzeit in g (für die Energiedichte), falls bekannt. */
   grams?: number | null
+  /** Ernährungsweise des Nutzers (Makro-Stil + Einschränkungen). */
+  diet?: { macro?: DietMacro | null; restrictions?: readonly DietRestriction[] | null } | null
+  /** KI-Hinweise zur Mahlzeit (tierische Produkte, Verarbeitung). */
+  flags?: MealFlags | null
+}
+
+/** Verstößt die tierische Kategorie gegen die Einschränkungen? → Warntext. */
+export function restrictionViolation(
+  restrictions: readonly DietRestriction[] | null | undefined,
+  animal: MealFlags['animal'],
+): string | null {
+  if (!restrictions?.length || !animal || animal === 'none') return null
+  if (restrictions.includes('vegan')) return 'Nicht vegan'
+  if (restrictions.includes('vegetarian') && (animal === 'meat' || animal === 'fish')) return 'Nicht vegetarisch'
+  if (restrictions.includes('pescetarian') && animal === 'meat') return 'Nicht pescetarisch'
+  return null
 }
 
 /** Label und Farbton zu einem Score. */
@@ -150,6 +179,36 @@ export function scoreMeal(t: MealTotals, opts: MealScoreOptions = {}): MealScore
     }
   }
 
+  // Ernährungsweise
+  const diet = opts.diet ?? null
+  const dietWarn: MealHighlight[] = []
+  const carbs = pos(t.carbs)
+  if (diet?.macro === 'keto') {
+    if (carbs > 15) {
+      score -= 12
+      dietWarn.push({ kind: 'warn', text: 'Zu viele KH für Keto' })
+    } else good.push({ kind: 'good', text: 'Keto-tauglich' })
+  } else if (diet?.macro === 'low_carb') {
+    if (carbs > 30) {
+      score -= 8
+      dietWarn.push({ kind: 'warn', text: 'Viele KH für Low Carb' })
+    } else good.push({ kind: 'good', text: 'Low-Carb-tauglich' })
+  }
+  const flags = opts.flags ?? null
+  const violation = restrictionViolation(diet?.restrictions, flags?.animal)
+  if (violation) {
+    score -= 25
+    dietWarn.push({ kind: 'warn', text: violation })
+  }
+  const processing = typeof flags?.processing === 'number' ? flags.processing : NaN
+  if (diet?.restrictions?.includes('unprocessed') && Number.isFinite(processing)) {
+    if (processing >= 4) {
+      score -= 10
+      dietWarn.push({ kind: 'warn', text: 'Stark verarbeitet' })
+    } else if (processing >= 3) score -= 4
+    else if (processing <= 1) good.push({ kind: 'good', text: 'Unverarbeitet' })
+  }
+
   const final = Math.max(0, Math.min(100, Math.round(score)))
-  return { score: final, ...scoreLabel(final), highlights: [...good, ...warn] }
+  return { score: final, ...scoreLabel(final), highlights: [...good, ...dietWarn, ...warn] }
 }

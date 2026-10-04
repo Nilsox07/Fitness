@@ -5,6 +5,8 @@
 import { supabase } from './supabase'
 import { MUSCLE_GROUPS, type MuscleGroup, type Meal, type PlanDay, type ShoppingCat } from '../types'
 import { aiBegin, aiEnd } from './aiActivity'
+import { dietPromptText, getActiveDiet, type DietStyle } from './dietStyle'
+import type { MealFlags } from './mealScore'
 
 export interface AiStatus {
   enabled: boolean
@@ -283,7 +285,8 @@ export async function assistant(history: ChatMsg[], context: unknown): Promise<A
     `Erlaubte Muskelgruppen: ${MUSCLE_GROUPS.join(', ')}. ` +
     'Wähle eine Aktion NUR, wenn der Nutzer sie klar will (z. B. "logg …", "leg Übung … an", ' +
     '"bring mich zu …", "ich gehe … ins Gym"). Sonst action.type="none" und beantworte die Frage. ' +
-    'Bei log_food schätze realistische Nährwerte der genannten Menge.'
+    'Bei log_food schätze realistische Nährwerte der genannten Menge.' +
+    prefClause()
   const prompt = `Kontext (JSON):\n${JSON.stringify(context)}\n\nGespräch:\n${convo}\n\nAntworte als JSON.`
   const text = await complete({ system, prompt, json: true, temperature: 0.3 })
   const raw = parseJson<{ reply?: string; action?: { type?: string; [k: string]: unknown } }>(text)
@@ -355,7 +358,7 @@ export async function mealPlanForDay(
     'Format: {"note":"kurzer Hinweis","items":[{"meal":"breakfast|lunch|dinner|snack",' +
     '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,' +
     '"sat_fat":<g>,"salt":<g>}]}. 4–6 Einträge, deutsch.' +
-    avoidClause()
+    prefClause()
   const text = await complete({ system, prompt, json: true, temperature: 0.5 })
   const raw = parseJson<{ note?: string; items?: Partial<MealPlanItem>[] }>(text)
   const meals = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -381,7 +384,7 @@ export async function recipeFromText(request: string): Promise<Recipe> {
     `Anfrage: "${request}".\n` +
     '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,"sat_fat":<g>,"salt":<g>}}. ' +
     'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."], ...}. Nährwerte pro Portion. Deutsch.' +
-    avoidClause()
+    prefClause()
   const text = await complete({ system, prompt, json: true, temperature: 0.6 })
   const r = parseJson<Partial<Recipe>>(text)
   return {
@@ -487,13 +490,26 @@ export function setDietAvoid(v: string) {
     /* ignore */
   }
 }
-/** Prompt-Zusatz, den alle KI-Essens-Generatoren beachten. */
-function avoidClause(): string {
+/** Prompt-Zusatz zur gewählten Ernährungsweise (Makro-Stil, Einschränkungen,
+ *  Intervallfasten), z. B. „Ernährungsweise des Nutzers: Keto (…), vegetarisch
+ *  (…). Halte dich strikt daran." — '' bei „Ausgewogen" ohne Extras. */
+export function dietContext(d: DietStyle = getActiveDiet()): string {
+  return dietPromptText(d)
+}
+
+/** Prompt-Zusatz „Das esse ich nicht" (Allergien/Abneigungen). */
+function avoidOnly(): string {
   const a = getDietAvoid().trim()
   return a
     ? ` WICHTIG: Der Nutzer isst folgendes NICHT bzw. hat Allergien/Abneigungen: "${a}". ` +
         'Vermeide diese Zutaten vollständig und schlage nichts damit vor.'
     : ''
+}
+
+/** Prompt-Zusatz, den alle KI-Essens-Generatoren beachten: Ernährungsweise +
+ *  „Das esse ich nicht". */
+function prefClause(): string {
+  return dietContext() + avoidOnly()
 }
 
 export interface FoodEstimate {
@@ -572,6 +588,21 @@ export interface MealAnalysis {
   title: string
   verdict: string
   items: FoodEstimate[]
+  /** KI-Hinweise für den Score (tierische Produkte, Verarbeitung) — optional. */
+  flags?: MealFlags
+}
+
+const ANIMAL_FLAGS = ['meat', 'fish', 'dairy_egg', 'none'] as const
+
+/** Liest {animal, processing} robust; undefined, wenn nichts Brauchbares kommt. */
+export function toMealFlags(raw: unknown): MealFlags | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const r = raw as { animal?: unknown; processing?: unknown }
+  const flags: MealFlags = {}
+  if ((ANIMAL_FLAGS as readonly unknown[]).includes(r.animal)) flags.animal = r.animal as MealFlags['animal']
+  const p = Math.round(num(r.processing, NaN))
+  if (Number.isFinite(p)) flags.processing = Math.min(4, Math.max(1, p))
+  return flags.animal || flags.processing ? flags : undefined
 }
 
 /** Titel aus den Bestandteilen, falls die KI keinen liefert. */
@@ -582,11 +613,12 @@ function fallbackTitle(items: FoodEstimate[]): string {
 
 /** Parst eine Analyse-Antwort ({title, verdict, items}) robust. */
 export function toMealAnalysis(text: string): MealAnalysis {
-  const raw = parseJson<{ title?: unknown; verdict?: unknown; items?: Partial<FoodEstimate>[] }>(text)
+  const raw = parseJson<{ title?: unknown; verdict?: unknown; items?: Partial<FoodEstimate>[]; flags?: unknown }>(text)
   const items = toEstimateList(raw.items)
   const title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim().slice(0, 60) : ''
   const verdict = typeof raw.verdict === 'string' ? raw.verdict.trim().slice(0, 200) : ''
-  return { title: title || fallbackTitle(items), verdict, items }
+  const flags = toMealFlags(raw.flags)
+  return { title: title || fallbackTitle(items), verdict, items, ...(flags ? { flags } : {}) }
 }
 
 /**
@@ -600,12 +632,18 @@ export async function analyzeMeal(input: {
   text?: string
   goal?: string
 }): Promise<MealAnalysis> {
+  const diet = dietContext()
   const meta =
     ' Zusätzlich: "title" = kurzer deutscher Name der ganzen Mahlzeit (max. 40 Zeichen, z. B. ' +
     '"Hähnchen mit Reis & Brokkoli") und "verdict" = EIN kurzer, freundlicher deutscher Satz ' +
     '(max. 110 Zeichen) mit ehrlicher Einschätzung und konkretem Tipp' +
     (input.goal ? ` passend zum Ziel des Nutzers („${input.goal}")` : '') +
-    '. Gesamtformat: {"title":"...","verdict":"...","items":[...]}.'
+    (diet ? ' und zur Ernährungsweise (weise freundlich auf Verstöße hin)' : '') +
+    '. Außerdem "flags": {"animal":"meat|fish|dairy_egg|none" (strengste enthaltene tierische ' +
+    'Zutat: Fleisch/Wurst > Fisch/Meeresfrüchte > Milch/Käse/Ei/Honig > keine),"processing":1-4 ' +
+    '(Verarbeitungsgrad wie NOVA: 1 unverarbeitet … 4 stark verarbeitetes Fertigprodukt)}. ' +
+    'Gesamtformat: {"title":"...","verdict":"...","flags":{...},"items":[...]}.' +
+    diet
   const prompt = input.image
     ? 'Erkenne das Essen auf dem Bild und schätze die Nährwerte der abgebildeten Portion. ' +
       (input.hint ? `Zusatzinfo vom Nutzer (Zutaten/Mengen unbedingt berücksichtigen): "${input.hint}". ` : '') +
@@ -641,7 +679,7 @@ export async function suggestOrder(
     `Gib die empfohlenen Artikel als items zurück. ${NUTRITION_FORMAT}\n` +
     'Zusätzlich ein Feld "note" mit einem kurzen Hinweis. ' +
     'Format: {"note":"...","items":[{"name":"...","amount_g":null,"kcal":...,"protein":...,"carbs":...,"fat":...}]}' +
-    avoidClause()
+    prefClause()
   const text = await complete({ system, prompt, json: true, temperature: 0.4 })
   const raw = parseJson<{ note?: string; items?: Partial<FoodEstimate>[] }>(text)
   return {
@@ -681,7 +719,7 @@ export async function shoppingList(
     `Wunsch/Präferenzen: "${wish || 'ausgewogen, proteinreich'}".\n` +
     'Format: {"note":"kurzer Hinweis","categories":[{"category":"z. B. Obst & Gemüse","items":["500 g Hähnchen", "..."]}]}. ' +
     'Realistische Mengen für den Zeitraum, deutsch.' +
-    avoidClause()
+    prefClause()
   const text = await complete({ system, prompt, json: true, temperature: 0.5 })
   const raw = parseJson<{ note?: string; categories?: Partial<ShoppingCategory>[] }>(text)
   return {
@@ -738,7 +776,7 @@ export async function generateWeeklyPlan(input: {
     '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"routine":true|false}]}],' +
     '"shopping":[{"category":"z. B. Obst & Gemüse","items":["500 g Hähnchen","..."]}]}. ' +
     `Genau ${input.days} Tage. Die Einkaufsliste deckt ALLE Tage ab, mit groben Mengen, nach Kategorie. Deutsch.` +
-    avoidClause()
+    prefClause()
   const text = await complete({ system, prompt, json: true, temperature: 0.6, maxTokens: planTokens(input.days) })
   const raw = parseJson<{
     note?: string
@@ -780,7 +818,7 @@ export async function adjustWeeklyPlan(input: {
     'Gleiches Format: {"note":"was du geändert hast","days":[{"label":"...","meals":[{"meal":"...",' +
     '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"routine":true|false}]}],' +
     '"shopping":[{"category":"...","items":["..."]}]}. Deutsch.' +
-    avoidClause()
+    prefClause()
   const text = await complete({
     system,
     prompt,
@@ -856,7 +894,7 @@ export async function recipeFromFridge(image: string, craving: string): Promise<
     'Nährwerte pro Portion schätzen (inkl. Ballaststoffe, Zucker, gesättigte Fette, Salz). ' +
     'Format: {"title":"...","servings":<Zahl>,"ingredients":["..."],"steps":["..."],' +
     '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,"sat_fat":<g>,"salt":<g>}}. Auf Deutsch.' +
-    avoidClause()
+    prefClause()
   const text = await complete({ system, prompt, image, json: true, temperature: 0.5 })
   const r = parseJson<Partial<Recipe>>(text)
   return {

@@ -16,16 +16,15 @@ import {
 } from '../../lib/analytics'
 import { shiftDate, trainingDay } from '../../lib/day'
 import { inRange, pctChange, periodRange, PERIOD_LABELS, type Period } from '../../lib/periods'
-import { computeXp, dailyQuests, levelInfo, weeklyQuests } from '../../lib/xp'
+import { dailyQuests, weeklyQuests } from '../../lib/xp'
 import { rankForSessions } from '../../lib/gamification'
-import { mascotEmoji } from '../../lib/cosmetics'
 import { weekStreakWithFreezes } from '../../lib/streaks'
 import { useStreakState } from '../../hooks/useStreak'
 import { GamePanel } from '../GamePanel'
 import { StreakCard } from '../StreakCard'
-import { SeasonCard } from '../SeasonCard'
-import { Heatmap } from '../Heatmap'
-import { AiPanel } from '../AiPanel'
+import { MyBuddy } from '../buddy/MyBuddy'
+import { BuddyLevelUp } from '../buddy/BuddyLevelUp'
+import { useBuddyLevel } from '../buddy/useBuddy'
 import { enter } from '../home/motion'
 import { ProgressHeader, SectionLabel, Segmented } from '../progress/ProgressHeader'
 import { StatsHero } from '../progress/StatsHero'
@@ -34,7 +33,7 @@ import { MiniSpark } from '../progress/Sparklines'
 import { GameCard, MetaChip } from '../progress/GameCard'
 import { isoWeekNumber, MONTHS_LONG } from '../progress/progressUtils'
 import type { Exercise, SetWithDate } from '../../types'
-import { nf, useGameToggle } from './shared'
+import { nf } from './shared'
 
 /** Bester Wert eines Satzes (bei einseitigen Übungen die stärkere Seite). */
 function setBest(s: SetWithDate) {
@@ -175,21 +174,20 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
   const visibleRows = showAllEx ? exerciseRows : exerciseRows.slice(0, 6)
   const prCount = exerciseRows.filter((r) => r.pr).length
 
-  // Gamification-Zusammenfassung
+  // Gamification-Zusammenfassung — ein Level für alles (Buddy-Level).
   const { data: streakState } = useStreakState()
+  const buddyLevel = useBuddyLevel()
   const game = useMemo(() => {
     const dates = sessionDates(sets)
     const freq = frequencyStats(dates)
     const quests = [...dailyQuests(sets, today), ...weeklyQuests(sets, today)]
     return {
-      xp: levelInfo(computeXp(sets)),
       rank: rankForSessions(freq.totalSessions),
-      mascot: mascotEmoji(freq.totalSessions),
       streak: weekStreakWithFreezes(dates, streakState?.frozen_weeks ?? []),
       open: quests.filter((q) => !q.done).length,
     }
   }, [sets, today, streakState])
-  const gameToggle = useGameToggle(game.xp.level, 'seen_level')
+  const [gameOpen, setGameOpen] = useState(false)
 
   return (
     <>
@@ -296,17 +294,14 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
         </div>
       </section>
 
-      <div style={enter(4)}>
-        <AiPanel sets={sets} exercises={exercises} />
-      </div>
-
-      {/* Gamification (kompakt, aufklappbar) */}
+      {/* Gamification (kompakt, aufklappbar) — Buddy-Level + Quests */}
       <GameCard
-        style={enter(5)}
-        mascot={game.mascot}
-        title={`Level ${game.xp.level}`}
-        subtitle={`${game.rank.title} · ${nf(game.xp.xpInLevel)} / ${nf(game.xp.xpForLevel)} XP`}
-        progress={game.xp.progress}
+        style={enter(4)}
+        buddy={<MyBuddy size={44} mood="happy" animate={false} />}
+        banner={<BuddyLevelUp />}
+        title={`Buddy-Level ${buddyLevel.level}`}
+        subtitle={`${game.rank.title} · ${nf(buddyLevel.xpInLevel)} / ${nf(buddyLevel.xpForLevel)} XP`}
+        progress={buddyLevel.progress}
         meta={
           <>
             <MetaChip>
@@ -319,13 +314,11 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
             </MetaChip>
           </>
         }
-        open={gameToggle.open}
-        onToggle={gameToggle.toggle}
+        open={gameOpen}
+        onToggle={() => setGameOpen((o) => !o)}
       >
-        <GamePanel sets={sets} exercises={exercises} />
+        <GamePanel sets={sets} exercises={exercises} compact />
         <StreakCard sets={sets} />
-        <SeasonCard sets={sets} />
-        <Heatmap dates={sets.map((s) => s.date)} />
       </GameCard>
     </>
   )
