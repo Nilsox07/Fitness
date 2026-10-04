@@ -12,6 +12,7 @@ import { WeightTrendCard } from '../food-progress/WeightTrendCard'
 import { ProteinDotsCard } from '../food-progress/ProteinDotsCard'
 import { NutritionGameCard } from '../food-progress/NutritionGameCard'
 import { PageHeader } from '../food-progress/ui'
+import { useNutritionPrefs } from '../../hooks/usePrefsSync'
 
 const WINDOW = 14
 
@@ -19,6 +20,7 @@ const ddmm = (date: string) => `${date.slice(8, 10)}.${date.slice(5, 7)}`
 
 /** Ernährungs-Statistik (neue App). */
 export function FoodStats() {
+  const { kcalBonus } = useNutritionPrefs()
   const { data: entries, isLoading } = useAllFoodEntries()
   const { data: settings } = useNutritionSettings()
   const { data: allSets } = useAllSets()
@@ -30,7 +32,7 @@ export function FoodStats() {
     const days = foodTotalsByDate(entries)
     const trainedDates = new Set((allSets ?? []).map((s) => s.date))
     // Kalorienziel je Tag (inkl. Trainingsbonus) — gleiche Regel wie auf der Ernährungsseite.
-    const targetOn = (date: string) => kcalTargetFor(settings, trainedDates.has(date))
+    const targetOn = (date: string) => kcalTargetFor(settings, trainedDates.has(date), kcalBonus)
     // Ø nur über abgeschlossene Tage mit Einträgen (ohne heute, ohne Lücken)
     const complete = [...days.entries()].filter(([d]) => d >= shiftDate(today, -WINDOW) && d < today)
     const n = complete.length
@@ -65,7 +67,7 @@ export function FoodStats() {
       streak: proteinStreak(days, today, proteinTarget),
       hasAny: days.size > 0,
     }
-  }, [entries, settings, allSets, today, proteinTarget])
+  }, [entries, settings, allSets, today, proteinTarget, kcalBonus])
 
   if (isLoading) return <p className="text-cocoa-light">Lädt…</p>
 

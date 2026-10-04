@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { Check, KeyRound } from 'lucide-react'
+import { Check, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
+import { AuthNote, AuthShell } from '../components/ui/AuthShell'
 
 export default function ResetPassword() {
   const { clearRecovery } = useAuth()
@@ -26,27 +27,26 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-md flex-col justify-center px-6">
-      <div className="mb-8 text-center">
-        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand/10 text-brand">
-          <KeyRound size={26} />
-        </div>
-        <h1 className="mt-2 text-2xl font-bold">Neues Passwort</h1>
-        <p className="text-sm text-cocoa-light">Lege dein neues Passwort fest.</p>
-      </div>
-
+    <AuthShell
+      mood={done ? 'proud' : error ? 'sad' : 'focus'}
+      title={done ? 'Passwort geändert' : 'Neues Passwort'}
+      subtitle={done ? 'Alles erledigt — weiter geht’s.' : 'Lege dein neues Passwort fest.'}
+    >
       {done ? (
-        <div className="card space-y-3 text-center">
-          <p className="flex items-center justify-center gap-1.5 font-medium text-success">
-            <Check size={16} strokeWidth={2.5} />
-            Passwort geändert.
-          </p>
-          <button className="btn-primary w-full" onClick={() => clearRecovery()}>
+        <div className="space-y-4 rounded-3xl bg-cream p-5 text-center shadow-sm">
+          <div className="anim-check mx-auto grid h-12 w-12 place-items-center rounded-full bg-success/15 text-success">
+            <Check size={24} strokeWidth={2.75} />
+          </div>
+          <p className="text-sm text-cocoa-light">Du kannst dich ab jetzt mit dem neuen Passwort anmelden.</p>
+          <button
+            className="btn-primary w-full rounded-2xl py-3.5 text-base shadow-lg shadow-brand/25"
+            onClick={() => clearRecovery()}
+          >
             Weiter zur App
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="card space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-3xl bg-cream p-5 shadow-sm">
           <div>
             <label className="label" htmlFor="new-password">
               Neues Passwort
@@ -57,19 +57,25 @@ export default function ResetPassword() {
               autoComplete="new-password"
               required
               minLength={6}
-              className="input"
+              placeholder="Mindestens 6 Zeichen"
+              className="input rounded-2xl py-3.5 text-base"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
-          {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
+          {error && <AuthNote kind="error">{error}</AuthNote>}
 
-          <button type="submit" className="btn-primary w-full" disabled={busy}>
-            {busy ? '…' : 'Passwort speichern'}
+          <button
+            type="submit"
+            className="btn-primary w-full gap-2 rounded-2xl py-3.5 text-base shadow-lg shadow-brand/25"
+            disabled={busy}
+          >
+            {busy && <Loader2 size={18} className="animate-spin" />}
+            Passwort speichern
           </button>
         </form>
       )}
-    </div>
+    </AuthShell>
   )
 }

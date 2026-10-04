@@ -9,7 +9,7 @@ import { lastTrainedPerMuscle, sessionDates } from '../../lib/analytics'
 import { weekStreakWithFreezes } from '../../lib/streaks'
 import { weekPrCount } from '../../lib/weeklyReview'
 import { recoveryLevel, sessionsInWeek } from '../../lib/home'
-import { WEEKLY_GOAL } from '../../lib/duel'
+import { useWeeklyGoal } from '../../hooks/usePrefsSync'
 import { localDate, trainingDay } from '../../lib/day'
 import { buddyMood, type BuddyState } from '../../lib/buddyMood'
 import { buddyXpParts, checkBuddyLevelUp } from '../../lib/buddyLevel'
@@ -55,6 +55,7 @@ export function useBuddy(opts: { activeWorkout?: boolean } = {}): BuddyState & {
   const { data: food } = useFoodEntries(localDate())
   const { showNutrition } = usePrefs()
   const skin = useBuddySkin()
+  const weeklyGoal = useWeeklyGoal()
   const today = trainingDay()
 
   const facts = useMemo(() => {
@@ -90,7 +91,7 @@ export function useBuddy(opts: { activeWorkout?: boolean } = {}): BuddyState & {
     activeWorkout: opts.activeWorkout,
     newPrToday: facts.pr,
     weeklySessions: facts.weekly,
-    weeklyGoal: WEEKLY_GOAL,
+    weeklyGoal,
     trainedToday: facts.trainedToday,
     daysSinceLastWorkout: facts.daysSince,
     recoveryAllTired: facts.allTired,

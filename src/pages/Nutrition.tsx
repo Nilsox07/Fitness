@@ -86,6 +86,7 @@ import { stagger } from '../components/nutrition-home/motion'
 import { kcalByDate, mealRecommendation } from '../lib/nutritionHome'
 import { dayLabel } from '../lib/day'
 import type { FoodEntry } from '../types'
+import { useNutritionPrefs } from '../hooks/usePrefsSync'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
 function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
@@ -142,6 +143,7 @@ function Bar({ value, target }: { value: number; target: number }) {
 }
 
 export default function Nutrition() {
+  const { kcalBonus, mealSplit } = useNutritionPrefs()
   const { user } = useAuth()
   const addRecipe = useAddRecipe()
   // Ausgewählter Tag (?date=YYYY-MM-DD) — so lassen sich vergangene Tage nachtragen/korrigieren.
@@ -666,8 +668,8 @@ export default function Nutrition() {
   }
 
   const hasTarget = settings && settings.kcal_target > 0
-  // Gleiches Tagesziel wie Tagesüberblick/Auswertung (Trainingstag +250 kcal).
-  const kcalTarget = kcalTargetFor(settings, trainedToday)
+  // Gleiches Tagesziel wie Tagesüberblick/Auswertung (Trainingstag + eigener Bonus, Standard 250).
+  const kcalTarget = kcalTargetFor(settings, trainedToday, kcalBonus)
   const kcalLeft = hasTarget ? kcalTarget - totals.kcal : 0
   const dayKcal = useMemo(() => kcalByDate(allEntries), [allEntries])
   const sheetOpen = addMode !== null || !!pending || !!aiResults || !!recipe || !!planItems || !!analysis
@@ -714,7 +716,7 @@ export default function Nutrition() {
             today={realToday}
             onChange={setDay}
             kcalByDate={dayKcal}
-            targetFor={(d) => kcalTargetFor(settings, trainedOn(d, allSets))}
+            targetFor={(d) => kcalTargetFor(settings, trainedOn(d, allSets), kcalBonus)}
           />
 
           {!isToday && (
@@ -735,6 +737,7 @@ export default function Nutrition() {
               fat: settings?.fat_target ?? 0,
             }}
             trained={trainedToday}
+            bonus={kcalBonus}
             onSetup={openSetup}
             style={stagger(1)}
           />
@@ -771,7 +774,7 @@ export default function Nutrition() {
                 key={meal}
                 meal={meal}
                 entries={(entries ?? []).filter((e) => (e.meal ?? 'snack') === meal)}
-                recommended={hasTarget ? mealRecommendation(meal, kcalTarget) : 0}
+                recommended={hasTarget ? mealRecommendation(meal, kcalTarget, mealSplit) : 0}
                 onAdd={() => {
                   setMealOverride(meal)
                   go('menu')

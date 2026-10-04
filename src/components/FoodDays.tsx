@@ -11,11 +11,13 @@ import { fmtInt, fmtLiters } from '../lib/nutritionHome'
 import { stagger } from './nutrition-home/motion'
 import { MonthCalendar } from './food-progress/MonthCalendar'
 import { PageHeader, SectionTitle } from './food-progress/ui'
+import { useNutritionPrefs } from '../hooks/usePrefsSync'
 
 const RECENT = 7
 
 /** Ernährungs-Tage (neue App): Monatskalender mit kcal-Ringen + die letzten 7 Tage als Liste. */
 export function FoodDays() {
+  const { kcalBonus } = useNutritionPrefs()
   const navigate = useNavigate()
   const { data: entries, isLoading } = useAllFoodEntries()
   const { data: water } = useAllWater()
@@ -29,7 +31,7 @@ export function FoodDays() {
     const waterBy = new Map((water ?? []).map((w) => [w.date, w.ml]))
     const trainedDates = new Set((allSets ?? []).map((s) => s.date))
     // Kalorienziel des Tages inkl. Trainingsbonus (gleiche Regel wie auf „Ernährung")
-    const targetFor = (date: string) => kcalTargetFor(settings, trainedDates.has(date))
+    const targetFor = (date: string) => kcalTargetFor(settings, trainedDates.has(date), kcalBonus)
     let earliest: string | null = null
     for (const k of totals.keys()) if (!earliest || k < earliest) earliest = k
     const recent = Array.from({ length: RECENT }, (_, i) => {
@@ -45,7 +47,7 @@ export function FoodDays() {
       }
     })
     return { kcalBy, targetFor, earliest, recent, summary: loggedSummary(totals, today, 30) }
-  }, [entries, water, allSets, settings, today])
+  }, [entries, water, allSets, settings, today, kcalBonus])
 
   const proteinTarget = settings?.protein_target ?? 0
   const open = (date: string) => navigate(date === today ? '/nutrition' : `/nutrition?date=${date}`)

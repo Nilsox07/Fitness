@@ -1,25 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Dumbbell, ListOrdered, Play, Plus, Sparkles } from 'lucide-react'
-import { Sheet } from '../workout/Sheet'
+import { CalendarCheck, Dumbbell, ListOrdered, Play, Plus, Sparkles } from 'lucide-react'
 import { estimateMinutes, type RecoveryLevel } from '../../lib/home'
-import { shiftDate } from '../../lib/day'
 import type { Exercise, MuscleGroup, PlanWithExercises } from '../../types'
 import { enter } from './motion'
+import { PlanPickerSheet, lastDoneLabel } from './PlanPicker'
 
 const DOT: Record<RecoveryLevel, string> = {
   fresh: 'bg-success',
   almost: 'bg-gold',
   tired: 'bg-brand/60',
-}
-
-function lastDoneLabel(date: string | null | undefined, today: string): string {
-  if (!date) return 'Noch nie trainiert'
-  if (date === shiftDate(today, -1)) return 'Zuletzt gestern'
-  const days = Math.round((Date.parse(today) - Date.parse(date)) / 86400000)
-  if (days <= 0) return 'Zuletzt heute'
-  if (days < 14) return `Zuletzt vor ${days} Tagen`
-  return `Zuletzt vor ${Math.round(days / 7)} Wochen`
 }
 
 /** Hero: „Dein nächstes Training" mit großem Start-Knopf, plus Plan-Auswahl. */
@@ -35,6 +25,7 @@ export function NextWorkoutCard({
   onStartPlan,
   onStartFree,
   index,
+  fromRhythm = false,
 }: {
   plans: PlanWithExercises[]
   suggested: PlanWithExercises | null
@@ -47,6 +38,8 @@ export function NextWorkoutCard({
   onStartPlan: (p: PlanWithExercises) => void
   onStartFree: () => void
   index: number
+  /** Vorschlag kommt aus dem eigenen Trainingsrhythmus („Heute laut Rhythmus"). */
+  fromRhythm?: boolean
 }) {
   const navigate = useNavigate()
   const [pickOpen, setPickOpen] = useState(false)
@@ -103,8 +96,12 @@ export function NextWorkoutCard({
 
         <div className="relative">
           <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-            <Sparkles size={13} className="text-brand" />
-            Dein nächstes Training
+            {fromRhythm ? (
+              <CalendarCheck size={13} className="text-brand" />
+            ) : (
+              <Sparkles size={13} className="text-brand" />
+            )}
+            {fromRhythm ? 'Heute laut Rhythmus' : 'Dein nächstes Training'}
           </p>
           <h2 className="mt-1 truncate text-3xl font-bold tracking-tight">{suggested.name}</h2>
           <p className="tabular mt-0.5 text-sm text-bg/70 dark:text-cocoa-light">
@@ -170,45 +167,17 @@ export function NextWorkoutCard({
       {errorLine}
 
       {pickOpen && (
-        <Sheet title="Plan wählen" onClose={() => setPickOpen(false)}>
-          <div className="space-y-2">
-            {plans.map((p) => {
-              const n = exList(p).length
-              const isSuggested = p.id === suggested.id
-              return (
-                <button
-                  key={p.id}
-                  className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition active:scale-[0.98] ${
-                    isSuggested ? 'bg-brand/10 ring-1 ring-brand/30' : 'bg-sand-light ring-1 ring-sand-dark'
-                  }`}
-                  disabled={busy}
-                  onClick={() => {
-                    setPickOpen(false)
-                    onStartPlan(p)
-                  }}
-                >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand text-on-brand">
-                    <Play size={16} className="ml-0.5 fill-current" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">{p.name}</span>
-                    <span className="tabular block truncate text-xs text-cocoa-light">
-                      {n} {n === 1 ? 'Übung' : 'Übungen'}
-                      {n > 0 && ` · ~${estimateMinutes(n)} Min`} · {lastDoneLabel(lastDone.get(p.id), today)}
-                    </span>
-                  </span>
-                  {isSuggested ? (
-                    <span className="shrink-0 rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-semibold text-brand">
-                      Vorschlag
-                    </span>
-                  ) : (
-                    <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </Sheet>
+        <PlanPickerSheet
+          plans={plans}
+          highlightId={suggested.id}
+          highlightLabel={fromRhythm ? 'Laut Rhythmus' : 'Vorschlag'}
+          exerciseCount={(p) => exList(p).length}
+          lastDone={lastDone}
+          today={today}
+          busy={busy}
+          onPick={onStartPlan}
+          onClose={() => setPickOpen(false)}
+        />
       )}
     </section>
   )

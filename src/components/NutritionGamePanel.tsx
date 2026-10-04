@@ -17,6 +17,7 @@ import {
 } from '../lib/nutritionXp'
 import { Confetti } from './Confetti'
 import { playLevelUp } from '../lib/sound'
+import { useNutritionPrefs } from '../hooks/usePrefsSync'
 
 function foodMascot(level: number): string {
   if (level >= 20) return '🏆'
@@ -55,6 +56,7 @@ function QuestRow({ q }: { q: Quest }) {
  * Ernährungs-XP fließen dort ins Buddy-Level, das auch die einzige Level-up-Feier hat.
  */
 export function NutritionGamePanel({ compact = false }: { compact?: boolean } = {}) {
+  const { kcalBonus } = useNutritionPrefs()
   const today = localDate()
   const { data: allEntries } = useAllFoodEntries()
   const { data: todayEntries } = useFoodEntries(today)
@@ -66,7 +68,7 @@ export function NutritionGamePanel({ compact = false }: { compact?: boolean } = 
   const g = useMemo(() => {
     const entries = allEntries ?? []
     const proteinTarget = settings?.protein_target ?? 0
-    const kcalTarget = kcalTargetFor(settings, trainedOn(today, allSets))
+    const kcalTarget = kcalTargetFor(settings, trainedOn(today, allSets), kcalBonus)
     const waterTarget = settings?.water_target_ml || 2500
     const days = byDay(entries)
     const dates = new Set(days.keys())
@@ -94,7 +96,7 @@ export function NutritionGamePanel({ compact = false }: { compact?: boolean } = 
       weekly: nutritionWeeklyQuests(entries, proteinTarget),
       badges: nutritionAchievements({ daysLogged: days.size, streak, proteinDays, waterGoalDays }),
     }
-  }, [allEntries, todayEntries, allWater, water, settings, allSets, today])
+  }, [allEntries, todayEntries, allWater, water, settings, allSets, today, kcalBonus])
 
   // Level-up-Feier (eigener Zähler, getrennt vom Fitness-Level). Der gespeicherte
   // „gesehene" Level sinkt nie — sonst würde ein kurzzeitig niedrigerer Level

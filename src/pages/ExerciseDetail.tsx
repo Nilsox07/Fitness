@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Lightbulb,
+  PlayCircle,
   Settings2,
   Trophy,
 } from "lucide-react";
@@ -44,6 +45,8 @@ import {
   exerciseToInput,
 } from "../components/ExerciseForm";
 import type { SetWithDate } from "../types";
+import { ExerciseHowTo } from "../components/library/ExerciseHowTo";
+import { useLibraryMatch } from "../components/library/useLibrary";
 
 type Metric = "est1RM" | "topWeight" | "volume";
 
@@ -108,6 +111,9 @@ export default function ExerciseDetail() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [form, setForm] = useState<ExerciseInput>(EMPTY_EXERCISE);
   const [saved, setSaved] = useState(false);
+  // Ausführung aus der Übungsbibliothek (nur neue App, wenn verknüpft/Name passt)
+  const howTo = useLibraryMatch(exercise, isNew);
+  const [howToOpen, setHowToOpen] = useState(true);
 
   // Formular mit der geladenen Übung befüllen (und nach dem Speichern synchron halten)
   useEffect(() => {
@@ -263,6 +269,28 @@ export default function ExerciseDetail() {
           </p>
         </div>
       </header>
+
+      {howTo && (
+        <section className="space-y-2">
+          <button
+            className="card flex w-full items-center gap-2 py-3 text-left font-semibold"
+            onClick={() => setHowToOpen((o) => !o)}
+            aria-expanded={howToOpen}
+          >
+            <PlayCircle size={18} className="text-cocoa-light" />
+            <span className="flex-1">Ausführung</span>
+            <ChevronDown
+              size={18}
+              className={`text-cocoa-muted transition-transform duration-200 ${howToOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {howToOpen && (
+            <div className="card anim-fade">
+              <ExerciseHowTo item={howTo} />
+            </div>
+          )}
+        </section>
+      )}
 
       {!hasData && (
         <p className="text-sm text-cocoa-light">

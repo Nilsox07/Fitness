@@ -1,58 +1,70 @@
-import { Check, Users } from 'lucide-react'
-import type { TeamGoal } from '../../lib/duel'
+import type { CSSProperties, ReactNode } from 'react'
+import { Check } from 'lucide-react'
 import { useBuddySkin } from '../buddy/useBuddy'
 import { Avatar } from './Avatar'
-import { buddyLook, firstName, type Person } from './format'
+import { buddyLook, type Person } from './format'
 
-/** Kooperatives Wochenziel: alle Trainings zusammen gegen ein gemeinsames Ziel. */
-export function TeamGoalCard({ goal, people, meId }: { goal: TeamGoal; people: Person[]; meId: string }) {
-  const byId = new Map(people.map((u) => [u.user_id, u]))
+/** Schlanke Karte für ein gemeinsames Wochenziel (Trainings oder Eiweiß-Tage). */
+export function TeamGoalCard({
+  title,
+  icon,
+  done,
+  target,
+  unit,
+  people,
+  meId,
+  tone = 'brand',
+  style,
+}: {
+  title: string
+  icon: ReactNode
+  done: number
+  target: number
+  /** Einheit im Untertitel, z. B. „Trainings" */
+  unit: string
+  people: Person[]
+  meId: string
+  tone?: 'brand' | 'success'
+  style?: CSSProperties
+}) {
   const mySkin = useBuddySkin()
+  const reached = target > 0 && done >= target
+  const pct = target > 0 ? Math.min(100, Math.round((done / target) * 100)) : 0
+  const bar = reached || tone === 'success' ? 'bg-success' : 'bg-brand'
   return (
-    <div className="card space-y-3">
-      <div className="flex items-center gap-2">
+    <div className="card space-y-2.5 py-3.5" style={style}>
+      <div className="flex items-center gap-3">
         <span
-          className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
-            goal.reached ? 'bg-success text-white' : 'bg-sand text-cocoa-light'
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+            reached ? 'bg-success text-white' : tone === 'success' ? 'bg-success/10 text-success' : 'bg-brand/10 text-brand'
           }`}
         >
-          {goal.reached ? <Check size={16} strokeWidth={3} className="anim-check" /> : <Users size={16} />}
+          {reached ? <Check size={17} strokeWidth={3} className="anim-check" /> : icon}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold">Zusammen diese Woche</div>
-          <div className="text-xs text-cocoa-light">
-            {goal.reached
-              ? 'Teamziel geschafft!'
-              : `Noch ${goal.target - goal.done} Trainings bis zum Teamziel`}
+          <div className="truncate text-sm font-semibold">{title}</div>
+          <div className="tabular truncate text-xs text-cocoa-light">
+            {reached ? 'Teamziel geschafft!' : `Noch ${target - done} ${unit} bis zum Teamziel`}
           </div>
         </div>
-        <div className="tabular shrink-0 text-lg font-bold">
-          {goal.done}
-          <span className="text-sm font-semibold text-cocoa-light"> / {goal.target}</span>
-        </div>
+        <span className="flex shrink-0 -space-x-2" aria-hidden>
+          {people.slice(0, 4).map((u) => (
+            <Avatar
+              key={u.user_id}
+              buddy={buddyLook(u, u.user_id === meId, mySkin)}
+              name={u.display_name}
+              size={24}
+              className="bg-sand ring-2 ring-cream"
+            />
+          ))}
+        </span>
+        <span className="tabular shrink-0 text-base font-bold">
+          {done}
+          <span className="text-xs font-semibold text-cocoa-muted">/{target}</span>
+        </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-sand">
-        <div
-          className={`h-full rounded-full transition-[width] duration-500 ${goal.reached ? 'bg-success' : 'bg-brand'}`}
-          style={{ width: `${goal.progress}%` }}
-        />
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {goal.perPerson.map((p) => {
-          const u = byId.get(p.user_id)
-          if (!u) return null
-          const isMe = p.user_id === meId
-          return (
-            <span
-              key={p.user_id}
-              className="flex items-center gap-1.5 rounded-full bg-sand py-0.5 pl-0.5 pr-2.5 text-xs"
-            >
-              <Avatar buddy={buddyLook(u, isMe, mySkin)} name={u.display_name} size={22} className="bg-cream" />
-              <span className="font-medium">{isMe ? 'Du' : firstName(u)}</span>
-              <span className="tabular font-semibold text-cocoa-light">{p.sessions}</span>
-            </span>
-          )
-        })}
+      <div className="h-1.5 overflow-hidden rounded-full bg-sand" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+        <div className={`h-full rounded-full transition-[width] duration-700 ease-out ${bar}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   )

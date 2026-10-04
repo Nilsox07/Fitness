@@ -14,4 +14,9 @@ describe('dayTarget', () => {
     expect(kcalTargetFor({ kcal_target: 0 }, true)).toBe(0)
     expect(kcalTargetFor(null, true)).toBe(0)
   })
+  it('nimmt einen eigenen Trainingsbonus', () => {
+    expect(kcalTargetFor({ kcal_target: 2000 }, true, 400)).toBe(2400)
+    expect(kcalTargetFor({ kcal_target: 2000 }, true, 0)).toBe(2000)
+    expect(kcalTargetFor({ kcal_target: 2000 }, false, 400)).toBe(2000)
+  })
 })

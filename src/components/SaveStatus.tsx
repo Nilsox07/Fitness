@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useMutationState, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CloudOff, Loader2 } from 'lucide-react'
 import { MK } from '../lib/mutationDefaults'
+import { usePrefs } from '../lib/prefs'
 
 /** Nur die Trainings-Schreibvorgänge (Workout/Sätze) zählen — andere Mutationen
  *  (Likes, KI, Kudos …) sollen hier weder Fehler anzeigen noch erneut laufen. */
@@ -24,6 +25,7 @@ const COLLAPSE_MS = 6000
  */
 export function SaveStatus() {
   const qc = useQueryClient()
+  const { isNew } = usePrefs()
   const states = useMutationState({
     filters: { predicate: isTracked },
     select: (m) => ({ status: m.state.status, isPaused: m.state.isPaused }),
@@ -61,6 +63,10 @@ export function SaveStatus() {
         }
       }),
     )
+  }
+
+  if (isNew) {
+    return <SaveStatusPill failed={failed} paused={paused} expanded={expanded} setExpanded={setExpanded} retry={retry} />
   }
 
   const base =
@@ -131,6 +137,82 @@ export function SaveStatus() {
         <Loader2 size={14} className="shrink-0 animate-spin" />
         Speichert…
       </span>
+    </div>
+  )
+}
+
+/**
+ * Neue App: schwebende Pille oben in der Mitte (wie die KI-Anzeige). Fehler/Offline
+ * zeigen zuerst einen erklärenden Text und klappen dann zur kurzen Pille zusammen.
+ */
+function SaveStatusPill({
+  failed,
+  paused,
+  expanded,
+  setExpanded,
+  retry,
+}: {
+  failed: number
+  paused: number
+  expanded: boolean
+  setExpanded: (v: boolean) => void
+  retry: () => Promise<void>
+}) {
+  const wrap =
+    'pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 flex justify-center px-4'
+  const pill =
+    'anim-fade pointer-events-auto flex max-w-full items-center gap-2 rounded-full py-1.5 pl-2.5 pr-3 text-xs font-semibold shadow-lg shadow-black/10 backdrop-blur'
+
+  if (failed) {
+    return (
+      <div className={wrap}>
+        <div className={`${pill} bg-red-600 text-white`} role="alert">
+          <button
+            type="button"
+            className="flex min-w-0 items-center gap-1.5"
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+          >
+            <AlertTriangle size={14} className="shrink-0" />
+            <span className="truncate">{expanded ? 'Nicht gespeichert – Verbindung prüfen' : 'Nicht gespeichert'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void retry()}
+            className="shrink-0 rounded-full bg-white/20 px-2.5 py-0.5"
+          >
+            Erneut
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (paused) {
+    return (
+      <div className={wrap}>
+        <button
+          type="button"
+          className={`${pill} bg-cocoa text-bg`}
+          onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          aria-label="Offline – Details"
+        >
+          <CloudOff size={14} className="shrink-0" />
+          <span className="truncate">
+            {expanded ? 'Offline – Sätze werden gesendet, sobald du wieder online bist' : 'Offline'}
+          </span>
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className={wrap}>
+      <div className={`${pill} bg-cream/95 text-cocoa-light ring-1 ring-sand-dark/40`} role="status">
+        <Loader2 size={14} className="shrink-0 animate-spin text-brand" />
+        Speichert…
+      </div>
     </div>
   )
 }

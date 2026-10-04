@@ -49,8 +49,12 @@ import { RestControl, useRestTimer } from '../components/workout/RestControl'
 import { Sheet } from '../components/workout/Sheet'
 import { HomeStart } from '../components/home/HomeStart'
 import { MyBuddy } from '../components/buddy/MyBuddy'
+import { LibrarySheet } from '../components/library/LibrarySheet'
+import { ExerciseHowTo } from '../components/library/ExerciseHowTo'
+import { useLibraryMatch } from '../components/library/useLibrary'
 import {
   AlertTriangle,
+  BookOpen,
   Check,
   ChevronRight,
   Flame,
@@ -58,6 +62,7 @@ import {
   Link2,
   MoreHorizontal,
   Play,
+  PlayCircle,
   Plus,
   RefreshCw,
   Search,
@@ -655,6 +660,11 @@ export default function Workout() {
   const [pendingPlanId, setPendingPlanId] = useState('')
   const [dropOpenSets, setDropOpenSets] = useState(true)
   const [tipOpen, setTipOpen] = useState(false)
+  // Übungsbibliothek (nur Neu-Modus): „Ausführung" der aktiven Übung + Bibliothek im Picker
+  const [libOpen, setLibOpen] = useState(false)
+  const [howToOpen, setHowToOpen] = useState(false)
+  const [libAddId, setLibAddId] = useState('')
+  const activeHowTo = useLibraryMatch(selectedExercise, isNew)
   const woId = todaysWorkout?.id ?? ''
 
   const pairs = useMemo<Pair[]>(
@@ -764,6 +774,14 @@ export default function Workout() {
     setPickerQuery('')
     bump()
   }
+
+  // Aus der Bibliothek neu angelegte Übung: hinzufügen, sobald sie in der Liste ist.
+  useEffect(() => {
+    if (!libAddId || !exById.has(libAddId)) return
+    setLibAddId('')
+    addExerciseToday(libAddId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [libAddId, exById])
 
   function pairWith(partnerId: string) {
     if (!woId || !exerciseId) return
@@ -1069,7 +1087,18 @@ export default function Workout() {
             )}
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h2 className="truncate text-lg font-bold">{active.name}</h2>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <h2 className="min-w-0 truncate text-lg font-bold">{active.name}</h2>
+                  {activeHowTo && (
+                    <button
+                      className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-2 py-0.5 text-[11px] font-semibold text-cocoa-light active:scale-95"
+                      onClick={() => setHowToOpen(true)}
+                      aria-label="Ausführung anzeigen"
+                    >
+                      <PlayCircle size={13} /> Ausführung
+                    </button>
+                  )}
+                </div>
                 <p className="truncate text-xs text-cocoa-light">
                   {[active.muscle_group, ...(active.secondary_muscles ?? [])].join(' · ')}
                   {pair ? ' · Supersatz' : ''}
@@ -1250,6 +1279,25 @@ export default function Workout() {
                 </div>
               </div>
             )}
+            {sheet === 'picker' && (
+              <button
+                className="flex w-full items-center gap-3 rounded-xl bg-sand-light px-3 py-2.5 text-left"
+                onClick={() => {
+                  setSheet(null)
+                  setPickerQuery('')
+                  setLibOpen(true)
+                }}
+              >
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-on-brand">
+                  <BookOpen size={16} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold">Bibliothek</span>
+                  <span className="block truncate text-xs text-cocoa-light">Neue Übung mit Animation & Ausführung</span>
+                </span>
+                <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />
+              </button>
+            )}
             {!q && sheet === 'picker' && <div className="label -mb-2">Alle Übungen</div>}
             <ul className="divide-y divide-sand">
               {pickerList.map((e) => {
@@ -1286,6 +1334,30 @@ export default function Workout() {
                 </li>
               )}
             </ul>
+          </Sheet>
+        )}
+
+        {libOpen && (
+          <LibrarySheet
+            onClose={() => setLibOpen(false)}
+            onAdded={(ex) => {
+              setLibOpen(false)
+              setLibAddId(ex.id)
+            }}
+            existingAction={{
+              label: 'Zum Training hinzufügen',
+              run: (ex) => {
+                setLibOpen(false)
+                if (todayExIds.includes(ex.id)) setExerciseId(ex.id)
+                else addExerciseToday(ex.id)
+              },
+            }}
+          />
+        )}
+
+        {howToOpen && active && activeHowTo && (
+          <Sheet title={active.name} onClose={() => setHowToOpen(false)}>
+            <ExerciseHowTo item={activeHowTo} />
           </Sheet>
         )}
 

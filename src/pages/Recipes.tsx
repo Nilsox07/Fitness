@@ -22,6 +22,7 @@ import {
   recipesForToday,
 } from '../components/recipes/recipeUtils'
 import type { Meal, SavedRecipe } from '../types'
+import { useNutritionPrefs } from '../hooks/usePrefsSync'
 
 function today(): string {
   const d = new Date()
@@ -192,6 +193,7 @@ function ClassicRecipes() {
 type Filter = 'all' | 'protein' | 'friends'
 
 function NewRecipes() {
+  const { kcalBonus } = useNutritionPrefs()
   const { user } = useAuth()
   const { data: recipes, isLoading } = useRecipes()
   const { data: ai } = useAiStatus()
@@ -222,7 +224,7 @@ function NewRecipes() {
       (s, e) => ({ kcal: s.kcal + (Number(e.kcal) || 0), protein: s.protein + (Number(e.protein) || 0) }),
       { kcal: 0, protein: 0 },
     )
-    const target = kcalTargetFor(settings, trainedOn(date, allSets))
+    const target = kcalTargetFor(settings, trainedOn(date, allSets), kcalBonus)
     const proteinTarget = settings?.protein_target ?? 0
     return {
       goal: settings?.goal ?? null,
@@ -232,7 +234,7 @@ function NewRecipes() {
       carbsTarget: settings?.carbs_target ?? 0,
       fatTarget: settings?.fat_target ?? 0,
     }
-  }, [entries, settings, allSets, date])
+  }, [entries, settings, allSets, date, kcalBonus])
 
   const scores = useMemo(() => {
     const m = new Map<string, MealScore>()

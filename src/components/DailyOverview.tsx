@@ -7,6 +7,7 @@ import { useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useWater } from '../hooks/useWater'
 import { sumEntries } from '../lib/nutrition'
 import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
+import { useNutritionPrefs } from '../hooks/usePrefsSync'
 
 const DAY_CUTOFF_H = 4
 
@@ -59,6 +60,7 @@ function Tile({
 
 /** Kompakter Tagesüberblick über Fitness + Ernährung, oben auf „Heute". */
 export function DailyOverview() {
+  const { kcalBonus } = useNutritionPrefs()
   const navigate = useNavigate()
   const { setWorld, showNutrition } = usePrefs()
   const { data: allSets } = useAllSets()
@@ -70,7 +72,7 @@ export function DailyOverview() {
   const trained = tSets.length > 0
   const totals = sumEntries(entries ?? [])
   // Ernährung zählt nach Kalendertag — gleiches Ziel (inkl. Trainingsbonus) wie auf „Ernährung".
-  const kcalTarget = kcalTargetFor(settings, trainedOn(today(), allSets))
+  const kcalTarget = kcalTargetFor(settings, trainedOn(today(), allSets), kcalBonus)
   const kcalLeft = kcalTarget ? kcalTarget - totals.kcal : 0
   const proteinTarget = settings?.protein_target ?? 0
   const goalWater = settings?.water_target_ml || 2500

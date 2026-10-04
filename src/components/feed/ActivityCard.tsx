@@ -1,9 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import {
   Activity as ActivityIcon,
+  ChefHat,
   Dumbbell,
+  Flame,
   Heart,
   MessageCircle,
+  Pizza,
   Send,
   Star,
   Trophy,
@@ -23,6 +26,7 @@ import {
 } from '../../hooks/useFeed'
 import { Avatar } from '../social/Avatar'
 import { timeAgo, type BuddyLook } from '../social/format'
+import { activityWorld, detailStats, parsePr } from '../community/communityUtils'
 
 /** Autor-Anzeige: Name + Buddy (falls die Stats bekannt sind). */
 export interface AuthorInfo {
@@ -30,16 +34,26 @@ export interface AuthorInfo {
   buddy?: BuddyLook
 }
 
-function kindIcon(kind: string): { Icon: LucideIcon; className: string } {
+interface KindStyle {
+  Icon: LucideIcon
+  /** getönter Kreis + Icon-Farbe */
+  tint: string
+  label: string
+}
+
+function kindStyle(kind: string): KindStyle {
   const k = kind.toLowerCase()
   if (k === 'pr' || k.includes('record') || k.includes('rekord'))
-    return { Icon: Trophy, className: 'text-gold' }
-  if (k.includes('level')) return { Icon: Star, className: 'text-gold' }
-  if (k === 'cheat' || k.includes('food') || k.includes('meal') || k.includes('nutrition'))
-    return { Icon: Utensils, className: 'text-cocoa-light' }
+    return { Icon: Trophy, tint: 'bg-gold/15 text-gold', label: 'Rekord' }
+  if (k.includes('level')) return { Icon: Star, tint: 'bg-gold/15 text-gold', label: 'Level' }
+  if (k.includes('streak')) return { Icon: Flame, tint: 'bg-brand/10 text-brand', label: 'Serie' }
+  if (k === 'cheat') return { Icon: Pizza, tint: 'bg-brand/10 text-brand', label: 'Cheat-Meal' }
+  if (k.includes('recipe') || k.includes('rezept'))
+    return { Icon: ChefHat, tint: 'bg-success/10 text-success', label: 'Rezept' }
+  if (activityWorld(k) === 'food') return { Icon: Utensils, tint: 'bg-success/10 text-success', label: 'Ernährung' }
   if (k.includes('workout') || k.includes('training'))
-    return { Icon: Dumbbell, className: 'text-cocoa-light' }
-  return { Icon: ActivityIcon, className: 'text-cocoa-light' }
+    return { Icon: Dumbbell, tint: 'bg-brand/10 text-brand', label: 'Training' }
+  return { Icon: ActivityIcon, tint: 'bg-sand text-cocoa-light', label: 'Aktivität' }
 }
 
 /** Eine Aktivität im Strava-Stil: Autor, Art, Inhalt, Applaus & Kommentare. */
@@ -48,11 +62,13 @@ export function ActivityCard({
   author,
   comments,
   likes,
+  style,
 }: {
   activity: Activity
   author: AuthorInfo
   comments: ActivityComment[]
   likes: ActivityLike[]
+  style?: CSSProperties
 }) {
   const { user } = useAuth()
   const { data: profile } = useMyProfile()
@@ -62,7 +78,9 @@ export function ActivityCard({
   const [text, setText] = useState('')
 
   const iLiked = likes.some((l) => l.user_id === user?.id)
-  const { Icon, className } = kindIcon(a.kind)
+  const { Icon, tint, label } = kindStyle(a.kind)
+  const pr = a.kind === 'pr' ? parsePr(a.title, a.detail) : null
+  const stats = a.kind === 'workout' ? detailStats(a.detail) : []
 
   function submit() {
     const t = text.trim()
@@ -76,22 +94,49 @@ export function ActivityCard({
   }
 
   return (
-    <li className="card space-y-3">
-      <div className="flex items-center gap-2.5">
-        <Avatar buddy={author.buddy} name={author.label} size={36} />
+    <li className="card space-y-3" style={style}>
+      <div className="flex items-center gap-3">
+        <Avatar buddy={author.buddy} name={author.label} size={40} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{author.label}</div>
-          <div className="text-xs text-cocoa-muted">{timeAgo(a.created_at)}</div>
+          <div className="truncate text-xs text-cocoa-muted">
+            {label} · {timeAgo(a.created_at)}
+          </div>
         </div>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sand">
-          <Icon size={16} className={className} />
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${tint}`} aria-hidden>
+          <Icon size={17} />
         </span>
       </div>
 
-      <div>
-        <div className="font-semibold leading-snug">{a.title}</div>
-        {a.detail && <div className="tabular mt-0.5 text-sm text-cocoa-light">{a.detail}</div>}
-      </div>
+      {pr ? (
+        <div className="flex items-center gap-3 rounded-xl bg-gold/10 px-3 py-2.5 ring-1 ring-gold/25">
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-gold">Neuer Rekord</div>
+            <div className="truncate font-semibold leading-snug">{pr.exercise}</div>
+          </div>
+          {pr.value && (
+            <div className="shrink-0 text-right leading-none">
+              <span className="tabular text-xl font-bold text-gold">{pr.value}</span>
+              {pr.unit && <div className="mt-0.5 text-[10px] font-medium text-cocoa-light">{pr.unit}</div>}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          <div className="font-semibold leading-snug">{a.title}</div>
+          {stats.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {stats.map((x) => (
+                <span key={x} className="tabular rounded-full bg-sand px-2.5 py-1 text-xs font-medium text-cocoa-light">
+                  {x}
+                </span>
+              ))}
+            </div>
+          ) : (
+            a.detail && <div className="tabular mt-0.5 text-sm text-cocoa-light">{a.detail}</div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-5 border-t border-sand-dark/40 pt-2.5 text-sm">
         <button
@@ -176,9 +221,10 @@ export function ActivityList({
 
   return (
     <ul className="space-y-3">
-      {activities.map((a) => (
+      {activities.map((a, i) => (
         <ActivityCard
           key={a.id}
+          style={{ animation: 'fade-in .3s ease-out both', animationDelay: `${Math.min(i, 8) * 45}ms` }}
           activity={a}
           author={authorOf(a)}
           comments={byActivity.c.get(a.id) ?? []}

@@ -7,8 +7,16 @@ import { useStreakState } from '../../hooks/useStreak'
 import { lastTrainedPerMuscle, sessionDates } from '../../lib/analytics'
 import { weekStreakWithFreezes } from '../../lib/streaks'
 import { getPlanQueue } from '../../lib/workoutSession'
-import { WEEKLY_GOAL } from '../../lib/duel'
-import { lastDoneByPlan, lastSessionStats, recoveryLevel, suggestNextPlan, type RecoveryLevel } from '../../lib/home'
+import { useTrainingRhythm } from '../../hooks/usePrefsSync'
+import { isConfigured, plannedTrainingDates, upcoming } from '../../lib/schedule'
+import {
+  lastDoneByPlan,
+  lastSessionStats,
+  recoveryLevel,
+  suggestNextPlan,
+  weekDates,
+  type RecoveryLevel,
+} from '../../lib/home'
 import { MUSCLE_GROUPS, type MuscleGroup, type PlanWithExercises } from '../../types'
 import { HomeHeader } from './HomeHeader'
 import { useBuddy } from '../buddy/useBuddy'
@@ -18,8 +26,17 @@ import { RecoveryCard, type MuscleState } from './RecoveryCard'
 import { LastWorkoutCard } from './LastWorkoutCard'
 import { NutritionRow } from './NutritionRow'
 import { ChallengeCard } from './ChallengeCard'
+import { RestDayCard } from './RestDayCard'
+import { RhythmPrompt } from './RhythmPrompt'
 
 const SKIP_MUSCLES = new Set<MuscleGroup>(['Sonstige', 'Ganzkörper'])
+
+/** „morgen", „übermorgen", „am Mittwoch". */
+function whenLabel(offset: number, date: string): string {
+  if (offset === 1) return 'morgen'
+  if (offset === 2) return 'übermorgen'
+  return `am ${new Date(date + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'long' })}`
+}
 
 /**
  * „Heute"-Start-Screen im Neu-Modus (noch kein Training heute):
@@ -46,6 +63,7 @@ export function HomeStart({
   const { data: profile } = useMyProfile()
   const { data: streakState } = useStreakState()
   const buddy = useBuddy()
+  const rhythm = useTrainingRhythm(today)
 
   const dates = useMemo(() => sessionDates(allSets ?? []), [allSets])
   const trainedDates = useMemo(() => new Set(dates), [dates])
@@ -85,6 +103,28 @@ export function HomeStart({
     }
   }, [plans, workouts, allSets, today])
 
+  // Trainingsrhythmus: was steht heute an, welche Tage sind diese Woche geplant?
+  const planById = useMemo(() => new Map((plans ?? []).map((p) => [p.id, p])), [plans])
+  const planned = useMemo(
+    () => plannedTrainingDates(rhythm.schedule, rhythm.history, today, weekDates(today)),
+    [rhythm.schedule, rhythm.history, today],
+  )
+  const rhythmPlan = rhythm.today.kind === 'train' ? (planById.get(rhythm.today.planId) ?? null) : null
+  const isRest = rhythm.today.kind === 'rest'
+  const nextUp = useMemo(() => {
+    if (!isRest) return null
+    const days = upcoming(rhythm.schedule, rhythm.history, today, 8)
+    for (let k = 1; k < days.length; k++) {
+      const p = days[k].plan
+      if (p.kind === 'train') {
+        const plan = planById.get(p.planId)
+        if (plan) return { plan, name: plan.name, when: whenLabel(k, days[k].date) }
+      }
+    }
+    return null
+  }, [isRest, rhythm.schedule, rhythm.history, today, planById])
+  const showPrompt = rhythm.ready && (plans?.length ?? 0) > 0 && !isConfigured(rhythm.schedule)
+
   const last = useMemo(() => lastSessionStats(allSets ?? [], today), [allSets, today])
   const lastNames = (last?.exerciseIds ?? []).map((id) => exById.get(id)?.name).filter((n): n is string => Boolean(n))
 
@@ -98,13 +138,29 @@ export function HomeStart({
   return (
     <div className="space-y-4">
       <HomeHeader name={profile?.display_name ?? null} dateLabel={dateLabel} streak={streak} buddy={buddy} />
-      <WeekStrip today={today} trainedDates={trainedDates} goal={WEEKLY_GOAL} index={++i} />
+      <WeekStrip today={today} trainedDates={trainedDates} goal={rhythm.goal} planned={planned} index={++i} />
+      {showPrompt && <RhythmPrompt index={++i} />}
       {plans === undefined ? (
         <div className="h-72 animate-pulse rounded-3xl bg-sand" aria-hidden />
+      ) : isRest && plans.length > 0 ? (
+        <RestDayCard
+          plans={plans}
+          nextUp={nextUp && { name: nextUp.name, when: nextUp.when }}
+          highlightId={nextUp?.plan.id ?? suggested?.id ?? null}
+          exerciseCount={(p) => p.exercise_ids.filter((id) => exById.has(id)).length}
+          lastDone={lastDone}
+          today={today}
+          busy={busy}
+          error={error}
+          onStartPlan={onStartPlan}
+          onStartFree={onStartFree}
+          index={++i}
+        />
       ) : (
         <NextWorkoutCard
           plans={plans}
-          suggested={suggested}
+          suggested={rhythmPlan ?? suggested}
+          fromRhythm={Boolean(rhythmPlan)}
           exById={exById}
           recovery={recovery}
           lastDone={lastDone}

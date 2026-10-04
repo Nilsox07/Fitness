@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Hand, MessageCircle, Send } from 'lucide-react'
+import { ChevronLeft, Dumbbell, Hand, MessageCircle, Send, Sparkles, Utensils } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { usePrefs } from '../lib/prefs'
 import { dayLabel, localDate } from '../lib/day'
 import { ActivityList } from '../components/feed/ActivityCard'
 import { useAuthorLookup } from '../components/feed/useAuthorLookup'
+import { MyBuddy } from '../components/buddy/MyBuddy'
+import { FilterChips, PageHeader, SectionTitle } from '../components/community/ui'
+import { enter, matchesFilter, type FeedFilter } from '../components/community/communityUtils'
 import {
   useActivities,
   useAddComment,
@@ -123,45 +126,63 @@ export default function Feed() {
 /** Neues Design: Aktivitäten nach Tagen gruppiert, gleiche Karten wie in der Community. */
 function FeedNew() {
   const goBack = useGoBack()
+  const { world, showNutrition } = usePrefs()
   const { data: activities, isLoading } = useActivities()
   const authorOf = useAuthorLookup()
+  const [filter, setFilter] = useState<FeedFilter>(world)
+  // Ernährung ausgeblendet → kein Ernährungs-Filter
+  const active: FeedFilter = !showNutrition && filter === 'food' ? 'fitness' : filter
 
   const groups = useMemo(() => {
     const out: { day: string; items: Activity[] }[] = []
     for (const a of activities ?? []) {
+      if (!matchesFilter(a.kind, active)) continue
       const day = localDate(new Date(a.created_at))
       const last = out[out.length - 1]
       if (last && last.day === day) last.items.push(a)
       else out.push({ day, items: [a] })
     }
     return out
-  }, [activities])
+  }, [activities, active])
+  const count = groups.reduce((s, g) => s + g.items.length, 0)
+
+  const options: { value: FeedFilter; label: string; icon: ReactNode }[] = [
+    { value: 'all', label: 'Alle', icon: <Sparkles size={14} /> },
+    { value: 'fitness', label: 'Training', icon: <Dumbbell size={14} /> },
+    ...(showNutrition ? [{ value: 'food' as const, label: 'Ernährung', icon: <Utensils size={14} /> }] : []),
+  ]
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center gap-2">
-        <button
-          className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
-          onClick={goBack}
-          aria-label="Zurück"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <h1 className="text-xl font-bold">Aktivitäten</h1>
-      </header>
+      <PageHeader
+        title="Aktivitäten"
+        subtitle={isLoading ? 'Lädt…' : `${count} ${count === 1 ? 'Eintrag' : 'Einträge'} von dir & deinen Freunden`}
+        onBack={goBack}
+        style={enter(0)}
+      />
 
-      {isLoading && <p className="text-sm text-cocoa-light">Lädt…</p>}
+      <div style={enter(1)}>
+        <FilterChips value={active} options={options} onChange={setFilter} label="Aktivitäten filtern" />
+      </div>
 
-      {groups.map((g) => (
-        <section key={g.day} className="space-y-2">
-          <h2 className="px-1 text-sm font-semibold text-cocoa-light">{dayLabel(g.day)}</h2>
+      {groups.map((g, i) => (
+        <section key={g.day} style={enter(Math.min(i, 4) + 2)}>
+          <SectionTitle right={`${g.items.length}`}>{dayLabel(g.day)}</SectionTitle>
           <ActivityList activities={g.items} authorOf={authorOf} />
         </section>
       ))}
 
-      {activities?.length === 0 && !isLoading && (
-        <div className="card text-center text-sm text-cocoa-light">
-          Noch nichts los. Schließ ein Training ab oder füg Freunde hinzu.
+      {!isLoading && count === 0 && (
+        <div className="anim-fade flex flex-col items-center gap-3 rounded-2xl bg-cream px-5 py-8 text-center">
+          <MyBuddy size={72} mood="sleepy" />
+          <div>
+            <p className="font-semibold">Noch nichts los</p>
+            <p className="mt-0.5 text-sm text-cocoa-light">
+              {active === 'food'
+                ? 'Teile ein Rezept oder füg Freunde hinzu.'
+                : 'Schließ ein Training ab oder füg Freunde hinzu.'}
+            </p>
+          </div>
         </div>
       )}
     </div>

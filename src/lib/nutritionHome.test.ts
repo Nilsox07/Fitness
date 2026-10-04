@@ -36,6 +36,12 @@ describe('nutritionHome', () => {
     expect(mealRecommendation('lunch', 0)).toBe(0)
   })
 
+  it('nutzt eine eigene Aufteilung in Prozent', () => {
+    const split = { breakfast: 40, lunch: 30, dinner: 30, snack: 0 }
+    expect(mealRecommendation('breakfast', 2000, split)).toBe(800)
+    expect(mealRecommendation('snack', 2000, split)).toBe(0)
+  })
+
   it('formatiert Zahlen deutsch', () => {
     expect(fmtInt(1240)).toBe('1.240')
     expect(fmtInt(99.6)).toBe('100')

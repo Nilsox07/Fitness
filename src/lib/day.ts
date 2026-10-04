@@ -36,9 +36,13 @@ function clampCutoff(h: number): number {
   return Math.min(6, Math.max(0, Math.round(h)))
 }
 
-/** Eingestellte Tageswechsel-Stunde (lokaler Spiegel der Einstellung, Standard 4). */
+/**
+ * Eingestellte Tageswechsel-Stunde (lokaler Spiegel der Einstellung, Standard 4).
+ * Nur im Neu-Modus — die klassische App bleibt beim festen Wechsel um 4 Uhr.
+ */
 export function getDayCutoff(): number {
   try {
+    if (localStorage.getItem('pref_app_mode') !== 'new') return DAY_CUTOFF_H
     const raw = localStorage.getItem(CUTOFF_KEY)
     if (raw == null || raw === '') return DAY_CUTOFF_H
     const v = Number(raw)

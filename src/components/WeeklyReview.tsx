@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { Trophy } from 'lucide-react'
+import { PremiumSheet, SheetHero } from './ui/PremiumSheet'
 import { useAiStatus } from '../hooks/useAi'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
@@ -8,7 +9,7 @@ import { useBodyWeights } from '../hooks/useBodyWeight'
 import { combinedWeeklyReview } from '../lib/ai'
 import { GOAL_LABEL } from '../lib/nutrition'
 import { sessionDates, totalVolume } from '../lib/analytics'
-import { WEEKLY_GOAL } from '../lib/duel'
+import { useWeeklyGoal } from '../hooks/usePrefsSync'
 import { MyBuddy } from './buddy/MyBuddy'
 import { usePrefs } from '../lib/prefs'
 import {
@@ -29,6 +30,7 @@ import {
 export function WeeklyReview() {
   const { data: ai } = useAiStatus()
   const { data: allSets } = useAllSets()
+  const weeklyGoal = useWeeklyGoal()
   const { data: exercises } = useExercises()
   const { data: foodEntries } = useAllFoodEntries()
   const { data: settings } = useNutritionSettings()
@@ -124,11 +126,11 @@ export function WeeklyReview() {
     })()
   }, [ai?.enabled, allSets, foodEntries, exercises, settings, weights, weightsLoading, showNutrition])
 
-  // Buddy ist stolz, wenn die Vorwoche das Wochenziel erreicht hat.
+  // Buddy ist stolz, wenn die Vorwoche das (persönliche) Wochenziel erreicht hat.
   const goalReached = useMemo(() => {
     const { start, end } = lastWeekRange()
-    return sessionDates((allSets ?? []).filter((s) => s.date >= start && s.date <= end)).length >= WEEKLY_GOAL
-  }, [allSets])
+    return sessionDates((allSets ?? []).filter((s) => s.date >= start && s.date <= end)).length >= weeklyGoal
+  }, [allSets, weeklyGoal])
 
   function close() {
     markSeen(isoWeekId())
@@ -137,30 +139,48 @@ export function WeeklyReview() {
 
   if (!open || !text) return null
 
+  const paragraphs = text
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+
   return (
-    <div className="anim-fade fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+1rem)]">
-      <div className="card max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <MyBuddy size={56} mood={goalReached ? 'proud' : 'happy'} className="-my-1 shrink-0" />
-            <div className="min-w-0">
-              <h2 className="text-lg font-bold leading-tight">Dein Wochenfazit</h2>
-              <p className="text-xs text-cocoa-light">von deinem Buddy</p>
-            </div>
-          </div>
-          <button
-            className="grid h-8 w-8 place-items-center rounded-full bg-sand text-cocoa-light"
-            onClick={close}
-            aria-label="Schließen"
-          >
-            <X size={16} strokeWidth={2.5} />
-          </button>
-        </div>
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{text}</p>
-        <button className="btn-primary w-full" onClick={close}>
+    <PremiumSheet
+      title="Dein Wochenfazit"
+      onClose={close}
+      z="z-40"
+      hero={
+        <SheetHero
+          art={<MyBuddy size={88} mood={goalReached ? 'proud' : 'happy'} />}
+          title="Dein Wochenfazit"
+          subtitle={`von deinem Buddy · ${lastWeekRange().label}`}
+        />
+      }
+      footer={
+        <button className="btn-primary w-full rounded-2xl py-3.5 text-base shadow-lg shadow-brand/25" onClick={close}>
           Los geht's
         </button>
+      }
+    >
+      {goalReached && (
+        <div className="flex justify-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
+            <Trophy size={13} />
+            Wochenziel geschafft
+          </span>
+        </div>
+      )}
+      <div className="space-y-3 rounded-2xl bg-cream p-4">
+        {paragraphs.map((p, i) => (
+          <p
+            key={i}
+            className="whitespace-pre-wrap text-[15px] leading-relaxed text-cocoa"
+            style={{ animation: 'fade-in .3s ease-out both', animationDelay: `${120 + i * 70}ms` }}
+          >
+            {p}
+          </p>
+        ))}
       </div>
-    </div>
+    </PremiumSheet>
   )
 }

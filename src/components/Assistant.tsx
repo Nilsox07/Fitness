@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAiStatus } from '../hooks/useAi'
 import { useAllSets } from '../hooks/useWorkouts'
@@ -9,10 +9,11 @@ import { usePrefs } from '../lib/prefs'
 import { assistant, type AssistantAction, type ChatMsg } from '../lib/ai'
 import { trainingSummary } from '../lib/analytics'
 import { sumEntries } from '../lib/nutrition'
-import { Send, X } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { MicButton } from './MicButton'
 import { Buddy } from './buddy/Buddy'
-import { useBuddyLook } from './buddy/useBuddy'
+import { useBuddy } from './buddy/useBuddy'
+import { PremiumSheet } from './ui/PremiumSheet'
 import type { Meal } from '../types'
 
 function todayLocal(): string {
@@ -41,11 +42,13 @@ export function Assistant() {
   const createEx = useCreateExercise()
   const setGym = useSetGymStatus()
   const { showNutrition } = usePrefs()
-  const look = useBuddyLook()
+  const buddy = useBuddy()
+  const endRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const [open, setOpen] = useState(false)
 
-  // Geöffnet wird der Assistent über den ✨-Button in der oberen Leiste.
+  // Geöffnet wird der Assistent über den Buddy-Button in der oberen Leiste.
   useEffect(() => {
     const onOpen = () => setOpen(true)
     window.addEventListener('open-assistant', onOpen)
@@ -54,6 +57,11 @@ export function Assistant() {
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+
+  // Neue Nachricht / Tipp-Anzeige → ans Ende scrollen
+  useEffect(() => {
+    if (open) endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+  }, [messages, busy, open])
 
   const context = useMemo(() => {
     const base = {
@@ -155,91 +163,137 @@ export function Assistant() {
     }
   }
 
+  const suggestions = [
+    ...(showNutrition ? ['Logg 200 g Magerquark und eine Banane', 'Wie viele Kalorien hab ich noch heute?'] : []),
+    'Leg die Übung Kniebeugen an, 5er-Schritte 20–120',
+    'Bring mich zur Auswertung',
+    'Ich gehe heute um 18 Uhr ins Gym',
+  ]
+
+  if (!open) return null
+
   return (
-    <>
-      {open && (
-        <div className="anim-fade fixed inset-0 z-40 flex flex-col bg-black/60 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+1rem)]">
-          <div className="card mx-auto flex h-full w-full max-w-md flex-col">
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="flex items-center gap-2 font-bold">
-                <Buddy size={36} mood={busy ? 'focus' : 'happy'} stage={look.stage} skin={look.skin} className="-my-1.5" />
-                Buddy
-                <span className="text-xs font-medium text-cocoa-muted">Assistent</span>
-              </h3>
-              <button
-                className="grid h-8 w-8 place-items-center rounded-full bg-sand text-cocoa-light"
-                onClick={() => setOpen(false)}
-                aria-label="Schließen"
-              >
-                <X size={16} strokeWidth={2.5} />
-              </button>
+    <PremiumSheet
+      title="Buddy"
+      subtitle={busy ? 'tippt gerade…' : buddy.line}
+      leading={
+        <span className="relative grid h-11 w-11 place-items-center rounded-full bg-brand/10">
+          <Buddy size={40} mood={busy ? 'focus' : buddy.mood} stage={buddy.stage} skin={buddy.skin} />
+          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-bg bg-success" />
+        </span>
+      }
+      onClose={() => setOpen(false)}
+      full
+      z="z-40"
+      bodyClassName="space-y-3"
+      footer={
+        <>
+          {/* Vorschläge als Chips */}
+          {!input && !busy && (
+            <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5" aria-label="Vorschläge">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => {
+                    setInput(s)
+                    inputRef.current?.focus()
+                  }}
+                  className="shrink-0 rounded-full bg-cream px-3.5 py-2 text-[13px] font-medium text-cocoa ring-1 ring-sand-dark/60 transition active:scale-95"
+                >
+                  {s}
+                </button>
+              ))}
             </div>
-
-            <div className="flex-1 space-y-2 overflow-y-auto">
-              {messages.length === 0 && (
-                <div className="space-y-2 text-sm text-cocoa-light">
-                  <p>Frag mich oder gib mir Anweisungen, z. B.:</p>
-                  <ul className="list-disc space-y-1 pl-5">
-                    {showNutrition && (
-                      <>
-                        <li>„Logg 200 g Magerquark und eine Banane"</li>
-                        <li>„Wie viele Kalorien hab ich noch heute?"</li>
-                      </>
-                    )}
-                    <li>„Leg die Übung Kniebeugen an, 5er-Schritte 20–120"</li>
-                    <li>„Bring mich zur Auswertung"</li>
-                    <li>„Ich gehe heute um 18 Uhr ins Gym"</li>
-                  </ul>
-                </div>
-              )}
-              {messages.map((m, i) =>
-                m.role === 'user' ? (
-                  <div
-                    key={i}
-                    className="ml-auto max-w-[85%] whitespace-pre-wrap rounded-2xl bg-brand px-3 py-2 text-sm text-on-brand"
-                  >
-                    {m.content}
-                  </div>
-                ) : (
-                  <div key={i} className="flex items-end gap-1.5">
-                    <Buddy
-                      size={28}
-                      mood={m.content.startsWith('⚠️') ? 'sad' : 'happy'}
-                      stage={look.stage}
-                      skin={look.skin}
-                      animate={false}
-                      className="mb-0.5 shrink-0"
-                    />
-                    <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-sand px-3 py-2 text-sm text-cocoa">
-                      {m.content}
-                    </div>
-                  </div>
-                ),
-              )}
-              {busy && (
-                <div className="flex items-center gap-1.5 text-sm text-cocoa-muted">
-                  <Buddy size={28} mood="focus" stage={look.stage} skin={look.skin} className="shrink-0" />
-                  Denke nach…
-                </div>
-              )}
-            </div>
-
-            <div className="mt-2 flex gap-2">
+          )}
+          <form
+            className="flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void send()
+            }}
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-1 rounded-full bg-sand-light py-1 pl-4 pr-1 ring-1 ring-sand-dark focus-within:ring-2 focus-within:ring-brand">
               <input
-                className="input"
-                placeholder="Fragen oder Anweisung…"
+                ref={inputRef}
+                className="min-w-0 flex-1 bg-transparent py-2 text-base text-cocoa outline-none placeholder:text-cocoa-muted"
+                placeholder="Schreib Buddy…"
+                aria-label="Nachricht an Buddy"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && send()}
               />
-              <MicButton onResult={(t) => setInput((v) => (v ? v + ' ' + t : t))} />
-              <button className="btn-primary shrink-0" onClick={send} disabled={busy} aria-label="Senden">
-                <Send size={18} />
-              </button>
+              <MicButton variant="round" onResult={(t) => setInput((v) => (v ? v + ' ' + t : t))} />
             </div>
+            <button
+              type="submit"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand text-on-brand shadow-lg shadow-brand/25 transition active:scale-90 disabled:opacity-40 disabled:shadow-none"
+              disabled={busy || !input.trim()}
+              aria-label="Senden"
+            >
+              <Send size={18} className="-ml-0.5" />
+            </button>
+          </form>
+        </>
+      }
+    >
+      {messages.length === 0 && (
+        <div className="anim-fade flex flex-col items-center px-4 pb-2 pt-6 text-center">
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-0 scale-125 rounded-full bg-brand/20 blur-2xl" />
+            <Buddy size={96} mood="cheer" stage={buddy.stage} skin={buddy.skin} className="relative" />
+          </div>
+          <p className="mt-3 text-lg font-bold tracking-tight">Hi, ich bin Buddy!</p>
+          <p className="mt-1 max-w-[17rem] text-sm text-cocoa-light">
+            Frag mich was oder gib mir eine Anweisung — ich logge, lege an und bringe dich hin.
+          </p>
+        </div>
+      )}
+
+      {messages.map((m, i) =>
+        m.role === 'user' ? (
+          <div key={i} className="anim-fade flex justify-end">
+            <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-3xl rounded-br-lg bg-brand px-4 py-2.5 text-[15px] leading-snug text-on-brand">
+              {m.content}
+            </div>
+          </div>
+        ) : (
+          <div key={i} className="anim-fade flex items-end gap-2">
+            <Buddy
+              size={26}
+              mood={m.content.startsWith('⚠️') ? 'sad' : 'happy'}
+              stage={buddy.stage}
+              skin={buddy.skin}
+              animate={false}
+              className="mb-0.5 shrink-0"
+            />
+            <div
+              className={`max-w-[80%] whitespace-pre-wrap break-words rounded-3xl rounded-bl-lg px-4 py-2.5 text-[15px] leading-snug ${
+                m.content.startsWith('⚠️')
+                  ? 'bg-red-500/10 text-red-600 dark:text-red-400'
+                  : 'bg-cream text-cocoa'
+              }`}
+            >
+              {m.content}
+            </div>
+          </div>
+        ),
+      )}
+
+      {busy && (
+        <div className="anim-fade flex items-end gap-2" role="status" aria-label="Buddy tippt">
+          <Buddy size={26} mood="focus" stage={buddy.stage} skin={buddy.skin} className="mb-0.5 shrink-0" />
+          <div className="flex items-center gap-1 rounded-3xl rounded-bl-lg bg-cream px-4 py-3.5">
+            {[0, 1, 2].map((d) => (
+              <span
+                key={d}
+                className="h-2 w-2 animate-bounce rounded-full bg-cocoa-muted"
+                style={{ animationDelay: `${d * 150}ms` }}
+              />
+            ))}
           </div>
         </div>
       )}
-    </>
+      <div ref={endRef} />
+    </PremiumSheet>
   )
 }

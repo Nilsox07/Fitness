@@ -13,7 +13,13 @@ export const DUEL_POINTS = {
   protein: 5,
 } as const
 
-/** Trainings pro Person und Woche (Wochenziel, Ring, Teamziel). */
+/**
+ * Trainings pro Person und Woche für Duell, Ring und Teamziel.
+ * Bewusst fest bei 3: Im Vergleich mit Freunden zählt für alle dasselbe Ziel
+ * (das persönliche Ziel aus dem Trainingsrhythmus wird nicht geteilt), damit der
+ * „Ziel 3×"-Bonus fair bleibt. Überall sonst gilt das persönliche Wochenziel
+ * (`weeklyGoal(schedule)` in `schedule.ts` / `useWeeklyGoal()`).
+ */
 export const WEEKLY_GOAL = 3
 
 /** Minimale Sicht auf eine geteilte Statistik-Zeile (kompatibel zu `UserStat`). */

@@ -104,18 +104,19 @@ export function sanitizeSchedule(s: Schedule | null | undefined, planIds: Readon
     return { type: 'weekdays', days }
   }
   const steps: ScheduleStep[] = []
-  let anchor = s.anchor ?? null
+  let removedBefore = 0
+  const orig = s.anchor ?? null
   s.steps.forEach((id, i) => {
     if (id && !planIds.has(id)) {
-      if (anchor && anchor.stepIndex > steps.length && i < anchor.stepIndex) {
-        anchor = { ...anchor, stepIndex: anchor.stepIndex - 1 }
-      }
+      if (orig && i < orig.stepIndex) removedBefore++
       return
     }
     steps.push(id ?? null)
   })
-  if (anchor && steps.length > 0) anchor = { ...anchor, stepIndex: clamp(anchor.stepIndex, 0, steps.length - 1) }
-  if (steps.length === 0) anchor = null
+  const anchor =
+    orig && steps.length > 0
+      ? { ...orig, stepIndex: clamp(orig.stepIndex - removedBefore, 0, steps.length - 1) }
+      : null
   return { type: 'rotation', steps, anchor }
 }
 

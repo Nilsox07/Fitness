@@ -7,9 +7,11 @@ import { kcalTargetFor, trainedOn } from '../../lib/dayTarget'
 import { useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
 import type { SetWithDate } from '../../types'
 import { enter } from './motion'
+import { useNutritionPrefs } from '../../hooks/usePrefsSync'
 
 /** Eine Zeile Ernährung statt doppeltem Tagesüberblick → wechselt in die Ernährungs-Welt. */
 export function NutritionRow({ allSets, index }: { allSets: SetWithDate[] | undefined; index: number }) {
+  const { kcalBonus } = useNutritionPrefs()
   const navigate = useNavigate()
   const { showNutrition, setWorld } = usePrefs()
   const day = localDate() // Ernährung zählt nach Kalendertag
@@ -18,7 +20,7 @@ export function NutritionRow({ allSets, index }: { allSets: SetWithDate[] | unde
   if (!showNutrition) return null
 
   const totals = sumEntries(entries ?? [])
-  const target = kcalTargetFor(settings, trainedOn(day, allSets))
+  const target = kcalTargetFor(settings, trainedOn(day, allSets), kcalBonus)
   const pct = target ? Math.min(100, Math.round((totals.kcal / target) * 100)) : 0
   const fmt = (n: number) => n.toLocaleString('de-DE')
 

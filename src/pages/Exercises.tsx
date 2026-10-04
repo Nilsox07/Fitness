@@ -4,6 +4,7 @@ import {
   Camera,
   Check,
   ChevronRight,
+  BookOpen,
   ClipboardList,
   Dumbbell,
   Mic,
@@ -36,6 +37,7 @@ import {
   exerciseToInput,
 } from '../components/ExerciseForm'
 import { ExerciseEmpty, ExerciseListNew } from '../components/exercises/ExerciseListNew'
+import { LibrarySheet } from '../components/library/LibrarySheet'
 import { enter } from '../components/exercises/muscle'
 import { MUSCLE_GROUPS, type Exercise, type MuscleGroup, type SetWithDate } from '../types'
 
@@ -86,15 +88,21 @@ function AddOption({
   title,
   desc,
   onClick,
+  primary = false,
 }: {
   Icon: LucideIcon
   title: string
   desc: string
   onClick: () => void
+  primary?: boolean
 }) {
   return (
     <button className="flex w-full items-center gap-3 px-3 py-3 text-left" onClick={onClick}>
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa">
+      <span
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+          primary ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa'
+        }`}
+      >
         <Icon size={18} />
       </span>
       <span className="min-w-0 flex-1">
@@ -134,6 +142,7 @@ export default function Exercises() {
 
   // Neue Liste (nur neue App)
   const [addOpen, setAddOpen] = useState(false)
+  const [libraryOpen, setLibraryOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [muscle, setMuscle] = useState<MuscleGroup | null>(null)
 
@@ -338,6 +347,16 @@ export default function Exercises() {
         <Sheet title="Übung hinzufügen" onClose={() => setAddOpen(false)}>
           <div className="divide-y divide-sand-dark/40 rounded-2xl bg-sand-light">
             <AddOption
+              Icon={BookOpen}
+              title="Aus Bibliothek wählen"
+              desc="Über 600 Übungen mit Animation & Ausführung"
+              primary
+              onClick={() => {
+                setAddOpen(false)
+                setLibraryOpen(true)
+              }}
+            />
+            <AddOption
               Icon={PenLine}
               title="Selbst eintragen"
               desc="Name, Muskeln und Wiederholungen manuell festlegen"
@@ -370,6 +389,23 @@ export default function Exercises() {
             )}
           </div>
         </Sheet>
+      )}
+
+      {libraryOpen && (
+        <LibrarySheet
+          onClose={() => setLibraryOpen(false)}
+          onAdded={(ex) => {
+            setLibraryOpen(false)
+            navigate(`/exercises/${ex.id}`)
+          }}
+          existingAction={{
+            label: 'Übung öffnen',
+            run: (ex) => {
+              setLibraryOpen(false)
+              navigate(`/exercises/${ex.id}`)
+            },
+          }}
+        />
       )}
 
       {equipOpen && !equipDrafts && (

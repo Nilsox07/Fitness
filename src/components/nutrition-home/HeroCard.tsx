@@ -14,6 +14,7 @@ export function HeroCard({
   totals,
   targets,
   trained,
+  bonus = TRAINING_BONUS,
   onSetup,
   style,
 }: {
@@ -21,6 +22,8 @@ export function HeroCard({
   /** kcal = 0 → noch kein Ziel gesetzt */
   targets: Targets
   trained: boolean
+  /** Trainingsbonus aus den Einstellungen (Standard 250) */
+  bonus?: number
   onSetup: () => void
   style?: CSSProperties
 }) {
@@ -75,7 +78,7 @@ export function HeroCard({
         <Side
           label="Ziel"
           value={fmtInt(targets.kcal)}
-          hint={trained ? `inkl. Training +${TRAINING_BONUS}` : undefined}
+          hint={trained && bonus > 0 ? `inkl. Training +${bonus}` : undefined}
         />
       </div>
 

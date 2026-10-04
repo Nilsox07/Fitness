@@ -25,10 +25,14 @@ export const MEAL_SHARE: Record<Meal, number> = {
   snack: 0.1,
 }
 
-/** Empfohlene kcal einer Mahlzeit, auf 10 gerundet; 0 ohne Ziel. */
-export function mealRecommendation(meal: Meal, kcalTarget: number): number {
+/**
+ * Empfohlene kcal einer Mahlzeit, auf 10 gerundet; 0 ohne Ziel.
+ * `split` = eigene Aufteilung in Prozent (Summe 100) aus den Einstellungen.
+ */
+export function mealRecommendation(meal: Meal, kcalTarget: number, split?: Record<Meal, number>): number {
   if (!(kcalTarget > 0)) return 0
-  return Math.round((kcalTarget * MEAL_SHARE[meal]) / 10) * 10
+  const share = split ? (Number(split[meal]) || 0) / 100 : MEAL_SHARE[meal]
+  return Math.round((kcalTarget * share) / 10) * 10
 }
 
 /** Ganze Zahl mit deutschem Tausenderpunkt („1.240"). */

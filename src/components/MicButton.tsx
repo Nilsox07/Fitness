@@ -24,7 +24,14 @@ function getRecognition(): SR | null {
 const supported = typeof window !== 'undefined' && Boolean(getRecognition())
 
 /** Diktier-Button: nimmt deutsche Sprache auf und gibt den Text zurück. */
-export function MicButton({ onResult }: { onResult: (text: string) => void }) {
+export function MicButton({
+  onResult,
+  variant = 'default',
+}: {
+  onResult: (text: string) => void
+  /** round = kleiner runder Knopf, z. B. innerhalb einer Chat-Eingabe */
+  variant?: 'default' | 'round'
+}) {
   const [listening, setListening] = useState(false)
   const ref = useRef<SR | null>(null)
 
@@ -48,16 +55,30 @@ export function MicButton({ onResult }: { onResult: (text: string) => void }) {
     rec.start()
   }
 
+  const shape =
+    variant === 'round'
+      ? `h-9 w-9 rounded-full ${listening ? 'bg-brand text-on-brand' : 'text-cocoa-light hover:bg-sand'}`
+      : `min-h-[2.75rem] w-11 rounded-xl ${listening ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa-light hover:bg-sand-dark/60'}`
+
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label="Spracheingabe"
-      className={`grid shrink-0 place-items-center rounded-xl px-3 transition-colors duration-200 ${
-        listening ? 'animate-pulse bg-ruby text-on-brand' : 'bg-sand text-cocoa-light'
+      aria-label={listening ? 'Spracheingabe beenden' : 'Spracheingabe'}
+      aria-pressed={listening}
+      title={listening ? 'Hört zu… antippen zum Beenden' : 'Diktieren'}
+      className={`relative grid shrink-0 place-items-center transition-colors duration-200 active:scale-95 ${shape} ${
+        variant === 'round' ? 'self-center' : 'self-stretch'
       }`}
     >
-      <Mic size={18} />
+      {listening && (
+        <span
+          className={`pointer-events-none absolute inset-0 animate-ping bg-brand/40 ${
+            variant === 'round' ? 'rounded-full' : 'rounded-xl'
+          }`}
+        />
+      )}
+      <Mic size={18} className="relative" />
     </button>
   )
 }

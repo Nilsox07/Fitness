@@ -28,6 +28,8 @@ import {
   type DietStyle,
 } from '../lib/dietStyle'
 import type { ActivityLevel, NutritionGoal, Sex } from '../types'
+import { Droplet, Salad, Target, User } from 'lucide-react'
+import { ErrorNote } from './ui/GroupList'
 
 const EMPTY: NutritionSettingsInput = {
   sex: 'm',
@@ -70,8 +72,7 @@ function Chip({
 function DietSection({ diet, onChange }: { diet: DietStyle; onChange: (d: DietStyle) => void }) {
   const win = fastingWindow(diet)
   return (
-    <div className="space-y-3 rounded-xl border border-sand-dark/60 p-3">
-      <div className="text-sm font-semibold text-cocoa">Ernährungsweise</div>
+    <div className="space-y-4">
       <div>
         <label className="label">Makro-Stil</label>
         <div className="flex flex-wrap gap-1.5">
@@ -119,7 +120,7 @@ function DietSection({ diet, onChange }: { diet: DietStyle; onChange: (d: DietSt
               id="fasting-start"
               type="time"
               step={900}
-              className="input w-28 py-1.5"
+              className="input tabular w-28 rounded-xl py-1.5"
               value={diet.fastingStart}
               onChange={(e) => e.target.value && onChange({ ...diet, fastingStart: e.target.value })}
             />
@@ -128,6 +129,43 @@ function DietSection({ diet, onChange }: { diet: DietStyle; onChange: (d: DietSt
         )}
       </div>
     </div>
+  )
+}
+
+/** Abschnitt der neuen Darstellung: Versal-Überschrift mit Icon, durch Linie getrennt. */
+function GoalSection({
+  icon,
+  title,
+  right,
+  children,
+}: {
+  icon: ReactNode
+  title: string
+  right?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
+          <span className="text-brand">{icon}</span>
+          {title}
+        </h3>
+        {right}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+/** Abweichung zum ausgewogenen Stil (nur bei anderem Makro-Stil). */
+function Delta({ show, value }: { show: boolean; value: number }) {
+  if (!show || value === 0) return null
+  return (
+    <span className={`tabular text-[11px] font-semibold ${value > 0 ? 'text-success' : 'text-gold'}`}>
+      {value > 0 ? '+' : '−'}
+      {Math.abs(value)}
+    </span>
   )
 }
 
@@ -231,6 +269,215 @@ export function GoalEditor({
           ' Bitte nochmal versuchen.',
       )
     }
+  }
+
+  if (isNew) {
+    const num = (key: 'age' | 'height_cm' | 'weight_kg', label: string, unit: string, mode: 'numeric' | 'decimal') => (
+      <div className="min-w-0">
+        <label className="label text-xs" htmlFor={`goal-${key}`}>
+          {label}
+        </label>
+        <div className="relative">
+          <input
+            id={`goal-${key}`}
+            type="number"
+            inputMode={mode}
+            aria-invalid={!!fieldError[key]}
+            className={`input tabular rounded-2xl py-3 pr-8 text-base ${fieldError[key] ? 'ring-red-400' : ''}`}
+            value={form[key]}
+            onFocus={(e) => e.currentTarget.select()}
+            onChange={(e) => setForm({ ...form, [key]: Number(e.target.value) })}
+          />
+          <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-cocoa-muted">
+            {unit}
+          </span>
+        </div>
+      </div>
+    )
+    const bodyErrors = [fieldError.age, fieldError.height_cm, fieldError.weight_kg].filter(Boolean) as string[]
+
+    return (
+      <div className="space-y-6">
+        <GoalSection icon={<User size={14} />} title="Körperdaten">
+          <div className="grid grid-cols-2 rounded-full bg-sand p-1" role="radiogroup" aria-label="Geschlecht">
+            {(
+              [
+                ['m', 'männlich'],
+                ['f', 'weiblich'],
+              ] as const
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={form.sex === k}
+                onClick={() => setForm({ ...form, sex: k as Sex })}
+                className={`h-9 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  form.sex === k ? 'bg-bg text-cocoa shadow-sm' : 'text-cocoa-light'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {num('age', 'Alter', 'J.', 'numeric')}
+            {num('height_cm', 'Größe', 'cm', 'numeric')}
+            {num('weight_kg', 'Gewicht', 'kg', 'decimal')}
+          </div>
+          {bodyErrors.map((m) => (
+            <FieldError key={m} msg={m} />
+          ))}
+          <div>
+            <label className="label text-xs" htmlFor="goal-activity">
+              Aktivität
+            </label>
+            <select
+              id="goal-activity"
+              className="input rounded-2xl py-3 text-base"
+              value={form.activity}
+              onChange={(e) => setForm({ ...form, activity: e.target.value as ActivityLevel })}
+            >
+              {Object.entries(ACTIVITY_LABEL).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+        </GoalSection>
+
+        <GoalSection icon={<Target size={14} />} title="Ziel">
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Ziel">
+            {(Object.entries(GOAL_LABEL) as [NutritionGoal, string][]).map(([k, v]) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={form.goal === k}
+                onClick={() => setForm({ ...form, goal: k })}
+                className={`min-h-[3rem] rounded-2xl px-3 py-2 text-sm font-semibold leading-tight transition active:scale-[0.97] ${
+                  form.goal === k ? 'bg-brand text-on-brand shadow-md shadow-brand/20' : 'bg-sand text-cocoa'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+          <p className="px-1 text-xs text-cocoa-light">{GOAL_HINT[form.goal]}</p>
+        </GoalSection>
+
+        <GoalSection icon={<Salad size={14} />} title="Ernährungsweise">
+          <DietSection diet={diet} onChange={setDiet} />
+          <div>
+            <label className="label" htmlFor="goal-avoid">
+              Das esse ich nicht / Allergien
+            </label>
+            <textarea
+              id="goal-avoid"
+              className="input rounded-2xl text-base"
+              rows={2}
+              placeholder="z. B. keine Pilze, Laktose, Erdnüsse, kein Schweinefleisch…"
+              value={avoid}
+              onChange={(e) => setAvoid(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-cocoa-light">
+              Die KI meidet diese Zutaten bei Rezepten, Essensplan, Einkaufsliste &amp; Restaurant-Vorschlägen.
+            </p>
+          </div>
+        </GoalSection>
+
+        <GoalSection
+          icon={<Droplet size={14} />}
+          title="Trinken"
+          right={
+            <button
+              type="button"
+              className="rounded-full bg-brand/10 px-2.5 py-1 text-xs font-semibold normal-case tracking-normal text-brand"
+              onClick={() => setForm({ ...form, water_target_ml: defaultWaterTarget(form.weight_kg) })}
+            >
+              Vorschlag: {defaultWaterTarget(form.weight_kg)} ml
+            </button>
+          }
+        >
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="numeric"
+              step={250}
+              aria-label="Trinkziel in ml pro Tag"
+              aria-invalid={!!fieldError.water_target_ml}
+              className="input tabular rounded-2xl py-3 pr-16 text-base"
+              value={form.water_target_ml}
+              onFocus={(e) => e.currentTarget.select()}
+              onChange={(e) => setForm({ ...form, water_target_ml: Number(e.target.value) })}
+            />
+            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-cocoa-muted">
+              ml/Tag
+            </span>
+          </div>
+          <FieldError msg={fieldError.water_target_ml} />
+        </GoalSection>
+
+        {/* Tagesziel als Mini-Hero */}
+        <div className="relative overflow-hidden rounded-3xl bg-cocoa p-4 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
+          <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-brand/30 blur-3xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
+                Dein Tagesziel
+              </span>
+              {showDelta && (
+                <span className="truncate text-[11px] text-bg/60 dark:text-cocoa-light">vs. Ausgewogen</span>
+              )}
+            </div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="tabular text-4xl font-bold tracking-tight">{t.kcal}</span>
+              <span className="text-sm text-bg/70 dark:text-cocoa-light">kcal</span>
+              <Delta show={showDelta} value={t.kcal - base.kcal} />
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {(
+                [
+                  ['protein', 'Eiweiß', 'bg-brand'],
+                  ['carbs', 'Kohlenhydrate', 'bg-gold'],
+                  ['fat', 'Fett', 'bg-bg/50 dark:bg-cocoa-light'],
+                ] as const
+              ).map(([k, label, dot]) => (
+                <div key={k} className="rounded-2xl bg-bg/10 px-2.5 py-2 dark:bg-white/5">
+                  <div className="flex items-center gap-1.5 text-[11px] text-bg/70 dark:text-cocoa-light">
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+                    <span className="truncate">{label}</span>
+                  </div>
+                  <div className="mt-0.5 flex items-baseline gap-1">
+                    <span className="tabular text-lg font-bold">{t[k]}</span>
+                    <span className="text-xs text-bg/60 dark:text-cocoa-light">g</span>
+                    <Delta show={showDelta} value={t[k] - base[k]} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <ErrorNote error={error} />
+
+        <div className="flex gap-2">
+          {onCancel && (
+            <button className="btn-ghost flex-1 rounded-2xl py-3" onClick={onCancel} disabled={upsert.isPending}>
+              Abbrechen
+            </button>
+          )}
+          <button
+            className="btn-primary flex-1 rounded-2xl py-3 text-base shadow-lg shadow-brand/25"
+            onClick={save}
+            disabled={upsert.isPending}
+          >
+            {upsert.isPending ? 'Speichert…' : 'Speichern'}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

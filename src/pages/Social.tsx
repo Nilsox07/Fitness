@@ -1,33 +1,45 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  CalendarClock,
   ChevronRight,
   Drumstick,
   Flame,
   Hand,
   HandFist,
+  HeartPulse,
   Laugh,
   Medal,
   Megaphone,
-  MessageCircle,
   Share2,
   Trophy,
   UserPlus,
+  Users,
 } from 'lucide-react'
 import { Sheet } from '../components/workout/Sheet'
 import { ActivityList } from '../components/feed/ActivityCard'
 import { useAuthorLookup } from '../components/feed/useAuthorLookup'
 import { FriendsRow } from '../components/social/FriendsRow'
-import { DuelCard } from '../components/social/DuelCard'
+import { DuelHero } from '../components/social/DuelHero'
+import { ProteinDuelHero } from '../components/social/ProteinDuelHero'
 import { TeamGoalCard } from '../components/social/TeamGoalCard'
-import { GymMeetCard } from '../components/social/GymMeetCard'
+import { GymMeetCard, PokeBubbles } from '../components/social/GymMeetCard'
 import { FriendSheet } from '../components/social/FriendSheet'
 import { LeaderboardSection } from '../components/social/LeaderboardSection'
+import { SharedRecipesRow } from '../components/social/SharedRecipesRow'
+import { InviteCard } from '../components/social/InviteCard'
+import { PageHeader, SectionTitle } from '../components/community/ui'
+import {
+  communitySubtitle,
+  enter,
+  matchesFilter,
+  PROTEIN_TEAM_DAYS,
+  proteinStandings,
+} from '../components/community/communityUtils'
 import { kcalToday as friendKcalToday, planToday, proteinToday as friendProteinToday, type Person } from '../components/social/format'
 import { useActivities } from '../hooks/useFeed'
 import { localDate } from '../lib/day'
 import {
+  daysLeftInWeek,
   duelStandings,
   effectiveMonthlyPrs,
   effectiveProteinDays,
@@ -77,7 +89,7 @@ export default function Social() {
   const { data: allSets } = useAllSets()
   const { data: food } = useAllFoodEntries()
   const { data: nutritionSettings } = useNutritionSettings()
-  const { showNutrition, isNew } = usePrefs()
+  const { showNutrition, isNew, world } = usePrefs()
   const { data: board } = useLeaderboard()
   const { data: kudos } = useKudos()
   const addFriend = useAddFriend()
@@ -539,10 +551,16 @@ export default function Social() {
   )
   // ── Neues Design ──────────────────────────────────────────────
   const today = localDate()
+  const isFood = world === 'food'
   const [openId, setOpenId] = useState<string | null>(null)
   const { data: activities } = useActivities()
   const authorOf = useAuthorLookup()
-  const latest = useMemo(() => (activities ?? []).slice(0, 5), [activities])
+  // Nur Aktivitäten der aktuellen Welt (Training bzw. Ernährung)
+  const worldActivities = useMemo(
+    () => (activities ?? []).filter((a) => matchesFilter(a.kind, world)),
+    [activities, world],
+  )
+  const latest = useMemo(() => worldActivities.slice(0, 5), [worldActivities])
   const kudosGiven = useMemo(
     () => new Set((kudos ?? []).filter((k) => k.from_user === user?.id).map((k) => k.to_user)),
     [kudos, user?.id],
@@ -567,6 +585,16 @@ export default function Social() {
     [people, includeProtein, today],
   )
   const team = useMemo(() => teamGoal(people, today), [people, today])
+  const protein = useMemo(
+    () =>
+      proteinStandings(
+        { user_id: mePerson.user_id, days: myStats.protein_week, today: myStats.protein_today },
+        friends as Person[],
+        today,
+      ),
+    [mePerson.user_id, myStats.protein_week, myStats.protein_today, friends, today],
+  )
+  const weekLeft = daysLeftInWeek(today)
   const openPerson = openId ? people.find((u) => u.user_id === openId) ?? null : null
 
   if (!isNew) {
@@ -590,76 +618,77 @@ export default function Social() {
     )
   }
 
+  const hasFriends = friends.length > 0
+  const allLink =
+    worldActivities.length > 0 ? (
+      <button className="flex items-center text-sm font-semibold text-brand" onClick={() => navigate('/feed')}>
+        Alle
+        <ChevronRight size={16} />
+      </button>
+    ) : undefined
+
   return (
     <div className="space-y-6">
-      <header className="flex items-center gap-2">
-        <h1 className="flex-1 text-xl font-bold">Community</h1>
-        <button
-          className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa"
-          onClick={() => setAddOpen(true)}
-          aria-label="Freund hinzufügen"
-        >
-          <UserPlus size={18} />
-        </button>
-      </header>
-
-      <FriendsRow
-        me={mePerson}
-        friends={friends}
-        today={today}
-        onOpen={(u) => setOpenId(u.user_id)}
-        onInvite={() => setAddOpen(true)}
-      />
-
-      {friends.length === 0 ? (
-        <div className="card space-y-4">
-          <div className="space-y-1 text-center">
-            <div className="font-semibold">Zusammen trainiert es sich besser</div>
-            <p className="text-sm text-cocoa-light">Lade Freunde ein — dann bekommt ihr:</p>
-          </div>
-          <ul className="space-y-3">
-            {[
-              { Icon: Trophy, title: 'Wochen-Duell', text: 'Punkte für jedes Training, jeden Montag neu.' },
-              { Icon: CalendarClock, title: 'Gym-Treff', text: 'Sag, wann du gehst — und verabredet euch.' },
-              { Icon: MessageCircle, title: 'Aktivitäten', text: 'Rekorde & Trainings feiern, kommentieren.' },
-            ].map(({ Icon, title, text }) => (
-              <li key={title} className="flex items-start gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa-light">
-                  <Icon size={17} />
-                </span>
-                <span className="text-sm">
-                  <span className="block font-semibold">{title}</span>
-                  <span className="text-cocoa-light">{text}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+      <PageHeader
+        title="Community"
+        subtitle={communitySubtitle(friends as Person[], world, today)}
+        style={enter(0)}
+        action={
           <button
-            className="btn-primary flex w-full items-center justify-center gap-1.5"
+            className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
             onClick={() => setAddOpen(true)}
+            aria-label="Freund hinzufügen"
           >
             <UserPlus size={18} />
-            Freund hinzufügen
           </button>
-        </div>
+        }
+      />
+
+      <div style={enter(1)}>
+        <FriendsRow
+          me={mePerson}
+          friends={friends}
+          today={today}
+          world={world}
+          onOpen={(u) => setOpenId(u.user_id)}
+          onInvite={() => setAddOpen(true)}
+        />
+      </div>
+
+      {!hasFriends ? (
+        <InviteCard world={world} onAdd={() => setAddOpen(true)} style={enter(2)} />
+      ) : isFood ? (
+        <>
+          <ProteinDuelHero
+            people={people}
+            meId={mePerson.user_id}
+            rows={protein.rows}
+            leaderId={protein.leaderId}
+            maxToday={protein.maxToday}
+            today={today}
+            daysLeft={weekLeft}
+            style={enter(2)}
+          />
+          {(pokes?.length ?? 0) > 0 && (
+            <div className="card" style={enter(3)}>
+              <PokeBubbles friends={friends} today={today} />
+            </div>
+          )}
+          <SharedRecipesRow style={enter(3)} />
+        </>
       ) : (
         <>
-          <section className="space-y-2">
-            <SectionHead
-              title="Diese Woche"
-              right={daysLeft === 0 ? 'letzter Tag' : daysLeft === 1 ? 'noch 1 Tag' : `noch ${daysLeft} Tage`}
-            />
-            <DuelCard
-              people={people}
-              meId={mePerson.user_id}
-              standings={standings}
-              includeProtein={includeProtein}
-            />
-            <TeamGoalCard goal={team} people={people} meId={mePerson.user_id} />
-          </section>
-
-          <section className="space-y-2">
-            <SectionHead title="Gym-Treff" />
+          <DuelHero
+            people={people}
+            meId={mePerson.user_id}
+            standings={standings}
+            includeProtein={includeProtein}
+            today={today}
+            daysLeft={weekLeft}
+            style={enter(2)}
+          />
+          <section style={enter(3)}>
+            <SectionTitle>Gym-Treff</SectionTitle>
             <GymMeetCard
               me={mePerson}
               friends={friends}
@@ -667,30 +696,27 @@ export default function Social() {
               onOpenFriend={(u) => setOpenId(u.user_id)}
             />
           </section>
+          <TeamGoalCard
+            title="Zusammen diese Woche"
+            icon={<Users size={17} />}
+            done={team.done}
+            target={team.target}
+            unit="Trainings"
+            people={people}
+            meId={mePerson.user_id}
+            style={enter(4)}
+          />
         </>
       )}
 
-      <section className="space-y-2">
-        <SectionHead
-          title="Aktivitäten"
-          right={
-            (activities?.length ?? 0) > 0 ? (
-              <button
-                className="flex items-center text-sm font-semibold text-brand"
-                onClick={() => navigate('/feed')}
-              >
-                Alle
-                <ChevronRight size={16} />
-              </button>
-            ) : undefined
-          }
-        />
+      <section style={enter(5)}>
+        <SectionTitle right={allLink}>Aktivitäten</SectionTitle>
         {latest.length > 0 ? (
           <>
             <ActivityList activities={latest} authorOf={authorOf} />
-            {(activities?.length ?? 0) > latest.length && (
+            {worldActivities.length > latest.length && (
               <button
-                className="card flex w-full items-center justify-between text-sm font-semibold"
+                className="card mt-3 flex w-full items-center justify-between py-3.5 text-sm font-semibold"
                 onClick={() => navigate('/feed')}
               >
                 Alle Aktivitäten
@@ -699,19 +725,38 @@ export default function Social() {
             )}
           </>
         ) : (
-          <div className="card text-center text-sm text-cocoa-light">
-            Noch nichts los. Schließ ein Training ab — es erscheint hier.
+          <div className="rounded-2xl bg-cream p-5 text-center text-sm text-cocoa-light">
+            {isFood
+              ? 'Noch nichts los. Teile ein Rezept — oder beichte dein nächstes Cheat-Meal.'
+              : 'Noch nichts los. Schließ ein Training ab — es erscheint hier.'}
           </div>
         )}
       </section>
 
-      {friends.length > 0 && (
-        <LeaderboardSection
-          board={board ?? []}
+      {hasFriends && isFood && (
+        <TeamGoalCard
+          title="Gemeinsam gesund"
+          icon={<HeartPulse size={17} />}
+          done={protein.totalDays}
+          target={PROTEIN_TEAM_DAYS * people.length}
+          unit="Eiweiß-Tage"
+          people={people}
           meId={mePerson.user_id}
+          tone="success"
+          style={enter(6)}
+        />
+      )}
+
+      {hasFriends && (
+        <LeaderboardSection
+          people={people}
+          meId={mePerson.user_id}
+          today={today}
+          world={world}
           kudosReceived={kudosReceived}
           kudosGiven={kudosGiven}
           onKudos={(id) => giveKudos.mutate(id)}
+          style={enter(7)}
         />
       )}
 
@@ -730,19 +775,6 @@ export default function Social() {
         <Sheet title="Freund hinzufügen" onClose={() => setAddOpen(false)}>
           {codeContent}
         </Sheet>
-      )}
-    </div>
-  )
-}
-
-function SectionHead({ title, right }: { title: string; right?: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-2 px-1">
-      <h2 className="text-sm font-semibold text-cocoa-light">{title}</h2>
-      {typeof right === 'string' ? (
-        <span className="tabular text-xs text-cocoa-muted">{right}</span>
-      ) : (
-        right
       )}
     </div>
   )

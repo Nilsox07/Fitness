@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Minus, Scale, TrendingDown, TrendingUp } from 'lucide-react'
 import { accentColor } from '../lib/cosmetics'
 import { Line, LineChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts'
 import { useBodyWeights, useUpsertBodyWeight } from '../hooks/useBodyWeight'
@@ -37,56 +38,81 @@ export function BodyWeightCard() {
     setValue('')
   }
 
+  const loggedToday = weights?.some((w) => w.date === today) ?? false
+  const TrendIcon = trend > 0 ? TrendingUp : trend < 0 ? TrendingDown : Minus
+  const fmtKg = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 1 })
+
   return (
-    <div className="card space-y-2">
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold">Körpergewicht</h2>
-        {latest && (
-          <span className="text-sm text-cocoa-light">
-            zuletzt <strong className="text-cocoa">{Number(latest.weight_kg)} kg</strong>
-            {trend !== 0 && (
-              <span className="text-cocoa-muted">
-                {' '}
-                ({trend > 0 ? '+' : ''}
-                {trend} kg)
+    <section className="card space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
+            <Scale size={13} />
+            Körpergewicht
+          </h2>
+          {latest ? (
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="tabular text-3xl font-bold tracking-tight text-cocoa">
+                {fmtKg(Number(latest.weight_kg))}
               </span>
-            )}
-          </span>
+              <span className="text-sm text-cocoa-light">kg</span>
+              {chartData.length >= 2 && (
+                <span
+                  className="tabular inline-flex items-center gap-0.5 rounded-full bg-sand px-2 py-0.5 text-xs font-semibold text-cocoa-light"
+                  title="Veränderung über die letzten Messungen"
+                >
+                  <TrendIcon size={13} strokeWidth={2.5} />
+                  {trend > 0 ? '+' : trend < 0 ? '−' : '±'}
+                  {fmtKg(Math.abs(trend))}
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-cocoa-light">Trag dein Gewicht ein, um den Verlauf zu sehen.</p>
+          )}
+        </div>
+
+        {chartData.length >= 2 && (
+          <div className="h-12 w-24 shrink-0" aria-hidden="true">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 4, right: 2, bottom: 4, left: 2 }}>
+                <YAxis domain={['dataMin - 1', 'dataMax + 1']} hide />
+                <Tooltip
+                  contentStyle={{
+                    background: dark ? '#161D2B' : '#FFFFFF',
+                    border: `1px solid ${dark ? '#344155' : '#D2D6DD'}`,
+                    color: dark ? '#E5E9F0' : '#0B0F19',
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  labelStyle={{ color: dark ? '#E5E9F0' : '#0B0F19' }}
+                />
+                <Line type="monotone" dataKey="kg" stroke={accentColor()} strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
 
       <div className="flex gap-2">
-        <input
-          className="input"
-          inputMode="decimal"
-          placeholder={latest ? String(Number(latest.weight_kg)) : 'kg'}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && save()}
-        />
-        <button className="btn-primary shrink-0" onClick={save} disabled={upsert.isPending}>
-          {weights?.some((w) => w.date === today) ? 'Aktualisieren' : 'Eintragen'}
+        <div className="relative min-w-0 flex-1">
+          <input
+            className="input tabular rounded-2xl pr-10 text-base"
+            inputMode="decimal"
+            aria-label="Gewicht in kg"
+            placeholder={latest ? fmtKg(Number(latest.weight_kg)) : 'Gewicht'}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && save()}
+          />
+          <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-cocoa-muted">
+            kg
+          </span>
+        </div>
+        <button className="btn-primary shrink-0 rounded-2xl" onClick={save} disabled={upsert.isPending || !value.trim()}>
+          {loggedToday ? 'Aktualisieren' : 'Eintragen'}
         </button>
       </div>
-
-      {chartData.length >= 2 && (
-        <ResponsiveContainer width="100%" height={90}>
-          <LineChart data={chartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-            <YAxis domain={['dataMin - 1', 'dataMax + 1']} hide />
-            <Tooltip
-              contentStyle={{
-                background: dark ? '#161D2B' : '#FFFFFF',
-                border: `1px solid ${dark ? '#344155' : '#D2D6DD'}`,
-                color: dark ? '#E5E9F0' : '#0B0F19',
-                borderRadius: 8,
-                fontSize: 12,
-              }}
-              labelStyle={{ color: dark ? '#E5E9F0' : '#0B0F19' }}
-            />
-            <Line type="monotone" dataKey="kg" stroke={accentColor()} strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
-      )}
-    </div>
+    </section>
   )
 }

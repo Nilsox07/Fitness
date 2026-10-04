@@ -18,12 +18,14 @@ import { MyBuddy } from '../buddy/MyBuddy'
 import { BuddyLevelUp } from '../buddy/BuddyLevelUp'
 import { useBuddyLevel } from '../buddy/useBuddy'
 import { nf } from '../stats/shared'
+import { useNutritionPrefs } from '../../hooks/usePrefsSync'
 
 /**
  * Kompakte Gamification-Karte: Buddy im XP-Ring, Buddy-Level (Training + Ernährung),
  * Serie, Quests; aufklappbar.
  */
 export function NutritionGameCard({ style }: { style?: CSSProperties }) {
+  const { kcalBonus } = useNutritionPrefs()
   const today = localDate()
   const { data: allEntries } = useAllFoodEntries()
   const { data: todayEntries } = useFoodEntries(today)
@@ -34,7 +36,7 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
   const g = useMemo(() => {
     const entries = allEntries ?? []
     const proteinTarget = settings?.protein_target ?? 0
-    const kcalTarget = kcalTargetFor(settings, trainedOn(today, allSets))
+    const kcalTarget = kcalTargetFor(settings, trainedOn(today, allSets), kcalBonus)
     const totals = sumEntries(todayEntries ?? [])
     const quests = [
       ...nutritionDailyQuests({
@@ -52,7 +54,7 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
       streak: nutritionStreak(new Set(byDay(entries).keys()), today),
       open: quests.filter((q) => !q.done).length,
     }
-  }, [allEntries, todayEntries, water, settings, allSets, today])
+  }, [allEntries, todayEntries, water, settings, allSets, today, kcalBonus])
   const level = useBuddyLevel()
   const [open, setOpen] = useState(false)
 
