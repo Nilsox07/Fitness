@@ -7,6 +7,7 @@ import {
   normalize,
   repRangeFor,
   searchLibrary,
+  suggestLinks,
   type LibraryExercise,
 } from './exerciseLibrary'
 import { MUSCLE_GROUPS } from '../types'
@@ -111,6 +112,36 @@ describe('findLibraryMatch', () => {
   })
 })
 
+describe('suggestLinks', () => {
+  it('liefert maximal n Vorschläge, beste zuerst', () => {
+    const r = suggestLinks('Bankdrücken', 'Brust', LIST)
+    expect(r.length).toBeLessThanOrEqual(3)
+    expect(r[0].id).toBe('Barbell_Bench_Press_-_Medium_Grip')
+    expect(suggestLinks('Bankdrücken', 'Brust', LIST, 1)).toHaveLength(1)
+  })
+
+  it('nutzt Synonyme deutsch ↔ englisch', () => {
+    expect(suggestLinks('Bench Press', 'Brust', LIST)[0].id).toBe('Barbell_Bench_Press_-_Medium_Grip')
+    expect(suggestLinks('Lat Pulldown eng', 'Rücken', LIST)[0].id).toBe('Wide-Grip_Lat_Pulldown')
+    expect(suggestLinks('Squats', 'Beine', LIST)[0].muscle).toBe('Beine')
+  })
+
+  it('bevorzugt genanntes Equipment', () => {
+    expect(suggestLinks('Bankdrücken Kurzhantel', 'Brust', LIST)[0].id).toBe('Dumbbell_Bench_Press')
+    expect(suggestLinks('Kniebeuge ohne Gewicht Körpergewicht', 'Beine', LIST)[0].id).toBe('Bodyweight_Squat')
+  })
+
+  it('bevorzugt dieselbe Muskelgruppe', () => {
+    expect(suggestLinks('Rudern', 'Rücken', LIST)[0].id).toBe('One-Arm_Dumbbell_Row')
+  })
+
+  it('liefert ohne inhaltlichen Treffer nichts', () => {
+    expect(suggestLinks('Meine Spezialübung', 'Brust', LIST)).toEqual([])
+    expect(suggestLinks('', 'Brust', LIST)).toEqual([])
+    expect(suggestLinks('Bankdrücken', 'Brust', [])).toEqual([])
+  })
+})
+
 describe('Übernahme', () => {
   it('Wiederholungsbereich: Grundübung 6–10, Isolation 10–15', () => {
     expect(repRangeFor({ mechanic: 'Grundübung' })).toEqual([6, 10])
@@ -153,6 +184,30 @@ describe('public/exercise-library.json', () => {
   it('hat eindeutige IDs und deutsche Namen', () => {
     expect(new Set(list.map((e) => e.id)).size).toBe(list.length)
     expect(new Set(list.map((e) => e.name_de)).size).toBe(list.length)
+  })
+
+  it('suggestLinks findet gängige Studio-Namen', () => {
+    const cases: [string, string, string][] = [
+      ['Bankdrücken', 'Brust', 'Barbell_Bench_Press_-_Medium_Grip'],
+      ['Latzug', 'Rücken', 'Wide-Grip_Lat_Pulldown'],
+      ['Pec Deck', 'Brust', 'Butterfly'],
+      ['Beinstrecker', 'Beine', 'Leg_Extensions'],
+      ['Beinbeuger sitzend', 'Beinbeuger', 'Seated_Leg_Curl'],
+      ['Beinpresse', 'Beine', 'Leg_Press'],
+      ['Trizeps Pushdown Seil', 'Trizeps', 'Triceps_Pushdown_-_Rope_Attachment'],
+      ['Hip Thrusts', 'Gesäß', 'Barbell_Hip_Thrust'],
+      ['Ausfallschritte', 'Beine', 'Dumbbell_Lunges'],
+      ['Klimmzüge', 'Rücken', 'Pullups'],
+      ['Face Pulls', 'Schultern', 'Face_Pull'],
+      ['Bizeps Curls SZ', 'Bizeps', 'EZ-Bar_Curl'],
+      ['Crunch Maschine', 'Bauch', 'Ab_Crunch_Machine'],
+    ]
+    for (const [name, muscle, id] of cases) {
+      expect(suggestLinks(name, muscle, list)[0]?.id, name).toBe(id)
+    }
+    // Top 3 enthalten den Klassiker
+    expect(suggestLinks('Rudern Kabel', 'Rücken', list).map((e) => e.id)).toContain('Seated_Cable_Rows')
+    expect(suggestLinks('Wadenheben sitzend', 'Waden', list).map((e) => e.id)).toContain('Seated_Calf_Raise')
   })
 
   it('alle Alias-Ziele existieren', () => {

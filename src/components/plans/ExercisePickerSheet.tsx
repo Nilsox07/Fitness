@@ -5,8 +5,16 @@ import { nextExercisePosition, useAddPlanExercise, useRemovePlanExercise } from 
 import { MUSCLE_GROUPS, type Exercise, type PlanWithExercises } from '../../types'
 import { Sheet } from '../workout/Sheet'
 import { MuscleAvatar } from '../exercises/MuscleBits'
+import { ExerciseAnimation } from '../library/ExerciseAnimation'
+import { LibraryResults } from '../library/LibraryResults'
+import { LibrarySheet } from '../library/LibrarySheet'
+import { useLibrary, useLibraryLinks } from '../library/useLibrary'
 
-/** Übungen zum Plan hinzufügen/entfernen (Mehrfachauswahl, sofort gespeichert). */
+/**
+ * Übungen zum Plan hinzufügen/entfernen (Mehrfachauswahl, sofort gespeichert).
+ * Unter den eigenen Übungen: Treffer aus der Übungsbibliothek — antippen legt
+ * die Übung an (verknüpft) und fügt sie direkt dem Plan hinzu.
+ */
 export function ExercisePickerSheet({
   plan,
   exercises,
@@ -21,6 +29,9 @@ export function ExercisePickerSheet({
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState<string | null>(null)
   const [pending, setPending] = useState<Set<string>>(new Set())
+  const [libOpen, setLibOpen] = useState(false)
+  const { list: library } = useLibrary()
+  const { byExercise } = useLibraryLinks(exercises, library)
   // Positionen fortlaufend vergeben, auch wenn mehrere Übungen schnell hintereinander kommen.
   const nextPos = useRef(nextExercisePosition(plan))
 
@@ -45,6 +56,19 @@ export function ExercisePickerSheet({
     })
   }
 
+  /** Neu angelegte Bibliotheks-Übung (oder vorhandene) ans Planende hängen. */
+  async function addToPlan(id: string) {
+    if (plan.exercise_ids.includes(id) || pending.has(id)) return
+    mark(id, true)
+    try {
+      const position = Math.max(nextPos.current, nextExercisePosition(plan))
+      nextPos.current = position + 1
+      await addEx.mutateAsync({ plan_id: plan.id, exercise_id: id, position })
+    } finally {
+      mark(id, false)
+    }
+  }
+
   async function toggle(ex: Exercise) {
     if (pending.has(ex.id)) return
     mark(ex.id, true)
@@ -67,6 +91,25 @@ export function ExercisePickerSheet({
     }`
 
   const inPlanCount = plan.exercise_ids.length
+
+  if (libOpen) {
+    return (
+      <LibrarySheet
+        onClose={() => setLibOpen(false)}
+        onAdded={(ex) => {
+          setLibOpen(false)
+          addToPlan(ex.id)
+        }}
+        existingAction={{
+          label: 'Zum Plan hinzufügen',
+          run: (ex) => {
+            setLibOpen(false)
+            addToPlan(ex.id)
+          },
+        }}
+      />
+    )
+  }
 
   return (
     <Sheet title="Übung hinzufügen" onClose={onClose}>
@@ -104,7 +147,16 @@ export function ExercisePickerSheet({
                   disabled={busy}
                   aria-pressed={inPlan}
                 >
-                  <MuscleAvatar muscle={ex.muscle_group} size={34} />
+                  {byExercise.get(ex.id) ? (
+                    <ExerciseAnimation
+                      images={byExercise.get(ex.id)!.images}
+                      alt=""
+                      still
+                      className="h-[34px] w-[34px] shrink-0 rounded-lg"
+                    />
+                  ) : (
+                    <MuscleAvatar muscle={ex.muscle_group} size={34} />
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{ex.name}</div>
                     <div className="text-xs text-cocoa-muted">{ex.muscle_group}</div>
@@ -133,13 +185,21 @@ export function ExercisePickerSheet({
           })}
         </ul>
       ) : (
-        <p className="py-4 text-center text-sm text-cocoa-muted">
-          Keine Übung gefunden.{' '}
+        <p className="py-3 text-center text-sm text-cocoa-muted">
+          Keine eigene Übung gefunden.{' '}
           <Link to="/exercises" className="underline">
             Übungen verwalten
           </Link>
         </p>
       )}
+
+      <LibraryResults
+        query={query}
+        muscle={group}
+        tone="sand"
+        onPicked={(ex) => addToPlan(ex.id)}
+        onBrowseAll={() => setLibOpen(true)}
+      />
 
       <button className="btn-primary w-full" onClick={onClose}>
         Fertig{inPlanCount > 0 && <span className="tabular ml-1 opacity-80">· {inPlanCount} im Plan</span>}

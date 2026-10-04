@@ -346,6 +346,7 @@ const CONCEPTS: Record<string, string[]> = {
   legext: ['beinstrecker', 'beinstrecken', 'leg extension'],
   legcurl: ['beinbeuger', 'beinbeugen', 'leg curl'],
   fly: ['butterfly', 'pec deck', 'fly', 'flys', 'flyes', 'fliegende', 'crossover'],
+  pecdeck: ['butterfly', 'pec deck', 'peck deck'],
   pushdown: ['trizepsdrucken', 'pushdown', 'push down', 'pressdown'],
   curl: ['curl', 'curls', 'bizepscurl', 'hammercurl'],
   lateral: ['seitheben', 'seitenheben', 'lateral raise'],
@@ -471,6 +472,8 @@ export function suggestLinks(
     if (muscle && ex.muscle === muscle) score += 1.5
     else if (muscle && (ex.secondary as string[]).includes(muscle)) score += 0.4
     if (qEquip) score += ex.equipment === qEquip ? 2.5 : -1.5
+    // Ohne Equipment-Angabe: klassisches Gym-Equipment leicht bevorzugen
+    else score += Math.max(0, 4 - (EQUIP_RANK[ex.equipment] ?? 4)) * 0.1
     // Kürzere, „klassischere" Namen leicht bevorzugen
     score -= Math.max(0, f.tokens.length - qTokens.length) * 0.05
     if (score <= 0.5) continue

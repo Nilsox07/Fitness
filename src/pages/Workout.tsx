@@ -57,6 +57,7 @@ import { showBuddyMoment } from '../components/buddy/BuddyMoment'
 import { LibrarySheet } from '../components/library/LibrarySheet'
 import { ExerciseHowTo } from '../components/library/ExerciseHowTo'
 import { useLibraryMatch } from '../components/library/useLibrary'
+import { LibraryResults } from '../components/library/LibraryResults'
 import {
   AlertTriangle,
   BookOpen,
@@ -1509,11 +1510,23 @@ export default function Workout() {
                 })}
                 {pickerList.length === 0 && (
                   <li className="px-4 py-3 text-sm text-cocoa-light">
-                    Keine Übung gefunden. Neue Übungen legst du im Tab „Übungen" an.
+                    {sheet === 'picker' && q
+                      ? 'Keine eigene Übung gefunden.'
+                      : 'Keine Übung gefunden. Neue Übungen legst du im Tab „Übungen" an.'}
                   </li>
                 )}
               </ul>
             </div>
+            {sheet === 'picker' && q && (
+              <LibraryResults
+                query={pickerQuery}
+                onPicked={(ex) => {
+                  setSheet(null)
+                  setPickerQuery('')
+                  setLibAddId(ex.id)
+                }}
+              />
+            )}
           </PremiumSheet>
         )}
 
