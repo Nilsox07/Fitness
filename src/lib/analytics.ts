@@ -1,12 +1,40 @@
 import type { Exercise, MuscleGroup, SetType, SetWithDate, WorkoutSet } from '../types'
+import { localDate } from './day'
+
+type PerformedSet = Pick<WorkoutSet, 'reps'> & Partial<Pick<WorkoutSet, 'reps_right'>>
+
+/**
+ * Wurde der Satz wirklich gemacht? Vorlagen-Sätze werden mit 0 Wdh angelegt und
+ * erst im Gym ausgefüllt — solange keine Seite Wdh hat, zählt der Satz nirgends
+ * (keine Session, kein XP, kein Rekord, kein Tipp).
+ */
+export function isPerformed(s: PerformedSet): boolean {
+  return s.reps > 0 || (s.reps_right ?? 0) > 0
+}
+
+/** Nur tatsächlich ausgeführte Sätze. */
+export function onlyPerformed<T extends PerformedSet>(sets: T[]): T[] {
+  return sets.filter(isPerformed)
+}
+
+/** Eindeutige Trainings-Tage (nur Tage mit mind. einem ausgeführten Satz). */
+export function sessionDates(sets: (PerformedSet & { date: string })[]): string[] {
+  return [...new Set(onlyPerformed(sets).map((s) => s.date))]
+}
 
 /**
  * Nur die schweren Arbeitssätze — Basis für Kraft-Fortschritt, 1RM, PRs und den
  * Steigerungs-Tipp. Aufwärm- und Dropsätze werden hier ausgeblendet, damit sie
  * die Kraftwerte nicht verfälschen (sie zählen weiterhin ins Gesamt-Volumen).
+ * Nicht ausgefüllte Sätze (0 Wdh) zählen ebenfalls nicht.
  */
-export function onlyWorking<T extends { set_type: SetType }>(sets: T[]): T[] {
-  return sets.filter((s) => s.set_type === 'working')
+export function onlyWorking<T extends { set_type: SetType } & PerformedSet>(sets: T[]): T[] {
+  return sets.filter((s) => s.set_type === 'working' && isPerformed(s))
+}
+
+/** Bestes geschätztes 1RM eines Satzes — bei einseitigen Übungen die stärkere Seite. */
+export function setBest1RM(s: VolumeSet): number {
+  return Math.max(estimate1RM(s.weight, s.reps), estimate1RM(s.weight_right ?? 0, s.reps_right ?? 0))
 }
 
 /**
@@ -61,7 +89,7 @@ export interface SessionSummary {
  */
 export function summarizeSessions(sets: SetWithDate[]): SessionSummary[] {
   const byDate = new Map<string, SetWithDate[]>()
-  for (const s of sets) {
+  for (const s of onlyPerformed(sets)) {
     const list = byDate.get(s.date) ?? []
     list.push(s)
     byDate.set(s.date, list)
@@ -70,7 +98,7 @@ export function summarizeSessions(sets: SetWithDate[]): SessionSummary[] {
   const sessions: SessionSummary[] = []
   for (const [date, daySets] of byDate) {
     const topWeight = Math.max(...daySets.map((s) => s.weight))
-    const bestEstimated1RM = Math.max(...daySets.map((s) => estimate1RM(s.weight, s.reps)))
+    const bestEstimated1RM = Math.max(...daySets.map(setBest1RM))
     sessions.push({
       date,
       topWeight,
@@ -106,10 +134,13 @@ export function personalRecords(allSets: SetWithDate[]): PersonalRecords {
     return { maxWeight: 0, maxReps: 0, maxEstimated1RM: 0, maxVolumeSession: 0 }
   }
   const sessions = summarizeSessions(sets)
+  // Einseitige Übungen: jeweils die stärkere Seite zählt (wie bei der Rekord-Feier).
   return {
-    maxWeight: Math.max(...sets.map((s) => s.weight)),
-    maxReps: Math.max(...sets.map((s) => s.reps)),
-    maxEstimated1RM: round1(Math.max(...sets.map((s) => estimate1RM(s.weight, s.reps)))),
+    maxWeight: Math.max(
+      ...sets.map((s) => Math.max(s.reps > 0 ? s.weight : 0, (s.reps_right ?? 0) > 0 ? (s.weight_right ?? 0) : 0)),
+    ),
+    maxReps: Math.max(...sets.map((s) => Math.max(s.reps, s.reps_right ?? 0))),
+    maxEstimated1RM: round1(Math.max(...sets.map(setBest1RM))),
     maxVolumeSession: Math.max(...sessions.map((s) => s.volume)),
   }
 }
@@ -123,10 +154,7 @@ export function monthlyPrCount(sets: SetWithDate[], today = new Date()): number 
   const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
   const byEx = new Map<string, { before: number; cur: number }>()
   for (const s of onlyWorking(sets)) {
-    const e1 = Math.max(
-      estimate1RM(s.weight, s.reps),
-      estimate1RM(s.weight_right ?? 0, s.reps_right ?? 0),
-    )
+    const e1 = setBest1RM(s)
     const rec = byEx.get(s.exercise_id) ?? { before: 0, cur: 0 }
     if (s.date.startsWith(month)) rec.cur = Math.max(rec.cur, e1)
     else rec.before = Math.max(rec.before, e1)
@@ -141,7 +169,7 @@ export function monthlyPrCount(sets: SetWithDate[], today = new Date()): number 
 // Wochen-Volumen
 // ---------------------------------------------------------------------------
 
-/** ISO-Wochenschlüssel "YYYY-Www" für ein Datum (YYYY-MM-DD). */
+/** ISO-Wochenschlüssel "YYYY-Www" für ein Datum (YYYY-MM-DD, lokales Kalenderdatum). */
 export function isoWeekKey(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00Z')
   const day = d.getUTCDay() || 7
@@ -224,7 +252,7 @@ export function weeklyMuscleSets(
   today = new Date(),
 ): MuscleSets[] {
   const byId = new Map(exercises.map((e) => [e.id, e]))
-  const week = isoWeekKey(today.toISOString().slice(0, 10))
+  const week = isoWeekKey(localDate(today))
   const acc = new Map<MuscleGroup, number>()
   for (const s of onlyWorking(sets)) {
     if (isoWeekKey(s.date) !== week) continue
@@ -302,7 +330,7 @@ export function lastTrainedPerMuscle(
 ): MuscleRecovery[] {
   const byId = new Map(exercises.map((e) => [e.id, e]))
   const last = new Map<MuscleGroup, string>()
-  for (const s of sets) {
+  for (const s of onlyPerformed(sets)) {
     const ex = byId.get(s.exercise_id)
     if (!ex) continue
     for (const { muscle } of musclesOf(ex)) {
@@ -310,7 +338,7 @@ export function lastTrainedPerMuscle(
       if (!prev || s.date > prev) last.set(muscle, s.date)
     }
   }
-  const todayStr = today.toISOString().slice(0, 10)
+  const todayStr = localDate(today)
   return [...last.entries()]
     .map(([muscle, lastDate]) => {
       const daysAgo = Math.round(
@@ -348,11 +376,12 @@ export function frequencyStats(workoutDates: string[], today = new Date()): Freq
   let streak = 0
   const cursor = new Date(today)
   // Auf Wochenbeginn-unabhängige Zählung: wir prüfen Wochenschlüssel je 7 Tage zurück
+  // (lokales Datum, damit der Wochenwechsel nicht von der UTC-Verschiebung abhängt)
   for (;;) {
-    const key = isoWeekKey(cursor.toISOString().slice(0, 10))
+    const key = isoWeekKey(localDate(cursor))
     if (weeks.has(key)) {
       streak++
-      cursor.setUTCDate(cursor.getUTCDate() - 7)
+      cursor.setDate(cursor.getDate() - 7)
     } else {
       break
     }
@@ -383,7 +412,7 @@ export function trainingSummary(
   exercises: ExerciseNamed[],
   today = new Date(),
 ) {
-  const freq = frequencyStats([...new Set(sets.map((s) => s.date))], today)
+  const freq = frequencyStats(sessionDates(sets), today)
   const weeks = weeklyVolume(sets).slice(-6)
   const perMuscleSets = weeklyMuscleSets(sets, exercises, today)
   const balance = balanceStats(sets, exercises)

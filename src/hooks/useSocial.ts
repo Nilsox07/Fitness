@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
+import { encodeGymStatus } from '../lib/gymStatus'
 
 export interface UserStat {
   user_id: string
@@ -101,14 +102,17 @@ export function useGiveKudos() {
   })
 }
 
+/** Gym-Plan setzen; gespeichert wird `YYYY-MM-DD|Text` (lokales Datum), '' löscht. */
 export function useSetGymStatus() {
   const qc = useQueryClient()
   const { user } = useAuth()
   return useMutation({
     mutationFn: async (status: string) => {
-      const { error } = await supabase
-        .from('user_stats')
-        .upsert({ user_id: user!.id, gym_status: status, updated_at: new Date().toISOString() })
+      const { error } = await supabase.from('user_stats').upsert({
+        user_id: user!.id,
+        gym_status: encodeGymStatus(status),
+        updated_at: new Date().toISOString(),
+      })
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['leaderboard'] }),

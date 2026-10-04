@@ -38,6 +38,27 @@ export async function notifyFriendsCheat(title: string, body: string): Promise<v
   }
 }
 
+/**
+ * Push-Abo DIESES Geräts entfernen (DB-Zeile + Browser-Abo), z. B. beim
+ * Abmelden. Best effort: Fehler werden ignoriert, damit Logout nie hängt.
+ */
+export async function disablePushOnThisDevice(): Promise<void> {
+  if (!pushSupported) return
+  try {
+    const reg = await navigator.serviceWorker.getRegistration()
+    const sub = await reg?.pushManager.getSubscription()
+    if (!sub) return
+    try {
+      await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
+    } catch {
+      /* ignore */
+    }
+    await sub.unsubscribe()
+  } catch {
+    /* ignore */
+  }
+}
+
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
   const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')

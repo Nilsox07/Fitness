@@ -28,6 +28,10 @@ const EMPTY: NutritionSettingsInput = {
   water_target_ml: 2500,
 }
 
+function FieldError({ msg }: { msg: string | null }) {
+  return msg ? <p className="mt-1 text-xs text-red-500 dark:text-red-400">{msg}</p> : null
+}
+
 /**
  * Wiederverwendbarer Editor für Körperdaten, Ziel, Nährwerte und Trinkziel.
  * Berechnet die Makros automatisch je nach Ziel (Abnehmen/Halten/Aufbauen/Recomp)
@@ -69,18 +73,53 @@ export function GoalEditor({
   }, [settings, loaded])
 
   const t = computeTargets(form)
+  const [error, setError] = useState<string | null>(null)
+
+  // Plausibilitätsprüfung (DB: Alter 10–100, Größe/Gewicht > 0, Trinkziel ≥ 0).
+  const fieldError = {
+    age:
+      !Number.isFinite(form.age) || form.age < 10 || form.age > 100
+        ? 'Alter bitte zwischen 10 und 100 Jahren.'
+        : null,
+    height_cm:
+      !Number.isFinite(form.height_cm) || form.height_cm < 100 || form.height_cm > 250
+        ? 'Größe bitte zwischen 100 und 250 cm.'
+        : null,
+    weight_kg:
+      !Number.isFinite(form.weight_kg) || form.weight_kg < 30 || form.weight_kg > 300
+        ? 'Gewicht bitte zwischen 30 und 300 kg.'
+        : null,
+    water_target_ml:
+      !Number.isFinite(form.water_target_ml) || form.water_target_ml < 0 || form.water_target_ml > 10000
+        ? 'Trinkziel bitte zwischen 0 und 10000 ml.'
+        : null,
+  }
+  const invalid = Object.values(fieldError).some(Boolean)
 
   async function save() {
+    if (invalid) {
+      setError('Bitte die markierten Angaben prüfen.')
+      return
+    }
+    setError(null)
     setDietAvoid(avoid)
-    await upsert.mutateAsync({
-      ...form,
-      kcal_target: t.kcal,
-      protein_target: t.protein,
-      carbs_target: t.carbs,
-      fat_target: t.fat,
-      water_target_ml: form.water_target_ml || defaultWaterTarget(form.weight_kg),
-    })
-    onSaved?.()
+    try {
+      await upsert.mutateAsync({
+        ...form,
+        age: Math.round(form.age), // DB-Spalte ist int
+        kcal_target: t.kcal,
+        protein_target: t.protein,
+        carbs_target: t.carbs,
+        fat_target: t.fat,
+        water_target_ml: Math.round(form.water_target_ml || defaultWaterTarget(form.weight_kg)),
+      })
+      onSaved?.()
+    } catch (e) {
+      setError(
+        'Speichern fehlgeschlagen' + (e instanceof Error && e.message ? `: ${e.message}` : '.') +
+          ' Bitte nochmal versuchen.',
+      )
+    }
   }
 
   return (
@@ -107,6 +146,7 @@ export function GoalEditor({
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
           />
+          <FieldError msg={fieldError.age} />
         </div>
         <div>
           <label className="label">Größe (cm)</label>
@@ -118,6 +158,7 @@ export function GoalEditor({
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => setForm({ ...form, height_cm: Number(e.target.value) })}
           />
+          <FieldError msg={fieldError.height_cm} />
         </div>
         <div>
           <label className="label">Gewicht (kg)</label>
@@ -129,6 +170,7 @@ export function GoalEditor({
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => setForm({ ...form, weight_kg: Number(e.target.value) })}
           />
+          <FieldError msg={fieldError.weight_kg} />
         </div>
       </div>
 
@@ -183,6 +225,7 @@ export function GoalEditor({
           onFocus={(e) => e.currentTarget.select()}
           onChange={(e) => setForm({ ...form, water_target_ml: Number(e.target.value) })}
         />
+        <FieldError msg={fieldError.water_target_ml} />
       </div>
 
       <div>
@@ -222,6 +265,8 @@ export function GoalEditor({
           </div>
         </div>
       </div>
+
+      {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
 
       <div className="flex gap-2 pt-1">
         {onCancel && (

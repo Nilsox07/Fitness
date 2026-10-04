@@ -2,6 +2,7 @@
 // Serverless-Funktion /api/ai (dort liegt der Key). Die Prompts sind nicht
 // geheim und leben deshalb hier — pro Feature ein typisierter Helfer.
 
+import { supabase } from './supabase'
 import { MUSCLE_GROUPS, type MuscleGroup, type Meal, type PlanDay, type ShoppingCat } from '../types'
 import { aiBegin, aiEnd } from './aiActivity'
 
@@ -26,9 +27,14 @@ async function complete(opts: {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS)
   try {
+    const { data: sess } = await supabase.auth.getSession()
+    const token = sess.session?.access_token
     const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
       // Standard-Obergrenze für die Antwortlänge (spart Zeit); große Generatoren
       // (mehrtägige Pläne) übergeben einen höheren Wert.
       body: JSON.stringify({ maxTokens: 2048, ...opts }),
@@ -196,16 +202,27 @@ export interface WeeklyReviewInput {
   weekLabel: string
   goalLabel: string
   training: { sessions: number; volumeKg: number; prs: number; topMuscles: string[] }
+  /** null = Ernährung ausgeblendet → reines Trainingsfazit */
   nutrition: {
     daysLogged: number
     avgKcal: number
     avgProtein: number
     target: { kcal: number; protein: number } | null
-  }
+  } | null
   bodyweight: { start: number; current: number } | null
 }
 
 export async function combinedWeeklyReview(input: WeeklyReviewInput): Promise<string> {
+  if (!input.nutrition) {
+    const prompt =
+      `Wochendaten (JSON) für ${input.weekLabel}:\n${JSON.stringify(input)}\n\n` +
+      'Schreib ein Wochenfazit NUR über das Training (max. ~120 Wörter) — erwähne Ernährung, ' +
+      'Kalorien oder Eiweiß nicht. Struktur:\n' +
+      '1) 🏋️ Training: Sessions, Volumen, Rekorde, Auffälligkeiten.\n' +
+      '2) 🎯 Fokus nächste Woche: 2–3 konkrete, umsetzbare Empfehlungen.\n' +
+      'Ehrlich aber motivierend, per „du". Nutze ein paar Emojis.'
+    return complete({ system: coachSystem(), prompt, temperature: 0.5 })
+  }
   const prompt =
     `Wochendaten (JSON) für ${input.weekLabel}:\n${JSON.stringify(input)}\n\n` +
     'Schreib EIN gemeinsames Wochenfazit über Training UND Ernährung (max. ~150 Wörter), ' +

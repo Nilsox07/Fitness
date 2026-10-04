@@ -10,6 +10,8 @@ import {
   onlyWorking,
   personalRecords,
   progressionSuggestion,
+  isPerformed,
+  sessionDates,
   summarizeSessions,
   totalVolume,
   weeklyMuscleSets,
@@ -272,5 +274,42 @@ describe('progressionSuggestion (Double Progression)', () => {
     const s = progressionSuggestion(ex, sets)
     expect(s.action).toBe('hold')
     expect(s.reason).not.toContain('Reserve')
+  })
+})
+
+describe('Nicht ausgefüllte Sätze (0 Wdh)', () => {
+  it('isPerformed erkennt ausgeführte Sätze (auch nur rechte Seite)', () => {
+    expect(isPerformed({ reps: 0, reps_right: null })).toBe(false)
+    expect(isPerformed({ reps: 0, reps_right: 0 })).toBe(false)
+    expect(isPerformed({ reps: 8 })).toBe(true)
+    expect(isPerformed({ reps: 0, reps_right: 6 })).toBe(true)
+  })
+
+  it('zählen nicht als Session, Arbeitssatz oder Rekord', () => {
+    const sets = [
+      mkSet('2026-01-10', 8, 60),
+      mkSet('2026-01-12', 0, 100), // Vorlage, nie ausgefüllt
+    ]
+    expect(sessionDates(sets)).toEqual(['2026-01-10'])
+    expect(onlyWorking(sets)).toHaveLength(1)
+    expect(summarizeSessions(sets).map((s) => s.date)).toEqual(['2026-01-10'])
+    expect(personalRecords(sets).maxWeight).toBe(60)
+  })
+
+  it('Tipp ignoriert eine abgebrochene Session mit leeren Sätzen', () => {
+    const ex = { target_rep_min: 8, target_rep_max: 12, increment: 2.5 }
+    const sets = [mkSet('2026-01-10', 12, 60, 1), mkSet('2026-01-10', 12, 60, 2), mkSet('2026-01-14', 0, 62.5, 1)]
+    const s = progressionSuggestion(ex, sets)
+    expect(s.action).toBe('increase')
+  })
+})
+
+describe('Einseitige Rekorde', () => {
+  it('personalRecords nimmt die stärkere Seite', () => {
+    const set = { ...mkSet('2026-02-01', 5, 20), reps_right: 10, weight_right: 22 }
+    const pr = personalRecords([set])
+    expect(pr.maxWeight).toBe(22)
+    expect(pr.maxReps).toBe(10)
+    expect(pr.maxEstimated1RM).toBeCloseTo(estimate1RM(22, 10), 1)
   })
 })

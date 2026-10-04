@@ -2,7 +2,8 @@
 // abgeleitet (nichts zu persistieren) — so bleibt es konsistent.
 
 import type { SetWithDate } from '../types'
-import { frequencyStats, isoWeekKey, onlyWorking, totalVolume } from './analytics'
+import { frequencyStats, isoWeekKey, onlyPerformed, onlyWorking, sessionDates, totalVolume } from './analytics'
+import { localDate } from './day'
 
 export interface LevelInfo {
   level: number
@@ -35,12 +36,13 @@ export function levelInfo(xp: number): LevelInfo {
   }
 }
 
-/** Gesamt-XP aus allen Sätzen. */
+/** Gesamt-XP aus allen Sätzen (nur ausgeführte Sätze zählen, 0-Wdh-Vorlagen nicht). */
 export function computeXp(sets: SetWithDate[]): number {
-  const sessions = new Set(sets.map((s) => s.date)).size
+  const dates = sessionDates(sets)
+  const sessions = dates.length
   const workingSets = onlyWorking(sets).length
-  const tonnage = totalVolume(sets)
-  const streak = frequencyStats([...new Set(sets.map((s) => s.date))]).weekStreak
+  const tonnage = totalVolume(onlyPerformed(sets))
+  const streak = frequencyStats(dates).weekStreak
   return Math.round(sessions * 50 + workingSets * 3 + tonnage / 100 + streak * 25)
 }
 
@@ -57,7 +59,7 @@ function quest(id: string, label: string, cur: number, goal: number, xp: number)
 }
 
 export function dailyQuests(sets: SetWithDate[], today: string): Quest[] {
-  const todays = sets.filter((s) => s.date === today)
+  const todays = onlyPerformed(sets).filter((s) => s.date === today)
   const exercises = new Set(todays.map((s) => s.exercise_id)).size
   const working = onlyWorking(todays).length
   return [
@@ -67,9 +69,10 @@ export function dailyQuests(sets: SetWithDate[], today: string): Quest[] {
   ]
 }
 
-export function weeklyQuests(sets: SetWithDate[], today = new Date()): Quest[] {
-  const week = isoWeekKey(today.toISOString().slice(0, 10))
-  const wSets = sets.filter((s) => isoWeekKey(s.date) === week)
+/** @param today Datum oder lokaler Tag (YYYY-MM-DD, z. B. der Trainings-Tag) */
+export function weeklyQuests(sets: SetWithDate[], today: Date | string = new Date()): Quest[] {
+  const week = isoWeekKey(typeof today === 'string' ? today : localDate(today))
+  const wSets = onlyPerformed(sets).filter((s) => isoWeekKey(s.date) === week)
   const sessions = new Set(wSets.map((s) => s.date)).size
   const volume = totalVolume(wSets)
   return [

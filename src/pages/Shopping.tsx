@@ -22,19 +22,37 @@ import { useAddRecipe } from '../hooks/useRecipes'
 import { MicButton } from '../components/MicButton'
 import { MEALS, MEAL_LABEL, type Meal, type PlanMeal } from '../types'
 
-function loadChecked(): Set<string> {
+// Abgehakte Artikel gelten pro Plan (gespeicherte Plan-ID bzw. Erzeugungszeitpunkt
+// eines neuen Plans) — ein neuer Plan startet mit leerer Liste.
+const CHECKED_KEY = 'shopping_checked'
+
+function loadChecked(planKey: string): Set<string> {
   try {
-    return new Set(JSON.parse(localStorage.getItem('shopping_checked') || '[]'))
+    const raw = JSON.parse(localStorage.getItem(CHECKED_KEY) || 'null') as {
+      plan?: string
+      items?: string[]
+    } | null
+    return raw && !Array.isArray(raw) && raw.plan === planKey ? new Set(raw.items ?? []) : new Set()
   } catch {
     return new Set()
   }
 }
-function saveChecked(s: Set<string>) {
+function saveChecked(planKey: string, s: Set<string>) {
   try {
-    localStorage.setItem('shopping_checked', JSON.stringify([...s]))
+    localStorage.setItem(CHECKED_KEY, JSON.stringify({ plan: planKey, items: [...s] }))
   } catch {
     /* ignore */
   }
+}
+
+/** Eindeutiger Schlüssel je Artikel: Kategorie + Name + Vorkommen (Duplikate getrennt). */
+function itemKeys(items: string[]): string[] {
+  const seen = new Map<string, number>()
+  return items.map((it) => {
+    const n = seen.get(it) ?? 0
+    seen.set(it, n + 1)
+    return `${it}#${n}`
+  })
 }
 
 export default function Shopping() {
@@ -55,12 +73,14 @@ export default function Shopping() {
   const [msg, setMsg] = useState<string | null>(null)
   const [plan, setPlan] = useState<WeeklyPlan | null>(null)
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null)
-  const [checked, setChecked] = useState<Set<string>>(loadChecked)
+  // Schlüssel des angezeigten Plans für die Abhak-Liste
+  const [planKey, setPlanKey] = useState<string | null>(null)
+  const [checked, setChecked] = useState<Set<string>>(new Set())
 
   // Anpassen
   const [adjustText, setAdjustText] = useState('')
   const [adjustBusy, setAdjustBusy] = useState(false)
-  const [newItem, setNewItem] = useState<Record<number, string>>({})
+  const [newItem, setNewItem] = useState<Record<string, string>>({})
 
   // Routine hinzufügen
   const [rMeal, setRMeal] = useState<Meal>('breakfast')
@@ -70,6 +90,7 @@ export default function Shopping() {
   // Rezept-Modal
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [recipeBusy, setRecipeBusy] = useState(false)
+  const [recipeErr, setRecipeErr] = useState<string | null>(null)
 
   const targets = {
     kcal: settings?.kcal_target || 2000,
@@ -128,6 +149,7 @@ export default function Shopping() {
       else {
         setPlan(res)
         setCurrentPlanId(null) // neuer, ungespeicherter Plan
+        showPlan(`gen-${Date.now()}`) // neue Einkaufsliste → nichts abgehakt
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'KI-Fehler')
@@ -166,6 +188,9 @@ export default function Shopping() {
         const name = `Plan ${new Date().toLocaleDateString('de-DE')}`
         const saved = await addPlan.mutateAsync({ name, days, plan: plan.days, shopping: plan.shopping })
         setCurrentPlanId(saved.id)
+        // Häkchen des gerade erzeugten Plans unter seiner neuen ID weiterführen
+        setPlanKey(saved.id)
+        saveChecked(saved.id, checked)
         setMsg('Plan & Einkaufsliste gespeichert')
       }
     } catch (e) {
@@ -181,18 +206,19 @@ export default function Shopping() {
     setPlan((p) => (p ? { ...p, shopping: mut(p.shopping) } : p))
     setMsg(null)
   }
-  function removeItem(catIdx: number, item: string) {
+  function removeItem(catIdx: number, itemIdx: number) {
     editShopping((s) =>
       s
-        .map((c, i) => (i === catIdx ? { ...c, items: c.items.filter((x) => x !== item) } : c))
+        .map((c, i) => (i === catIdx ? { ...c, items: c.items.filter((_, j) => j !== itemIdx) } : c))
         .filter((c) => c.items.length),
     )
   }
-  function addItem(catIdx: number) {
-    const text = (newItem[catIdx] ?? '').trim()
+  // Eingabetext je Kategorie-Name (nicht Index — Indizes verschieben sich beim Entfernen)
+  function addItem(catIdx: number, category: string) {
+    const text = (newItem[category] ?? '').trim()
     if (!text) return
     editShopping((s) => s.map((c, i) => (i === catIdx ? { ...c, items: [...c.items, text] } : c)))
-    setNewItem((n) => ({ ...n, [catIdx]: '' }))
+    setNewItem((n) => ({ ...n, [category]: '' }))
   }
   function removeMeal(dayIdx: number, mealIdx: number) {
     setPlan((p) =>
@@ -223,32 +249,45 @@ export default function Shopping() {
   }
 
   async function saveRecipe() {
-    if (!recipe) return
+    if (!recipe || addRecipe.isPending) return
     const n = recipe.nutrition
-    await addRecipe.mutateAsync({
-      title: recipe.title,
-      servings: recipe.servings,
-      ingredients: recipe.ingredients,
-      steps: recipe.steps,
-      kcal: n.kcal,
-      protein: n.protein,
-      carbs: n.carbs,
-      fat: n.fat,
-      fiber: n.fiber,
-      sugar: n.sugar,
-      sat_fat: n.sat_fat,
-      salt: n.salt,
-      shared: false,
-    })
-    setRecipe(null)
+    setErr(null)
+    try {
+      await addRecipe.mutateAsync({
+        title: recipe.title,
+        servings: recipe.servings,
+        ingredients: recipe.ingredients,
+        steps: recipe.steps,
+        kcal: n.kcal,
+        protein: n.protein,
+        carbs: n.carbs,
+        fat: n.fat,
+        fiber: n.fiber,
+        sugar: n.sugar,
+        sat_fat: n.sat_fat,
+        salt: n.salt,
+        shared: false,
+      })
+      setRecipe(null)
+    } catch (e) {
+      const detail = e instanceof Error && e.message ? ` (${e.message})` : ''
+      setRecipeErr(`Speichern fehlgeschlagen${detail}. Bitte nochmal versuchen.`)
+    }
   }
 
-  function toggle(item: string) {
+  /** Plan anzeigen: Abhak-Liste dieses Plans laden (neuer Plan → leer). */
+  function showPlan(key: string) {
+    setPlanKey(key)
+    setChecked(loadChecked(key))
+  }
+
+  function toggle(key: string) {
+    if (!planKey) return
     setChecked((prev) => {
       const next = new Set(prev)
-      if (next.has(item)) next.delete(item)
-      else next.add(item)
-      saveChecked(next)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      saveChecked(planKey, next)
       return next
     })
   }
@@ -456,53 +495,57 @@ export default function Shopping() {
                 Noch keine Artikel — füge unten welche hinzu oder erstelle den Plan neu.
               </p>
             )}
-            {plan.shopping.map((c, ci) => (
-              <div key={c.category} className="card">
-                <h3 className="mb-2 font-semibold">{c.category}</h3>
-                <ul className="space-y-1">
-                  {c.items.map((it) => {
-                    const done = checked.has(it)
-                    return (
-                      <li key={it} className="flex items-center gap-2">
-                        <button className="flex flex-1 items-center gap-2 text-left text-sm" onClick={() => toggle(it)}>
-                          <span
-                            className={`grid h-5 w-5 shrink-0 place-items-center rounded-md transition-colors duration-200 ${
-                              done ? 'anim-check bg-success text-white' : 'bg-sand text-transparent'
-                            }`}
+            {plan.shopping.map((c, ci) => {
+              const keys = itemKeys(c.items)
+              return (
+                <div key={`${c.category}#${ci}`} className="card">
+                  <h3 className="mb-2 font-semibold">{c.category}</h3>
+                  <ul className="space-y-1">
+                    {c.items.map((it, ii) => {
+                      const key = `${c.category}|${keys[ii]}`
+                      const done = checked.has(key)
+                      return (
+                        <li key={keys[ii]} className="flex items-center gap-2">
+                          <button className="flex flex-1 items-center gap-2 text-left text-sm" onClick={() => toggle(key)}>
+                            <span
+                              className={`grid h-5 w-5 shrink-0 place-items-center rounded-md transition-colors duration-200 ${
+                                done ? 'anim-check bg-success text-white' : 'bg-sand text-transparent'
+                              }`}
+                            >
+                              <Check size={13} strokeWidth={3} />
+                            </span>
+                            <span className={done ? 'text-cocoa-muted line-through' : 'text-cocoa'}>{it}</span>
+                          </button>
+                          <button
+                            className="grid h-7 w-7 place-items-center rounded-full text-cocoa-muted hover:text-red-500"
+                            aria-label="Artikel entfernen"
+                            onClick={() => removeItem(ci, ii)}
                           >
-                            <Check size={13} strokeWidth={3} />
-                          </span>
-                          <span className={done ? 'text-cocoa-muted line-through' : 'text-cocoa'}>{it}</span>
-                        </button>
-                        <button
-                          className="grid h-7 w-7 place-items-center rounded-full text-cocoa-muted hover:text-red-500"
-                          aria-label="Artikel entfernen"
-                          onClick={() => removeItem(ci, it)}
-                        >
-                          <X size={15} />
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    className="input text-sm"
-                    placeholder="Artikel hinzufügen…"
-                    value={newItem[ci] ?? ''}
-                    onChange={(e) => setNewItem((n) => ({ ...n, [ci]: e.target.value }))}
-                    onKeyDown={(e) => e.key === 'Enter' && addItem(ci)}
-                  />
-                  <button
-                    className="btn-ghost flex shrink-0 items-center text-sm"
-                    onClick={() => addItem(ci)}
-                    aria-label="Artikel hinzufügen"
-                  >
-                    <Plus size={16} />
-                  </button>
+                            <X size={15} />
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      className="input text-sm"
+                      placeholder="Artikel hinzufügen…"
+                      value={newItem[c.category] ?? ''}
+                      onChange={(e) => setNewItem((n) => ({ ...n, [c.category]: e.target.value }))}
+                      onKeyDown={(e) => e.key === 'Enter' && addItem(ci, c.category)}
+                    />
+                    <button
+                      className="btn-ghost flex shrink-0 items-center text-sm"
+                      onClick={() => addItem(ci, c.category)}
+                      aria-label="Artikel hinzufügen"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </>
       )}
@@ -518,6 +561,7 @@ export default function Shopping() {
                 onClick={() => {
                   setPlan({ note: '', days: p.plan, shopping: p.shopping })
                   setCurrentPlanId(p.id)
+                  showPlan(p.id)
                   setDays(p.days)
                   setMsg(`„${p.name}" geladen`)
                 }}
@@ -543,13 +587,16 @@ export default function Shopping() {
 
       {/* Rezept-Modal */}
       {recipe && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="card max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="font-bold">{recipe.title}</h3>
               <button
                 className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-cocoa-muted"
-                onClick={() => setRecipe(null)}
+                onClick={() => {
+                  setRecipeErr(null)
+                  setRecipe(null)
+                }}
                 aria-label="Schließen"
               >
                 <X size={18} />
@@ -579,6 +626,7 @@ export default function Shopping() {
                 </ol>
               </div>
             )}
+            {recipeErr && <p className="text-sm text-red-500 dark:text-red-400">{recipeErr}</p>}
             <button
               className="btn-primary flex w-full items-center justify-center gap-1.5"
               onClick={saveRecipe}

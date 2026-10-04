@@ -21,3 +21,17 @@ export function dayLabel(date: string, today = localDate()): string {
     ...(y !== new Date().getFullYear() ? { year: 'numeric' } : {}),
   })
 }
+
+/**
+ * Trainings-Tag: wechselt nicht um Mitternacht, sondern erst um DAY_CUTOFF_H Uhr
+ * morgens. So bleibt eine Session, die vor 0 Uhr startet und danach weiterläuft,
+ * als ein Training zusammen.
+ */
+export const DAY_CUTOFF_H = 4
+
+/** Lokales Datum (YYYY-MM-DD) des Trainings-Tags, Wechsel um 04:00 statt 00:00. */
+export function trainingDay(now = new Date()): string {
+  const d = new Date(now)
+  d.setHours(d.getHours() - DAY_CUTOFF_H)
+  return localDate(d)
+}

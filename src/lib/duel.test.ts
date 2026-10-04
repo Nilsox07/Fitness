@@ -4,8 +4,10 @@ import {
   daysLeftInWeek,
   duelScore,
   duelStandings,
+  effectiveMonthlyPrs,
   effectiveProteinDays,
   effectiveSessions,
+  effectiveWeeklyVolume,
   isThisWeek,
   teamGoal,
   weekStart,
@@ -102,5 +104,21 @@ describe('teamGoal', () => {
     const g = teamGoal([stat('a', 5, TODAY), stat('b', 3, TODAY)], TODAY)
     expect(g.reached).toBe(true)
     expect(g.progress).toBe(100)
+  })
+})
+
+describe('veraltete Wochen-/Monatswerte', () => {
+  it('Volumen nur aus dieser Woche', () => {
+    const base = { user_id: 'a', weekly_sessions: 2, weekly_volume: 5000 }
+    expect(effectiveWeeklyVolume({ ...base, last_workout: '2026-09-29' }, TODAY)).toBe(5000)
+    expect(effectiveWeeklyVolume({ ...base, last_workout: '2026-09-25' }, TODAY)).toBe(0)
+  })
+  it('Rekorde nur aus diesem Monat', () => {
+    const base = { user_id: 'a', weekly_sessions: 0, monthly_prs: 3 }
+    expect(effectiveMonthlyPrs({ ...base, last_workout: '2026-09-02' }, TODAY)).toBe(3)
+    expect(effectiveMonthlyPrs({ ...base, last_workout: '2026-08-31' }, TODAY)).toBe(0)
+    expect(
+      effectiveMonthlyPrs({ ...base, last_workout: '2026-09-02', updated_at: '2026-08-20T10:00:00' }, TODAY),
+    ).toBe(0)
   })
 })

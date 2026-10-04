@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check, Minus, Plus, Trash2 } from 'lucide-react'
 import { useDeleteSet, useUpdateSet } from '../../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../../lib/weights'
@@ -12,12 +12,18 @@ export interface PrevSet {
 }
 
 const fmt = (n: number) => n.toLocaleString('de-DE')
+/** Eingabefeld-Text: deutsches Komma, ohne Tausenderpunkt („22,5", „102,5"). */
+const fmtInput = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 2, useGrouping: false })
+const parseNum = (raw: string) => parseFloat(raw.trim().replace(',', '.'))
 
 export function isSetDone(s: WorkoutSet, unilateral: boolean): boolean {
   return s.reps > 0 || (unilateral && (s.reps_right ?? 0) > 0)
 }
 
-/** Kleines Zahlenfeld mit −/+ (schmal genug für eine Zeile). */
+/**
+ * Kleines Zahlenfeld mit −/+ (schmal genug für eine Zeile).
+ * onChange bekommt mit, ob der Wert getippt (Feld verlassen) oder per −/+ kam.
+ */
 function MiniStepper({
   label,
   value,
@@ -28,35 +34,35 @@ function MiniStepper({
 }: {
   label: string
   value: number
-  onChange: (v: number) => void
+  onChange: (v: number, via: 'input' | 'step') => void
   step?: number
   steps?: number[]
   dim?: boolean
 }) {
   const hasLadder = !!steps && steps.length > 0
-  const [text, setText] = useState(String(value))
-  useEffect(() => setText(String(value)), [value])
+  const [text, setText] = useState(fmtInput(value))
+  useEffect(() => setText(fmtInput(value)), [value])
 
   const clamp = (v: number) => Math.max(0, Math.round(v * 100) / 100)
   function commit(raw: string) {
-    const n = parseFloat(raw.replace(',', '.'))
+    const n = parseNum(raw)
     const next = Number.isNaN(n) ? 0 : hasLadder ? snapToLadder(n, steps!) : clamp(n)
-    setText(String(next))
-    if (next !== value) onChange(next)
+    setText(fmtInput(next))
+    if (next !== value) onChange(next, 'input')
   }
   function adjust(delta: number) {
-    const parsed = parseFloat(text.replace(',', '.'))
+    const parsed = parseNum(text)
     const base = Number.isNaN(parsed) ? value : parsed
     const next = hasLadder ? ladderStep(base, steps!, delta) : clamp(base + delta)
-    setText(String(next))
-    onChange(next)
+    setText(fmtInput(next))
+    onChange(next, 'step')
   }
 
   return (
     <div className="flex min-w-0 items-stretch overflow-hidden rounded-lg bg-sand">
       <button
         type="button"
-        className="grid w-7 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
+        className="grid w-6 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
         onClick={() => adjust(-step)}
         aria-label={`${label} verringern`}
       >
@@ -65,9 +71,9 @@ function MiniStepper({
       <input
         type="text"
         inputMode={Number.isInteger(step) ? 'numeric' : 'decimal'}
-        className={`tabular w-full min-w-0 bg-transparent py-1.5 text-center text-[15px] font-semibold outline-none focus:bg-sand-light focus:ring-2 focus:ring-inset focus:ring-brand ${
-          dim ? 'text-cocoa-muted' : 'text-cocoa'
-        }`}
+        className={`tabular w-full min-w-0 bg-transparent px-0 py-1.5 text-center font-semibold outline-none focus:bg-sand-light focus:ring-2 focus:ring-inset focus:ring-brand ${
+          text.length >= 5 ? 'text-sm tracking-tight' : 'text-[15px]'
+        } ${dim ? 'text-cocoa-muted' : 'text-cocoa'}`}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onFocus={(e) => e.currentTarget.select()}
@@ -76,7 +82,7 @@ function MiniStepper({
       />
       <button
         type="button"
-        className="grid w-7 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
+        className="grid w-6 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
         onClick={() => adjust(step)}
         aria-label={`${label} erhöhen`}
       >
@@ -86,7 +92,8 @@ function MiniStepper({
   )
 }
 
-const GRID = 'grid grid-cols-[2rem_3rem_minmax(0,1fr)_minmax(0,1fr)_2.25rem] items-center gap-1.5'
+// Schmale „Vorher"-Spalte + enger Abstand, damit auch „102,5" bei 390 px Breite ins Feld passt.
+const GRID = 'grid grid-cols-[2rem_2.75rem_minmax(0,1fr)_minmax(0,1fr)_2.25rem] items-center gap-1'
 
 /** Spaltenköpfe passend zu den Zeilen. */
 export function SetTableHeader() {
@@ -127,6 +134,16 @@ export function CompactSetRow({
   const steps = ladder.length ? ladder : undefined
   const uni = exercise.unilateral
   const done = isSetDone(s, uni)
+  // onDone nur einmal pro Abschluss (z. B. Wdh tippen → Feld verlassen → gleich ✓).
+  const fired = useRef(false)
+  useEffect(() => {
+    if (!done) fired.current = false
+  }, [done])
+  function fireDone() {
+    if (fired.current) return
+    fired.current = true
+    onDone()
+  }
 
   function complete() {
     if (done) return
@@ -136,13 +153,15 @@ export function CompactSetRow({
       reps: s.reps || reps,
       ...(uni ? { reps_right: s.reps_right || prev?.reps_right || reps } : {}),
     })
-    onDone()
+    fireDone()
   }
 
-  function setReps(key: 'reps' | 'reps_right', v: number) {
+  // Nur ✓ oder fertig eingetippte Wdh (Feld verlassen) lösen Pause/Supersatz-Sprung
+  // aus — ein Tipp auf „+" (0 → 1) ist noch kein abgeschlossener Satz.
+  function setReps(key: 'reps' | 'reps_right', v: number, via: 'input' | 'step') {
     const wasDone = done
     update.mutate({ id: s.id, [key]: v })
-    if (!wasDone && v > 0) onDone()
+    if (via === 'input' && !wasDone && v > 0) fireDone()
   }
 
   return (
@@ -176,7 +195,7 @@ export function CompactSetRow({
           label="Wdh"
           value={s.reps}
           dim={!done}
-          onChange={(v) => setReps('reps', v)}
+          onChange={(v, via) => setReps('reps', v, via)}
         />
         <button
           type="button"
@@ -208,7 +227,7 @@ export function CompactSetRow({
             label="Wdh rechts"
             value={s.reps_right ?? 0}
             dim={!done}
-            onChange={(v) => setReps('reps_right', v)}
+            onChange={(v, via) => setReps('reps_right', v, via)}
           />
           <span />
         </div>

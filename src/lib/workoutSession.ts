@@ -75,26 +75,54 @@ export function partnerOf(pairs: Pair[], exId: string): string | null {
   return p[0] === exId ? p[1] : p[0]
 }
 
+export interface RoundSet {
+  set_type: string
+  done: boolean
+}
+
 /**
- * Was passiert, nachdem Satz Nr. `setIndex` einer Übung erledigt wurde?
+ * Wie vielte Satz seines Typs ist ein Satz? (0 = erster Aufwärm-/Arbeits-/Dropsatz)
+ * `list` = alle Sätze der Übung in Reihenfolge.
+ */
+export function typeOccurrence<T extends { set_type: string }>(list: T[], index: number): number {
+  const type = list[index]?.set_type
+  return list.slice(0, Math.max(0, index)).filter((x) => x.set_type === type).length
+}
+
+/** Der Satz gleichen Typs an gleicher Position (k-ter Arbeitssatz ↔ k-ter Arbeitssatz). */
+export function matchingSet<T extends { set_type: string }>(
+  list: T[],
+  setType: string,
+  occurrence: number,
+): T | undefined {
+  return list.filter((x) => x.set_type === setType)[occurrence]
+}
+
+/**
+ * Was passiert, nachdem ein Satz einer Übung erledigt wurde?
+ * Runden werden nach Satz-Typ + Position innerhalb des Typs zugeordnet (wie die
+ * Spalte „Vorher"): der 1. Arbeitssatz von A1 gehört zum 1. Arbeitssatz von A2 —
+ * auch wenn nur eine der Übungen einen Aufwärmsatz hat.
  * - Ohne Supersatz: Pause starten, auf der Übung bleiben.
- * - Im Supersatz und der gleiche Satz der Partner-Übung ist noch offen:
+ * - Im Supersatz und der passende Satz der Partner-Übung ist noch offen:
  *   KEINE Pause, direkt zur Partner-Übung wechseln.
- * - Im Supersatz und die Runde ist komplett: Pause starten und zurück zur
- *   ersten Übung des Paares (nächste Runde).
+ * - Im Supersatz und die Runde ist komplett (oder der Partner hat keinen
+ *   passenden Satz): Pause starten und zurück zur ersten Übung des Paares.
  */
 export function afterSetDone(opts: {
   exId: string
-  setIndex: number
+  setType: string
+  /** Position des Satzes innerhalb seines Typs (siehe typeOccurrence) */
+  occurrence: number
   pairs: Pair[]
-  doneFlags: (exId: string) => boolean[]
+  setsOf: (exId: string) => RoundSet[]
 }): { next: string | null; rest: boolean } {
   const pair = pairOf(opts.pairs, opts.exId)
   if (!pair) return { next: null, rest: true }
   const partner = pair[0] === opts.exId ? pair[1] : pair[0]
-  const partnerDone = opts.doneFlags(partner)[opts.setIndex]
-  if (partnerDone === false) return { next: partner, rest: false }
-  // Runde komplett (oder Partner hat weniger Sätze)
+  const partnerSet = matchingSet(opts.setsOf(partner), opts.setType, opts.occurrence)
+  if (partnerSet && !partnerSet.done) return { next: partner, rest: false }
+  // Runde komplett (oder Partner hat weniger Sätze dieses Typs)
   return { next: pair[0] === opts.exId ? null : pair[0], rest: true }
 }
 

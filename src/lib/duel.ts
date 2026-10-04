@@ -22,6 +22,8 @@ export interface DuelStat {
   weekly_sessions: number
   last_workout: string | null
   protein_week?: number | null
+  weekly_volume?: number | null
+  monthly_prs?: number | null
   /** Zeitpunkt der letzten Synchronisation (kommt per `select *` mit, falls vorhanden). */
   updated_at?: string | null
 }
@@ -76,6 +78,27 @@ export function daysLeftInWeek(today = localDate()): number {
 export function effectiveSessions(u: DuelStat, today = localDate()): number {
   if (!isThisWeek(u.last_workout, today)) return 0
   return Math.max(0, Math.round(u.weekly_sessions ?? 0))
+}
+
+/** Wochen-Volumen — 0, wenn die geteilte Zahl nicht aus dieser Woche stammt. */
+export function effectiveWeeklyVolume(u: DuelStat, today = localDate()): number {
+  if (!isThisWeek(u.last_workout, today)) return 0
+  return Math.max(0, Math.round(u.weekly_volume ?? 0))
+}
+
+/** Liegt `date` im selben Kalendermonat wie `today`? */
+export function isThisMonth(date: string | null | undefined, today = localDate()): boolean {
+  return Boolean(date) && date!.slice(0, 7) === today.slice(0, 7)
+}
+
+/**
+ * Neue Rekorde diesen Monat — 0, wenn die Zahl aus einem Vormonat stammt
+ * (letztes Training bzw. letzte Synchronisation nicht in diesem Monat).
+ */
+export function effectiveMonthlyPrs(u: DuelStat, today = localDate()): number {
+  if (!isThisMonth(u.last_workout, today)) return 0
+  if (u.updated_at && !isThisMonth(localDate(new Date(u.updated_at)), today)) return 0
+  return Math.max(0, Math.round(u.monthly_prs ?? 0))
 }
 
 /**

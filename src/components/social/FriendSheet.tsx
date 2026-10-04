@@ -4,7 +4,7 @@ import { Sheet } from '../workout/Sheet'
 import { useGiveKudos, useSendPoke } from '../../hooks/useSocial'
 import { effectiveProteinDays, effectiveSessions } from '../../lib/duel'
 import { RingAvatar } from './Avatar'
-import { avatarEmoji, firstName, statusLine, type Person } from './format'
+import { avatarEmoji, firstName, proteinToday, statusLine, type Person } from './format'
 
 const PRESETS = ['Heute Gym? 💪', 'Kommst du mit?', 'Wo bleibst du? 😄']
 
@@ -31,6 +31,8 @@ export function FriendSheet({
   const [text, setText] = useState('')
   const [sent, setSent] = useState<string | null>(null)
   const st = statusLine(person, today)
+  // Eigene Zahl ist lokal frisch; bei Freunden nur, wenn sie von heute stammt.
+  const protein = (u: Person) => (u.user_id === me.user_id ? Math.round(u.protein_today ?? 0) : proteinToday(u, today))
 
   const rows: { label: string; get: (u: Person) => number; unit?: string }[] = [
     { label: 'Trainings diese Woche', get: (u) => effectiveSessions(u, today) },
@@ -40,14 +42,14 @@ export function FriendSheet({
     ...(showNutrition
       ? [
           { label: 'Protein-Tage (Woche)', get: (u: Person) => effectiveProteinDays(u, today) },
-          { label: 'Protein heute', get: (u: Person) => u.protein_today ?? 0, unit: ' g' },
+          { label: 'Protein heute', get: protein, unit: ' g' },
         ]
       : []),
   ]
 
   const presets = [
     ...PRESETS,
-    ...(showNutrition && !isMe ? [`😂 Nur ${person.protein_today ?? 0} g Protein heute? Schwach!`] : []),
+    ...(showNutrition && !isMe ? [`😂 Nur ${protein(person)} g Protein heute? Schwach!`] : []),
   ]
 
   function poke(t: string) {

@@ -4,6 +4,7 @@ import type { UserStat } from '../../hooks/useSocial'
 import { localDate } from '../../lib/day'
 import { mascotStage } from '../../lib/gamification'
 import { mascotEmoji } from '../../lib/cosmetics'
+import { parseGymStatus } from '../../lib/gymStatus'
 
 /** `UserStat` inkl. `updated_at`, das per `select *` mitkommt (nicht im Typ deklariert). */
 export type Person = UserStat & { updated_at?: string | null }
@@ -33,12 +34,31 @@ export function avatarEmoji(u: Pick<UserStat, 'total_sessions'>, isMe: boolean):
   return isMe ? mascotEmoji(u.total_sessions ?? 0) : mascotStage(u.total_sessions ?? 0).emoji
 }
 
-/** Plan heute gesetzt? (Zeile heute aktualisiert und Status nicht leer) */
+/** Wurde die Zeile heute (lokal) aktualisiert? */
+export function updatedToday(u: Person, today = localDate()): boolean {
+  return Boolean(u.updated_at) && localDate(new Date(u.updated_at!)) === today
+}
+
+/**
+ * Plan heute gesetzt? Neue Werte tragen ihr Datum im Text (`YYYY-MM-DD|…`);
+ * alte Werte ohne Datum gelten nur, wenn die Zeile heute aktualisiert wurde.
+ */
 export function planToday(u: Person, today = localDate()): string | null {
-  const s = u.gym_status?.trim()
-  if (!s) return null
-  if (u.updated_at && localDate(new Date(u.updated_at)) !== today) return null
-  return s
+  const { date, text } = parseGymStatus(u.gym_status)
+  if (!text) return null
+  if (date) return date === today ? text : null
+  if (u.updated_at && !updatedToday(u, today)) return null
+  return text
+}
+
+/** Protein heute eines Freundes — 0, wenn die geteilte Zahl nicht von heute ist. */
+export function proteinToday(u: Person, today = localDate()): number {
+  return updatedToday(u, today) ? Math.round(u.protein_today ?? 0) : 0
+}
+
+/** kcal heute eines Freundes — 0, wenn die geteilte Zahl nicht von heute ist. */
+export function kcalToday(u: Person, today = localDate()): number {
+  return updatedToday(u, today) ? Math.round(u.kcal_today ?? 0) : 0
 }
 
 export const NOT_TODAY = 'Heute nicht'

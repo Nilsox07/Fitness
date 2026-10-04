@@ -46,6 +46,7 @@ const micro = (x: { fiber?: number; sugar?: number; sat_fat?: number; salt?: num
   salt: x.salt ?? 0,
 })
 import {
+  useAddFoodEntries,
   useAddFoodEntry,
   useAllFoodEntries,
   useDeleteFoodEntry,
@@ -54,6 +55,7 @@ import {
   useNutritionSettings,
 } from '../hooks/useNutrition'
 import { scalePer100, sumEntries } from '../lib/nutrition'
+import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
 import {
   estimateFoodFromImage,
@@ -103,6 +105,18 @@ function todayLocal(): string {
   ).padStart(2, '0')}`
 }
 
+/** Fehlermeldung — wird im jeweils offenen Sheet gezeigt, damit sie nicht hinter dem Overlay verschwindet. */
+function ErrorLine({ error }: { error: string | null }) {
+  if (!error) return null
+  return <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+}
+
+/** Fehlertext für fehlgeschlagene Speichervorgänge. */
+function saveError(e: unknown, what = 'Speichern'): string {
+  const detail = e instanceof Error && e.message ? ` (${e.message})` : ''
+  return `${what} fehlgeschlagen${detail}. Bitte nochmal versuchen.`
+}
+
 function Bar({ value, target }: { value: number; target: number }) {
   const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0
   return (
@@ -119,9 +133,12 @@ export default function Nutrition() {
   const addRecipe = useAddRecipe()
   // Ausgewählter Tag (?date=YYYY-MM-DD) — so lassen sich vergangene Tage nachtragen/korrigieren.
   const [params, setParams] = useSearchParams()
+  const { isNew } = usePrefs()
   const realToday = todayLocal()
   const paramDate = params.get('date')
-  const today = paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate < realToday ? paramDate : realToday
+  // Vergangene Tage nur im neuen Modus (der klassische hat keine Tagesnavigation).
+  const today =
+    isNew && paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate < realToday ? paramDate : realToday
   const isToday = today === realToday
   const setDay = (d: string) => setParams(d >= realToday ? {} : { date: d }, { replace: true })
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null)
@@ -129,7 +146,7 @@ export default function Nutrition() {
   const { data: entries } = useFoodEntries(today)
   const { data: allEntries } = useAllFoodEntries()
   const { data: allSets } = useAllSets()
-  const trainedToday = (allSets ?? []).some((s) => s.date === today)
+  const trainedToday = trainedOn(today, allSets)
 
   // „Zuletzt gegessen": eindeutige letzte Lebensmittel für 1-Tap-Wiederholung
   const recent = useMemo(() => {
@@ -143,20 +160,26 @@ export default function Nutrition() {
   }, [allEntries])
 
   function quickAdd(e: FoodEntry) {
-    addEntry.mutate({
-      date: today,
-      name: e.name,
-      amount_g: e.amount_g,
-      kcal: e.kcal,
-      protein: e.protein,
-      carbs: e.carbs,
-      fat: e.fat,
-      ...micro(e),
-      barcode: e.barcode,
-      meal: e.meal ?? currentMeal(),
-    })
+    addEntry.mutate(
+      {
+        date: today,
+        name: e.name,
+        amount_g: e.amount_g,
+        kcal: e.kcal,
+        protein: e.protein,
+        carbs: e.carbs,
+        fat: e.fat,
+        ...micro(e),
+        barcode: e.barcode,
+        // wie alle anderen Wege: Mahlzeit nach aktueller Uhrzeit
+        meal: currentMeal(),
+      },
+      { onError: (err) => setError(saveError(err)) },
+    )
   }
   const addEntry = useAddFoodEntry()
+  const addEntries = useAddFoodEntries()
+  const saving = addEntry.isPending || addEntries.isPending
   const deleteEntry = useDeleteFoodEntry()
   const updateEntry = useUpdateFoodEntry()
 
@@ -195,10 +218,14 @@ export default function Nutrition() {
   })
 
   const [error, setError] = useState<string | null>(null)
+  /** Sheet wechseln und alte Fehlermeldung verwerfen. */
+  const go = (mode: typeof addMode) => {
+    setError(null)
+    setAddMode(mode)
+  }
 
   // KI-Erfassung (Foto/Text)
   const { data: ai } = useAiStatus()
-  const { isNew } = usePrefs()
   const aiOn = isNew && ai?.enabled
   const [aiResults, setAiResults] = useState<FoodEstimate[] | null>(null)
   const [aiBusy, setAiBusy] = useState(false)
@@ -255,7 +282,7 @@ export default function Nutrition() {
     setError(null)
     try {
       const res = await mealPlanForDay(
-        { kcal: settings?.kcal_target ?? 2000, protein: settings?.protein_target ?? 130 },
+        { kcal: settings?.kcal_target || 2000, protein: settings?.protein_target || 130 },
         planWish,
       )
       setPlanItems(res.items)
@@ -269,21 +296,28 @@ export default function Nutrition() {
   }
 
   async function logPlan(items: MealPlanItem[]) {
-    for (const it of items) {
-      await addEntry.mutateAsync({
-        date: today,
-        name: it.name,
-        amount_g: null,
-        kcal: it.kcal,
-        protein: it.protein,
-        carbs: it.carbs,
-        fat: it.fat,
-        ...micro(it),
-        barcode: null,
-        meal: it.meal,
-      })
+    if (saving) return
+    setError(null)
+    try {
+      // ein Insert für alle Einträge — keine halb geloggten Pläne
+      await addEntries.mutateAsync(
+        items.map((it) => ({
+          date: today,
+          name: it.name,
+          amount_g: null,
+          kcal: it.kcal,
+          protein: it.protein,
+          carbs: it.carbs,
+          fat: it.fat,
+          ...micro(it),
+          barcode: null,
+          meal: it.meal,
+        })),
+      )
+      setPlanItems(null)
+    } catch (e) {
+      setError(saveError(e, 'Loggen'))
     }
-    setPlanItems(null)
   }
 
   async function estimateOrder() {
@@ -361,56 +395,90 @@ export default function Nutrition() {
   }
 
   async function saveRecipe(r: Recipe, shared: boolean) {
-    await addRecipe.mutateAsync({
-      title: r.title,
-      servings: r.servings,
-      ingredients: r.ingredients,
-      steps: r.steps,
-      kcal: r.nutrition.kcal,
-      protein: r.nutrition.protein,
-      carbs: r.nutrition.carbs,
-      fat: r.nutrition.fat,
-      ...micro(r.nutrition),
-      shared,
-      author_name: user?.email?.split('@')[0] ?? null,
-    })
-    setRecipe(null)
-    setCraving('')
+    if (addRecipe.isPending) return
+    setError(null)
+    try {
+      await addRecipe.mutateAsync({
+        title: r.title,
+        servings: r.servings,
+        ingredients: r.ingredients,
+        steps: r.steps,
+        kcal: r.nutrition.kcal,
+        protein: r.nutrition.protein,
+        carbs: r.nutrition.carbs,
+        fat: r.nutrition.fat,
+        ...micro(r.nutrition),
+        shared,
+        author_name: user?.email?.split('@')[0] ?? null,
+      })
+      setRecipe(null)
+      setCraving('')
+    } catch (e) {
+      setError(saveError(e))
+    }
   }
 
   async function logRecipe(r: Recipe) {
-    await addEntry.mutateAsync({
-      date: today,
-      name: `🍳 ${r.title}`,
-      amount_g: null,
-      kcal: r.nutrition.kcal,
-      protein: r.nutrition.protein,
-      carbs: r.nutrition.carbs,
-      fat: r.nutrition.fat,
-      ...micro(r.nutrition),
-      barcode: null,
-      meal: currentMeal(),
-    })
-    setRecipe(null)
-    setCraving('')
-  }
-
-  async function addEstimates(items: FoodEstimate[]) {
-    for (const it of items) {
+    if (saving) return
+    setError(null)
+    try {
       await addEntry.mutateAsync({
         date: today,
-        name: it.name,
-        amount_g: it.amount_g,
-        kcal: it.kcal,
-        protein: it.protein,
-        carbs: it.carbs,
-        fat: it.fat,
-        ...micro(it),
+        name: `🍳 ${r.title}`,
+        amount_g: null,
+        kcal: r.nutrition.kcal,
+        protein: r.nutrition.protein,
+        carbs: r.nutrition.carbs,
+        fat: r.nutrition.fat,
+        ...micro(r.nutrition),
         barcode: null,
         meal: currentMeal(),
       })
+      setRecipe(null)
+      setCraving('')
+    } catch (e) {
+      setError(saveError(e, 'Loggen'))
     }
-    setAiResults(null)
+  }
+
+  const estimateToEntry = (it: FoodEstimate) => ({
+    date: today,
+    name: it.name,
+    amount_g: it.amount_g,
+    kcal: it.kcal,
+    protein: it.protein,
+    carbs: it.carbs,
+    fat: it.fat,
+    ...micro(it),
+    barcode: null,
+    meal: currentMeal(),
+  })
+
+  /** Alle Schätzungen in einem Insert übernehmen. */
+  async function addEstimates(items: FoodEstimate[]) {
+    if (saving) return
+    setError(null)
+    try {
+      await addEntries.mutateAsync(items.map(estimateToEntry))
+      setAiResults(null)
+    } catch (e) {
+      setError(saveError(e, 'Übernehmen'))
+    }
+  }
+
+  /** Eine Schätzung übernehmen — nur diese verschwindet aus der Liste. */
+  async function addEstimate(it: FoodEstimate) {
+    if (saving) return
+    setError(null)
+    try {
+      await addEntry.mutateAsync(estimateToEntry(it))
+      setAiResults((prev) => {
+        const rest = (prev ?? []).filter((x) => x !== it)
+        return rest.length ? rest : null
+      })
+    } catch (e) {
+      setError(saveError(e, 'Übernehmen'))
+    }
   }
 
   function openSetup() {
@@ -448,49 +516,68 @@ export default function Nutrition() {
   }
 
   async function confirmPending() {
-    if (!pending) return
+    if (!pending || saving) return
     const m = scalePer100(pending.per100, amount)
-    await addEntry.mutateAsync({
-      date: today,
-      name: pending.name,
-      amount_g: amount,
-      kcal: m.kcal,
-      protein: m.protein,
-      carbs: m.carbs,
-      fat: m.fat,
-      ...micro(m),
-      barcode: pending.barcode,
-      meal: currentMeal(),
-    })
-    setPending(null)
-    setAddMode(null)
-    setQuery('')
-    setResults([])
+    setError(null)
+    try {
+      await addEntry.mutateAsync({
+        date: today,
+        name: pending.name,
+        amount_g: amount,
+        kcal: m.kcal,
+        protein: m.protein,
+        carbs: m.carbs,
+        fat: m.fat,
+        ...micro(m),
+        barcode: pending.barcode,
+        meal: currentMeal(),
+      })
+      setPending(null)
+      setAddMode(null)
+      setQuery('')
+      setResults([])
+    } catch (e) {
+      setError(saveError(e))
+    }
   }
 
   async function addManual() {
-    if (!manual.name.trim()) return
-    await addEntry.mutateAsync({
-      date: today,
-      name: manual.name.trim(),
-      amount_g: manual.amount_g || null,
-      kcal: manual.kcal,
-      protein: manual.protein,
-      carbs: manual.carbs,
-      fat: manual.fat,
-      ...micro(manual),
-      barcode: null,
-      meal: currentMeal(),
-    })
-    setManual({ name: '', amount_g: 0, kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sat_fat: 0, salt: 0 })
-    setAddMode(null)
+    if (saving) return
+    if (!manual.name.trim()) {
+      setError('Bitte einen Namen eingeben.')
+      return
+    }
+    setError(null)
+    // leere/ungültige Felder als 0 speichern (DB: NOT NULL, ≥ 0)
+    const v = (x: number) => (Number.isFinite(x) && x > 0 ? x : 0)
+    try {
+      await addEntry.mutateAsync({
+        date: today,
+        name: manual.name.trim(),
+        amount_g: v(manual.amount_g) || null,
+        kcal: v(manual.kcal),
+        protein: v(manual.protein),
+        carbs: v(manual.carbs),
+        fat: v(manual.fat),
+        fiber: v(manual.fiber),
+        sugar: v(manual.sugar),
+        sat_fat: v(manual.sat_fat),
+        salt: v(manual.salt),
+        barcode: null,
+        meal: currentMeal(),
+      })
+      setManual({ name: '', amount_g: 0, kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sat_fat: 0, salt: 0 })
+      setAddMode(null)
+    } catch (e) {
+      setError(saveError(e))
+    }
   }
 
   const hasTarget = settings && settings.kcal_target > 0
-  // An Trainingstagen etwas mehr Energie (v. a. Kohlenhydrate) einplanen.
-  const TRAINING_BONUS = 250
-  const kcalTarget = hasTarget ? settings!.kcal_target + (trainedToday ? TRAINING_BONUS : 0) : 0
+  // Gleiches Tagesziel wie Tagesüberblick/Auswertung (Trainingstag +250 kcal).
+  const kcalTarget = kcalTargetFor(settings, trainedToday)
   const kcalLeft = hasTarget ? kcalTarget - totals.kcal : 0
+  const sheetOpen = addMode !== null || !!pending || !!aiResults || !!recipe || !!planItems
 
   return (
     <div className="space-y-4">
@@ -526,7 +613,8 @@ export default function Nutrition() {
 
       {isNew && isToday && <DailyOverview />}
 
-      {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
+      {/* Fehler ohne offenes Sheet (sonst zeigt das Sheet ihn selbst) */}
+      {!sheetOpen && <ErrorLine error={error} />}
 
       {/* Tagesübersicht */}
       <div className="card space-y-3">
@@ -585,7 +673,7 @@ export default function Nutrition() {
       </div>
 
       {/* Erfassen */}
-      <button className="btn-primary w-full gap-1.5" onClick={() => setAddMode('menu')}>
+      <button className="btn-primary w-full gap-1.5" onClick={() => go('menu')}>
         <Plus size={18} strokeWidth={2.5} />
         Lebensmittel hinzufügen
       </button>
@@ -639,7 +727,7 @@ export default function Nutrition() {
                     <button
                       className="ml-2 shrink-0 px-2 text-cocoa-muted transition-colors duration-200 hover:text-red-500 dark:hover:text-red-400"
                       aria-label="Eintrag löschen"
-                      onClick={() => deleteEntry.mutate(e)}
+                      onClick={() => deleteEntry.mutate(e, { onError: (err) => setError(saveError(err, 'Löschen')) })}
                     >
                       <X size={18} />
                     </button>
@@ -664,11 +752,14 @@ export default function Nutrition() {
           entry={editEntry}
           onClose={() => setEditEntry(null)}
           onSave={(patch) => {
-            updateEntry.mutate({ id: editEntry.id, ...patch })
+            updateEntry.mutate(
+              { id: editEntry.id, ...patch },
+              { onError: (err) => setError(saveError(err)) },
+            )
             setEditEntry(null)
           }}
           onDelete={() => {
-            deleteEntry.mutate(editEntry)
+            deleteEntry.mutate(editEntry, { onError: (err) => setError(saveError(err, 'Löschen')) })
             setEditEntry(null)
           }}
         />
@@ -676,7 +767,7 @@ export default function Nutrition() {
 
       {/* ----- Ziel-Setup ----- */}
       {setupOpen && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">Ziel & Körperdaten</h2>
             <GoalEditor onSaved={() => setSetupOpen(false)} onCancel={() => setSetupOpen(false)} />
@@ -686,28 +777,29 @@ export default function Nutrition() {
 
       {/* ----- Hinzufügen: Menü ----- */}
       {addMode === 'menu' && !pending && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card w-full max-w-md space-y-2">
             <h2 className="text-lg font-bold">Hinzufügen</h2>
+            <ErrorLine error={error} />
             {aiOn && (
               <>
-                <button className="btn-primary w-full gap-2" onClick={() => setAddMode('photo')}>
+                <button className="btn-primary w-full gap-2" onClick={() => go('photo')}>
                   <Camera size={18} />
                   Foto (KI)
                 </button>
-                <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('aitext')}>
+                <button className="btn-ghost w-full gap-2" onClick={() => go('aitext')}>
                   <MessageSquare size={18} className="text-cocoa-light" />
                   Text beschreiben (KI)
                 </button>
-                <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('recipe')}>
+                <button className="btn-ghost w-full gap-2" onClick={() => go('recipe')}>
                   <ChefHat size={18} className="text-cocoa-light" />
                   Rezept (Foto/Text, KI)
                 </button>
-                <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('plan')}>
+                <button className="btn-ghost w-full gap-2" onClick={() => go('plan')}>
                   <ClipboardList size={18} className="text-cocoa-light" />
                   Tagesplan für heute (KI)
                 </button>
-                <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('restaurant')}>
+                <button className="btn-ghost w-full gap-2" onClick={() => go('restaurant')}>
                   <Store size={18} className="text-cocoa-light" />
                   Restaurant / unterwegs (KI)
                 </button>
@@ -723,17 +815,17 @@ export default function Nutrition() {
               <ScanBarcode size={18} className={aiOn ? 'text-cocoa-light' : undefined} />
               Barcode scannen
             </button>
-            <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('search')}>
+            <button className="btn-ghost w-full gap-2" onClick={() => go('search')}>
               <Search size={18} className="text-cocoa-light" />
               In Datenbank suchen
             </button>
-            <button className="btn-ghost w-full gap-2" onClick={() => setAddMode('manual')}>
+            <button className="btn-ghost w-full gap-2" onClick={() => go('manual')}>
               <PenLine size={18} className="text-cocoa-light" />
               Manuell eingeben
             </button>
             <button
               className="w-full pt-1 text-center text-sm text-cocoa-light underline"
-              onClick={() => setAddMode(null)}
+              onClick={() => go(null)}
             >
               Abbrechen
             </button>
@@ -743,7 +835,7 @@ export default function Nutrition() {
 
       {/* ----- Suche ----- */}
       {addMode === 'search' && !pending && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">Suchen</h2>
             <div className="flex gap-2">
@@ -777,9 +869,10 @@ export default function Nutrition() {
                 </li>
               ))}
             </ul>
+            <ErrorLine error={error} />
             <button
               className="w-full text-center text-sm text-cocoa-light underline"
-              onClick={() => setAddMode('menu')}
+              onClick={() => go('menu')}
             >
               Zurück
             </button>
@@ -789,7 +882,7 @@ export default function Nutrition() {
 
       {/* ----- Mengen-Bestätigung (Barcode/Suche) ----- */}
       {pending && (
-        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card w-full max-w-md space-y-3">
             <h2 className="text-lg font-bold">{pending.name}</h2>
             <p className="tabular text-xs text-cocoa-light">
@@ -802,12 +895,19 @@ export default function Nutrition() {
               = <strong>{scalePer100(pending.per100, amount).kcal} kcal</strong>, Eiweiß{' '}
               {scalePer100(pending.per100, amount).protein} g
             </p>
+            <ErrorLine error={error} />
             <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => setPending(null)}>
+              <button
+                className="btn-ghost flex-1"
+                onClick={() => {
+                  setError(null)
+                  setPending(null)
+                }}
+              >
                 Abbrechen
               </button>
-              <button className="btn-primary flex-1" onClick={confirmPending} disabled={addEntry.isPending}>
-                Hinzufügen
+              <button className="btn-primary flex-1" onClick={confirmPending} disabled={saving}>
+                {addEntry.isPending ? 'Speichert…' : 'Hinzufügen'}
               </button>
             </div>
           </div>
@@ -816,7 +916,7 @@ export default function Nutrition() {
 
       {/* ----- Manuelle Eingabe ----- */}
       {addMode === 'manual' && !pending && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">Manuell eingeben</h2>
             <div>
@@ -855,12 +955,13 @@ export default function Nutrition() {
                 </div>
               ))}
             </div>
+            <ErrorLine error={error} />
             <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => setAddMode('menu')}>
+              <button className="btn-ghost flex-1" onClick={() => go('menu')}>
                 Zurück
               </button>
-              <button className="btn-primary flex-1" onClick={addManual} disabled={addEntry.isPending}>
-                Hinzufügen
+              <button className="btn-primary flex-1" onClick={addManual} disabled={saving}>
+                {addEntry.isPending ? 'Speichert…' : 'Hinzufügen'}
               </button>
             </div>
           </div>
@@ -869,7 +970,7 @@ export default function Nutrition() {
 
       {/* ----- KI: Restaurant / unterwegs ----- */}
       {addMode === 'restaurant' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card w-full max-w-md space-y-3">
             <h2 className="flex items-center gap-2 text-lg font-bold">
               <Store size={20} className="text-cocoa-light" />
@@ -926,7 +1027,7 @@ export default function Nutrition() {
               />
               <MicButton onResult={(t) => setRestItem((v) => (v ? v + ' ' + t : t))} />
             </div>
-            {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
+            <ErrorLine error={error} />
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button className="btn-primary" onClick={estimateOrder} disabled={aiBusy}>
                 {aiBusy ? '…' : 'Bestellung schätzen'}
@@ -938,7 +1039,7 @@ export default function Nutrition() {
             </div>
             <button
               className="w-full text-center text-sm text-cocoa-light underline"
-              onClick={() => setAddMode('menu')}
+              onClick={() => go('menu')}
             >
               Zurück
             </button>
@@ -948,7 +1049,7 @@ export default function Nutrition() {
 
       {/* ----- KI: Foto + optionale Notiz ----- */}
       {addMode === 'photo' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card w-full max-w-md space-y-3">
             <h2 className="flex items-center gap-2 text-lg font-bold">
               <Camera size={20} className="text-cocoa-light" />
@@ -978,9 +1079,10 @@ export default function Nutrition() {
                 onChange={(e) => handlePhoto(e.target.files?.[0])}
               />
             </label>
+            <ErrorLine error={error} />
             <button
               className="w-full text-center text-sm text-cocoa-light underline"
-              onClick={() => setAddMode('menu')}
+              onClick={() => go('menu')}
             >
               Zurück
             </button>
@@ -990,7 +1092,7 @@ export default function Nutrition() {
 
       {/* ----- KI: Text beschreiben ----- */}
       {addMode === 'aitext' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card w-full max-w-md space-y-3">
             <h2 className="flex items-center gap-2 text-lg font-bold">
               <MessageSquare size={20} className="text-cocoa-light" />
@@ -1010,8 +1112,9 @@ export default function Nutrition() {
               />
               <MicButton onResult={(t) => setAiText((v) => (v ? v + ' ' + t : t))} />
             </div>
+            <ErrorLine error={error} />
             <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => setAddMode('menu')}>
+              <button className="btn-ghost flex-1" onClick={() => go('menu')}>
                 Zurück
               </button>
               <button className="btn-primary flex-1" onClick={handleAiText} disabled={aiBusy}>
@@ -1024,7 +1127,7 @@ export default function Nutrition() {
 
       {/* ----- KI: Ergebnis prüfen & übernehmen ----- */}
       {aiResults && (
-        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">KI-Schätzung</h2>
             <p className="text-xs text-cocoa-light">
@@ -1045,8 +1148,9 @@ export default function Nutrition() {
                     </div>
                   </div>
                   <button
-                    className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white"
-                    onClick={() => addEstimates([it])}
+                    className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white disabled:opacity-40"
+                    onClick={() => addEstimate(it)}
+                    disabled={saving}
                     aria-label="Übernehmen"
                   >
                     <Plus size={16} strokeWidth={2.5} />
@@ -1054,16 +1158,24 @@ export default function Nutrition() {
                 </li>
               ))}
             </ul>
+            <ErrorLine error={error} />
             <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => setAiResults(null)}>
+              <button
+                className="btn-ghost flex-1"
+                onClick={() => {
+                  setError(null)
+                  setAiResults(null)
+                }}
+                disabled={saving}
+              >
                 Verwerfen
               </button>
               <button
                 className="btn-primary flex-1"
                 onClick={() => addEstimates(aiResults)}
-                disabled={addEntry.isPending}
+                disabled={saving}
               >
-                Alle übernehmen
+                {addEntries.isPending ? 'Speichert…' : 'Alle übernehmen'}
               </button>
             </div>
           </div>
@@ -1072,7 +1184,7 @@ export default function Nutrition() {
 
       {/* ----- KI: Kühlschrank-Rezept ----- */}
       {addMode === 'recipe' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card w-full max-w-md space-y-3">
             <h2 className="flex items-center gap-2 text-lg font-bold">
               <ChefHat size={20} className="text-cocoa-light" />
@@ -1099,6 +1211,7 @@ export default function Nutrition() {
                 onChange={(e) => handleFridge(e.target.files?.[0])}
               />
             </label>
+            <ErrorLine error={error} />
             <div className="flex items-center gap-2 text-xs text-cocoa-muted">
               <span className="h-px flex-1 bg-sand-dark" /> oder ohne Foto{' '}
               <span className="h-px flex-1 bg-sand-dark" />
@@ -1118,7 +1231,7 @@ export default function Nutrition() {
             </div>
             <button
               className="w-full text-center text-sm text-cocoa-light underline"
-              onClick={() => setAddMode('menu')}
+              onClick={() => go('menu')}
             >
               Zurück
             </button>
@@ -1128,7 +1241,7 @@ export default function Nutrition() {
 
       {/* ----- Rezept-Ergebnis ----- */}
       {recipe && (
-        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">{recipe.title}</h2>
             <p className="tabular text-xs text-cocoa-light">
@@ -1151,20 +1264,40 @@ export default function Nutrition() {
                 ))}
               </ol>
             </div>
+            <ErrorLine error={error} />
             <div className="grid grid-cols-2 gap-2 pt-1">
-              <button className="btn-ghost gap-1.5" onClick={() => saveRecipe(recipe, false)}>
+              <button
+                className="btn-ghost gap-1.5"
+                onClick={() => saveRecipe(recipe, false)}
+                disabled={addRecipe.isPending || saving}
+              >
                 <Save size={16} className="text-cocoa-light" />
                 Speichern
               </button>
-              <button className="btn-ghost gap-1.5" onClick={() => saveRecipe(recipe, true)}>
+              <button
+                className="btn-ghost gap-1.5"
+                onClick={() => saveRecipe(recipe, true)}
+                disabled={addRecipe.isPending || saving}
+              >
                 <Share2 size={16} className="text-cocoa-light" />
                 Speichern & teilen
               </button>
-              <button className="btn-ghost" onClick={() => setRecipe(null)}>
+              <button
+                className="btn-ghost"
+                onClick={() => {
+                  setError(null)
+                  setRecipe(null)
+                }}
+                disabled={addRecipe.isPending || saving}
+              >
                 Schließen
               </button>
-              <button className="btn-primary" onClick={() => logRecipe(recipe)}>
-                Loggen
+              <button
+                className="btn-primary"
+                onClick={() => logRecipe(recipe)}
+                disabled={addRecipe.isPending || saving}
+              >
+                {addEntry.isPending ? 'Speichert…' : 'Loggen'}
               </button>
             </div>
           </div>
@@ -1173,14 +1306,14 @@ export default function Nutrition() {
 
       {/* ----- KI: Essensplan Eingabe ----- */}
       {addMode === 'plan' && (
-        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card w-full max-w-md space-y-3">
             <h2 className="flex items-center gap-2 text-lg font-bold">
               <ClipboardList size={20} className="text-cocoa-light" />
               Tagesplan für heute
             </h2>
             <p className="tabular text-xs text-cocoa-light">
-              Ziel: ~{settings?.kcal_target ?? 2000} kcal · {settings?.protein_target ?? 130} g Eiweiß.
+              Ziel: ~{settings?.kcal_target || 2000} kcal · {settings?.protein_target || 130} g Eiweiß.
               Wünsche?
             </p>
             <div className="flex gap-2">
@@ -1193,8 +1326,9 @@ export default function Nutrition() {
               />
               <MicButton onResult={(t) => setPlanWish((v) => (v ? v + ' ' + t : t))} />
             </div>
+            <ErrorLine error={error} />
             <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => setAddMode('menu')}>
+              <button className="btn-ghost flex-1" onClick={() => go('menu')}>
                 Zurück
               </button>
               <button className="btn-primary flex-1" onClick={genPlan} disabled={aiBusy}>
@@ -1207,7 +1341,7 @@ export default function Nutrition() {
 
       {/* ----- Essensplan Ergebnis ----- */}
       {planItems && (
-        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
+        <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
             <h2 className="text-lg font-bold">Essensplan</h2>
             {planNote && <p className="text-xs text-cocoa-light">{planNote}</p>}
@@ -1225,16 +1359,24 @@ export default function Nutrition() {
               Summe: {planItems.reduce((s, i) => s + i.kcal, 0)} kcal ·{' '}
               {planItems.reduce((s, i) => s + i.protein, 0)} g Eiweiß
             </div>
+            <ErrorLine error={error} />
             <div className="flex gap-2 pt-1">
-              <button className="btn-ghost flex-1" onClick={() => setPlanItems(null)}>
+              <button
+                className="btn-ghost flex-1"
+                onClick={() => {
+                  setError(null)
+                  setPlanItems(null)
+                }}
+                disabled={saving}
+              >
                 Verwerfen
               </button>
               <button
                 className="btn-primary flex-1"
                 onClick={() => logPlan(planItems)}
-                disabled={addEntry.isPending}
+                disabled={saving}
               >
-                Alle loggen
+                {addEntries.isPending ? 'Speichert…' : 'Alle loggen'}
               </button>
             </div>
           </div>

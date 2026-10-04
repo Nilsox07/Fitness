@@ -1,6 +1,11 @@
 // Streak mit „Freeze" (Duolingo-Style) + perfekte Wochen.
 
 import { isoWeekKey } from './analytics'
+import { localDate } from './day'
+
+// Hinweis: `dates` sollen nur Tage mit tatsächlich ausgeführten Sätzen sein
+// (siehe sessionDates in analytics) — leere Vorlagen-Sätze zählen nicht.
+// Wochenschlüssel werden aus dem LOKALEN Datum gebildet (nicht UTC).
 
 const PERFECT_MIN = 4 // Trainings/Woche für eine „perfekte Woche"
 
@@ -26,10 +31,10 @@ export function weekStreakWithFreezes(
   let streak = 0
   const cursor = new Date(today)
   for (;;) {
-    const key = isoWeekKey(cursor.toISOString().slice(0, 10))
+    const key = isoWeekKey(localDate(cursor))
     if (weeks.has(key) || fset.has(key)) {
       streak++
-      cursor.setUTCDate(cursor.getUTCDate() - 7)
+      cursor.setDate(cursor.getDate() - 7)
     } else break
   }
   return streak
@@ -43,7 +48,7 @@ export function perfectWeeksCount(dates: string[]): number {
 
 /** Abgeschlossene (nicht aktuelle) perfekte Wochen, aufsteigend sortiert. */
 export function completedPerfectWeeks(dates: string[], today = new Date()): string[] {
-  const current = isoWeekKey(today.toISOString().slice(0, 10))
+  const current = isoWeekKey(localDate(today))
   return [...daysPerWeek(dates).entries()]
     .filter(([w, c]) => c >= PERFECT_MIN && w !== current)
     .map(([w]) => w)
@@ -51,10 +56,10 @@ export function completedPerfectWeeks(dates: string[], today = new Date()): stri
 }
 
 export function trainedThisWeek(dates: string[], today = new Date()): boolean {
-  const current = isoWeekKey(today.toISOString().slice(0, 10))
+  const current = isoWeekKey(localDate(today))
   return dates.some((d) => isoWeekKey(d) === current)
 }
 
 export function currentWeekKey(today = new Date()): string {
-  return isoWeekKey(today.toISOString().slice(0, 10))
+  return isoWeekKey(localDate(today))
 }

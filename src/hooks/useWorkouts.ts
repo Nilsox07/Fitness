@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { MK, type SetInput, type SetPatch } from '../lib/mutationDefaults'
+import { MK, withId, type SetInput, type SetPatch, type WorkoutInput } from '../lib/mutationDefaults'
 import type { SetWithDate, Workout, WorkoutSet } from '../types'
 
-export type { SetInput } from '../lib/mutationDefaults'
+export type { SetInput, WorkoutInput } from '../lib/mutationDefaults'
+export { newId } from '../lib/mutationDefaults'
 
 export function useWorkouts() {
   return useQuery({
@@ -58,19 +59,37 @@ export function useAllSets() {
 // wiederaufnehmbaren Defaults (siehe lib/mutationDefaults). Die Hooks sind
 // deshalb nur dünne Wrapper über den jeweiligen mutationKey — so überleben
 // offline gepufferte Sätze auch einen App-Neustart.
+//
+// Neue Trainings/Sätze bekommen ihre ID schon hier (im Client), damit sie in den
+// persistierten Variablen steht: die UI kennt die Zeile sofort, und auch eine
+// nach Reload fortgesetzte Mutation schreibt genau diese ID.
 export function useCreateWorkout() {
-  return useMutation<Workout, Error, { date: string; name?: string | null }>({
-    mutationKey: MK.workoutCreate,
-  })
+  const m = useMutation<Workout, Error, WorkoutInput>({ mutationKey: MK.workoutCreate })
+  return {
+    ...m,
+    mutate: (v: WorkoutInput, o?: Parameters<typeof m.mutate>[1]) => m.mutate(withId(v), o),
+    mutateAsync: (v: WorkoutInput, o?: Parameters<typeof m.mutateAsync>[1]) => m.mutateAsync(withId(v), o),
+  }
 }
 
 export function useAddSet() {
-  return useMutation<WorkoutSet, Error, SetInput>({ mutationKey: MK.setAdd })
+  const m = useMutation<WorkoutSet, Error, SetInput>({ mutationKey: MK.setAdd })
+  return {
+    ...m,
+    mutate: (v: SetInput, o?: Parameters<typeof m.mutate>[1]) => m.mutate(withId(v), o),
+    mutateAsync: (v: SetInput, o?: Parameters<typeof m.mutateAsync>[1]) => m.mutateAsync(withId(v), o),
+  }
 }
 
 /** Mehrere Sätze auf einmal anlegen (z. B. die Satz-Vorlage). */
 export function useAddSets() {
-  return useMutation<WorkoutSet[], Error, SetInput[]>({ mutationKey: MK.setAddMany })
+  const m = useMutation<WorkoutSet[], Error, SetInput[]>({ mutationKey: MK.setAddMany })
+  return {
+    ...m,
+    mutate: (v: SetInput[], o?: Parameters<typeof m.mutate>[1]) => m.mutate(v.map(withId), o),
+    mutateAsync: (v: SetInput[], o?: Parameters<typeof m.mutateAsync>[1]) =>
+      m.mutateAsync(v.map(withId), o),
+  }
 }
 
 export function useUpdateSet() {

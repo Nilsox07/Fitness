@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cumulativeXp, dailyQuests, levelInfo } from './xp'
+import { computeXp, cumulativeXp, dailyQuests, levelInfo, weeklyQuests } from './xp'
 import type { SetType, SetWithDate } from '../types'
 
 let c = 0
@@ -43,5 +43,15 @@ describe('dailyQuests', () => {
     expect(q.find((x) => x.id === 'train')!.done).toBe(true)
     expect(q.find((x) => x.id === 'ex3')!.done).toBe(true)
     expect(q.find((x) => x.id === 'sets10')!.done).toBe(false)
+  })
+})
+
+describe('leere Vorlagen-Sätze (0 Wdh)', () => {
+  it('bringen kein XP und erfüllen keine Quest', () => {
+    const today = '2026-09-16'
+    const empty = { ...s(today, 'a'), reps: 0 }
+    expect(computeXp([empty])).toBe(0)
+    expect(dailyQuests([empty], today).find((x) => x.id === 'train')!.done).toBe(false)
+    expect(weeklyQuests([empty], today).find((x) => x.id === 'w3')!.progress).toBe(0)
   })
 })

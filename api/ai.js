@@ -142,6 +142,28 @@ async function callGroq({ system, prompt, json, temperature }) {
   return text
 }
 
+/**
+ * Nur angemeldete Nutzer dürfen die KI nutzen (sonst könnte jeder das Kontingent verbrauchen).
+ * Prüft das Supabase-Access-Token. Fehlt die Supabase-Konfiguration auf dem Server,
+ * wird nicht blockiert (damit die App nicht komplett ausfällt).
+ */
+async function isAuthorized(req) {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const anon = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+  if (!url || !anon) return true
+  const auth = req.headers.authorization || ''
+  if (!auth.startsWith('Bearer ')) return false
+  try {
+    const r = await fetch(`${url.replace(/\/$/, '')}/auth/v1/user`, {
+      headers: { apikey: anon, authorization: auth },
+    })
+    return r.ok
+  } catch {
+    // Supabase nicht erreichbar → nicht an der KI scheitern lassen
+    return true
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     res.status(200).json({ enabled: Boolean(activeKey()), provider: PROVIDER, model: activeModel() })
@@ -151,6 +173,11 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
+  if (!(await isAuthorized(req))) {
+    res.status(401).json({ error: 'Bitte neu anmelden, um die KI zu nutzen.' })
+    return
+  }
+
   if (!activeKey()) {
     res.status(503).json({ error: 'KI nicht konfiguriert (API-Key fehlt).' })
     return

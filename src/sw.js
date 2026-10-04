@@ -23,23 +23,36 @@ self.addEventListener('push', (event) => {
   }
   const title = data.title || 'Fitness Tracker'
   const body = data.body || 'Zeit fürs nächste Training! 💪'
+  // Eigener Tag je Art, damit ein Cheat-Meal-Alarm nicht die Trainings-
+  // Erinnerung ersetzt (und umgekehrt). Der Server schickt aktuell nur
+  // {title, body}; Cheat-Pushes erkennt man am Titel („… hat gesündigt").
+  const isCheat = data.kind === 'cheat' || /gesündigt/i.test(title)
+  const tag = data.tag || (isCheat ? 'fitness-cheat' : 'fitness-reminder')
+  const url = typeof data.url === 'string' && data.url.startsWith('/') ? data.url : isCheat ? '/feed' : '/'
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon: '/icon.svg',
       badge: '/icon.svg',
-      tag: 'fitness-reminder',
+      tag,
+      data: { url },
     }),
   )
 })
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
+  const data = event.notification.data || {}
+  const url = typeof data.url === 'string' && data.url.startsWith('/') ? data.url : '/'
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       const client = clients.find((c) => 'focus' in c)
-      if (client) return client.focus()
-      return self.clients.openWindow('/')
+      if (client) {
+        // Zur Ziel-Seite wechseln (gleiche Origin), dann fokussieren.
+        const nav = url !== '/' && 'navigate' in client ? client.navigate(url).catch(() => client) : null
+        return Promise.resolve(nav).then((c) => (c || client).focus())
+      }
+      return self.clients.openWindow(url)
     }),
   )
 })
