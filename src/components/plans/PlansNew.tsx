@@ -15,6 +15,7 @@ import { MyBuddy } from '../buddy/MyBuddy'
 import { AiPlanGeneratorBody } from './AiPlanGenerator'
 import { PlanCard } from './PlanCard'
 import { PlanEditor } from './PlanEditor'
+import { QuickWorkoutCard } from '../quick/QuickWorkoutCard'
 
 /** Pläne im Routine-Stil (Neu-Modus): Liste mit Play-Knopf, Editor per ?edit=<id>. */
 export default function PlansNew() {
@@ -151,6 +152,8 @@ export default function PlansNew() {
           <div className="h-28 animate-pulse rounded-3xl bg-sand" />
         </div>
       )}
+
+      {!isLoading && <QuickWorkoutCard title="Schnell-Workout · keine Zeit?" style={enter(idx++)} />}
 
       {hasPlans && (
         <ul className="space-y-3">

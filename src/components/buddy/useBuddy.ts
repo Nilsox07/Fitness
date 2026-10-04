@@ -47,7 +47,19 @@ export function useBuddyLook(): { stage: number; skin: string } {
 }
 
 /** Stimmung + Spruch des eigenen Buddys aus den echten Daten. */
-export function useBuddy(opts: { activeWorkout?: boolean } = {}): BuddyState & { stage: number; skin: string } {
+export interface BuddyInfo extends BuddyState {
+  stage: number
+  skin: string
+  /** Trainings gesamt */
+  sessions: number
+  /** Trainings in dieser Woche */
+  weeklySessions: number
+  weeklyGoal: number
+  /** Noch offenes Eiweiß heute in g (0, wenn kein Ziel / Ernährung aus) */
+  proteinLeft: number
+}
+
+export function useBuddy(opts: { activeWorkout?: boolean } = {}): BuddyInfo {
   const { data: allSets } = useAllSets()
   const { data: exercises } = useExercises()
   const { data: streakState } = useStreakState()
@@ -103,7 +115,16 @@ export function useBuddy(opts: { activeWorkout?: boolean } = {}): BuddyState & {
     date: today,
   })
 
-  return { ...state, stage: mascotStageIndex(facts.sessions), skin }
+  const proteinTarget = settings?.protein_target ?? 0
+  return {
+    ...state,
+    stage: mascotStageIndex(facts.sessions),
+    skin,
+    sessions: facts.sessions,
+    weeklySessions: facts.weekly,
+    weeklyGoal,
+    proteinLeft: showNutrition && proteinTarget > 0 ? Math.max(0, Math.round(proteinTarget - protein)) : 0,
+  }
 }
 
 /**

@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { usePrefs, type World } from "../lib/prefs";
-import { useAiStatus } from "../hooks/useAi";
-import { Sparkles } from "lucide-react";
+import { BuddyFace } from "./buddy/BuddyFace";
+import { openBuddySheet } from "./buddy/BuddySheet";
+import { useBuddy } from "./buddy/useBuddy";
 
 function IconDumbbell({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -56,7 +57,7 @@ const HOME: Record<World, string> = { fitness: "/", food: "/nutrition" };
 
 export function TopBar() {
   const { world, setWorld, showNutrition } = usePrefs();
-  const { data: ai } = useAiStatus();
+  const buddy = useBuddy();
   const navigate = useNavigate();
 
   function switchTo(w: World) {
@@ -112,16 +113,16 @@ export function TopBar() {
             </button>
           </div>
         )}
-        {ai?.enabled && (
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new Event("open-assistant"))}
-            aria-label="KI-Assistent"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-brand"
-          >
-            <Sparkles size={18} />
-          </button>
-        )}
+        {/* Buddy-Gesicht: öffnet das Buddy-Sheet (Stimmung, Tipps, Chat) */}
+        <button
+          type="button"
+          onClick={openBuddySheet}
+          aria-label="Buddy öffnen"
+          title={buddy.line}
+          className="relative shrink-0 rounded-full bg-brand/15 ring-2 ring-brand/30 transition active:scale-90"
+        >
+          <BuddyFace size={36} mood={buddy.mood} stage={buddy.stage} skin={buddy.skin} />
+        </button>
         <button
           type="button"
           onClick={() => navigate("/profile")}

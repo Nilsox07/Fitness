@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Settings2, Timer, X } from 'lucide-react'
-import { Sheet } from './Sheet'
+import { PremiumSheet } from '../ui/PremiumSheet'
 import {
   getExerciseRest,
   getRestMode,
@@ -134,7 +134,7 @@ export function RestControl({
   if (timer.left != null) {
     const pct = Math.max(0, Math.min(100, (timer.left / Math.max(1, timer.running)) * 100))
     return (
-      <div className="anim-fade relative flex flex-1 items-center gap-1.5 overflow-hidden rounded-xl bg-sand px-2.5 py-1.5 text-cocoa">
+      <div className="anim-fade relative flex flex-1 items-center gap-1.5 overflow-hidden rounded-2xl bg-sand px-2.5 py-1.5 text-cocoa">
         {/* Restzeit als dezent schrumpfender Balken */}
         <div
           className="absolute inset-y-0 left-0 bg-brand/15 transition-[width] duration-300 ease-linear"
@@ -169,7 +169,7 @@ export function RestControl({
 
   return (
     <>
-      <div className="flex shrink-0 items-stretch overflow-hidden rounded-xl bg-sand">
+      <div className="flex shrink-0 items-stretch overflow-hidden rounded-2xl bg-sand">
         <button
           className="tabular flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-cocoa"
           onClick={() => timer.start(base)}
@@ -188,16 +188,25 @@ export function RestControl({
       </div>
 
       {settings && (
-        <Sheet title="Pausentimer" onClose={() => setSettings(false)}>
+        <PremiumSheet
+          title="Pausentimer"
+          subtitle="Pause zwischen den Sätzen"
+          leading={
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10 text-brand">
+              <Timer size={18} />
+            </span>
+          }
+          onClose={() => setSettings(false)}
+        >
           <div>
-            <div className="label">Dauer</div>
+            <div className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">Dauer</div>
             <div className="grid grid-cols-4 gap-2">
               {PRESETS.map((p) => (
                 <button
                   key={p}
                   onClick={() => timer.setTotal(p)}
-                  className={`btn py-2 text-sm ${
-                    timer.total === p ? 'bg-brand text-on-brand' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+                  className={`btn rounded-2xl py-2.5 text-sm ${
+                    timer.total === p ? 'bg-brand text-on-brand' : 'bg-cream text-cocoa'
                   }`}
                 >
                   {mmss(p)}
@@ -207,7 +216,7 @@ export function RestControl({
           </div>
           {exercise && (
             <div>
-              <div className="label">Nur für {exercise.name}</div>
+              <div className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">Nur für {exercise.name}</div>
               <div className="grid grid-cols-4 gap-2">
                 {[null, 90, 120, 180].map((p) => (
                   <button
@@ -216,43 +225,43 @@ export function RestControl({
                       setExerciseRest(exercise.id, p)
                       setExRestState(p)
                     }}
-                    className={`btn py-2 text-sm ${
-                      exRest === p ? 'bg-brand text-on-brand' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+                    className={`btn rounded-2xl py-2.5 text-sm ${
+                      exRest === p ? 'bg-brand text-on-brand' : 'bg-cream text-cocoa'
                     }`}
                   >
                     {p == null ? 'Standard' : mmss(p)}
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-cocoa-light">
+              <p className="mt-2 px-1 text-xs leading-relaxed text-cocoa-light">
                 Schwere Grundübungen (Kniebeuge, Bankdrücken, Kreuzheben) brauchen 2–3 Min, Isolationsübungen
                 (Curls, Seitheben) meist 60–90 s.
               </p>
             </div>
           )}
           <div>
-            <div className="label">Automatisch starten</div>
+            <div className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">Automatisch starten</div>
             <div className="grid grid-cols-2 gap-2">
               {(['auto', 'off'] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => timer.setMode(m)}
-                  className={`btn py-2 text-sm ${
-                    timer.mode === m ? 'bg-brand text-on-brand' : 'bg-sand-light text-cocoa ring-1 ring-sand-dark'
+                  className={`btn rounded-2xl py-2.5 text-sm ${
+                    timer.mode === m ? 'bg-brand text-on-brand' : 'bg-cream text-cocoa'
                   }`}
                 >
                   {m === 'auto' ? 'Nach Satz' : 'Nur manuell'}
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-cocoa-light">
+            <p className="mt-2 px-1 text-xs leading-relaxed text-cocoa-light">
               „Nach Satz" startet beim Abhaken ✓. Bei <strong>Supersätzen</strong> erst, wenn die
               Runde aus beiden Übungen erledigt ist — dazwischen springt die App direkt zur
               Partner-Übung. Vor einem <strong>Dropsatz</strong> gibt es keine Pause, nach dem{' '}
               <strong>Aufwärmen</strong> nur eine kurze (45–90 s).
             </p>
           </div>
-        </Sheet>
+        </PremiumSheet>
       )}
     </>
   )

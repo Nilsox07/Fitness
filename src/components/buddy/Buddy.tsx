@@ -9,6 +9,9 @@ export type { BuddyMood }
 /** Ab wie vielen Trainings welche Wachstumsstufe erreicht ist (wie mascotStageIndex). */
 export const BUDDY_STAGE_SESSIONS = [0, 10, 30, 60, 120, 250]
 
+/** Namen der Wachstumsstufen (wie in der Sammlung). */
+export const BUDDY_STAGE_LABELS = ['Ei', 'Küken', 'im Aufbau', 'Kraftpaket', 'Athlet', 'Champion']
+
 export interface BuddyProps {
   size?: number
   mood?: BuddyMood

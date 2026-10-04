@@ -59,7 +59,7 @@ function MiniStepper({
   }
 
   return (
-    <div className="flex min-w-0 items-stretch overflow-hidden rounded-lg bg-sand">
+    <div className="flex min-w-0 items-stretch overflow-hidden rounded-xl bg-sand">
       <button
         type="button"
         className="grid w-6 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
@@ -71,7 +71,7 @@ function MiniStepper({
       <input
         type="text"
         inputMode={Number.isInteger(step) ? 'numeric' : 'decimal'}
-        className={`tabular w-full min-w-0 bg-transparent px-0 py-1.5 text-center font-semibold outline-none focus:bg-sand-light focus:ring-2 focus:ring-inset focus:ring-brand ${
+        className={`tabular w-full min-w-0 bg-transparent px-0 py-2 text-center font-semibold outline-none focus:bg-sand-light focus:ring-2 focus:ring-inset focus:ring-brand ${
           text.length >= 5 ? 'text-sm tracking-tight' : 'text-[15px]'
         } ${dim ? 'text-cocoa-muted' : 'text-cocoa'}`}
         value={text}
@@ -165,12 +165,12 @@ export function CompactSetRow({
   }
 
   return (
-    <div className={`rounded-xl p-1 transition-colors duration-200 ${done ? 'bg-success/10' : ''}`}>
+    <div className={`rounded-2xl p-1 transition-colors duration-200 ${done ? 'bg-success/10' : ''}`}>
       <div className={GRID}>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className={`relative h-8 rounded-lg text-sm font-bold tabular ${
+          className={`relative h-9 rounded-xl text-sm font-bold tabular ${
             s.set_type === 'working' ? 'text-cocoa' : 'text-cocoa-light'
           } ${open ? 'bg-sand-dark' : 'bg-sand'}`}
           aria-label="Satz-Optionen"
@@ -201,8 +201,8 @@ export function CompactSetRow({
           type="button"
           onClick={complete}
           aria-label={done ? 'Satz erledigt' : 'Satz abhaken'}
-          className={`grid h-8 w-9 place-items-center rounded-lg transition active:scale-90 ${
-            done ? 'anim-check bg-success text-white' : 'bg-sand text-cocoa-muted'
+          className={`grid h-9 w-9 place-items-center rounded-xl transition active:scale-90 ${
+            done ? 'anim-check bg-success text-white shadow-sm shadow-success/30' : 'bg-sand text-cocoa-muted'
           }`}
         >
           <Check size={18} strokeWidth={3} />
