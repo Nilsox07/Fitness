@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, type ChangeEvent, type ReactNode } from 'react'
 import {
   ChevronRight,
   FolderOpen,
@@ -152,12 +152,20 @@ export function MealEditSheet({
   onClose: () => void
 }) {
   const [draft, setDraft] = useState(meal)
-  const num = (k: 'kcal' | 'protein' | 'carbs' | 'fat') => ({
-    value: Number.isFinite(draft[k]) ? String(draft[k]) : '',
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-      const v = Number(e.target.value.replace(',', '.'))
-      setDraft((d) => ({ ...d, [k]: Number.isFinite(v) && v > 0 ? Math.round(v) : 0 }))
-    },
+  type NumKey = 'kcal' | 'protein' | 'carbs' | 'fat'
+  const [nums, setNums] = useState<Record<NumKey, string>>({
+    kcal: String(meal.kcal),
+    protein: String(meal.protein),
+    carbs: String(meal.carbs),
+    fat: String(meal.fat),
+  })
+  const toNum = (s: string) => {
+    const v = Number(s.replace(',', '.'))
+    return Number.isFinite(v) && v > 0 ? Math.round(v) : 0
+  }
+  const num = (k: NumKey) => ({
+    value: nums[k],
+    onChange: (e: ChangeEvent<HTMLInputElement>) => setNums((n) => ({ ...n, [k]: e.target.value })),
   })
   return (
     <Sheet title="Mahlzeit bearbeiten" onClose={onClose}>
@@ -200,7 +208,7 @@ export function MealEditSheet({
         ).map(([k, l]) => (
           <label key={k} className="block min-w-0">
             <span className="label truncate">{l}</span>
-            <input className="input tabular px-2 text-center" inputMode="numeric" {...num(k)} />
+            <input className="input tabular px-2 text-center" inputMode="decimal" {...num(k)} />
           </label>
         ))}
       </div>
@@ -212,7 +220,16 @@ export function MealEditSheet({
         <button
           className="btn-primary flex-1 gap-1.5"
           disabled={!draft.name.trim()}
-          onClick={() => onSave({ ...draft, name: draft.name.trim() })}
+          onClick={() =>
+            onSave({
+              ...draft,
+              name: draft.name.trim(),
+              kcal: toNum(nums.kcal),
+              protein: toNum(nums.protein),
+              carbs: toNum(nums.carbs),
+              fat: toNum(nums.fat),
+            })
+          }
         >
           Übernehmen
         </button>
