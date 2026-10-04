@@ -719,6 +719,8 @@ export default function Workout() {
   const [pendingPlanId, setPendingPlanId] = useState('')
   const [dropOpenSets, setDropOpenSets] = useState(true)
   const [tipOpen, setTipOpen] = useState(false)
+  // „Freies Training“ gewählt, aber noch keine Übung: dann Trainingsansicht statt Startseite
+  const [freeStarted, setFreeStarted] = useState(false)
   // Übungsbibliothek (nur Neu-Modus): „Ausführung" der aktiven Übung + Bibliothek im Picker
   const [libOpen, setLibOpen] = useState(false)
   const [howToOpen, setHowToOpen] = useState(false)
@@ -975,8 +977,16 @@ export default function Workout() {
       month: 'long',
     })
 
-    // ---- Heute noch kein Training: Start-Screen ----
-    if (!todaysWorkout) {
+    // ---- Heute noch kein Training (oder ein leeres, noch nicht begonnenes): Start-Screen ----
+    const emptyToday =
+      !!todaysWorkout &&
+      workoutSets !== undefined &&
+      workoutSets.length === 0 &&
+      !selectedExercise &&
+      !freeStarted &&
+      !pendingPlanId &&
+      sheet === null
+    if (!todaysWorkout || emptyToday) {
       return (
         <HomeStart
           today={today}
@@ -984,11 +994,21 @@ export default function Workout() {
           error={saveError}
           onStartPlan={(p) =>
             guarded(() => {
-              setPendingPlanId(p.id)
-              startWorkout()
+              if (todaysWorkout) {
+                loadPlanOrdered(p)
+              } else {
+                setPendingPlanId(p.id)
+                startWorkout()
+              }
             })
           }
-          onStartFree={() => guarded(startWorkout)}
+          onStartFree={() =>
+            guarded(() => {
+              setFreeStarted(true)
+              if (todaysWorkout) setSheet('picker')
+              else startWorkout()
+            })
+          }
         />
       )
     }
