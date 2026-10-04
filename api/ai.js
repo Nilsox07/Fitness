@@ -44,7 +44,7 @@ function imagePart(image) {
   return { inlineData: { mimeType, data } }
 }
 
-async function geminiOnce({ model, key, body }) {
+async function geminiOnce({ model, key, body, json }) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
   const res = await fetch(url, {
     method: 'POST',
@@ -57,7 +57,28 @@ async function geminiOnce({ model, key, body }) {
     throw err
   }
   const data = await res.json()
-  return data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? ''
+  const cand = data?.candidates?.[0]
+  const text = cand?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
+  const reason = cand?.finishReason
+  // Abgeschnittene/blockierte Antworten klar melden statt halbes JSON an die App zu geben.
+  if (reason === 'MAX_TOKENS' && (json || !text.trim())) {
+    throw userError('Die KI-Antwort war zu lang und wurde abgeschnitten — bitte nochmal versuchen oder weniger Tage wählen.')
+  }
+  if (reason === 'SAFETY' || reason === 'PROHIBITED_CONTENT' || reason === 'BLOCKLIST' || data?.promptFeedback?.blockReason) {
+    throw userError('Die KI hat die Anfrage aus Sicherheitsgründen abgelehnt. Bitte anders formulieren.')
+  }
+  if (!text.trim()) {
+    throw userError('Die KI hat keine Antwort geliefert — bitte nochmal versuchen.')
+  }
+  return text
+}
+
+/** Fehler mit fertiger, nutzerfreundlicher Meldung (kein erneuter Versuch). */
+function userError(message) {
+  const err = new Error(message)
+  err.status = 422
+  err.userMessage = message
+  return err
 }
 
 async function callGemini({ system, prompt, json, temperature, image, maxTokens }) {
@@ -80,11 +101,11 @@ async function callGemini({ system, prompt, json, temperature, image, maxTokens 
   for (const model of GEMINI_MODELS) {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        return await geminiOnce({ model, key, body })
+        return await geminiOnce({ model, key, body, json })
       } catch (e) {
         lastErr = e
         const s = e.status
-        if (s === 400 || s === 401 || s === 403) throw e // echter Fehler (Key/Anfrage) -> sofort melden
+        if (s === 400 || s === 401 || s === 403 || e.userMessage) throw e // echter Fehler (Key/Anfrage/Antwort) -> sofort melden
         if (s === 404) break // Modell gibt es nicht -> naechstes Modell probieren
         if (!TRANSIENT.has(s)) throw e
         if (attempt < 2) await sleep(500 * (attempt + 1)) // 0,5s / 1,0s
@@ -112,7 +133,13 @@ async function callGroq({ system, prompt, json, temperature }) {
   })
   if (!res.ok) throw new Error(`Groq ${res.status}: ${await res.text()}`)
   const data = await res.json()
-  return data?.choices?.[0]?.message?.content ?? ''
+  const choice = data?.choices?.[0]
+  const text = choice?.message?.content ?? ''
+  if (choice?.finish_reason === 'length' && (json || !text.trim())) {
+    throw userError('Die KI-Antwort war zu lang und wurde abgeschnitten — bitte nochmal versuchen.')
+  }
+  if (!text.trim()) throw userError('Die KI hat keine Antwort geliefert — bitte nochmal versuchen.')
+  return text
 }
 
 export default async function handler(req, res) {
@@ -145,6 +172,10 @@ export default async function handler(req, res) {
         : await callGemini({ system, prompt, json, temperature, image, maxTokens })
     res.status(200).json({ text })
   } catch (err) {
+    if (err?.userMessage) {
+      res.status(502).json({ error: err.userMessage })
+      return
+    }
     const msg = err instanceof Error ? err.message : 'KI-Fehler'
     // Ueberlastung freundlich melden statt roher API-Fehler.
     if (err?.status === 503 || err?.status === 429 || /UNAVAILABLE|overloaded|high demand/i.test(msg)) {

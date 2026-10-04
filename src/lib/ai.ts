@@ -61,15 +61,49 @@ export async function getAiStatus(): Promise<AiStatus> {
   }
 }
 
-/** Robustes JSON-Parsing (entfernt evtl. Code-Fences). */
-function parseJson<T>(text: string): T {
-  const clean = text
+const INCOMPLETE = 'Die KI-Antwort war unvollständig — bitte nochmal versuchen.'
+
+/** Robustes JSON-Parsing: entfernt Code-Fences (auch mitten im Text) und schneidet
+ *  vom ersten `{`/`[` bis zur passenden letzten `}`/`]` aus. */
+export function parseJson<T>(text: string): T {
+  const clean = String(text ?? '')
+    .replace(/```(?:json)?/gi, '')
     .trim()
-    .replace(/^```(?:json)?/i, '')
-    .replace(/```$/, '')
-    .trim()
-  return JSON.parse(clean) as T
+  try {
+    return JSON.parse(clean) as T
+  } catch {
+    /* weiter unten: JSON aus dem Text herausschneiden */
+  }
+  const obj = clean.indexOf('{')
+  const arr = clean.indexOf('[')
+  const start = obj < 0 ? arr : arr < 0 ? obj : Math.min(obj, arr)
+  if (start >= 0) {
+    const close = clean[start] === '{' ? '}' : ']'
+    const end = clean.lastIndexOf(close)
+    if (end > start) {
+      try {
+        return JSON.parse(clean.slice(start, end + 1)) as T
+      } catch {
+        /* unten: klare Meldung */
+      }
+    }
+  }
+  throw new Error(INCOMPLETE)
 }
+
+/** Zahl robust aus KI-Antworten lesen: „ca. 350", „2,5", "12 g" → Zahl; sonst fallback.
+ *  Verhindert NaN/null in NOT-NULL-Spalten. */
+export function num(v: unknown, fallback = 0): number {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : fallback
+  if (typeof v !== 'string') return fallback
+  const m = /-?\d+(?:[.,]\d+)?/.exec(v)
+  if (!m) return fallback
+  const n = Number(m[0].replace(',', '.'))
+  return Number.isFinite(n) ? n : fallback
+}
+
+/** Nicht-negative Nährwert-Zahl (DB: check >= 0). */
+const nn = (v: unknown) => Math.max(0, num(v))
 
 // ---------------------------------------------------------------------------
 // Feature: KI-Wochenreview & Coach-Chat
@@ -246,11 +280,11 @@ export async function assistant(history: ChatMsg[], context: unknown): Promise<A
   } else if (a.type === 'log_food' && Array.isArray(a.items)) {
     const items = (a.items as Partial<FoodEstimate>[]).map((i) => ({
       name: String(i.name ?? 'Lebensmittel'),
-      amount_g: i.amount_g == null ? null : Number(i.amount_g),
-      kcal: Math.round(Number(i.kcal ?? 0)),
-      protein: Math.round(Number(i.protein ?? 0)),
-      carbs: Math.round(Number(i.carbs ?? 0)),
-      fat: Math.round(Number(i.fat ?? 0)),
+      amount_g: amountG(i.amount_g),
+      kcal: Math.round(nn(i.kcal)),
+      protein: Math.round(nn(i.protein)),
+      carbs: Math.round(nn(i.carbs)),
+      fat: Math.round(nn(i.fat)),
       ...micros(i),
     }))
     if (items.length) action = { type: 'log_food', items }
@@ -313,10 +347,10 @@ export async function mealPlanForDay(
     items: (raw.items ?? []).map((i) => ({
       meal: (meals.includes(String(i.meal)) ? i.meal : 'snack') as MealPlanItem['meal'],
       name: String(i.name ?? 'Mahlzeit'),
-      kcal: Math.round(Number(i.kcal ?? 0)),
-      protein: Math.round(Number(i.protein ?? 0)),
-      carbs: Math.round(Number(i.carbs ?? 0)),
-      fat: Math.round(Number(i.fat ?? 0)),
+      kcal: Math.round(nn(i.kcal)),
+      protein: Math.round(nn(i.protein)),
+      carbs: Math.round(nn(i.carbs)),
+      fat: Math.round(nn(i.fat)),
       ...micros(i),
     })),
   }
@@ -335,7 +369,7 @@ export async function recipeFromText(request: string): Promise<Recipe> {
   const r = parseJson<Partial<Recipe>>(text)
   return {
     title: String(r.title ?? 'Rezept'),
-    servings: Number(r.servings ?? 1) || 1,
+    servings: Math.max(1, num(r.servings, 1)),
     ingredients: (r.ingredients ?? []).map(String),
     steps: (r.steps ?? []).map(String),
     nutrition: recipeNutrition(r.nutrition),
@@ -468,13 +502,20 @@ const NUTRITION_FORMAT =
   '"sat_fat":<g gesättigte Fettsäuren>,"salt":<g Salz>}]}. Zahlen gerundet, realistische ' +
   'Schätzung. Mehrere Bestandteile = mehrere items.'
 
+/** Menge in g (oder null, wenn unbekannt/unlesbar). */
+function amountG(v: unknown): number | null {
+  if (v == null || v === '') return null
+  const n = num(v, NaN)
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 10) / 10 : null
+}
+
 /** Extra-Nährwerte robust aus einem beliebigen Objekt lesen. */
 function micros(i: Partial<FoodEstimate>) {
   return {
-    fiber: Math.round(Number(i.fiber ?? 0) * 10) / 10,
-    sugar: Math.round(Number(i.sugar ?? 0) * 10) / 10,
-    sat_fat: Math.round(Number(i.sat_fat ?? 0) * 10) / 10,
-    salt: Math.round(Number(i.salt ?? 0) * 100) / 100,
+    fiber: Math.round(nn(i.fiber) * 10) / 10,
+    sugar: Math.round(nn(i.sugar) * 10) / 10,
+    sat_fat: Math.round(nn(i.sat_fat) * 10) / 10,
+    salt: Math.round(nn(i.salt) * 100) / 100,
   }
 }
 
@@ -482,11 +523,11 @@ function toEstimates(text: string): FoodEstimate[] {
   const raw = parseJson<{ items?: Partial<FoodEstimate>[] }>(text)
   return (raw.items ?? []).map((i) => ({
     name: String(i.name ?? 'Lebensmittel'),
-    amount_g: i.amount_g == null ? null : Number(i.amount_g),
-    kcal: Math.round(Number(i.kcal ?? 0)),
-    protein: Math.round(Number(i.protein ?? 0)),
-    carbs: Math.round(Number(i.carbs ?? 0)),
-    fat: Math.round(Number(i.fat ?? 0)),
+    amount_g: amountG(i.amount_g),
+    kcal: Math.round(nn(i.kcal)),
+    protein: Math.round(nn(i.protein)),
+    carbs: Math.round(nn(i.carbs)),
+    fat: Math.round(nn(i.fat)),
     ...micros(i),
   }))
 }
@@ -531,11 +572,11 @@ export async function suggestOrder(
     note: String(raw.note ?? ''),
     items: (raw.items ?? []).map((i) => ({
       name: String(i.name ?? 'Artikel'),
-      amount_g: i.amount_g == null ? null : Number(i.amount_g),
-      kcal: Math.round(Number(i.kcal ?? 0)),
-      protein: Math.round(Number(i.protein ?? 0)),
-      carbs: Math.round(Number(i.carbs ?? 0)),
-      fat: Math.round(Number(i.fat ?? 0)),
+      amount_g: amountG(i.amount_g),
+      kcal: Math.round(nn(i.kcal)),
+      protein: Math.round(nn(i.protein)),
+      carbs: Math.round(nn(i.carbs)),
+      fat: Math.round(nn(i.fat)),
       ...micros(i),
     })),
   }
@@ -581,6 +622,11 @@ export async function shoppingList(
 
 const MEAL_KEYS: Meal[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
+/** Antwortlänge für mehrtägige Pläne: ~1200 Tokens pro Tag (+ Einkaufsliste), max. 16000. */
+function planTokens(days: number): number {
+  return Math.min(16000, Math.max(4096, Math.round(days) * 1200 + 1500))
+}
+
 export interface WeeklyPlan {
   note: string
   days: PlanDay[]
@@ -617,7 +663,7 @@ export async function generateWeeklyPlan(input: {
     '"shopping":[{"category":"z. B. Obst & Gemüse","items":["500 g Hähnchen","..."]}]}. ' +
     `Genau ${input.days} Tage. Die Einkaufsliste deckt ALLE Tage ab, mit groben Mengen, nach Kategorie. Deutsch.` +
     avoidClause()
-  const text = await complete({ system, prompt, json: true, temperature: 0.6, maxTokens: 4096 })
+  const text = await complete({ system, prompt, json: true, temperature: 0.6, maxTokens: planTokens(input.days) })
   const raw = parseJson<{
     note?: string
     days?: { label?: string; meals?: Record<string, unknown>[] }[]
@@ -628,10 +674,10 @@ export async function generateWeeklyPlan(input: {
     meals: (d.meals ?? []).map((m) => ({
       meal: (MEAL_KEYS.includes(String(m.meal) as Meal) ? m.meal : 'snack') as Meal,
       name: String(m.name ?? 'Mahlzeit'),
-      kcal: Math.round(Number(m.kcal ?? 0)),
-      protein: Math.round(Number(m.protein ?? 0)),
-      carbs: Math.round(Number(m.carbs ?? 0)),
-      fat: Math.round(Number(m.fat ?? 0)),
+      kcal: Math.round(nn(m.kcal)),
+      protein: Math.round(nn(m.protein)),
+      carbs: Math.round(nn(m.carbs)),
+      fat: Math.round(nn(m.fat)),
       routine: Boolean(m.routine),
     })),
   }))
@@ -659,7 +705,13 @@ export async function adjustWeeklyPlan(input: {
     '"name":"...","kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"routine":true|false}]}],' +
     '"shopping":[{"category":"...","items":["..."]}]}. Deutsch.' +
     avoidClause()
-  const text = await complete({ system, prompt, json: true, temperature: 0.5, maxTokens: 4096 })
+  const text = await complete({
+    system,
+    prompt,
+    json: true,
+    temperature: 0.5,
+    maxTokens: planTokens(input.current.days.length),
+  })
   const raw = parseJson<{
     note?: string
     days?: { label?: string; meals?: Record<string, unknown>[] }[]
@@ -670,10 +722,10 @@ export async function adjustWeeklyPlan(input: {
     meals: (d.meals ?? []).map((m) => ({
       meal: (MEAL_KEYS.includes(String(m.meal) as Meal) ? m.meal : 'snack') as Meal,
       name: String(m.name ?? 'Mahlzeit'),
-      kcal: Math.round(Number(m.kcal ?? 0)),
-      protein: Math.round(Number(m.protein ?? 0)),
-      carbs: Math.round(Number(m.carbs ?? 0)),
-      fat: Math.round(Number(m.fat ?? 0)),
+      kcal: Math.round(nn(m.kcal)),
+      protein: Math.round(nn(m.protein)),
+      carbs: Math.round(nn(m.carbs)),
+      fat: Math.round(nn(m.fat)),
       routine: Boolean(m.routine),
     })),
   }))
@@ -706,14 +758,14 @@ export interface Recipe {
 
 function recipeNutrition(n: Partial<Recipe['nutrition']> | undefined): Recipe['nutrition'] {
   return {
-    kcal: Math.round(Number(n?.kcal ?? 0)),
-    protein: Math.round(Number(n?.protein ?? 0)),
-    carbs: Math.round(Number(n?.carbs ?? 0)),
-    fat: Math.round(Number(n?.fat ?? 0)),
-    fiber: Math.round(Number(n?.fiber ?? 0) * 10) / 10,
-    sugar: Math.round(Number(n?.sugar ?? 0) * 10) / 10,
-    sat_fat: Math.round(Number(n?.sat_fat ?? 0) * 10) / 10,
-    salt: Math.round(Number(n?.salt ?? 0) * 100) / 100,
+    kcal: Math.round(nn(n?.kcal)),
+    protein: Math.round(nn(n?.protein)),
+    carbs: Math.round(nn(n?.carbs)),
+    fat: Math.round(nn(n?.fat)),
+    fiber: Math.round(nn(n?.fiber) * 10) / 10,
+    sugar: Math.round(nn(n?.sugar) * 10) / 10,
+    sat_fat: Math.round(nn(n?.sat_fat) * 10) / 10,
+    salt: Math.round(nn(n?.salt) * 100) / 100,
   }
 }
 
@@ -733,7 +785,7 @@ export async function recipeFromFridge(image: string, craving: string): Promise<
   const r = parseJson<Partial<Recipe>>(text)
   return {
     title: String(r.title ?? 'Rezept'),
-    servings: Number(r.servings ?? 1) || 1,
+    servings: Math.max(1, num(r.servings, 1)),
     ingredients: (r.ingredients ?? []).map(String),
     steps: (r.steps ?? []).map(String),
     nutrition: recipeNutrition(r.nutrition),

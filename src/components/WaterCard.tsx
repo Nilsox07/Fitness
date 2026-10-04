@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { Droplet, GlassWater, Minus, Plus } from 'lucide-react'
 import { useWater, useSetWater } from '../hooks/useWater'
 import { useNutritionSettings } from '../hooks/useNutrition'
@@ -22,7 +23,20 @@ export function WaterCard({ date }: { date?: string } = {}) {
   const pct = Math.min(100, Math.round((ml / goalMl) * 100))
   const glasses = Math.round(ml / STEP)
 
-  const change = (delta: number) => setWater.mutate({ date: today, ml: Math.max(0, ml + delta) })
+  // Zuletzt angeforderter Wert: schnelle Taps bauen darauf auf, auch wenn der
+  // (optimistische) Cache-Wert noch nicht neu gerendert wurde.
+  const latest = useRef<{ date: string; ml: number } | null>(null)
+  const change = (delta: number) => {
+    const base = latest.current?.date === today ? latest.current.ml : ml
+    const next = Math.max(0, base + delta)
+    const req = { date: today, ml: next }
+    latest.current = req
+    setWater.mutate(req, {
+      onSettled: () => {
+        if (latest.current === req) latest.current = null
+      },
+    })
+  }
 
   return (
     <div className="card space-y-2">
