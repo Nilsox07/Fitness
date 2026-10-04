@@ -56,6 +56,7 @@ import {
 import { frequencyStats, isoWeekKey, monthlyPrCount, totalVolume, weeklyVolume } from '../lib/analytics'
 import { rankForSessions } from '../lib/gamification'
 import { computeXp, levelInfo } from '../lib/xp'
+import { buddyLevelInfo } from '../lib/buddyLevel'
 import { seasonId, seasonXp } from '../lib/season'
 
 // Reihenfolge = faire Kennzahlen zuerst; Volumen (kraftabhängig) zuletzt.
@@ -141,7 +142,10 @@ export default function Social() {
       sets.filter((s) => isoWeekKey(s.date) === thisWeek).map((s) => s.date),
     ).size
     const dates = sets.map((s) => s.date).sort()
-    const lvl = levelInfo(computeXp(sets))
+    // Neue App: geteiltes Level = Buddy-Level (ein Level für alles).
+    const lvl = isNew
+      ? buddyLevelInfo({ sets, foodEntries: fe, proteinTarget, showNutrition, today: todayStr })
+      : levelInfo(computeXp(sets))
     return {
       display_name: profile?.display_name ?? user?.email?.split('@')[0] ?? 'Ich',
       total_sessions: freq.totalSessions,
@@ -161,7 +165,7 @@ export default function Social() {
       kcal_today: showNutrition ? kcalToday : 0,
       protein_week: showNutrition ? proteinWeek : 0,
     }
-  }, [allSets, food, profile, user, todayStr, nutritionSettings, showNutrition])
+  }, [allSets, food, profile, user, todayStr, nutritionSettings, showNutrition, isNew])
 
   useEffect(() => {
     if (allSets) syncStats.mutate(myStats)

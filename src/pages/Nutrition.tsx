@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   Bot,
   Camera,
@@ -53,6 +53,7 @@ import {
   useUpdateFoodEntry,
   useFoodEntries,
   useNutritionSettings,
+  useDietStyle,
 } from '../hooks/useNutrition'
 import { GOAL_LABEL, scalePer100, sumEntries } from '../lib/nutrition'
 import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
@@ -79,6 +80,8 @@ import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
 import { RecentChips } from '../components/nutrition-home/RecentChips'
 import { MealCard } from '../components/nutrition-home/MealCard'
 import { WaterRow } from '../components/nutrition-home/WaterRow'
+import { FastingCard } from '../components/nutrition-home/FastingCard'
+import { dietShortLabel } from '../lib/dietStyle'
 import { stagger } from '../components/nutrition-home/motion'
 import { kcalByDate, mealRecommendation } from '../lib/nutritionHome'
 import { dayLabel } from '../lib/day'
@@ -153,6 +156,8 @@ export default function Nutrition() {
   const setDay = (d: string) => setParams(d >= realToday ? {} : { date: d }, { replace: true })
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null)
   const { data: settings } = useNutritionSettings()
+  const diet = useDietStyle()
+  const dietLabel = dietShortLabel(diet)
   const { data: entries } = useFoodEntries(today)
   const { data: allEntries } = useAllFoodEntries()
   const { data: allSets } = useAllSets()
@@ -675,7 +680,7 @@ export default function Nutrition() {
       {isNew ? (
         <>
           <header className="flex items-start justify-between gap-2" style={stagger(0)}>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold tracking-tight">{isToday ? 'Heute' : dayLabel(today, realToday)}</h1>
               <p className="text-sm text-cocoa-light">
                 {new Date(`${today}T12:00:00`).toLocaleDateString('de-DE', {
@@ -684,6 +689,15 @@ export default function Nutrition() {
                   month: 'long',
                 })}
               </p>
+              {dietLabel && (
+                <Link
+                  to="/profile?s=goal"
+                  className="mt-1.5 inline-flex max-w-full items-center rounded-full bg-sand px-2.5 py-0.5 text-xs font-semibold text-cocoa transition active:scale-95"
+                  title="Ernährungsweise ändern"
+                >
+                  <span className="truncate">{dietLabel}</span>
+                </Link>
+              )}
             </div>
             <button
               className="grid h-10 w-10 place-items-center rounded-full bg-cream text-cocoa transition active:scale-90"
@@ -724,6 +738,8 @@ export default function Nutrition() {
             onSetup={openSetup}
             style={stagger(1)}
           />
+
+          {isToday && diet.fasting !== 'none' && <FastingCard entries={entries ?? []} style={stagger(2)} />}
 
           <QuickAddBar
             aiOn={!!aiOn}

@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { Hourglass, TriangleAlert, UtensilsCrossed } from 'lucide-react'
 import { useDietStyle } from '../../hooks/useNutrition'
-import { fastingState, fastingWindow, fmtDuration, inEatingWindow, type DietStyle } from '../../lib/dietStyle'
+import { entriesOutsideWindow, fastingState, fastingWindow, fmtDuration } from '../../lib/dietStyle'
 import type { FoodEntry } from '../../types'
 import { Ring } from './Ring'
 
@@ -24,23 +24,6 @@ function useMinuteClock(): Date {
     }
   }, [])
   return now
-}
-
-const sameLocalDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-
-/** Heute außerhalb des Essensfensters geloggte Einträge (nach Erfassungszeit). */
-export function entriesOutsideWindow(
-  entries: Pick<FoodEntry, 'created_at'>[],
-  diet: Pick<DietStyle, 'fasting' | 'fastingStart'>,
-  now: Date,
-): Date[] {
-  const win = fastingWindow(diet)
-  if (!win) return []
-  return entries
-    .map((e) => new Date(e.created_at))
-    .filter((d) => !Number.isNaN(d.getTime()) && sameLocalDay(d, now))
-    .filter((d) => !inEatingWindow(d.getHours() * 60 + d.getMinutes(), win.startMin, win.hours))
 }
 
 const clock = (d: Date) => d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })

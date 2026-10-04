@@ -1,24 +1,21 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, Flame, Hand, Medal, Trophy } from 'lucide-react'
 import type { UserStat } from '../../hooks/useSocial'
-import { seasonId } from '../../lib/season'
 import { effectiveMonthlyPrs, effectiveWeeklyVolume } from '../../lib/duel'
 import { Avatar } from './Avatar'
 import { avatarEmoji } from './format'
 
 // Reihenfolge = faire Kennzahlen zuerst; Volumen (kraftabhängig) zuletzt.
-type Metric = 'monthly_prs' | 'total_sessions' | 'week_streak' | 'season_xp' | 'level' | 'weekly_volume'
+type Metric = 'monthly_prs' | 'total_sessions' | 'week_streak' | 'level' | 'weekly_volume'
 const METRIC_LABEL: Record<Metric, string> = {
   monthly_prs: 'Fortschritt',
   total_sessions: 'Trainings',
   week_streak: 'Streak',
-  season_xp: 'Season',
   level: 'Level',
   weekly_volume: 'Volumen',
 }
 
 function metricValue(u: UserStat, m: Metric): number {
-  if (m === 'season_xp') return u.season_id === seasonId() ? (u.season_xp ?? 0) : 0
   // Wochen-/Monatswerte nur, wenn sie aus dem aktuellen Zeitraum stammen.
   if (m === 'weekly_volume') return effectiveWeeklyVolume(u)
   if (m === 'monthly_prs') return effectiveMonthlyPrs(u)
@@ -56,8 +53,6 @@ export function LeaderboardSection({
             <Trophy size={14} className="text-gold" />
           </span>
         )
-      case 'season_xp':
-        return `${v} XP`
       case 'level':
         return `Lvl ${v || 1}`
       case 'weekly_volume':

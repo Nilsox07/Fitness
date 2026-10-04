@@ -24,6 +24,7 @@ import History from './pages/History'
 import Analytics from './pages/Analytics'
 import Nutrition from './pages/Nutrition'
 import Profile from './pages/Profile'
+import { Splash } from './components/Splash'
 
 // Welche Route zu welcher Welt gehört (geteilte Seiten lassen die Welt, wie sie ist).
 const FOOD_ROUTES = ['/nutrition', '/recipes', '/shopping']
@@ -86,6 +87,7 @@ export default function App() {
       {isNew && <Assistant />}
       {isNew && <WhatsNew />}
       {isNew && <WeeklyReview />}
+      {isNew && <Splash />}
       <TabBar />
     </div>
   )

@@ -289,3 +289,20 @@ export function fmtDuration(min: number): string {
   if (m < 60) return `${m} min`
   return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} h`
 }
+
+const sameLocalDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+
+/** Heute (Tag von `now`) außerhalb des Essensfensters erfasste Einträge (nach created_at). */
+export function entriesOutsideWindow(
+  entries: { created_at: string }[],
+  diet: Pick<DietStyle, 'fasting' | 'fastingStart'>,
+  now: Date,
+): Date[] {
+  const win = fastingWindow(diet)
+  if (!win) return []
+  return entries
+    .map((e) => new Date(e.created_at))
+    .filter((d) => !Number.isNaN(d.getTime()) && sameLocalDay(d, now))
+    .filter((d) => !inEatingWindow(d.getHours() * 60 + d.getMinutes(), win.startMin, win.hours))
+}
