@@ -3,6 +3,7 @@ import { Dumbbell, Footprints, Moon, Play, StretchHorizontal } from 'lucide-reac
 import type { PlanWithExercises } from '../../types'
 import { enter } from './motion'
 import { PlanPickerSheet } from './PlanPicker'
+import { BuddyLine, HeroWithBuddy, type HeroBuddyData } from './HeroBuddy'
 
 const IDEAS = [
   { icon: Footprints, title: 'Spaziergang', sub: '20–30 Min an der frischen Luft' },
@@ -22,6 +23,7 @@ export function RestDayCard({
   onStartPlan,
   onStartFree,
   index,
+  buddy,
 }: {
   plans: PlanWithExercises[]
   /** Nächstes geplantes Training, z. B. { name: 'Pull', when: 'morgen' } */
@@ -35,46 +37,51 @@ export function RestDayCard({
   onStartPlan: (p: PlanWithExercises) => void
   onStartFree: () => void
   index: number
+  /** Buddy sitzt oben rechts auf der Karte, sein Spruch steht oben in der Karte. */
+  buddy?: HeroBuddyData
 }) {
   const [pickOpen, setPickOpen] = useState(false)
 
   return (
     <section className="space-y-2" style={enter(index)}>
-      <div className="relative overflow-hidden rounded-3xl bg-cream p-5 ring-1 ring-sand-dark/40">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-gold/15 blur-3xl" />
-        <div className="relative">
-          <div className="flex items-start gap-3">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sand text-cocoa-light">
-              <Moon size={22} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-cocoa-muted">Laut Rhythmus</p>
-              <h2 className="text-2xl font-bold tracking-tight">Heute Ruhetag</h2>
+      <HeroWithBuddy buddy={buddy}>
+        <div className="relative overflow-hidden rounded-3xl bg-cream p-5 ring-1 ring-sand-dark/40">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-gold/15 blur-3xl" />
+          <div className="relative">
+            {buddy && <BuddyLine line={buddy.line} tone="light" />}
+            <div className="flex items-start gap-3">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sand text-cocoa-light">
+                <Moon size={22} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-cocoa-muted">Laut Rhythmus</p>
+                <h2 className="text-2xl font-bold tracking-tight">Heute Ruhetag</h2>
+              </div>
             </div>
-          </div>
-          <p className="mt-3 text-sm text-cocoa-light">
-            Erholung gehört zum Plan — in der Pause werden deine Muskeln stärker.
-          </p>
-
-          <ul className="mt-4 space-y-2">
-            {IDEAS.map(({ icon: Icon, title, sub }) => (
-              <li key={title} className="flex items-center gap-3 rounded-2xl bg-sand/70 px-3 py-2.5">
-                <Icon size={18} className="shrink-0 text-cocoa-light" />
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold">{title}</span>
-                  <span className="block truncate text-xs text-cocoa-light">{sub}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {nextUp && (
-            <p className="mt-4 text-sm text-cocoa-light">
-              Als Nächstes: <span className="font-semibold text-cocoa">{nextUp.name}</span> · {nextUp.when}
+            <p className="mt-3 text-sm text-cocoa-light">
+              Erholung gehört zum Plan — in der Pause werden deine Muskeln stärker.
             </p>
-          )}
+
+            <ul className="mt-4 space-y-2">
+              {IDEAS.map(({ icon: Icon, title, sub }) => (
+                <li key={title} className="flex items-center gap-3 rounded-2xl bg-sand/70 px-3 py-2.5">
+                  <Icon size={18} className="shrink-0 text-cocoa-light" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{title}</span>
+                    <span className="block truncate text-xs text-cocoa-light">{sub}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {nextUp && (
+              <p className="mt-4 text-sm text-cocoa-light">
+                Als Nächstes: <span className="font-semibold text-cocoa">{nextUp.name}</span> · {nextUp.when}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      </HeroWithBuddy>
 
       <div className="grid grid-cols-2 gap-2">
         <button

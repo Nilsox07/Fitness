@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ChevronRight,
@@ -12,6 +12,7 @@ import {
   Trophy,
   User,
   Zap,
+  type LucideIcon,
 } from 'lucide-react'
 import { useAiStatus } from '../../hooks/useAi'
 import { useTrainingRhythm } from '../../hooks/usePrefsSync'
@@ -31,11 +32,11 @@ export function openBuddySheet(): void {
   window.dispatchEvent(new Event(OPEN_BUDDY_EVENT))
 }
 
-/** Route des Schnell-Workouts (falls vorhanden). */
+/** Route des Schnell-Workouts. */
 const QUICK_ROUTE = '/quick'
 
 export interface BuddyTip {
-  icon: ComponentType<{ size?: number; className?: string }>
+  icon: LucideIcon
   text: string
   to?: string
 }

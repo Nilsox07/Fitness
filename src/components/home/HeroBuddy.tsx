@@ -35,7 +35,7 @@ export function HeroWithBuddy({ buddy, children }: { buddy?: HeroBuddyData; chil
           width: SIZE,
           height: SIZE,
           transformOrigin: '50% 100%',
-          animation: 'check-pop .4s ease-out both',
+          animation: 'check-pop .4s ease-out backwards',
           animationDelay: '220ms',
           filter: 'drop-shadow(0 6px 8px rgb(0 0 0 / 0.18))',
         }}

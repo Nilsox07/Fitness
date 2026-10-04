@@ -28,6 +28,8 @@ import { NutritionRow } from './NutritionRow'
 import { ChallengeCard } from './ChallengeCard'
 import { RestDayCard } from './RestDayCard'
 import { RhythmPrompt } from './RhythmPrompt'
+import { enter } from './motion'
+import { QuickWorkoutCard } from '../quick/QuickWorkoutCard'
 
 const SKIP_MUSCLES = new Set<MuscleGroup>(['Sonstige', 'Ganzkörper'])
 
@@ -137,7 +139,7 @@ export function HomeStart({
   let i = 0
   return (
     <div className="space-y-4">
-      <HomeHeader name={profile?.display_name ?? null} dateLabel={dateLabel} streak={streak} buddy={buddy} />
+      <HomeHeader name={profile?.display_name ?? null} dateLabel={dateLabel} streak={streak} />
       <WeekStrip today={today} trainedDates={trainedDates} goal={rhythm.goal} planned={planned} index={++i} />
       {showPrompt && <RhythmPrompt index={++i} />}
       {plans === undefined ? (
@@ -155,6 +157,7 @@ export function HomeStart({
           onStartPlan={onStartPlan}
           onStartFree={onStartFree}
           index={++i}
+          buddy={buddy}
         />
       ) : (
         <NextWorkoutCard
@@ -170,8 +173,10 @@ export function HomeStart({
           onStartPlan={onStartPlan}
           onStartFree={onStartFree}
           index={++i}
+          buddy={buddy}
         />
       )}
+      {plans !== undefined && <QuickWorkoutCard style={enter(++i)} />}
       <RecoveryCard items={muscleStates} index={++i} />
       {last && <LastWorkoutCard stats={last} today={today} names={lastNames} index={++i} />}
       <NutritionRow allSets={allSets} index={++i} />

@@ -5,6 +5,7 @@ import { estimateMinutes, type RecoveryLevel } from '../../lib/home'
 import type { Exercise, MuscleGroup, PlanWithExercises } from '../../types'
 import { enter } from './motion'
 import { PlanPickerSheet, lastDoneLabel } from './PlanPicker'
+import { BuddyLine, HeroWithBuddy, type HeroBuddyData } from './HeroBuddy'
 
 const DOT: Record<RecoveryLevel, string> = {
   fresh: 'bg-success',
@@ -26,6 +27,7 @@ export function NextWorkoutCard({
   onStartFree,
   index,
   fromRhythm = false,
+  buddy,
 }: {
   plans: PlanWithExercises[]
   suggested: PlanWithExercises | null
@@ -40,6 +42,8 @@ export function NextWorkoutCard({
   index: number
   /** Vorschlag kommt aus dem eigenen Trainingsrhythmus („Heute laut Rhythmus"). */
   fromRhythm?: boolean
+  /** Buddy sitzt oben rechts auf der Karte, sein Spruch steht oben in der Karte. */
+  buddy?: HeroBuddyData
 }) {
   const navigate = useNavigate()
   const [pickOpen, setPickOpen] = useState(false)
@@ -55,25 +59,32 @@ export function NextWorkoutCard({
   if (!suggested) {
     return (
       <section className="space-y-2" style={enter(index)}>
-        <div className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg dark:bg-sand-light dark:text-cocoa">
-          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-brand/30 blur-3xl" />
-          <p className="relative flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-            <Sparkles size={13} className="text-brand" />
-            Los geht's
-          </p>
-          <h2 className="relative mt-1 text-2xl font-bold tracking-tight">Leg deinen ersten Plan an</h2>
-          <p className="relative mt-1 text-sm text-bg/70 dark:text-cocoa-light">
-            Mit einem Plan startest du jedes Training mit einem Tipp — Reihenfolge, Gewichte und Sätze
-            stehen schon bereit.
-          </p>
-          <button
-            className="btn-primary relative mt-4 w-full gap-2 py-3.5 text-base"
-            onClick={() => navigate('/plans')}
-          >
-            <Plus size={18} strokeWidth={2.5} />
-            Plan erstellen
-          </button>
-        </div>
+        <HeroWithBuddy buddy={buddy}>
+          <div className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg dark:bg-sand-light dark:text-cocoa">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-brand/30 blur-3xl" />
+            {buddy && (
+              <div className="relative">
+                <BuddyLine line={buddy.line} tone="dark" />
+              </div>
+            )}
+            <p className="relative flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
+              <Sparkles size={13} className="text-brand" />
+              Los geht's
+            </p>
+            <h2 className="relative mt-1 text-2xl font-bold tracking-tight">Leg deinen ersten Plan an</h2>
+            <p className="relative mt-1 text-sm text-bg/70 dark:text-cocoa-light">
+              Mit einem Plan startest du jedes Training mit einem Tipp — Reihenfolge, Gewichte und Sätze
+              stehen schon bereit.
+            </p>
+            <button
+              className="btn-primary relative mt-4 w-full gap-2 py-3.5 text-base"
+              onClick={() => navigate('/plans')}
+            >
+              <Plus size={18} strokeWidth={2.5} />
+              Plan erstellen
+            </button>
+          </div>
+        </HeroWithBuddy>
         <button className="btn-ghost w-full gap-2" onClick={onStartFree} disabled={busy}>
           <Dumbbell size={16} />
           Freies Training
@@ -89,68 +100,71 @@ export function NextWorkoutCard({
 
   return (
     <section className="space-y-2" style={enter(index)}>
-      <div className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
-        {/* dezenter Brand-Schimmer */}
-        <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
+      <HeroWithBuddy buddy={buddy}>
+        <div className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
+          {/* dezenter Brand-Schimmer */}
+          <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
 
-        <div className="relative">
-          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-            {fromRhythm ? (
-              <CalendarCheck size={13} className="text-brand" />
-            ) : (
-              <Sparkles size={13} className="text-brand" />
-            )}
-            {fromRhythm ? 'Heute laut Rhythmus' : 'Dein nächstes Training'}
-          </p>
-          <h2 className="mt-1 truncate text-3xl font-bold tracking-tight">{suggested.name}</h2>
-          <p className="tabular mt-0.5 text-sm text-bg/70 dark:text-cocoa-light">
-            {exs.length} {exs.length === 1 ? 'Übung' : 'Übungen'}
-            {minutes > 0 && ` · ~${minutes} Min`}
-            {' · '}
-            {lastDoneLabel(lastDone.get(suggested.id), today)}
-          </p>
-
-          {exs.length > 0 && (
-            <ul className="mt-4 space-y-1.5">
-              {exs.slice(0, 4).map((e, i) => (
-                <li key={e.id} className="flex items-center gap-2.5 text-sm">
-                  <span className="tabular grid h-5 w-5 shrink-0 place-items-center rounded-full bg-bg/10 text-[10px] font-bold text-bg/70 dark:bg-white/5 dark:text-cocoa-light">
-                    {i + 1}
-                  </span>
-                  <span className="truncate">{e.name}</span>
-                </li>
-              ))}
-              {exs.length > 4 && (
-                <li className="pl-7 text-xs text-bg/50 dark:text-cocoa-muted">+ {exs.length - 4} weitere</li>
+          <div className="relative">
+            {buddy && <BuddyLine line={buddy.line} tone="dark" />}
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
+              {fromRhythm ? (
+                <CalendarCheck size={13} className="text-brand" />
+              ) : (
+                <Sparkles size={13} className="text-brand" />
               )}
-            </ul>
-          )}
+              {fromRhythm ? 'Heute laut Rhythmus' : 'Dein nächstes Training'}
+            </p>
+            <h2 className="mt-1 truncate text-3xl font-bold tracking-tight">{suggested.name}</h2>
+            <p className="tabular mt-0.5 text-sm text-bg/70 dark:text-cocoa-light">
+              {exs.length} {exs.length === 1 ? 'Übung' : 'Übungen'}
+              {minutes > 0 && ` · ~${minutes} Min`}
+              {' · '}
+              {lastDoneLabel(lastDone.get(suggested.id), today)}
+            </p>
 
-          {muscles.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {muscles.map((m) => (
-                <span
-                  key={m}
-                  className="flex items-center gap-1.5 rounded-full bg-bg/10 px-2.5 py-1 text-xs font-medium text-bg/85 dark:bg-white/5 dark:text-cocoa"
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${DOT[recovery.get(m) ?? 'fresh']}`} />
-                  {m}
-                </span>
-              ))}
-            </div>
-          )}
+            {exs.length > 0 && (
+              <ul className="mt-4 space-y-1.5">
+                {exs.slice(0, 4).map((e, i) => (
+                  <li key={e.id} className="flex items-center gap-2.5 text-sm">
+                    <span className="tabular grid h-5 w-5 shrink-0 place-items-center rounded-full bg-bg/10 text-[10px] font-bold text-bg/70 dark:bg-white/5 dark:text-cocoa-light">
+                      {i + 1}
+                    </span>
+                    <span className="truncate">{e.name}</span>
+                  </li>
+                ))}
+                {exs.length > 4 && (
+                  <li className="pl-7 text-xs text-bg/50 dark:text-cocoa-muted">+ {exs.length - 4} weitere</li>
+                )}
+              </ul>
+            )}
 
-          <button
-            className="btn-primary mt-5 w-full gap-2 py-3.5 text-base shadow-lg shadow-brand/30"
-            disabled={busy}
-            onClick={() => onStartPlan(suggested)}
-          >
-            <Play size={18} className="fill-current" />
-            Training starten
-          </button>
+            {muscles.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {muscles.map((m) => (
+                  <span
+                    key={m}
+                    className="flex items-center gap-1.5 rounded-full bg-bg/10 px-2.5 py-1 text-xs font-medium text-bg/85 dark:bg-white/5 dark:text-cocoa"
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${DOT[recovery.get(m) ?? 'fresh']}`} />
+                    {m}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <button
+              className="btn-primary mt-5 w-full gap-2 py-3.5 text-base shadow-lg shadow-brand/30"
+              disabled={busy}
+              onClick={() => onStartPlan(suggested)}
+            >
+              <Play size={18} className="fill-current" />
+              Training starten
+            </button>
+          </div>
         </div>
-      </div>
+      </HeroWithBuddy>
 
       <div className={`grid gap-2 ${plans.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {plans.length > 1 && (

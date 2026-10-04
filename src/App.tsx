@@ -7,6 +7,7 @@ import { TopBar } from './components/TopBar'
 import { SaveStatus } from './components/SaveStatus'
 import { AiActivityBar } from './components/AiActivityBar'
 import { Assistant } from './components/Assistant'
+import { BuddyMomentHost } from './components/buddy/BuddyMomentHost'
 import { WhatsNew } from './components/WhatsNew'
 import { WeeklyReview } from './components/WeeklyReview'
 import Login from './pages/Login'
@@ -87,6 +88,7 @@ export default function App() {
         </Routes>
       </main>
       {isNew && <Assistant />}
+      {isNew && <BuddyMomentHost />}
       {isNew && <WhatsNew />}
       {isNew && <WeeklyReview />}
       {isNew && <Splash />}
