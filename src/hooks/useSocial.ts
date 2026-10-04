@@ -161,3 +161,24 @@ export function useDismissPoke() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['pokes'] }),
   })
 }
+
+/** Anzeigenamen ändern (Profil + geteilte Stats, damit Freunde ihn sofort sehen). */
+export function useUpdateDisplayName() {
+  const qc = useQueryClient()
+  const { user } = useAuth()
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const clean = name.trim().slice(0, 40)
+      if (!clean) throw new Error('Bitte gib einen Namen ein.')
+      const { error } = await supabase.from('profiles').update({ display_name: clean }).eq('id', user!.id)
+      if (error) throw error
+      // Stats-Zeile (falls vorhanden) gleich mitziehen — Fehler hier sind egal
+      await supabase.from('user_stats').update({ display_name: clean }).eq('user_id', user!.id)
+      return clean
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      qc.invalidateQueries({ queryKey: ['leaderboard'] })
+    },
+  })
+}

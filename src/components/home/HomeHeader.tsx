@@ -17,7 +17,9 @@ export function HomeHeader({
   dateLabel: string
   streak: number
 }) {
-  const first = name?.trim().split(/\s+/)[0]
+  // 'jens.haake' (aus der Mailadresse) wird zu 'Jens'
+  const raw = name?.trim().split(/[\s._-]+/)[0]
+  const first = raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : undefined
   return (
     <header className="flex items-start justify-between gap-3" style={enter(0)}>
       <div className="min-w-0">

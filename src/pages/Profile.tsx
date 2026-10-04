@@ -9,6 +9,7 @@ import {
   Dumbbell,
   Lock,
   LogOut,
+  PenLine,
   MessageSquare,
   Moon,
   Palette,
@@ -52,6 +53,8 @@ import { useNutritionSettings } from '../hooks/useNutrition'
 import { GOAL_LABEL } from '../lib/nutrition'
 import { Group, Row, SEG_TRACK, SubHeader, TILE, Toggle, segBtn } from '../components/profile/ui'
 import { ProfileHeader } from '../components/profile/ProfileHeader'
+import { NameSheet } from '../components/profile/NameSheet'
+import { useMyProfile } from '../hooks/useSocial'
 
 /** Unterseiten des Profils (neue Version), per ?s=… in der URL → Zurück-Geste funktioniert. */
 type Sub = 'goal' | 'review' | 'version' | 'coach' | 'push' | 'unlock' | 'export' | 'fitbit'
@@ -76,6 +79,8 @@ const MODES: { v: ThemeMode; label: string }[] = [
 export default function Profile() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { data: myProfile } = useMyProfile()
+  const [nameOpen, setNameOpen] = useState(false)
   const { mode, setMode } = useTheme()
   const { showNutrition, setShowNutrition, appMode, setAppMode, isNew } = usePrefs()
   const { data: ai } = useAiStatus()
@@ -571,6 +576,7 @@ export default function Profile() {
         </Group>
 
         <Group title="Konto">
+          <Row icon={PenLine} label="Name" value={myProfile?.display_name || '—'} onClick={() => setNameOpen(true)} />
           <Row icon={User} label="Angemeldet als" value={user?.email ?? '—'} />
           <Row
             icon={LogOut}
@@ -579,6 +585,9 @@ export default function Profile() {
             onClick={() => void signOut()}
           />
         </Group>
+        {nameOpen && (
+          <NameSheet current={myProfile?.display_name ?? ''} onClose={() => setNameOpen(false)} />
+        )}
       </div>
     )
   }

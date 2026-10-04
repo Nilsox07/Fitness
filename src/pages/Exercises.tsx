@@ -27,7 +27,6 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useAiStatus } from '../hooks/useAi'
 import { usePrefs } from '../lib/prefs'
 import { parseEquipmentList, parseNewExercise, type ExerciseDraft } from '../lib/ai'
-import { onlyWorking } from '../lib/analytics'
 import { MicButton } from '../components/MicButton'
 import { Sheet } from '../components/workout/Sheet'
 import {
@@ -36,6 +35,8 @@ import {
   cleanExerciseInput,
   exerciseToInput,
 } from '../components/ExerciseForm'
+import { ExerciseEmpty, ExerciseListNew } from '../components/exercises/ExerciseListNew'
+import { enter } from '../components/exercises/muscle'
 import { MUSCLE_GROUPS, type Exercise, type MuscleGroup, type SetWithDate } from '../types'
 
 function fileToDataUrl(file: File, maxDim = 1280): Promise<string> {
@@ -59,24 +60,6 @@ function fileToDataUrl(file: File, maxDim = 1280): Promise<string> {
     }
     reader.readAsDataURL(file)
   })
-}
-
-const kg = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 2 })
-
-/** „zuletzt 3×8 · 80 kg" aus der letzten Session (nur ausgeführte Arbeitssätze). */
-function lastPerformance(sets: SetWithDate[]): string | null {
-  const working = onlyWorking(sets) // ohne leere Vorlagen-Sätze (0 Wdh)
-  if (working.length === 0) return null
-  const lastDate = working.reduce((d, s) => (s.date > d ? s.date : d), '')
-  const day = working.filter((s) => s.date === lastDate)
-  const top = Math.max(...day.map((s) => s.weight))
-  const atTop = day.filter((s) => s.weight === top)
-  const reps = atTop.map((s) => s.reps)
-  const sameReps = reps.every((r) => r === reps[0])
-  const scheme = sameReps ? `${atTop.length}×${reps[0]}` : `${atTop.length} Sätze`
-  const record = Math.max(...working.map((s) => s.weight))
-  const base = top > 0 ? `zuletzt ${scheme} · ${kg(top)} kg` : `zuletzt ${scheme}`
-  return record > top ? `${base} · Rekord ${kg(record)} kg` : base
 }
 
 /** Entwürfe nach Gerät gruppieren (Reihenfolge bleibt erhalten). */
@@ -298,14 +281,33 @@ export default function Exercises() {
   return (
     <div className="space-y-4">
       {isNew ? (
-        <header className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Übungen</h1>
-          <button
-            className="btn-primary flex items-center gap-1.5 text-sm"
-            onClick={() => setAddOpen(true)}
-          >
-            <Plus size={16} /> Übung
-          </button>
+        <header className="flex items-start justify-between gap-3" style={enter(0)}>
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight">Übungen</h1>
+            <p className="tabular mt-0.5 truncate text-sm text-cocoa-light">
+              {exercises
+                ? `${exercises.length} ${exercises.length === 1 ? 'Übung' : 'Übungen'} · ${usedGroups.length} ${
+                    usedGroups.length === 1 ? 'Muskelgruppe' : 'Muskelgruppen'
+                  }`
+                : 'Lädt…'}
+            </p>
+          </div>
+          <div className="mt-1 flex shrink-0 gap-2">
+            <button
+              className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-95"
+              onClick={() => navigate('/plans')}
+              aria-label="Trainingspläne"
+            >
+              <ClipboardList size={18} />
+            </button>
+            <button
+              className="grid h-10 w-10 place-items-center rounded-full bg-brand text-on-brand shadow-md shadow-brand/25 transition active:scale-95"
+              onClick={() => setAddOpen(true)}
+              aria-label="Übung hinzufügen"
+            >
+              <Plus size={20} strokeWidth={2.5} />
+            </button>
+          </div>
         </header>
       ) : (
         <header className="flex items-center justify-between">
@@ -531,11 +533,11 @@ export default function Exercises() {
         </div>
       )}
 
-      {isLoading && <p className="text-cocoa-light">Lädt…</p>}
+      {isLoading && !isNew && <p className="text-cocoa-light">Lädt…</p>}
 
       {isNew ? (
         <>
-          <div className="relative">
+          <div className="relative" style={enter(1)}>
             <Search
               size={18}
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cocoa-muted"
@@ -551,7 +553,10 @@ export default function Exercises() {
           </div>
 
           {usedGroups.length > 1 && (
-            <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div
+              className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              style={enter(1)}
+            >
               {[null, ...usedGroups].map((g) => {
                 const on = muscle === g
                 return (
@@ -570,36 +575,25 @@ export default function Exercises() {
             </div>
           )}
 
-          {exercises?.length === 0 && (
-            <p className="text-cocoa-light">Noch keine Übungen. Lege deine erste an.</p>
+          {isLoading && (
+            <div className="space-y-px overflow-hidden rounded-2xl" aria-hidden>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="h-16 animate-pulse bg-sand" />
+              ))}
+            </div>
           )}
+
+          {exercises?.length === 0 && <ExerciseEmpty onAdd={() => setAddOpen(true)} />}
           {!!exercises?.length && filtered.length === 0 && (
-            <p className="text-sm text-cocoa-light">Keine Übung gefunden.</p>
+            <p className="py-6 text-center text-sm text-cocoa-light">Keine Übung gefunden.</p>
           )}
 
           {filtered.length > 0 && (
-            <ul className="divide-y divide-sand-dark/40 rounded-2xl bg-cream">
-              {filtered.map((ex) => {
-                const perf = lastPerformance(setsByExercise.get(ex.id) ?? [])
-                return (
-                  <li key={ex.id}>
-                    <button
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left"
-                      onClick={() => navigate(`/exercises/${ex.id}`)}
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-semibold text-cocoa">{ex.name}</span>
-                        <span className="block truncate text-sm text-cocoa-light">
-                          {ex.muscle_group}
-                          {perf && <span className="tabular"> · {perf}</span>}
-                        </span>
-                      </span>
-                      <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+            <ExerciseListNew
+              exercises={filtered}
+              setsByExercise={setsByExercise}
+              onOpen={(ex) => navigate(`/exercises/${ex.id}`)}
+            />
           )}
         </>
       ) : (
