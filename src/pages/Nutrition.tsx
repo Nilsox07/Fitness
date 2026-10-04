@@ -2131,7 +2131,7 @@ export default function Nutrition() {
                     disabled={addRecipe.isPending || saving}
                   >
                     <Share2 size={16} className="text-cocoa-light" />
-                    & teilen
+                    Teilen
                   </button>
                 </div>
               </>
