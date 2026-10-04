@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { ChevronRight, Dumbbell, Plus } from 'lucide-react'
 import { onlyWorking, summarizeSessions } from '../../lib/analytics'
 import type { Exercise, SetWithDate } from '../../types'
+import type { LibraryExercise } from '../../lib/exerciseLibrary'
+import { ExerciseAnimation } from '../library/ExerciseAnimation'
 import { MuscleAvatar, Sparkline } from './MuscleBits'
 import { enter, muscleTint } from './muscle'
 
@@ -23,15 +25,21 @@ export function lastPerformance(sets: SetWithDate[]): string | null {
 
 const SPARK_SESSIONS = 8
 
-/** Übungsliste (Neu-Modus): Avatar, letzte Leistung, Mini-Verlauf des besten Satzes. */
+/**
+ * Übungsliste (Neu-Modus): Avatar (bzw. Bibliotheks-Vorschaubild, wenn
+ * verknüpft), letzte Leistung, Mini-Verlauf des besten Satzes.
+ */
 export function ExerciseListNew({
   exercises,
   setsByExercise,
   onOpen,
+  thumbs,
 }: {
   exercises: Exercise[]
   setsByExercise: Map<string, SetWithDate[]>
   onOpen: (ex: Exercise) => void
+  /** Übungs-ID → verknüpfter Bibliotheks-Eintrag (Vorschaubild statt Avatar). */
+  thumbs?: Map<string, LibraryExercise>
 }) {
   const rows = useMemo(
     () =>
@@ -56,7 +64,16 @@ export function ExerciseListNew({
               className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-sand-light"
               onClick={() => onOpen(ex)}
             >
-              <MuscleAvatar muscle={ex.muscle_group} />
+              {thumbs?.get(ex.id) ? (
+                <ExerciseAnimation
+                  images={thumbs.get(ex.id)!.images}
+                  alt=""
+                  still
+                  className="h-10 w-10 shrink-0 rounded-xl ring-1 ring-sand-dark/40"
+                />
+              ) : (
+                <MuscleAvatar muscle={ex.muscle_group} />
+              )}
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold text-cocoa">{ex.name}</span>
                 <span className="block truncate text-xs text-cocoa-light">
