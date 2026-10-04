@@ -1085,3 +1085,41 @@ export async function suggestMuscles(exerciseName: string): Promise<MuscleSugges
     .slice(0, 3)
   return { primary, secondary }
 }
+
+/**
+ * Ordnet eigene Übungen in EINEM Aufruf der Übungsbibliothek zu. Pro Übung
+ * darf nur eine der mitgegebenen Kandidaten-IDs gewählt werden (sonst null).
+ * Ergebnis: { [Übungs-ID]: Bibliotheks-ID | null }.
+ */
+export async function matchExercisesToLibrary(
+  items: { id: string; name: string; muscle: string }[],
+  candidates: Record<string, { id: string; name: string; name_en?: string; muscle?: string }[]>,
+): Promise<Record<string, string | null>> {
+  const out: Record<string, string | null> = {}
+  const withCands = items.filter((it) => (candidates[it.id] ?? []).length > 0)
+  for (const it of items) out[it.id] = null
+  if (withCands.length === 0) return out
+
+  const lines = withCands.map((it, i) => {
+    const cands = (candidates[it.id] ?? [])
+      .map((c) => `    - ${c.id}: ${c.name}${c.name_en ? ` / ${c.name_en}` : ''}${c.muscle ? ` (${c.muscle})` : ''}`)
+      .join('\n')
+    return `${i + 1}. key=${it.id} · "${it.name}" (${it.muscle})\n  Kandidaten:\n${cands}`
+  })
+  const system =
+    'Du ordnest selbst benannte Fitnessübungen einer Übungsdatenbank zu. Wähle je Übung den ' +
+    'Kandidaten, der dieselbe Bewegung beschreibt (gleiches Gerät, wenn erkennbar). Passt keiner ' +
+    'wirklich, gib null zurück. Antworte ausschließlich mit JSON.'
+  const prompt =
+    `${lines.join('\n\n')}\n\n` +
+    'Format: {"matches":{"<key>":"<Kandidaten-ID oder null>", ...}} — nutze nur IDs aus den Kandidaten der jeweiligen Übung.'
+  const text = await complete({ system, prompt, json: true, temperature: 0.1, maxTokens: 1500 })
+  const raw = parseJson<{ matches?: Record<string, unknown> }>(text)
+  const matches = raw.matches ?? (raw as Record<string, unknown>)
+  for (const it of withCands) {
+    const v = matches[it.id]
+    const allowed = candidates[it.id] ?? []
+    out[it.id] = typeof v === 'string' && allowed.some((c) => c.id === v) ? v : null
+  }
+  return out
+}
