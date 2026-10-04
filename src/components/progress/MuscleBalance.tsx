@@ -19,11 +19,11 @@ function Split({ a, b, labelA, labelB, grow }: { a: number; b: number; labelA: s
   const pct = total > 0 ? Math.round((a / total) * 100) : 50
   return (
     <div className="min-w-0 rounded-xl bg-sand-light px-3 py-2">
-      <div className="tabular flex justify-between text-[11px] text-cocoa-light">
-        <span>
+      <div className="tabular flex justify-between gap-2 text-[11px] text-cocoa-light">
+        <span className="whitespace-nowrap">
           <span className="font-semibold text-cocoa">{pct} %</span> {labelA}
         </span>
-        <span>
+        <span className="whitespace-nowrap">
           {labelB} <span className="font-semibold text-cocoa">{100 - pct} %</span>
         </span>
       </div>

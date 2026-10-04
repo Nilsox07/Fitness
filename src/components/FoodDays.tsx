@@ -60,7 +60,7 @@ export function FoodDays() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Tage" subtitle={subtitle} style={stagger(0)} />
+      <PageHeader title="Fortschritt" subtitle={subtitle} style={stagger(0)} />
 
       <MonthCalendar
         today={today}

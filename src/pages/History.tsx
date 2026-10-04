@@ -23,7 +23,6 @@ import {
   useDeleteWorkout,
   useWorkouts,
 } from '../hooks/useWorkouts'
-import { ProgressSwitch } from '../components/ProgressSwitch'
 import { FoodDays } from '../components/FoodDays'
 import { dayLabel, trainingDay } from '../lib/day'
 import { EditableSetRow } from '../components/EditableSetRow'
@@ -194,7 +193,6 @@ export default function History() {
   if (isNew && world === 'food') {
     return (
       <div className="space-y-4">
-        <ProgressSwitch />
         <FoodDays />
       </div>
     )

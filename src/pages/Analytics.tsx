@@ -421,7 +421,6 @@ function NewAnalytics() {
   if (world === 'food') {
     return (
       <div className="space-y-5">
-        <ProgressSwitch />
         <FoodStats />
       </div>
     )

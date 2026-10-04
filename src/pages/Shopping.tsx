@@ -21,41 +21,13 @@ import {
 import { useAddRecipe } from '../hooks/useRecipes'
 import { MicButton } from '../components/MicButton'
 import { MEALS, MEAL_LABEL, type Meal, type PlanMeal } from '../types'
+import { usePrefs } from '../lib/prefs'
+import { MealPlanPage } from '../components/mealplan/MealPlanPage'
+import { itemKeys, loadChecked, saveChecked } from '../components/mealplan/planUtils'
 
-// Abgehakte Artikel gelten pro Plan (gespeicherte Plan-ID bzw. Erzeugungszeitpunkt
-// eines neuen Plans) — ein neuer Plan startet mit leerer Liste.
-const CHECKED_KEY = 'shopping_checked'
+// Abhak-Helfer (pro Plan) teilen sich klassische und neue Ansicht.
 
-function loadChecked(planKey: string): Set<string> {
-  try {
-    const raw = JSON.parse(localStorage.getItem(CHECKED_KEY) || 'null') as {
-      plan?: string
-      items?: string[]
-    } | null
-    return raw && !Array.isArray(raw) && raw.plan === planKey ? new Set(raw.items ?? []) : new Set()
-  } catch {
-    return new Set()
-  }
-}
-function saveChecked(planKey: string, s: Set<string>) {
-  try {
-    localStorage.setItem(CHECKED_KEY, JSON.stringify({ plan: planKey, items: [...s] }))
-  } catch {
-    /* ignore */
-  }
-}
-
-/** Eindeutiger Schlüssel je Artikel: Kategorie + Name + Vorkommen (Duplikate getrennt). */
-function itemKeys(items: string[]): string[] {
-  const seen = new Map<string, number>()
-  return items.map((it) => {
-    const n = seen.get(it) ?? 0
-    seen.set(it, n + 1)
-    return `${it}#${n}`
-  })
-}
-
-export default function Shopping() {
+function ClassicShopping() {
   const { data: settings } = useNutritionSettings()
   const { data: routines } = useMealRoutines()
   const { data: savedPlans } = useMealPlans()
@@ -640,4 +612,9 @@ export default function Shopping() {
       )}
     </div>
   )
+}
+
+export default function Shopping() {
+  const { isNew } = usePrefs()
+  return isNew ? <MealPlanPage /> : <ClassicShopping />
 }

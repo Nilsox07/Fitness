@@ -1,11 +1,16 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { ProgressSwitch } from '../ProgressSwitch'
 
 /** Großer Seitentitel mit gedämpfter Unterzeile (wie auf den neuen Startseiten). */
 export function PageHeader({ title, subtitle, style }: { title: string; subtitle?: ReactNode; style?: CSSProperties }) {
   return (
-    <header style={style}>
-      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-      {subtitle && <p className="tabular text-sm text-cocoa-light">{subtitle}</p>}
+    <header style={style} className="space-y-3">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        {subtitle && <p className="tabular text-sm text-cocoa-light">{subtitle}</p>}
+      </div>
+      {/* Wie bei Fitness: Titel oben, darunter der Umschalter Tage | Statistik */}
+      <ProgressSwitch />
     </header>
   )
 }

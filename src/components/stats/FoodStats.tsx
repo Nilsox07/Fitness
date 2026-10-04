@@ -73,7 +73,7 @@ export function FoodStats() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Statistik"
+        title="Fortschritt"
         subtitle={stats.hasAny ? `Letzte ${WINDOW} Tage` : undefined}
         style={stagger(0)}
       />
