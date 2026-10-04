@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronRight, Dumbbell, List, PenLine, Plus, Sparkles } from 'lucide-react'
+import { CalendarDays, Check, ChevronRight, Dumbbell, List, Moon, PenLine, Plus, Sparkles } from 'lucide-react'
 import { useExercises } from '../../hooks/useExercises'
 import { useAllSets, useWorkouts } from '../../hooks/useWorkouts'
 import { useAiStatus } from '../../hooks/useAi'
@@ -8,6 +8,11 @@ import { nextPlanPosition, useCreatePlan, usePlans } from '../../hooks/usePlans'
 import { getPlanQueue } from '../../lib/workoutSession'
 import { lastDoneByPlan, suggestNextPlan } from '../../lib/home'
 import { trainingDay } from '../../lib/day'
+import { WEEKDAY_SHORT, definesDays, describeSchedule, isConfigured, upcoming } from '../../lib/schedule'
+import { useTrainingRhythm } from '../../hooks/usePrefsSync'
+import { RhythmEditor } from '../profile/RhythmEditor'
+import { SubHeader } from '../profile/ui'
+import { StarterSetCard } from '../exercises/StarterSet'
 import type { PlanWithExercises } from '../../types'
 import { Sheet } from '../workout/Sheet'
 import { agoLong, enter } from '../exercises/muscle'
@@ -17,12 +22,16 @@ import { PlanCard } from './PlanCard'
 import { PlanEditor } from './PlanEditor'
 import { QuickWorkoutCard } from '../quick/QuickWorkoutCard'
 
-/** Pläne im Routine-Stil (Neu-Modus): Liste mit Play-Knopf, Editor per ?edit=<id>. */
+/**
+ * Pläne im Routine-Stil (Neu-Modus): Liste mit Play-Knopf, Editor per ?edit=<id>,
+ * Trainingsrhythmus oben als Karte, Editor per ?rhythm=1.
+ */
 export default function PlansNew() {
   const navigate = useNavigate()
   const location = useLocation()
   const [params, setParams] = useSearchParams()
   const editId = params.get('edit')
+  const rhythmOpen = params.get('rhythm') === '1'
   const { data: plans, isLoading, isFetching } = usePlans()
   const { data: exercises } = useExercises()
   const { data: workouts } = useWorkouts()
@@ -73,6 +82,10 @@ export default function PlansNew() {
     return recent ? `${head} · zuletzt: ${recent.name} ${agoLong(recentDate, today)}` : head
   }, [plans, lastDone, today])
 
+  function openRhythm() {
+    setParams({ rhythm: '1' })
+  }
+
   function openEditor(id: string) {
     setParams({ edit: id })
   }
@@ -102,6 +115,15 @@ export default function PlansNew() {
   useEffect(() => {
     if (editId && plans && !isFetching && !editPlan) setParams({}, { replace: true })
   }, [editId, plans, isFetching, editPlan, setParams])
+
+  if (rhythmOpen) {
+    return (
+      <div className="anim-fade space-y-4">
+        <SubHeader title="Trainingsrhythmus" subtitle="Wann du trainierst" onBack={closeEditor} />
+        <RhythmEditor />
+      </div>
+    )
+  }
 
   if (editId && editPlan) {
     return (
@@ -152,6 +174,8 @@ export default function PlansNew() {
           <div className="h-28 animate-pulse rounded-3xl bg-sand" />
         </div>
       )}
+
+      {!isLoading && hasPlans && <RhythmCard onOpen={openRhythm} style={enter(idx++)} />}
 
       {!isLoading && <QuickWorkoutCard title="Schnell-Workout · keine Zeit?" style={enter(idx++)} />}
 
@@ -226,6 +250,7 @@ export default function PlansNew() {
               />
             )}
           </div>
+          {exercises && exercises.length < 5 && <StarterSetCard tone="brand" />}
         </section>
       )}
 
@@ -281,6 +306,76 @@ export default function PlansNew() {
         </Sheet>
       )}
     </div>
+  )
+}
+
+/** Karte „Trainingsrhythmus": Kurzbeschreibung + Vorschau der nächsten 7 Tage. */
+function RhythmCard({ onOpen, style }: { onOpen: () => void; style?: CSSProperties }) {
+  const today = trainingDay()
+  const { schedule, history } = useTrainingRhythm(today)
+  const { data: plans } = usePlans()
+  const nameOf = (id: string) => plans?.find((p) => p.id === id)?.name ?? 'Plan'
+  const configured = isConfigured(schedule)
+  const days = definesDays(schedule) ? upcoming(schedule, history, today, 7) : []
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      style={style}
+      className="block w-full rounded-2xl bg-cream p-4 text-left transition active:scale-[0.99]"
+      aria-label="Trainingsrhythmus bearbeiten"
+    >
+      <span className="flex items-center gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+          <CalendarDays size={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold text-cocoa">Trainingsrhythmus</span>
+          <span className="block truncate text-xs text-cocoa-light">
+            {configured ? describeSchedule(schedule) : 'Lege fest, wann du welchen Plan trainierst'}
+          </span>
+        </span>
+        <span className="shrink-0 text-xs font-semibold text-brand">{configured ? 'Ändern' : 'Festlegen'}</span>
+        <ChevronRight size={16} className="-ml-1 shrink-0 text-cocoa-muted" />
+      </span>
+
+      {days.length > 0 && (
+        <span className="mt-3 grid grid-cols-7 gap-1" aria-label="Nächste 7 Tage">
+          {days.map((d, k) => {
+            const train = d.plan.kind === 'train' ? nameOf(d.plan.planId) : null
+            const label = train ?? (d.plan.kind === 'rest' ? 'Ruhetag' : 'frei')
+            return (
+              <span key={d.date} className="flex min-w-0 flex-col items-center gap-1" title={`${WEEKDAY_SHORT[d.weekday]}: ${label}`}>
+                <span className={`text-[10px] font-semibold ${k === 0 ? 'text-brand' : 'text-cocoa-muted'}`}>
+                  {k === 0 ? 'Heute' : WEEKDAY_SHORT[d.weekday]}
+                </span>
+                <span
+                  className={`grid h-9 w-full place-items-center rounded-xl text-[11px] font-bold ${
+                    d.done
+                      ? 'bg-success text-white'
+                      : train
+                        ? 'bg-brand/15 text-brand'
+                        : 'bg-sand text-cocoa-muted'
+                  }`}
+                >
+                  {d.done ? (
+                    <Check size={15} strokeWidth={3} />
+                  ) : train ? (
+                    train.slice(0, 2)
+                  ) : d.plan.kind === 'rest' ? (
+                    <Moon size={13} />
+                  ) : (
+                    '·'
+                  )}
+                </span>
+                <span className="w-full truncate text-center text-[10px] text-cocoa-light">{train ?? (d.plan.kind === 'rest' ? 'Ruhe' : '')}</span>
+              </span>
+            )
+          })}
+        </span>
+      )}
+    </button>
   )
 }
 

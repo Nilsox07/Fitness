@@ -33,7 +33,7 @@ export function RhythmPrompt({ index }: { index: number }) {
       <button
         type="button"
         className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-4 text-left"
-        onClick={() => navigate('/profile?s=rhythm')}
+        onClick={() => navigate('/plans?rhythm=1')}
       >
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/10 text-brand">
           <CalendarDays size={18} />

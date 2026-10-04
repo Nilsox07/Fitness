@@ -21,7 +21,6 @@ import {
   Flame,
   Layers,
   ClipboardList,
-  CalendarDays,
   SlidersHorizontal,
 } from 'lucide-react'
 import { signOut } from '../lib/userData'
@@ -59,16 +58,16 @@ import { ProfileHeader } from '../components/profile/ProfileHeader'
 import { BUDDY_SKIN_EVENT } from '../components/buddy/useBuddy'
 import { NameSheet } from '../components/profile/NameSheet'
 import { useMyProfile } from '../hooks/useSocial'
-import { useUserPrefs } from '../hooks/usePrefsSync'
-import { describeSchedule } from '../lib/schedule'
-import { RhythmEditor } from '../components/profile/RhythmEditor'
 import { SettingsEditor } from '../components/profile/SettingsEditor'
 
-/** Unterseiten des Profils (neue Version), per ?s=… in der URL → Zurück-Geste funktioniert. */
-type Sub = 'rhythm' | 'settings' | 'goal' | 'review' | 'version' | 'coach' | 'push' | 'export'
+/**
+ * Unterseiten des Profils (neue Version), per ?s=… in der URL → Zurück-Geste funktioniert.
+ * Der Trainingsrhythmus liegt jetzt bei den Plänen (/plans?rhythm=1); alte Links
+ * auf ?s=rhythm werden dorthin umgeleitet.
+ */
+type Sub = 'settings' | 'goal' | 'review' | 'version' | 'coach' | 'push' | 'export'
 
 const SUB_TITLE: Record<Sub, string> = {
-  rhythm: 'Trainingsrhythmus',
   settings: 'Meine Einstellungen',
   goal: 'Ziel & Körperdaten',
   review: 'Wochenfazit',
@@ -79,7 +78,6 @@ const SUB_TITLE: Record<Sub, string> = {
 }
 
 const SUB_SUBTITLE: Record<Sub, string> = {
-  rhythm: 'Wann du trainierst',
   settings: 'Training & Ernährung',
   goal: 'Nährwerte automatisch berechnet',
   review: 'Jeden Montag neu',
@@ -99,7 +97,6 @@ export default function Profile() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { data: myProfile } = useMyProfile()
-  const { prefs: userPrefs } = useUserPrefs()
   const [nameOpen, setNameOpen] = useState(false)
   const { mode, setMode } = useTheme()
   const { showNutrition, setShowNutrition, appMode, setAppMode, isNew } = usePrefs()
@@ -193,7 +190,6 @@ export default function Profile() {
   const [params, setParams] = useSearchParams()
 
   const available: Record<Sub, boolean> = {
-    rhythm: true,
     settings: true,
     goal: showNutrition,
     review: true,
@@ -208,6 +204,12 @@ export default function Profile() {
     rawSub && Object.prototype.hasOwnProperty.call(SUB_TITLE, rawSub) && available[rawSub]
       ? rawSub
       : null
+
+  // Alte Links (/profile?s=rhythm) → Trainingsrhythmus bei den Plänen
+  const legacyRhythm = isNew && rawSub === ('rhythm' as string)
+  useEffect(() => {
+    if (legacyRhythm) navigate('/plans?rhythm=1', { replace: true })
+  }, [legacyRhythm, navigate])
 
   /** Unterseite öffnen = neuer History-Eintrag → Browser-/Gesten-Zurück führt zur Liste. */
   const openSub = (s: Sub) => setParams({ s })
@@ -224,16 +226,15 @@ export default function Profile() {
   }
 
   if (isNew) {
+    if (legacyRhythm) return null
     if (sub) {
       return (
         <div className="anim-fade space-y-4">
           <SubHeader title={SUB_TITLE[sub]} subtitle={SUB_SUBTITLE[sub]} onBack={closeSub} />
 
-          {sub === 'rhythm' && <RhythmEditor />}
-
           {sub === 'settings' && (
             <SettingsEditor
-              onOpenRhythm={() => setParams({ s: 'rhythm' }, { replace: true })}
+              onOpenRhythm={() => navigate('/plans?rhythm=1')}
               onOpenGoal={showNutrition ? () => openSub('goal') : undefined}
             />
           )}
@@ -396,12 +397,6 @@ export default function Profile() {
         />
 
         <Group title="Training">
-          <Row
-            icon={CalendarDays} tint="brand"
-            label="Trainingsrhythmus"
-            value={userPrefs.schedule ? describeSchedule(userPrefs.schedule) : 'Festlegen'}
-            onClick={() => openSub('rhythm')}
-          />
           <Row icon={SlidersHorizontal} tint="neutral" label="Meine Einstellungen" onClick={() => openSub('settings')} />
         </Group>
 

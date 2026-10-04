@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Link2,
   Lightbulb,
   ListOrdered,
   PlayCircle,
@@ -53,7 +54,9 @@ import { ExerciseAnimation } from "../components/library/ExerciseAnimation";
 import { GroupLabel, GroupList } from "../components/ui/GroupList";
 import { MuscleChip } from "../components/exercises/MuscleBits";
 import { enter } from "../components/home/motion";
-import { useLibraryMatch } from "../components/library/useLibrary";
+import { useLibrary, useLibraryMatch } from "../components/library/useLibrary";
+import { LibrarySheet } from "../components/library/LibrarySheet";
+import { setLink, suggestLinks } from "../lib/exerciseLibrary";
 
 type Metric = "est1RM" | "topWeight" | "volume";
 
@@ -170,6 +173,9 @@ export default function ExerciseDetail() {
   // Ausführung aus der Übungsbibliothek (nur neue App, wenn verknüpft/Name passt)
   const howTo = useLibraryMatch(exercise, isNew);
   const [howToOpen, setHowToOpen] = useState(true);
+  // Neue App: eigene Übung mit der Bibliothek verknüpfen / Verknüpfung ändern
+  const { list: library } = useLibrary(isNew);
+  const [linkOpen, setLinkOpen] = useState(false);
   // Neue App: Zeitraum des Diagramms, Ausführungs-Schritte, ganzer Verlauf
   const [period, setPeriod] = useState<Period>("all");
   const [stepsOpen, setStepsOpen] = useState(false);
@@ -371,6 +377,17 @@ export default function ExerciseDetail() {
                 alt={`Animation: ${howTo.name_de}`}
                 className="relative mt-4 aspect-[4/3] w-full shadow-inner"
               />
+              <button
+                type="button"
+                className="relative mt-2 flex max-w-full items-center gap-1.5 text-xs text-bg/60 transition active:opacity-70 dark:text-cocoa-light"
+                onClick={() => setLinkOpen(true)}
+              >
+                <Link2 size={13} className="shrink-0" />
+                <span className="truncate">{howTo.name_de}</span>
+                <span className="shrink-0 font-semibold text-bg/85 underline underline-offset-2 dark:text-cocoa">
+                  Verknüpfung ändern
+                </span>
+              </button>
               {hasData && (
                 <div className="relative mt-3 flex items-center gap-2 text-sm">
                   <Trophy size={15} className="shrink-0 text-gold" strokeWidth={2.5} />
@@ -404,6 +421,39 @@ export default function ExerciseDetail() {
             </p>
           )}
         </section>
+
+        {!howTo && library && (
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left ring-1 ring-brand/20 transition active:scale-[0.99]"
+            onClick={() => setLinkOpen(true)}
+            style={enter(1)}
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+              <PlayCircle size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-cocoa">Ausführung hinzufügen</span>
+              <span className="block truncate text-xs text-cocoa-light">Mit Bibliothek verknüpfen — Animation &amp; Schritte</span>
+            </span>
+            <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
+          </button>
+        )}
+
+        {linkOpen && library && (
+          <LibrarySheet
+            title="Mit Bibliothek verknüpfen"
+            mode="pick"
+            pickLabel="Mit dieser Übung verknüpfen"
+            suggestions={suggestLinks(exercise.name, exercise.muscle_group, library, 5)}
+            currentId={howTo?.id ?? null}
+            onPick={(item) => {
+              setLink(exercise.id, item.id);
+              setLinkOpen(false);
+            }}
+            onClose={() => setLinkOpen(false)}
+          />
+        )}
 
         {howTo && !hasData && (
           <p className="px-1 text-sm text-cocoa-light">
