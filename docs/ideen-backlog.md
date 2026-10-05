@@ -51,6 +51,13 @@ Empfehlung: zuerst Ghost + ETA + „Heute vor einem Jahr“, dann Scan, Wrapped 
 - Android: Play Console (einmalig 25 $), interner Test-Track → nicht öffentlich, aber Auto-Updates über den Play Store; alternativ APK drüberinstallieren
 - iOS: TestFlight braucht Apple-Entwicklerkonto (99 €/Jahr), Builds laufen nach 90 Tagen ab
 
+## Server / Hosting für den Launch
+- Supabase (PostgreSQL) bleibt – Branchenstandard, Open Source, später selbst hostbar (z. B. Hetzner) ohne App-Umbau. Kein Wechsel auf MySQL.
+- Supabase-Projekt in EU-Region (Frankfurt), AVV/DPA abschließen, Pro-Plan (Free pausiert bei Inaktivität, keine Backups)
+- Ein gemeinsames Projekt in einer Supabase-Organisation statt zwei Privatkonten
+- Vercel Hobby ist nur nicht-kommerziell → beim Launch Vercel Pro oder Frontend zu Cloudflare Pages / Hetzner
+- Gemini: bezahlte Stufe nutzen (Gratis-Stufe darf Daten zum Training verwenden – bei Gesundheitsdaten tabu)
+
 ## Im Hinterkopf (nicht jetzt)
 - **Einsatz-Challenge** unter Freunden (statt Krypto-Token)
 - **Store-Launch:**
