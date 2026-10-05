@@ -32,6 +32,25 @@ Empfehlung: zuerst Ghost + ETA + „Heute vor einem Jahr“, dann Scan, Wrapped 
 | 17 | NFC-Sticker im Spind | Apple Kurzbefehle / Smart Home | Handy an den Sticker → Training startet sofort | erst native App |
 | 18 | Pausentimer auf dem Sperrbildschirm | Uber Live Activities | Pause und nächster Satz auf dem Sperrbildschirm und der Dynamic Island | erst native App |
 
+### Runde 3
+| # | Feature | Vorbild | Idee | Aufwand |
+|---|---------|---------|------|---------|
+| 19 | Sprach-Logging | Siri / Alexa | Im Satz sagen: „80 Kilo, 8 Wiederholungen“ → wird eingetragen, Hände bleiben an der Hantel | mittel |
+| 20 | Umleitung | Google Maps | Gerät besetzt → ein Tipp → gleichwertige Ersatzübung für dieselben Muskeln, Plan läuft weiter | klein |
+| 21 | Satz-Gefühl | Uber-Bewertung | Nach jedem Satz ein Emoji-Tipp (leicht/okay/hart/Limit) → App schlägt nächstes Mal das Gewicht vor | klein |
+| 22 | Pläne teilen per Link/QR | Spotify-Playlists | Plan als Link oder QR verschicken, Freund übernimmt ihn mit einem Tipp – wächst die App ganz nebenbei | klein–mittel |
+| 23 | Kühlschrank-Koch | Too Good To Go / Resteküche | Foto vom Kühlschrank → KI schlägt ein Gericht vor, das zu den restlichen Makros des Tages passt | mittel |
+| 24 | Kalorien-Kontoauszug | Banking-Apps | Monatsauswertung: „34 % deiner Kalorien kamen aus Snacks, 12 % aus Getränken“ | klein |
+| 25 | Gym-Auslastung | Google Maps Stoßzeiten / Waze | Nutzer melden, wie voll ihr Studio ist → beste Trainingszeit | mittel, braucht viele Nutzer |
+| 26 | Überraschungs-Belohnung | Überraschungsei | Nach dem Training manchmal ein zufälliges Extra (Buddy-Outfit, Sticker) – nie kaufbar | klein |
+| 27 | Technik-Häppchen | Duolingo | 1-Minuten-Lektionen pro Übung mit kurzer Frage, passend zu den Figuren | mittel |
+
+## Native App vor dem Store – Updates
+- Capacitor-Hülle lädt die Web-App (Vercel-URL oder Live-Update-Plugin) → jedes Deploy kommt automatisch an, wie jetzt
+- Neu installieren nur bei Änderungen an der Hülle selbst (neue native Plugins wie Health Connect)
+- Android: Play Console (einmalig 25 $), interner Test-Track → nicht öffentlich, aber Auto-Updates über den Play Store; alternativ APK drüberinstallieren
+- iOS: TestFlight braucht Apple-Entwicklerkonto (99 €/Jahr), Builds laufen nach 90 Tagen ab
+
 ## Im Hinterkopf (nicht jetzt)
 - **Einsatz-Challenge** unter Freunden (statt Krypto-Token)
 - **Store-Launch:**
