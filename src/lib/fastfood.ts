@@ -82,7 +82,7 @@ export function menuItemToEstimate(item: MenuItem, qty = 1): FoodEstimate {
   }
 }
 
-const MAIN = /burger|chicken|wraps|subs|sandwich|pizza|pasta|fisch|bowl|salat|frühstück/i
+const MAIN = /burger|chicken|wraps|subs|sandwich|pizza|pasta|fisch|bowl|salat/i
 const SIDE = /beilage/i
 const DRINK = /getränk/i
 
