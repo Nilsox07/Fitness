@@ -665,7 +665,9 @@ export default function Nutrition() {
   async function estimateOrder() {
     // Von der Karte gewählt → exakte Werte, keine KI nötig.
     if (activeChain && orderItems.length > 0) {
-      if (isNew) showAnalysis(orderItems, activeChain.name)
+      const title =
+        orderItems.length <= 2 ? orderItems.map((i) => i.name).join(' + ') : `${activeChain.name} · ${orderItems.length} Artikel`
+      if (isNew) showAnalysis(orderItems, title)
       else setAiResults(orderItems)
       setOrderQty({})
       setAddMode(null)
@@ -1732,7 +1734,11 @@ export default function Nutrition() {
           footer={
             isNew ? (
               <>
-                <PrimaryButton onClick={estimateOrder} disabled={aiBusy} busy={aiBusy}>
+                <PrimaryButton
+                  onClick={estimateOrder}
+                  disabled={aiBusy || (!!activeChain && orderItems.length === 0 && !restItem.trim())}
+                  busy={aiBusy}
+                >
                   {orderItems.length > 0
                     ? `${orderItems.length} ${orderItems.length === 1 ? 'Artikel' : 'Artikel'} eintragen · ${orderKcal} kcal`
                     : activeChain

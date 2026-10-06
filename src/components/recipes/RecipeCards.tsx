@@ -111,7 +111,7 @@ export function RecipeGridCard({
           <ScoreBadge score={score} className="absolute left-2 top-2" />
         </RecipeCover>
         <div className="flex flex-1 flex-col gap-1 p-3">
-          <div className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-tight text-cocoa">
+          <div className="line-clamp-2 h-[2.5em] overflow-hidden text-sm font-semibold leading-tight text-cocoa">
             {recipe.title}
           </div>
           <div className="tabular text-xs text-cocoa-light">

@@ -41,7 +41,7 @@ export const CHAIN_BADGE: Record<string, { name: string; short: string; bg: stri
   starbucks: { name: 'Starbucks', short: 'Sb', bg: '#00704A', fg: '#FFFFFF' },
   fiveguys: { name: 'Five Guys', short: '5G', bg: '#E31837', fg: '#FFFFFF' },
   dunkin: { name: "Dunkin'", short: 'Du', bg: '#FF671F', fg: '#FFFFFF' },
-  deandavid: { name: 'dean&david', short: 'd&d', bg: '#1E1E1E', fg: '#C8D400' },
+  deananddavid: { name: 'dean&david', short: 'd&d', bg: '#1E1E1E', fg: '#C8D400' },
   vapiano: { name: 'Vapiano', short: 'Va', bg: '#E2001A', fg: '#FFFFFF' },
 }
 
