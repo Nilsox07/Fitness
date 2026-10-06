@@ -62,7 +62,7 @@ async function geminiOnce({ model, key, body, json }) {
   const reason = cand?.finishReason
   // Abgeschnittene/blockierte Antworten klar melden statt halbes JSON an die App zu geben.
   if (reason === 'MAX_TOKENS' && (json || !text.trim())) {
-    throw userError('Die KI-Antwort war zu lang und wurde abgeschnitten — bitte nochmal versuchen oder weniger Tage wählen.')
+    throw userError('Die KI-Antwort war zu lang und wurde abgeschnitten — bitte nochmal versuchen.')
   }
   if (reason === 'SAFETY' || reason === 'PROHIBITED_CONTENT' || reason === 'BLOCKLIST' || data?.promptFeedback?.blockReason) {
     throw userError('Die KI hat die Anfrage aus Sicherheitsgründen abgelehnt. Bitte anders formulieren.')
@@ -81,16 +81,22 @@ function userError(message) {
   return err
 }
 
+const THINKING_HEADROOM = 4096
+
 async function callGemini({ system, prompt, json, temperature, image, maxTokens }) {
   const key = process.env.GEMINI_API_KEY
   const parts = [{ text: prompt }]
   if (image) parts.push(imagePart(image))
+  // maxTokens ist das Budget für die eigentliche Antwort. Gemini zählt sein
+  // internes „Denken" mit dazu — deshalb Puffer obendrauf und Denken auf „low"
+  // begrenzen (spart Kosten; bezahlt wird nur, was wirklich verbraucht wird).
   const body = {
     contents: [{ role: 'user', parts }],
     generationConfig: {
       temperature: temperature ?? 0.4,
-      ...(maxTokens ? { maxOutputTokens: maxTokens } : {}),
+      ...(maxTokens ? { maxOutputTokens: maxTokens + THINKING_HEADROOM } : {}),
       ...(json ? { responseMimeType: 'application/json' } : {}),
+      thinkingConfig: { thinkingLevel: 'low' },
     },
     ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
   }
@@ -105,6 +111,12 @@ async function callGemini({ system, prompt, json, temperature, image, maxTokens 
       } catch (e) {
         lastErr = e
         const s = e.status
+        // Modell kennt thinkingLevel nicht (ältere Generation) → ohne Denk-Einstellung erneut
+        if (s === 400 && body.generationConfig.thinkingConfig && /thinking/i.test(String(e.message))) {
+          delete body.generationConfig.thinkingConfig
+          attempt--
+          continue
+        }
         if (s === 400 || s === 401 || s === 403 || e.userMessage) throw e // echter Fehler (Key/Anfrage/Antwort) -> sofort melden
         if (s === 404) break // Modell gibt es nicht -> naechstes Modell probieren
         if (!TRANSIENT.has(s)) throw e
