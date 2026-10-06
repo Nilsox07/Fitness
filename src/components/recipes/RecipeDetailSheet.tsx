@@ -33,6 +33,8 @@ export function RecipeDetailSheet({
   onToggleShared,
   onDelete,
   onClose,
+  badges = [],
+  extra,
 }: {
   recipe: SavedRecipe
   mine: boolean
@@ -43,6 +45,10 @@ export function RecipeDetailSheet({
   onToggleShared: () => void
   onDelete: () => void
   onClose: () => void
+  /** Zusätzliche Chips im Kopf (z. B. „15 Min", „Vegan") */
+  badges?: string[]
+  /** Zusätzlicher Inhalt oben im Sheet (z. B. Empfehlungsgrund, Speichern) */
+  extra?: ReactNode
 }) {
   const titleId = useId()
   const [portions, setPortions] = useState(1)
@@ -190,11 +196,20 @@ export function RecipeDetailSheet({
                     geteilt
                   </span>
                 )}
+                {badges.map((b) => (
+                  <span
+                    key={b}
+                    className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md"
+                  >
+                    {b}
+                  </span>
+                ))}
               </div>
             </div>
           </RecipeCover>
 
           <div className="space-y-7 px-5 pb-6 pt-5">
+            {extra}
             {!mine && recipe.author_name && (
               <div className="-mt-1 flex items-center gap-1.5 text-xs text-cocoa-light">
                 Geteilt von <FriendChip name={recipe.author_name} className="text-xs font-semibold text-cocoa" />

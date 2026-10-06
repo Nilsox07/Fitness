@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth'
 import { usePrefs } from '../lib/prefs'
 import { useAiStatus } from '../hooks/useAi'
 import { useRecipes, useToggleRecipeShared, useDeleteRecipe } from '../hooks/useRecipes'
-import { useAddFoodEntry, useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
+import { useAddFoodEntry, useDietStyle, useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useAllSets } from '../hooks/useWorkouts'
 import { localDate } from '../lib/day'
 import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
@@ -14,6 +14,8 @@ import { stagger } from '../components/nutrition-home/motion'
 import { RecipeCreateSheet, type CreateMode } from '../components/recipes/RecipeCreateSheet'
 import { ForYouCard, RecipeGridCard } from '../components/recipes/RecipeCards'
 import { RecipeDetailSheet, type RecipeDayContext } from '../components/recipes/RecipeDetailSheet'
+import { RecipeDiscover } from '../components/recipes/RecipeDiscover'
+import type { RecommendContext } from '../lib/recipeRecommend'
 import {
   currentMeal,
   isHighProtein,
@@ -26,9 +28,7 @@ import { useNutritionPrefs } from '../hooks/usePrefsSync'
 
 function today(): string {
   const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 /** Eine Portion als Ernährungseintrag (für die aktuelle Mahlzeit). */
@@ -102,11 +102,7 @@ function RecipeCard({ r, mine }: { r: SavedRecipe; mine: boolean }) {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          className="btn-ghost flex items-center gap-1.5 text-sm"
-          onClick={log}
-          disabled={addEntry.isPending}
-        >
+        <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={log} disabled={addEntry.isPending}>
           <Plus size={16} />
           Loggen
         </button>
@@ -164,8 +160,8 @@ function ClassicRecipes() {
           ))}
           {mine.length === 0 && !isLoading && (
             <li className="text-sm text-cocoa-light">
-              Noch keine. Erstelle Rezepte im Tab „Plan" („Rezept" pro Mahlzeit) oder über „Heute →
-              Hinzufügen → Rezept" und speichere sie.
+              Noch keine. Erstelle Rezepte im Tab „Plan" („Rezept" pro Mahlzeit) oder über „Heute → Hinzufügen → Rezept"
+              und speichere sie.
             </li>
           )}
         </ul>
@@ -211,6 +207,8 @@ function NewRecipes() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [openId, setOpenId] = useState<string | null>(null)
+  const [tab, setTab] = useState<'discover' | 'mine'>('discover')
+  const diet = useDietStyle()
 
   const all = useMemo(() => recipes ?? [], [recipes])
   const mineCount = all.filter((r) => r.user_id === user?.id).length
@@ -235,6 +233,18 @@ function NewRecipes() {
       fatTarget: settings?.fat_target ?? 0,
     }
   }, [entries, settings, allSets, date, kcalBonus])
+
+  const recCtx = useMemo<RecommendContext>(
+    () => ({
+      goal: day.goal,
+      diet,
+      meal: currentMeal(),
+      remainingKcal: day.remainingKcal,
+      remainingProtein: day.remainingProtein,
+    }),
+    [day, diet],
+  )
+  const savedTitles = useMemo(() => new Set(all.filter((r) => r.user_id === user?.id).map((r) => r.title)), [all, user])
 
   const scores = useMemo(() => {
     const m = new Map<string, MealScore>()
@@ -267,7 +277,7 @@ function NewRecipes() {
     ...(hasFriends ? [{ id: 'friends' as const, label: 'Von Freunden' }] : []),
   ]
 
-  const openRecipe = openId ? all.find((r) => r.id === openId) ?? null : null
+  const openRecipe = openId ? (all.find((r) => r.id === openId) ?? null) : null
   const searching = query.trim().length > 0
   const subtitle = [
     `${mineCount} ${mineCount === 1 ? 'eigenes' : 'eigene'}`,
@@ -284,10 +294,12 @@ function NewRecipes() {
       <header className="flex items-start justify-between gap-2" style={stagger(0)}>
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">Rezepte</h1>
-          <p className="text-sm text-cocoa-light">{isLoading ? 'Lädt…' : subtitle}</p>
+          <p className="text-sm text-cocoa-light">
+            {tab === 'discover' ? 'Zum direkt Nachkochen' : isLoading ? 'Lädt…' : subtitle}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {all.length > 0 && (
+          {(all.length > 0 || tab === 'discover') && (
             <button
               className={`${iconBtn} ${searchOpen ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa'}`}
               onClick={() => {
@@ -310,102 +322,149 @@ function NewRecipes() {
         </div>
       </header>
 
-      {isLoading && (
-        <div className="grid grid-cols-2 gap-3" aria-hidden="true">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="overflow-hidden rounded-2xl bg-cream">
-              <div className="aspect-[4/3] animate-pulse bg-sand" />
-              <div className="space-y-2 p-3">
-                <div className="h-3 w-4/5 animate-pulse rounded-full bg-sand" />
-                <div className="h-3 w-1/2 animate-pulse rounded-full bg-sand" />
-              </div>
-            </div>
-          ))}
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-sand p-1" role="tablist" style={stagger(0)}>
+        {(
+          [
+            ['discover', 'Entdecken'],
+            ['mine', 'Meine Rezepte'],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`rounded-full py-2 text-sm font-semibold transition ${
+              tab === id ? 'bg-bg text-cocoa shadow-sm' : 'text-cocoa-light'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'discover' && searchOpen && (
+        <div className="anim-fade relative">
+          <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cocoa-muted" />
+          <input
+            className="input pl-10"
+            type="search"
+            autoFocus
+            placeholder="Rezepte oder Zutaten suchen"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </div>
       )}
 
-      {!isLoading && all.length === 0 && (
-        <EmptyState aiOn={aiOn} onCreate={(m) => setSheet(m)} />
+      {tab === 'discover' && (
+        <RecipeDiscover
+          ctx={recCtx}
+          day={day}
+          query={query}
+          savedTitles={savedTitles}
+          onLog={(entry) => addEntry.mutateAsync(entry)}
+        />
       )}
 
-      {!isLoading && all.length > 0 && (
+      {tab === 'mine' && (
         <>
-          {searchOpen && (
-            <div className="anim-fade relative">
-              <Search
-                size={18}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cocoa-muted"
-              />
-              <input
-                className="input pl-10"
-                type="search"
-                autoFocus
-                placeholder="Rezepte oder Zutaten suchen"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    setQuery('')
-                    setSearchOpen(false)
-                  }
-                }}
-              />
+          {isLoading && (
+            <div className="grid grid-cols-2 gap-3" aria-hidden="true">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="overflow-hidden rounded-2xl bg-cream">
+                  <div className="aspect-[4/3] animate-pulse bg-sand" />
+                  <div className="space-y-2 p-3">
+                    <div className="h-3 w-4/5 animate-pulse rounded-full bg-sand" />
+                    <div className="h-3 w-1/2 animate-pulse rounded-full bg-sand" />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
-          {forYou.length > 0 && !searching && activeFilter === 'all' && (
-            <section className="space-y-2.5" style={stagger(1)}>
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-[13px] font-semibold uppercase tracking-wide text-cocoa-muted">Für dich</h2>
-                {day.remainingKcal != null && (
-                  <span className="tabular text-xs text-cocoa-muted">noch {day.remainingKcal} kcal heute</span>
-                )}
-              </div>
-              <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {forYou.map((r, i) => (
-                  <ForYouCard key={r.id} recipe={r} onOpen={() => setOpenId(r.id)} style={stagger(i + 1, 50)} />
+          {!isLoading && all.length === 0 && <EmptyState aiOn={aiOn} onCreate={(m) => setSheet(m)} />}
+
+          {!isLoading && all.length > 0 && (
+            <>
+              {searchOpen && (
+                <div className="anim-fade relative">
+                  <Search
+                    size={18}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cocoa-muted"
+                  />
+                  <input
+                    className="input pl-10"
+                    type="search"
+                    autoFocus
+                    placeholder="Rezepte oder Zutaten suchen"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setQuery('')
+                        setSearchOpen(false)
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              {forYou.length > 0 && !searching && activeFilter === 'all' && (
+                <section className="space-y-2.5" style={stagger(1)}>
+                  <div className="flex items-baseline justify-between">
+                    <h2 className="text-[13px] font-semibold uppercase tracking-wide text-cocoa-muted">Für dich</h2>
+                    {day.remainingKcal != null && (
+                      <span className="tabular text-xs text-cocoa-muted">noch {day.remainingKcal} kcal heute</span>
+                    )}
+                  </div>
+                  <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {forYou.map((r, i) => (
+                      <ForYouCard key={r.id} recipe={r} onOpen={() => setOpenId(r.id)} style={stagger(i + 1, 50)} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]" style={stagger(2)}>
+                {chips.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setFilter(c.id)}
+                    aria-pressed={activeFilter === c.id}
+                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                      activeFilter === c.id ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
                 ))}
               </div>
-            </section>
-          )}
 
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]" style={stagger(2)}>
-            {chips.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setFilter(c.id)}
-                aria-pressed={activeFilter === c.id}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                  activeFilter === c.id ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-
-          {visible.length > 0 ? (
-            <ul className="grid grid-cols-2 gap-3">
-              {visible.map((r, i) => (
-                <RecipeGridCard
-                  key={r.id}
-                  recipe={r}
-                  score={scores.get(r.id)!}
-                  mine={r.user_id === user?.id}
-                  onOpen={() => setOpenId(r.id)}
-                  onQuickLog={() => log(r, 1, currentMeal())}
-                  style={stagger(Math.min(i, 8) + 3, 45)}
-                />
-              ))}
-            </ul>
-          ) : (
-            <div className="anim-fade flex flex-col items-center gap-2 rounded-2xl bg-cream px-5 py-8 text-center">
-              <div className="grid h-12 w-12 place-items-center rounded-full bg-sand text-cocoa-light">
-                <Search size={22} />
-              </div>
-              <p className="text-sm font-semibold text-cocoa">Keine Treffer</p>
-              <p className="text-xs text-cocoa-light">Anderen Suchbegriff oder Filter probieren.</p>
-            </div>
+              {visible.length > 0 ? (
+                <ul className="grid grid-cols-2 gap-3">
+                  {visible.map((r, i) => (
+                    <RecipeGridCard
+                      key={r.id}
+                      recipe={r}
+                      score={scores.get(r.id)!}
+                      mine={r.user_id === user?.id}
+                      onOpen={() => setOpenId(r.id)}
+                      onQuickLog={() => log(r, 1, currentMeal())}
+                      style={stagger(Math.min(i, 8) + 3, 45)}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <div className="anim-fade flex flex-col items-center gap-2 rounded-2xl bg-cream px-5 py-8 text-center">
+                  <div className="grid h-12 w-12 place-items-center rounded-full bg-sand text-cocoa-light">
+                    <Search size={22} />
+                  </div>
+                  <p className="text-sm font-semibold text-cocoa">Keine Treffer</p>
+                  <p className="text-xs text-cocoa-light">Anderen Suchbegriff oder Filter probieren.</p>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

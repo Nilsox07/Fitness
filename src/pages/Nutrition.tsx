@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   Bot,
@@ -94,6 +94,8 @@ import { kcalByDate, mealRecommendation } from '../lib/nutritionHome'
 import { dayLabel } from '../lib/day'
 import type { FoodEntry } from '../types'
 import { useNutritionPrefs } from '../hooks/usePrefsSync'
+import { ChainBadge, ChainMenu } from '../components/food/ChainMenu'
+import { CHAIN_BADGE, findChain, loadChains, menuItemToEstimate, suggestCombo, type Chain } from '../lib/fastfood'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
 function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
@@ -151,10 +153,6 @@ function Bar({ value, target }: { value: number; target: number }) {
 
 /** Anbieter-Chips im Restaurant-Sheet. */
 const PLACES = [
-  "McDonald's",
-  'Burger King',
-  'KFC',
-  'Subway',
   'Döner',
   'Italienisch',
   'Indisch',
@@ -448,6 +446,19 @@ export default function Nutrition() {
   >(null)
   const [place, setPlace] = useState('')
   const [restItem, setRestItem] = useState('')
+  const [chains, setChains] = useState<Chain[] | null>(null)
+  const [orderQty, setOrderQty] = useState<Record<string, number>>({})
+  useEffect(() => {
+    if (addMode !== 'restaurant' || chains) return
+    loadChains()
+      .then(setChains)
+      .catch(() => setChains([]))
+  }, [addMode, chains])
+  const activeChain = chains && place ? findChain(chains, place) : undefined
+  const orderItems = activeChain
+    ? activeChain.items.filter((i) => (orderQty[i.name] ?? 0) > 0).map((i) => menuItemToEstimate(i, orderQty[i.name]))
+    : []
+  const orderKcal = orderItems.reduce((s, i) => s + i.kcal, 0)
   const [scanning, setScanning] = useState(false)
 
   // gewähltes Produkt → Mengen-Bestätigung
@@ -652,6 +663,14 @@ export default function Nutrition() {
   }
 
   async function estimateOrder() {
+    // Von der Karte gewählt → exakte Werte, keine KI nötig.
+    if (activeChain && orderItems.length > 0) {
+      if (isNew) showAnalysis(orderItems, activeChain.name)
+      else setAiResults(orderItems)
+      setOrderQty({})
+      setAddMode(null)
+      return
+    }
     if (!place && !restItem.trim()) return
     setAiBusy(true)
     setError(null)
@@ -673,6 +692,28 @@ export default function Nutrition() {
   async function suggestForBudget() {
     if (!place) {
       setError('Wähl zuerst einen Anbieter.')
+      return
+    }
+    if (activeChain) {
+      const remaining = {
+        kcal: Math.max(0, kcalTarget - totals.kcal),
+        protein: Math.max(0, (settings?.protein_target ?? 0) - totals.protein),
+      }
+      const combo = suggestCombo(activeChain.items, hasTarget ? remaining : { kcal: 800, protein: 40 })
+      if (combo.length === 0) {
+        setError('Kein Vorschlag möglich.')
+        return
+      }
+      const items = combo.map((i) => menuItemToEstimate(i))
+      const kcal = items.reduce((s, i) => s + i.kcal, 0)
+      const note = hasTarget
+        ? kcal > remaining.kcal
+          ? 'Dein Budget ist fast aufgebraucht – das ist die kleinste sinnvolle Option.'
+          : `Passt in deine restlichen ${remaining.kcal} kcal, mit möglichst viel Eiweiß.`
+        : 'Viel Eiweiß für ca. 800 kcal.'
+      if (isNew) showAnalysis(items, `Vorschlag: ${activeChain.name}`, note)
+      else setAiResults(items)
+      setAddMode(null)
       return
     }
     setAiBusy(true)
@@ -1692,7 +1733,11 @@ export default function Nutrition() {
             isNew ? (
               <>
                 <PrimaryButton onClick={estimateOrder} disabled={aiBusy} busy={aiBusy}>
-                  Bestellung schätzen
+                  {orderItems.length > 0
+                    ? `${orderItems.length} ${orderItems.length === 1 ? 'Artikel' : 'Artikel'} eintragen · ${orderKcal} kcal`
+                    : activeChain
+                      ? 'Nicht dabei? Mit KI schätzen'
+                      : 'Bestellung schätzen'}
                 </PrimaryButton>
                 <button className="btn-ghost w-full gap-1.5 rounded-2xl py-3" onClick={suggestForBudget} disabled={aiBusy}>
                   <Bot size={16} className="text-brand" />
@@ -1702,7 +1747,7 @@ export default function Nutrition() {
             ) : (
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button className="btn-primary" onClick={estimateOrder} disabled={aiBusy}>
-                  {aiBusy ? '…' : 'Bestellung schätzen'}
+                  {aiBusy ? '…' : orderItems.length > 0 ? `${orderItems.length} eintragen` : 'Bestellung schätzen'}
                 </button>
                 <button className="btn-ghost gap-1.5" onClick={suggestForBudget} disabled={aiBusy}>
                   <Bot size={16} className="text-cocoa-light" />
@@ -1726,18 +1771,26 @@ export default function Nutrition() {
           <div>
             {isNew && <GroupLabel>Wo isst du?</GroupLabel>}
             <div className={isNew ? '-mx-5 flex gap-2 overflow-x-auto px-5 pb-1' : '-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1'}>
-              {PLACES.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPlace(p)}
-                  aria-pressed={place === p}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ${
-                    place === p ? 'bg-brand text-on-brand' : isNew ? 'bg-cream text-cocoa' : 'bg-sand text-cocoa'
-                  } ${isNew ? 'font-medium' : ''}`}
-                >
-                  {p}
-                </button>
-              ))}
+              {[...Object.entries(CHAIN_BADGE).map(([id, b]) => ({ id, name: b.name })), ...PLACES.map((p) => ({ id: '', name: p }))].map(
+                ({ id, name: p }) => (
+                  <button
+                    key={p}
+                    onClick={() => {
+                      setPlace(place === p ? '' : p)
+                      setOrderQty({})
+                    }}
+                    aria-pressed={place === p}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-full py-1.5 text-sm transition-colors duration-200 ${
+                      id ? 'pl-1.5 pr-3' : 'px-3'
+                    } ${
+                      place === p ? 'bg-brand text-on-brand' : isNew ? 'bg-cream text-cocoa' : 'bg-sand text-cocoa'
+                    } ${isNew ? 'font-medium' : ''}`}
+                  >
+                    {id && <ChainBadge id={id} size={22} />}
+                    {p}
+                  </button>
+                ),
+              )}
             </div>
           </div>
           <div>
@@ -1745,7 +1798,11 @@ export default function Nutrition() {
             <div className="flex gap-2">
               <input
                 className={isNew ? BIG_INPUT : 'input'}
-                placeholder="Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis"
+                placeholder={
+                  activeChain
+                    ? 'Auf der Karte suchen, z. B. Big Mac'
+                    : 'Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis'
+                }
                 value={restItem}
                 onChange={(e) => setRestItem(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && estimateOrder()}
@@ -1753,6 +1810,17 @@ export default function Nutrition() {
               <MicButton onResult={(t) => setRestItem((v) => (v ? v + ' ' + t : t))} />
             </div>
           </div>
+          {activeChain && (
+            <ChainMenu
+              chain={activeChain}
+              query={restItem}
+              qty={orderQty}
+              onQty={(name, n) => setOrderQty((q) => ({ ...q, [name]: Math.max(0, n) }))}
+            />
+          )}
+          {place && chains && !activeChain && chains.length > 0 && (
+            <p className="text-xs text-cocoa-muted">Für „{place}" schätzt die KI die Nährwerte.</p>
+          )}
           {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
         </FlowSheet>
       )}
