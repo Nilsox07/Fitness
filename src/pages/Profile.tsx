@@ -33,7 +33,7 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
-import { enablePush, pushSupported, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
+import { enablePush, pushSupported, sendTestPush, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
 import { computeXp, levelInfo } from '../lib/xp'
 import { buddyLevelInfo } from '../lib/buddyLevel'
 import { localDate } from '../lib/day'
@@ -316,7 +316,8 @@ export default function Profile() {
           {sub === 'push' && (
             <SubCard>
               <p className="text-sm text-cocoa-light">
-                Push, wenn du ein paar Tage nicht im Gym warst.
+                Buddy erinnert dich abends, wenn du an einem Trainingstag noch nicht im Gym warst – und meldet
+                Cheat-Alarme deiner Freunde.
               </p>
               <button
                 className="btn-primary w-full gap-1.5"
@@ -331,6 +332,23 @@ export default function Profile() {
                     Aktivieren
                   </>
                 )}
+              </button>
+              <button
+                className="btn-ghost w-full gap-1.5"
+                onClick={async () => {
+                  setPushBusy(true)
+                  setPushMsg(null)
+                  try {
+                    setPushMsg(await sendTestPush())
+                  } catch {
+                    setPushMsg('Senden fehlgeschlagen.')
+                  } finally {
+                    setPushBusy(false)
+                  }
+                }}
+                disabled={pushBusy}
+              >
+                Test-Benachrichtigung senden
               </button>
               {pushMsg && <p className="text-sm text-cocoa-light">{pushMsg}</p>}
             </SubCard>

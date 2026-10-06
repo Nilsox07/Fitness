@@ -99,3 +99,19 @@ export async function enablePush(userId: string): Promise<void> {
     )
   if (error) throw error
 }
+
+/** Test-Benachrichtigung an die eigenen Geräte; gibt eine lesbare Meldung zurück. */
+export async function sendTestPush(): Promise<string> {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  if (!token) return 'Nicht angemeldet.'
+  const r = await fetch('/api/push/test', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}` },
+  })
+  const res = (await r.json().catch(() => ({}))) as { ok?: boolean; sent?: number; reason?: string; errors?: number[] }
+  if (res.ok) return 'Test verschickt – sollte gleich auf dem Handy erscheinen.'
+  if (res.reason === 'push_not_configured') return 'Auf dem Server fehlen die VAPID-Schlüssel.'
+  if (res.reason === 'no_subscription') return 'Auf diesem Konto ist noch kein Gerät angemeldet – erst „Aktivieren“ tippen.'
+  return `Senden fehlgeschlagen${res.errors?.length ? ` (Fehler ${res.errors.join(', ')})` : ''}.`
+}
