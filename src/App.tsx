@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { usePrefs } from './lib/prefs'
 import { TabBar } from './components/TabBar'
@@ -84,6 +84,7 @@ export default function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/quick" element={isNew ? <QuickWorkout /> : <Navigate to="/" replace />} />
+          <Route path="/share" element={<ShareTarget />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -95,4 +96,14 @@ export default function App() {
       <TabBar />
     </div>
   )
+}
+
+/** Ziel des Teilen-Menüs (Android): geteilten Link/Text an den Rezept-Import geben. */
+function ShareTarget() {
+  const [params] = useSearchParams()
+  const shared = [params.get('title'), params.get('text'), params.get('url')]
+    .filter((v): v is string => !!v && !!v.trim())
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .join('\n')
+  return <Navigate to={shared ? `/recipes?import=${encodeURIComponent(shared)}` : '/recipes'} replace />
 }

@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
-import { Check, ChevronDown, PenLine, Plus, Search, Share2, Sparkles, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Check, ChevronDown, ChevronRight, Link2, PenLine, Plus, Search, Share2, Sparkles, X } from 'lucide-react'
 import { MyBuddy } from '../components/buddy/MyBuddy'
 import { useAuth } from '../lib/auth'
 import { usePrefs } from '../lib/prefs'
@@ -192,7 +193,7 @@ function NewRecipes() {
   const { kcalBonus } = useNutritionPrefs()
   const { user } = useAuth()
   const { data: recipes, isLoading } = useRecipes()
-  const { data: ai } = useAiStatus()
+  const { data: ai, isPending: aiPending } = useAiStatus()
   const aiOn = !!ai?.enabled
   const { data: settings } = useNutritionSettings()
   const date = localDate()
@@ -203,6 +204,8 @@ function NewRecipes() {
   const del = useDeleteRecipe()
 
   const [sheet, setSheet] = useState<CreateMode | null>(null)
+  const [importText, setImportText] = useState('')
+  const [params, setParams] = useSearchParams()
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
@@ -212,6 +215,23 @@ function NewRecipes() {
 
   const all = useMemo(() => recipes ?? [], [recipes])
   const mineCount = all.filter((r) => r.user_id === user?.id).length
+
+  // Über das Teilen-Menü (/share) geschickter Link → Import-Sheet öffnen.
+  useEffect(() => {
+    const shared = params.get('import')
+    if (!shared || aiPending) return // erst wissen, ob die KI verfügbar ist
+    setImportText(shared)
+    setSheet('link')
+    setParams({}, { replace: true })
+  }, [params, setParams, aiPending])
+
+  // Neues eigenes Rezept gespeichert → „Meine Rezepte" zeigen.
+  const prevMine = useRef<number | null>(null)
+  useEffect(() => {
+    if (isLoading) return
+    if (prevMine.current != null && mineCount > prevMine.current) setTab('mine')
+    prevMine.current = mineCount
+  }, [mineCount, isLoading])
   const friendsCount = all.length - mineCount
   const hasFriends = friendsCount > 0
   const activeFilter: Filter = filter === 'friends' && !hasFriends ? 'all' : filter
@@ -357,6 +377,26 @@ function NewRecipes() {
         </div>
       )}
 
+      {tab === 'discover' && aiOn && !query.trim() && (
+        <button
+          className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left transition active:scale-[0.99]"
+          onClick={() => {
+            setImportText('')
+            setSheet('link')
+          }}
+          style={stagger(1)}
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+            <Link2 size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-cocoa">Rezept von TikTok, Insta & Co.</span>
+            <span className="block text-xs text-cocoa-light">Link einfügen oder direkt an die App teilen</span>
+          </span>
+          <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />
+        </button>
+      )}
+
       {tab === 'discover' && (
         <RecipeDiscover
           ctx={recCtx}
@@ -485,7 +525,17 @@ function NewRecipes() {
           onClose={() => setOpenId(null)}
         />
       )}
-      {sheet && <RecipeCreateSheet initial={sheet} aiEnabled={aiOn} onClose={() => setSheet(null)} />}
+      {sheet && (
+        <RecipeCreateSheet
+          initial={sheet}
+          initialText={importText}
+          aiEnabled={aiOn}
+          onClose={() => {
+            setSheet(null)
+            setImportText('')
+          }}
+        />
+      )}
     </div>
   )
 }

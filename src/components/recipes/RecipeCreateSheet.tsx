@@ -1,29 +1,48 @@
 import { useState, type ReactNode } from 'react'
-import { ChevronRight, PenLine, Sparkles } from 'lucide-react'
+import { ChevronRight, Link2, PenLine, Sparkles } from 'lucide-react'
 import { Sheet } from '../workout/Sheet'
 import { useAuth } from '../../lib/auth'
 import { useAddRecipe } from '../../hooks/useRecipes'
 import { recipeFromText, type Recipe } from '../../lib/ai'
+import { ImportRecipeForm } from './ImportRecipeForm'
 
-export type CreateMode = 'menu' | 'ai' | 'manual'
+export type CreateMode = 'menu' | 'ai' | 'manual' | 'link'
 
 /** Bottom-Sheet: neues Rezept per KI erzeugen oder selbst eintragen. */
 export function RecipeCreateSheet({
   initial = 'menu',
+  initialText = '',
   aiEnabled,
   onClose,
 }: {
   initial?: CreateMode
+  /** Geteilter Text/Link (Teilen-Menü) für den Import */
+  initialText?: string
   aiEnabled: boolean
   onClose: () => void
 }) {
-  const [mode, setMode] = useState<CreateMode>(initial === 'ai' && !aiEnabled ? 'menu' : initial)
-  const title = mode === 'ai' ? 'Rezept mit KI' : mode === 'manual' ? 'Rezept eintragen' : 'Neues Rezept'
+  const [mode, setMode] = useState<CreateMode>((initial === 'ai' || initial === 'link') && !aiEnabled ? 'menu' : initial)
+  const title =
+    mode === 'ai'
+      ? 'Rezept mit KI'
+      : mode === 'manual'
+        ? 'Rezept eintragen'
+        : mode === 'link'
+          ? 'Rezept übernehmen'
+          : 'Neues Rezept'
 
   return (
     <Sheet title={title} onClose={onClose}>
       {mode === 'menu' && (
         <div className="space-y-2">
+          {aiEnabled && (
+            <OptionButton
+              icon={<Link2 size={20} />}
+              title="Von TikTok, Insta & Co."
+              sub="Link oder Screenshot – Rezept wird übernommen"
+              onClick={() => setMode('link')}
+            />
+          )}
           {aiEnabled && (
             <OptionButton
               icon={<Sparkles size={20} />}
@@ -42,6 +61,7 @@ export function RecipeCreateSheet({
       )}
       {mode === 'ai' && <AiRecipeForm onDone={onClose} />}
       {mode === 'manual' && <ManualRecipeForm onDone={onClose} />}
+      {mode === 'link' && <ImportRecipeForm initialText={initialText} onDone={onClose} />}
     </Sheet>
   )
 }

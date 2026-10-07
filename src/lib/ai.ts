@@ -396,6 +396,108 @@ export async function recipeFromText(request: string): Promise<Recipe> {
   }
 }
 
+/** Was /api/recipe-import zu einem geteilten Link findet. */
+export interface SharedPost {
+  source: string
+  url: string
+  title: string
+  caption: string
+  author: string
+  image: string | null
+  recipe: { name: string; yield: string; ingredients: string[]; steps: string[]; nutrition: unknown } | null
+}
+
+/** Ergebnis eines Imports: Rezept + ob Zutaten/Mengen ergänzt werden mussten. */
+export interface ImportedRecipe extends Recipe {
+  /** true = im Beitrag standen keine (vollständigen) Zutaten, die KI hat ergänzt */
+  guessed: boolean
+  source: string
+  url: string | null
+}
+
+/** Ersten Link aus geteiltem Text holen (TikTok & Co. schicken oft „Schau mal … https://…"). */
+export function extractUrl(text: string): string | null {
+  const m = /https?:\/\/[^\s<>"']+/i.exec(text)
+  return m ? m[0].replace(/[),.!?]+$/, '') : null
+}
+
+/** Link-Infos vom Server holen (Bildunterschrift, Vorschaubild, strukturiertes Rezept). */
+export async function fetchSharedPost(url: string): Promise<SharedPost> {
+  const { data: sess } = await supabase.auth.getSession()
+  const token = sess.session?.access_token
+  const res = await fetch('/api/recipe-import', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ url }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || 'Link konnte nicht geladen werden.')
+  return data as SharedPost
+}
+
+const IMPORT_FORMAT =
+  'Format: {"title":"...","servings":<Zahl>,"ingredients":["Menge Zutat", ...],"steps":["..."],' +
+  '"guessed":<true|false>,' +
+  '"nutrition":{"kcal":<Zahl>,"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g>,"sugar":<g>,"sat_fat":<g>,"salt":<g>}}. ' +
+  'Nährwerte PRO PORTION aus den Mengen berechnen. Alles auf Deutsch (Zutaten und Schritte übersetzen, ' +
+  'amerikanische Maße wie cups/oz in g/ml umrechnen).'
+
+function toImported(text: string, source: string, url: string | null): ImportedRecipe {
+  const r = parseJson<Partial<Recipe> & { guessed?: unknown }>(text)
+  return {
+    title: String(r.title ?? 'Rezept'),
+    servings: Math.max(1, num(r.servings, 1)),
+    ingredients: (r.ingredients ?? []).map(String),
+    steps: (r.steps ?? []).map(String),
+    nutrition: recipeNutrition(r.nutrition),
+    guessed: r.guessed === true || r.guessed === 'true',
+    source,
+    url,
+  }
+}
+
+/**
+ * Rezept aus einem geteilten Beitrag (Link-Infos und/oder eingefügtem Text).
+ * Das Original bleibt erhalten – es wird NICHT an die Ernährungsweise angepasst.
+ */
+export async function recipeFromPost(post: SharedPost | null, pastedText = ''): Promise<ImportedRecipe> {
+  const system =
+    'Du übernimmst Rezepte aus Social-Media-Beiträgen (TikTok, Instagram, YouTube) und Rezeptseiten. ' +
+    'Übernimm Zutaten, Mengen und Schritte so originalgetreu wie möglich. Fehlen Zutaten oder Mengen ' +
+    '(z. B. „Rezept im Video"), ergänze ein typisches Rezept für genau dieses Gericht und setze "guessed": true. ' +
+    'Antworte ausschließlich mit JSON.'
+  const useful = (post?.caption.trim().length ?? 0) > 15 || !!post?.recipe || !!post?.image || pastedText.trim().length > 15
+  if (!useful) {
+    throw new Error(
+      post?.source === 'Instagram'
+        ? 'Instagram gibt den Beitrag ohne Anmeldung nicht frei. Mach einen Screenshot vom Rezept oder kopier die Bildunterschrift hier rein.'
+        : 'Im Link steht kein Rezept. Mach einen Screenshot oder kopier die Beschreibung hier rein.',
+    )
+  }
+  const parts: string[] = []
+  if (post) {
+    parts.push(`Quelle: ${post.source}${post.author ? ` (von ${post.author})` : ''}`)
+    if (post.title) parts.push(`Titel: ${post.title}`)
+    if (post.caption) parts.push(`Bildunterschrift/Beschreibung:\n${post.caption.slice(0, 4000)}`)
+    if (post.recipe) parts.push(`Strukturierte Rezeptdaten der Seite:\n${JSON.stringify(post.recipe).slice(0, 6000)}`)
+  }
+  if (pastedText.trim()) parts.push(`Vom Nutzer eingefügter Text:\n${pastedText.trim().slice(0, 4000)}`)
+  if (post?.image) parts.push('Das Bild ist das Vorschaubild des Beitrags – nutze es, um das Gericht zu erkennen.')
+  const prompt = `${parts.join('\n\n')}\n\n${IMPORT_FORMAT}`
+  const text = await complete({ system, prompt, image: post?.image ?? undefined, json: true, temperature: 0.3 })
+  return toImported(text, post?.source ?? 'Text', post?.url ?? null)
+}
+
+/** Rezept aus einem Screenshot (z. B. Rezept-Slide aus Instagram oder Text im Video). */
+export async function recipeFromScreenshot(image: string): Promise<ImportedRecipe> {
+  const system =
+    'Du liest Rezepte aus Screenshots (Social-Media-Beiträge, Kochbuchseiten, Videos mit Text). ' +
+    'Übernimm Zutaten, Mengen und Schritte originalgetreu. Ist nur das fertige Gericht zu sehen, ' +
+    'erstelle ein typisches Rezept dafür und setze "guessed": true. Antworte ausschließlich mit JSON.'
+  const text = await complete({ system, prompt: IMPORT_FORMAT, image, json: true, temperature: 0.3 })
+  return toImported(text, 'Screenshot', null)
+}
+
 /** Coach-Chat: beantwortet die letzte Nutzerfrage mit Datenkontext. */
 export async function coachChat(history: ChatMsg[], context: unknown): Promise<string> {
   const convo = history

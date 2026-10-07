@@ -26,6 +26,12 @@ export default defineConfig({
         background_color: '#0B0F19',
         display: 'standalone',
         orientation: 'portrait',
+        // Android: App erscheint im Teilen-Menü (TikTok, Instagram, Browser …) → Rezept-Import
+        share_target: {
+          action: '/share',
+          method: 'GET',
+          params: { title: 'title', text: 'text', url: 'url' },
+        },
         icons: [
           {
             src: 'icon.svg',
