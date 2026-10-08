@@ -35,6 +35,8 @@ export function RecipeDetailSheet({
   onClose,
   badges = [],
   extra,
+  heroImage,
+  footerAction,
 }: {
   recipe: SavedRecipe
   mine: boolean
@@ -49,6 +51,10 @@ export function RecipeDetailSheet({
   badges?: string[]
   /** Zusätzlicher Inhalt oben im Sheet (z. B. Empfehlungsgrund, Speichern) */
   extra?: ReactNode
+  /** Foto statt Farbverlauf im Kopf (z. B. Vorschaubild eines TikTok-Videos) */
+  heroImage?: string | null
+  /** Zusätzlicher Knopf im Fuß neben „Hinzufügen" (z. B. „Speichern") */
+  footerAction?: ReactNode
 }) {
   const titleId = useId()
   const [portions, setPortions] = useState(1)
@@ -128,6 +134,7 @@ export function RecipeDetailSheet({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {/* Hero */}
           <RecipeCover recipe={recipe} iconSize={64} iconClassName="-translate-y-5" className="h-56 w-full">
+            {heroImage && <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />}
             <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-2.5">
               <div className="absolute left-1/2 top-2.5 h-1 w-10 -translate-x-1/2 rounded-full bg-white/60" />
               <button className={`${overlayBtn} mt-2`} onClick={onClose} disabled={saving} aria-label="Schließen">
@@ -350,24 +357,31 @@ export function RecipeDetailSheet({
               {error}
             </p>
           )}
-          <button className="btn-primary w-full gap-2 py-3 disabled:opacity-60" onClick={log} disabled={saving || done}>
-            {done ? (
-              <>
-                <Check size={18} strokeWidth={3} className="anim-check" />
-                Hinzugefügt
-              </>
-            ) : saving ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Speichert…
-              </>
-            ) : (
-              <>
-                Zum Tagebuch hinzufügen
-                <span className="tabular font-normal opacity-80">· {totals.kcal} kcal</span>
-              </>
-            )}
-          </button>
+          <div className="flex gap-2">
+            {footerAction}
+            <button
+              className="btn-primary min-w-0 flex-1 gap-2 whitespace-nowrap py-3 disabled:opacity-60"
+              onClick={log}
+              disabled={saving || done}
+            >
+              {done ? (
+                <>
+                  <Check size={18} strokeWidth={3} className="anim-check" />
+                  Hinzugefügt
+                </>
+              ) : saving ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Speichert…
+                </>
+              ) : (
+                <>
+                  {footerAction ? 'Eintragen' : 'Zum Tagebuch hinzufügen'}
+                  <span className="tabular font-normal opacity-80">· {totals.kcal} kcal</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>,

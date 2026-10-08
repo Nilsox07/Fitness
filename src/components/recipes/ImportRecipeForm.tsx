@@ -41,7 +41,16 @@ type Phase = 'idle' | 'loading-post' | 'reading' | 'done'
  * Link (oder ganzen geteilten Text) einfügen, alternativ Screenshot. Startet sofort,
  * wenn der Inhalt über das Teilen-Menü kam.
  */
-export function ImportRecipeForm({ initialText = '', onDone }: { initialText?: string; onDone: () => void }) {
+export function ImportRecipeForm({
+  initialText = '',
+  onDone,
+  onRecognized,
+}: {
+  initialText?: string
+  onDone: () => void
+  /** Erkanntes Rezept an die große Detail-Ansicht übergeben (statt Vorschau hier) */
+  onRecognized?: (r: ImportedRecipe) => void
+}) {
   const { user } = useAuth()
   const addRecipe = useAddRecipe()
   const [text, setText] = useState(initialText)
@@ -66,12 +75,17 @@ export function ImportRecipeForm({ initialText = '', onDone }: { initialText?: s
       }
       setPhase('reading')
       // Längerer Zusatztext (z. B. kopierte Bildunterschrift) geht mit an die KI.
-      setRecipe(await recipeFromPost(post, rest.length > 20 ? rest : ''))
-      setPhase('done')
+      show(await recipeFromPost(post, rest.length > 20 ? rest : ''))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Import fehlgeschlagen')
       setPhase('idle')
     }
+  }
+
+  function show(r: ImportedRecipe) {
+    setPhase('done')
+    if (onRecognized) onRecognized(r)
+    else setRecipe(r)
   }
 
   async function fromScreenshot(file: File | undefined) {
@@ -80,8 +94,7 @@ export function ImportRecipeForm({ initialText = '', onDone }: { initialText?: s
     setRecipe(null)
     setPhase('reading')
     try {
-      setRecipe(await recipeFromScreenshot(await fileToDataUrl(file)))
-      setPhase('done')
+      show(await recipeFromScreenshot(await fileToDataUrl(file)))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Screenshot konnte nicht gelesen werden')
       setPhase('idle')

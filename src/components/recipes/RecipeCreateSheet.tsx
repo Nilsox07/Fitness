@@ -3,7 +3,7 @@ import { ChevronRight, Link2, PenLine, Sparkles } from 'lucide-react'
 import { Sheet } from '../workout/Sheet'
 import { useAuth } from '../../lib/auth'
 import { useAddRecipe } from '../../hooks/useRecipes'
-import { recipeFromText, type Recipe } from '../../lib/ai'
+import { recipeFromText, type ImportedRecipe, type Recipe } from '../../lib/ai'
 import { ImportRecipeForm } from './ImportRecipeForm'
 
 export type CreateMode = 'menu' | 'ai' | 'manual' | 'link'
@@ -14,12 +14,15 @@ export function RecipeCreateSheet({
   initialText = '',
   aiEnabled,
   onClose,
+  onImported,
 }: {
   initial?: CreateMode
   /** Geteilter Text/Link (Teilen-Menü) für den Import */
   initialText?: string
   aiEnabled: boolean
   onClose: () => void
+  /** Erkanntes Import-Rezept in der großen Ansicht zeigen */
+  onImported?: (r: ImportedRecipe) => void
 }) {
   const [mode, setMode] = useState<CreateMode>((initial === 'ai' || initial === 'link') && !aiEnabled ? 'menu' : initial)
   const title =
@@ -61,7 +64,7 @@ export function RecipeCreateSheet({
       )}
       {mode === 'ai' && <AiRecipeForm onDone={onClose} />}
       {mode === 'manual' && <ManualRecipeForm onDone={onClose} />}
-      {mode === 'link' && <ImportRecipeForm initialText={initialText} onDone={onClose} />}
+      {mode === 'link' && <ImportRecipeForm initialText={initialText} onDone={onClose} onRecognized={onImported} />}
     </Sheet>
   )
 }

@@ -413,6 +413,8 @@ export interface ImportedRecipe extends Recipe {
   guessed: boolean
   source: string
   url: string | null
+  /** Vorschaubild des Beitrags bzw. der Screenshot (Data-URL) */
+  image: string | null
 }
 
 /** Ersten Link aus geteiltem Text holen (TikTok & Co. schicken oft „Schau mal … https://…"). */
@@ -448,7 +450,7 @@ const IMPORT_FORMAT =
   'Nährwerte PRO PORTION aus den Mengen berechnen. Alles auf Deutsch (Zutaten und Schritte übersetzen, ' +
   'amerikanische Maße wie cups/oz in g/ml umrechnen).'
 
-function toImported(text: string, source: string, url: string | null): ImportedRecipe {
+function toImported(text: string, source: string, url: string | null, image: string | null = null): ImportedRecipe {
   const r = parseJson<Partial<Recipe> & { guessed?: unknown }>(text)
   return {
     title: String(r.title ?? 'Rezept'),
@@ -459,6 +461,7 @@ function toImported(text: string, source: string, url: string | null): ImportedR
     guessed: r.guessed === true || r.guessed === 'true',
     source,
     url,
+    image,
   }
 }
 
@@ -491,7 +494,7 @@ export async function recipeFromPost(post: SharedPost | null, pastedText = ''): 
   if (post?.image) parts.push('Das Bild ist das Vorschaubild des Beitrags – nutze es, um das Gericht zu erkennen.')
   const prompt = `${parts.join('\n\n')}\n\n${IMPORT_FORMAT}`
   const text = await complete({ system, prompt, image: post?.image ?? undefined, json: true, temperature: 0.3 })
-  return toImported(text, post?.source ?? 'Text', post?.url ?? null)
+  return toImported(text, post?.source ?? 'Text', post?.url ?? null, post?.image ?? null)
 }
 
 /** Rezept aus einem Screenshot (z. B. Rezept-Slide aus Instagram oder Text im Video). */
@@ -501,7 +504,7 @@ export async function recipeFromScreenshot(image: string): Promise<ImportedRecip
     'Übernimm Zutaten, Mengen und Schritte originalgetreu. Ist nur das fertige Gericht zu sehen, ' +
     'erstelle ein typisches Rezept dafür und setze "guessed": true. Antworte ausschließlich mit JSON.'
   const text = await complete({ system, prompt: IMPORT_FORMAT, image, json: true, temperature: 0.3 })
-  return toImported(text, 'Screenshot', null)
+  return toImported(text, 'Screenshot', null, image)
 }
 
 /** Coach-Chat: beantwortet die letzte Nutzerfrage mit Datenkontext. */

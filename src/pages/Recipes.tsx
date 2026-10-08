@@ -16,6 +16,8 @@ import { RecipeCreateSheet, type CreateMode } from '../components/recipes/Recipe
 import { ForYouCard, RecipeGridCard } from '../components/recipes/RecipeCards'
 import { RecipeDetailSheet, type RecipeDayContext } from '../components/recipes/RecipeDetailSheet'
 import { RecipeDiscover } from '../components/recipes/RecipeDiscover'
+import { ImportedRecipeSheet } from '../components/recipes/ImportedRecipeSheet'
+import type { ImportedRecipe } from '../lib/ai'
 import type { RecommendContext } from '../lib/recipeRecommend'
 import {
   currentMeal,
@@ -205,6 +207,7 @@ function NewRecipes() {
 
   const [sheet, setSheet] = useState<CreateMode | null>(null)
   const [importText, setImportText] = useState('')
+  const [imported, setImported] = useState<ImportedRecipe | null>(null)
   const [params, setParams] = useSearchParams()
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -534,8 +537,14 @@ function NewRecipes() {
             setSheet(null)
             setImportText('')
           }}
+          onImported={(r) => {
+            setSheet(null)
+            setImportText('')
+            setImported(r)
+          }}
         />
       )}
+      {imported && <ImportedRecipeSheet recipe={imported} day={day} onClose={() => setImported(null)} />}
     </div>
   )
 }
