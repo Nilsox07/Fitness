@@ -33,18 +33,50 @@ function safeUrl(raw) {
   return u
 }
 
-async function get(url, accept = 'text/html') {
+async function get(url, accept = 'text/html', ua = UA) {
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), 8000)
   try {
     return await fetch(url, {
-      headers: { 'user-agent': UA, accept, 'accept-language': 'de-DE,de;q=0.9,en;q=0.8' },
+      headers: { 'user-agent': ua, accept, 'accept-language': 'de-DE,de;q=0.9,en;q=0.8' },
       redirect: 'follow',
       signal: ctrl.signal,
     })
   } finally {
     clearTimeout(t)
   }
+}
+
+/**
+ * Instagram: Die normale Seite verlangt eine Anmeldung, die offizielle
+ * Einbettungsseite (für Webseiten gedacht) enthält aber Bildunterschrift,
+ * Konto und Vorschaubild.
+ */
+async function instagramEmbed(u) {
+  const code = /\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/.exec(u.pathname)?.[1]
+  if (!code) return null
+  const r = await get(`https://www.instagram.com/p/${code}/embed/captioned/`, 'text/html', 'facebookexternalhit/1.1')
+  if (!r.ok) return null
+  const html = await r.text()
+  const start = html.indexOf('class="Caption"')
+  let caption = ''
+  let author = ''
+  if (start >= 0) {
+    const end = html.indexOf('class="CaptionComments"', start)
+    const chunk = html.slice(start, end > start ? end : start + 20000)
+    author = decode(/class="CaptionUsername"[^>]*>([^<]*)</.exec(chunk)?.[1] ?? '')
+    caption = decode(
+      chunk
+        .replace(/^class="Caption">/, '')
+        .replace(/<a class="CaptionUsername"[^>]*>[^<]*<\/a>/, '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, ''),
+    )
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  }
+  const img = /<img[^>]+class="EmbeddedMediaImage"[^>]*\ssrc="([^"]+)"/.exec(html)?.[1]
+  return { caption, author, image: img ? decode(img) : '' }
 }
 
 function decode(s) {
@@ -154,9 +186,19 @@ async function importHandler(req, res) {
       }
     }
 
+    if (out.source === 'Instagram') {
+      const ig = await instagramEmbed(u)
+      if (ig) {
+        out.caption = ig.caption
+        out.author = ig.author
+        thumb = ig.image
+      }
+    }
+
     // Seite selbst: Open-Graph-Texte, Vorschaubild, ggf. strukturiertes Rezept.
-    const page = await get(u.href)
-    if (page.ok && (page.headers.get('content-type') || '').includes('html')) {
+    // (Instagram verlangt dort eine Anmeldung – überspringen.)
+    const page = out.source === 'Instagram' ? null : await get(u.href)
+    if (page?.ok && (page.headers.get('content-type') || '').includes('html')) {
       const html = (await page.text()).slice(0, 2_000_000)
       out.title = meta(html, 'og:title') || decode(/<title>([^<]*)<\/title>/i.exec(html)?.[1] ?? '')
       const desc = meta(html, 'og:description') || meta(html, 'description')
@@ -168,8 +210,8 @@ async function importHandler(req, res) {
     /* Netzwerkfehler → mit dem weitermachen, was da ist */
   }
 
-  // Vorschaubild hilft der KI, wenn im Text kaum etwas steht.
-  if (thumb && !out.recipe && out.caption.length < 400) out.image = await imageAsDataUrl(thumb)
+  // Vorschaubild für die Ansicht (und für die KI, wenn im Text kaum etwas steht).
+  if (thumb) out.image = await imageAsDataUrl(thumb)
 
   res.status(200).json(out)
 }

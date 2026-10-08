@@ -479,7 +479,7 @@ export async function recipeFromPost(post: SharedPost | null, pastedText = ''): 
   if (!useful) {
     throw new Error(
       post?.source === 'Instagram'
-        ? 'Instagram gibt den Beitrag ohne Anmeldung nicht frei. Mach einen Screenshot vom Rezept oder kopier die Bildunterschrift hier rein.'
+        ? 'Instagram gibt diesen Beitrag nicht frei (z. B. privates Konto). Mach einen Screenshot vom Rezept oder kopier die Bildunterschrift hier rein.'
         : 'Im Link steht kein Rezept. Mach einen Screenshot oder kopier die Beschreibung hier rein.',
     )
   }
@@ -491,9 +491,17 @@ export async function recipeFromPost(post: SharedPost | null, pastedText = ''): 
     if (post.recipe) parts.push(`Strukturierte Rezeptdaten der Seite:\n${JSON.stringify(post.recipe).slice(0, 6000)}`)
   }
   if (pastedText.trim()) parts.push(`Vom Nutzer eingefügter Text:\n${pastedText.trim().slice(0, 4000)}`)
-  if (post?.image) parts.push('Das Bild ist das Vorschaubild des Beitrags – nutze es, um das Gericht zu erkennen.')
+  // Bild nur mitschicken, wenn der Text wenig hergibt (spart KI-Kosten).
+  const sendImage = !!post?.image && !post.recipe && post.caption.length < 400 && pastedText.trim().length < 200
+  if (sendImage) parts.push('Das Bild ist das Vorschaubild des Beitrags – nutze es, um das Gericht zu erkennen.')
   const prompt = `${parts.join('\n\n')}\n\n${IMPORT_FORMAT}`
-  const text = await complete({ system, prompt, image: post?.image ?? undefined, json: true, temperature: 0.3 })
+  const text = await complete({
+    system,
+    prompt,
+    image: sendImage ? (post?.image ?? undefined) : undefined,
+    json: true,
+    temperature: 0.3,
+  })
   return toImported(text, post?.source ?? 'Text', post?.url ?? null, post?.image ?? null)
 }
 
