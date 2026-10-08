@@ -221,11 +221,27 @@ function NewRecipes() {
 
   // Über das Teilen-Menü (/share) geschickter Link → Import-Sheet öffnen.
   useEffect(() => {
-    const shared = params.get('import')
+    let shared = params.get('import')
+    // Falls die App direkt nach dem Teilen auf eine neue Version neu lädt, ist der
+    // Link aus der Adresse schon weg → aus dem Zwischenspeicher wiederholen.
+    if (shared) {
+      try {
+        sessionStorage.setItem('pending_import', JSON.stringify({ text: shared, at: Date.now() }))
+      } catch {
+        /* ignore */
+      }
+    } else {
+      try {
+        const p = JSON.parse(sessionStorage.getItem('pending_import') || 'null') as { text: string; at: number } | null
+        if (p && Date.now() - p.at < 60000) shared = p.text
+      } catch {
+        /* ignore */
+      }
+    }
     if (!shared || aiPending) return // erst wissen, ob die KI verfügbar ist
     setImportText(shared)
     setSheet('link')
-    setParams({}, { replace: true })
+    if (params.get('import')) setParams({}, { replace: true })
   }, [params, setParams, aiPending])
 
   // Neues eigenes Rezept gespeichert → „Meine Rezepte" zeigen.
@@ -534,10 +550,12 @@ function NewRecipes() {
           initialText={importText}
           aiEnabled={aiOn}
           onClose={() => {
+            clearPendingImport()
             setSheet(null)
             setImportText('')
           }}
           onImported={(r) => {
+            clearPendingImport()
             setSheet(null)
             setImportText('')
             setImported(r)
@@ -584,6 +602,14 @@ function EmptyState({ aiOn, onCreate }: { aiOn: boolean; onCreate: (m: CreateMod
       </div>
     </div>
   )
+}
+
+function clearPendingImport() {
+  try {
+    sessionStorage.removeItem('pending_import')
+  } catch {
+    /* ignore */
+  }
 }
 
 export default function Recipes() {

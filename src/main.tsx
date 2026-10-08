@@ -27,8 +27,13 @@ if ('serviceWorker' in navigator) {
   let hasController = Boolean(navigator.serviceWorker.controller)
   let updateReady = false
   let reloaded = false
+  // Frisch gestartet (z. B. über das Teilen-Menü) und noch nichts getan → sofort
+  // auf die neue Version wechseln statt die alte bis zum nächsten Start zu zeigen.
+  const startedAt = Date.now()
+  const freshStart = () => Date.now() - startedAt < 15000 && queryClient.isMutating() === 0
   const tryReload = () => {
-    if (reloaded || !updateReady || document.visibilityState !== 'hidden') return
+    if (reloaded || !updateReady) return
+    if (document.visibilityState !== 'hidden' && !freshStart()) return
     // Laufende Schreibvorgänge nicht abwürgen — beim nächsten Verstecken erneut.
     if (queryClient.isMutating() > 0) return
     reloaded = true
@@ -45,6 +50,11 @@ if ('serviceWorker' in navigator) {
   document.addEventListener('visibilitychange', () => {
     // Kurz warten, damit der (gedrosselte) Cache-Persister noch schreiben kann.
     if (updateReady && document.visibilityState === 'hidden') setTimeout(tryReload, 700)
+    // Installierte Apps bleiben oft lange im Speicher und laden nie neu →
+    // beim Zurückkehren aktiv nach einer neuen Version fragen.
+    if (document.visibilityState === 'visible') {
+      navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => {})
+    }
   })
 }
 
