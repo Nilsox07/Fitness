@@ -423,13 +423,19 @@ export function extractUrl(text: string): string | null {
 
 /** Link-Infos vom Server holen (Bildunterschrift, Vorschaubild, strukturiertes Rezept). */
 export async function fetchSharedPost(url: string): Promise<SharedPost> {
+  const call = (token: string | undefined) =>
+    fetch('/api/recipe-import', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ url }),
+    })
   const { data: sess } = await supabase.auth.getSession()
-  const token = sess.session?.access_token
-  const res = await fetch('/api/recipe-import', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ url }),
-  })
+  let res = await call(sess.session?.access_token)
+  // Über das Teilen-Menü frisch gestartet → Token evtl. abgelaufen: einmal erneuern.
+  if (res.status === 401) {
+    const { data } = await supabase.auth.refreshSession()
+    res = await call(data.session?.access_token)
+  }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || 'Link konnte nicht geladen werden.')
   return data as SharedPost

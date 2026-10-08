@@ -1,9 +1,10 @@
 // Gemeinsame Helfer für die Fitbit-Endpunkte (kein eigener Endpoint wegen "_").
 import { createClient } from '@supabase/supabase-js'
 
-// In Vercel heißen die Werte oft nur VITE_… (für die App) — beide Namen akzeptieren.
-export const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+// Dieselbe Supabase-Instanz wie die App (VITE_…) zuerst — sonst passt das
+// Login-Token nicht, falls in Vercel noch alte/andere SUPABASE_… Werte stehen.
+export const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
 
 /** Service-Role-Client; wirft eine verständliche Meldung, wenn der Schlüssel fehlt. */
 export function admin() {
@@ -15,12 +16,16 @@ export function admin() {
   return createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
 
+/** Nutzer zum Login-Token direkt über die Auth-API (wie /api/ai). */
 async function userFromToken(token) {
   if (!token || !SUPABASE_URL || !SUPABASE_ANON_KEY) return null
   try {
-    const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    const { data } = await anon.auth.getUser(token)
-    return data?.user ?? null
+    const r = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_ANON_KEY, authorization: `Bearer ${token}` },
+    })
+    if (!r.ok) return null
+    const user = await r.json()
+    return user?.id ? user : null
   } catch {
     return null
   }
