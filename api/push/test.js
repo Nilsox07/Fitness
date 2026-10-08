@@ -19,7 +19,13 @@ export default async function handler(req, res) {
   }
 
   webpush.setVapidDetails(VAPID_SUBJECT || 'mailto:admin@example.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
-  const db = admin()
+  let db
+  try {
+    db = admin()
+  } catch (e) {
+    res.status(200).json({ ok: false, reason: 'server_config', error: e.message })
+    return
+  }
   const { data: subs } = await db.from('push_subscriptions').select('*').eq('user_id', user.id)
   if (!subs || subs.length === 0) {
     res.status(200).json({ ok: false, reason: 'no_subscription' })

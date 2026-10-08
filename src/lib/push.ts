@@ -109,7 +109,14 @@ export async function sendTestPush(): Promise<string> {
     method: 'POST',
     headers: { authorization: `Bearer ${token}` },
   })
-  const res = (await r.json().catch(() => ({}))) as { ok?: boolean; sent?: number; reason?: string; errors?: number[] }
+  const res = (await r.json().catch(() => ({}))) as {
+    ok?: boolean
+    sent?: number
+    reason?: string
+    error?: string
+    errors?: number[]
+  }
+  if (res.reason === 'server_config' && res.error) return res.error
   if (res.ok) return 'Test verschickt – sollte gleich auf dem Handy erscheinen.'
   if (res.reason === 'push_not_configured') return 'Auf dem Server fehlen die VAPID-Schlüssel.'
   if (res.reason === 'no_subscription') return 'Auf diesem Konto ist noch kein Gerät angemeldet – erst „Aktivieren“ tippen.'

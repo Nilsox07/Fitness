@@ -111,6 +111,14 @@ async function imageAsDataUrl(src) {
 }
 
 export default async function handler(req, res) {
+  try {
+    await importHandler(req, res)
+  } catch (e) {
+    res.status(500).json({ error: `Link konnte nicht geladen werden (${e?.message || 'Serverfehler'}).` })
+  }
+}
+
+async function importHandler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'method' })
     return
