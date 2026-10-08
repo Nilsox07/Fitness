@@ -1,10 +1,8 @@
 // Gemeinsame Helfer für die Fitbit-Endpunkte (kein eigener Endpoint wegen "_").
 import { createClient } from '@supabase/supabase-js'
 
-// Dieselbe Supabase-Instanz wie die App (VITE_…) zuerst — sonst passt das
-// Login-Token nicht, falls in Vercel noch alte/andere SUPABASE_… Werte stehen.
-export const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from './_supabase.js'
+export { SUPABASE_URL }
 
 /** Service-Role-Client; wirft eine verständliche Meldung, wenn der Schlüssel fehlt. */
 export function admin() {

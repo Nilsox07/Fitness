@@ -9,6 +9,7 @@
 // GET  /api/ai            -> { enabled, provider, model }  (für die UI)
 // POST /api/ai { system, prompt, json, temperature } -> { text }
 
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from './_supabase.js'
 const PROVIDER = (process.env.AI_PROVIDER || 'gemini').toLowerCase()
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 
@@ -160,8 +161,8 @@ async function callGroq({ system, prompt, json, temperature }) {
  * wird nicht blockiert (damit die App nicht komplett ausfällt).
  */
 async function isAuthorized(req) {
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-  const anon = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+  const url = SUPABASE_URL
+  const anon = SUPABASE_ANON_KEY
   if (!url || !anon) return true
   const auth = req.headers.authorization || ''
   if (!auth.startsWith('Bearer ')) return false
