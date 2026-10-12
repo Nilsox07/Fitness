@@ -6,7 +6,6 @@ import { Ring } from '../nutrition-home/Ring'
 
 /** Dunkle Hero-Karte: Ø kcal/Tag groß, Ziel, Treffer-Quote als Ring. */
 export function StatsHero({
-  windowDays,
   n,
   avgKcal,
   avgTarget,
@@ -15,7 +14,6 @@ export function StatsHero({
   proteinTarget,
   style,
 }: {
-  windowDays: number
   /** abgeschlossene Tage mit Einträgen im Zeitraum */
   n: number
   avgKcal: number | null
@@ -43,7 +41,7 @@ export function StatsHero({
 
       <div className="relative">
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-          <Sparkles size={13} className="text-brand" />Ø kcal / Tag · {windowDays} {windowDays === 1 ? 'Tag' : 'Tage'}
+          <Sparkles size={13} className="text-brand" />Ø kcal / Tag
         </p>
 
         <div className="mt-1 flex items-center justify-between gap-3">

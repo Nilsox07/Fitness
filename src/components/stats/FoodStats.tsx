@@ -40,6 +40,8 @@ export function FoodStats() {
     // Ø nur über abgeschlossene Tage mit Einträgen im Zeitraum (ohne heute, ohne Lücken)
     const complete = [...days.entries()].filter(([d]) => d >= range.start && d < today)
     const n = complete.length
+    // „erfasst“ zählt auch heute mit – sonst steht am ersten Tag „0 Tage“, obwohl schon gegessen wurde.
+    const logged = [...days.keys()].filter((d) => d >= range.start && d <= today).length
     const avg = (f: (v: (typeof complete)[number][1]) => number) =>
       n ? Math.round(complete.reduce((s, [, v]) => s + f(v), 0) / n) : null
     // Ø-Ziel über dieselben Tage (ohne Tage → Ziel von heute)
@@ -66,6 +68,7 @@ export function FoodStats() {
     const elapsed = daysBetween(range.start, today) + 1
     return {
       n,
+      logged,
       avgKcal: avg((v) => v.kcal),
       avgProtein: avg((v) => v.protein),
       avgCarbs: avg((v) => v.carbs),
@@ -91,7 +94,7 @@ export function FoodStats() {
     <div className="space-y-5">
       <ProgressHeader
         title="Fortschritt"
-        subtitle={`${periodName} · ${stats.n} ${stats.n === 1 ? 'Tag' : 'Tage'} erfasst`}
+        subtitle={`${periodName} · ${stats.logged} ${stats.logged === 1 ? 'Tag' : 'Tage'} erfasst`}
         action={
           <Segmented
             label="Zeitraum"
@@ -109,7 +112,6 @@ export function FoodStats() {
       {stats.hasAny && (
         <>
           <StatsHero
-            windowDays={stats.elapsed}
             n={stats.n}
             avgKcal={stats.avgKcal}
             avgTarget={stats.avgTarget}
