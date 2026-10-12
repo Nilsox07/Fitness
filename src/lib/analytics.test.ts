@@ -247,15 +247,38 @@ describe('progressionSuggestion (Double Progression)', () => {
     expect(s.suggestedWeight).toBe(50)
   })
 
-  it('empfiehlt Deload bei Stagnation über 3 Sessions', () => {
+  it('empfiehlt Deload erst bei echtem Plateau (3 Sessions ohne Steigerung, ≥ 3 Wochen)', () => {
     const sets = [
       mkSet('2026-01-01', 9, 50, 1),
       mkSet('2026-01-08', 9, 50, 1),
       mkSet('2026-01-15', 9, 50, 1),
+      mkSet('2026-01-22', 9, 50, 1),
     ]
     const s = progressionSuggestion(ex, sets)
     expect(s.action).toBe('deload')
     expect(s.suggestedWeight).toBe(45)
+  })
+
+  it('kein Deload, wenn die Wdh. beim gleichen Gewicht steigen (Double Progression)', () => {
+    const sets = [
+      mkSet('2026-01-01', 8, 50, 1),
+      mkSet('2026-01-08', 9, 50, 1),
+      mkSet('2026-01-15', 10, 50, 1),
+      mkSet('2026-01-22', 11, 50, 1),
+    ]
+    expect(progressionSuggestion(ex, sets).action).toBe('hold')
+  })
+
+  it('kein Deload nach nur 3 Sessions oder in kurzer Zeit', () => {
+    const three = [mkSet('2026-01-01', 9, 50, 1), mkSet('2026-01-08', 9, 50, 1), mkSet('2026-01-15', 9, 50, 1)]
+    expect(progressionSuggestion(ex, three).action).toBe('hold')
+    const fast = [
+      mkSet('2026-01-01', 9, 50, 1),
+      mkSet('2026-01-03', 9, 50, 1),
+      mkSet('2026-01-05', 9, 50, 1),
+      mkSet('2026-01-07', 9, 50, 1),
+    ]
+    expect(progressionSuggestion(ex, fast).action).toBe('hold')
   })
 
   it('gibt Start-Hinweis ohne Daten', () => {

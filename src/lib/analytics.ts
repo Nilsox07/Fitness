@@ -475,6 +475,27 @@ export interface ProgressionSuggestion {
   reason: string
 }
 
+/** Mindestdauer eines Plateaus in Tagen (kurze Schwankungen sind normal). */
+export const PLATEAU_MIN_DAYS = 21
+
+/**
+ * Plateau = die letzten 3 Sessions übertreffen die beste Leistung der Sessions
+ * davor nicht (geschätztes 1RM, 1 % Toleranz) und der Zeitraum umfasst mind.
+ * 3 Wochen. Braucht mind. 4 Sessions.
+ */
+export function isPlateau(sessions: Pick<SessionSummary, 'date' | 'bestEstimated1RM'>[]): boolean {
+  if (sessions.length < 4) return false
+  const recent = sessions.slice(-3)
+  const before = sessions.slice(-9, -3)
+  const best = Math.max(...before.map((s) => s.bestEstimated1RM))
+  if (!(best > 0)) return false
+  const noProgress = recent.every((s) => s.bestEstimated1RM <= best * 1.01)
+  const from = sessions[sessions.length - 4].date
+  const to = sessions[sessions.length - 1].date
+  const days = (Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86400000
+  return noProgress && days >= PLATEAU_MIN_DAYS
+}
+
 /**
  * Bewertet die letzte(n) Session(s) einer Übung und gibt eine transparente
  * Empfehlung nach dem Prinzip der "Double Progression":
@@ -506,12 +527,11 @@ export function progressionSuggestion(
   const reachedFailure = workingSets.some((s) => s.to_failure)
   const { target_rep_min, target_rep_max, increment } = exercise
 
-  // Stagnation: gleiches Top-Gewicht in den letzten 3 Sessions ohne Wdh.-Zuwachs
-  const recent = sessions.slice(-3)
-  const stalled =
-    recent.length >= 3 &&
-    recent.every((s) => s.topWeight === topWeight) &&
-    minReps < target_rep_max
+  // Plateau: In den letzten 3 Sessions keine bessere Leistung (geschätztes 1RM,
+  // berücksichtigt also auch mehr Wdh. beim gleichen Gewicht) als die Bestleistung
+  // davor – und das über mind. 3 Wochen. Mehr Wdh. bei gleichem Gewicht sind bei
+  // Double Progression Fortschritt und lösen keinen Deload aus.
+  const stalled = isPlateau(sessions)
 
   if (minReps >= target_rep_max) {
     // Wie viel höher? Aus geschätztem 1RM das Gewicht ableiten, das dich wieder
@@ -539,7 +559,7 @@ export function progressionSuggestion(
     return {
       action: 'deload',
       suggestedWeight: deloaded,
-      reason: `Seit 3 Trainings bei ${topWeight} kg ohne Zuwachs. Mach einen Deload auf ~${deloaded} kg und arbeite dich wieder hoch.`,
+      reason: `Seit 3 Trainings (über ${PLATEAU_MIN_DAYS / 7}+ Wochen) keine Steigerung. Setz das Gewicht auf ~${deloaded} kg zurück und arbeite dich wieder hoch – und check Schlaf, Eiweiß und Pausenzeiten.`,
     }
   }
 
