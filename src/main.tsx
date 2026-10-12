@@ -56,7 +56,10 @@ if ('serviceWorker' in navigator) {
     // Installierte Apps bleiben oft lange im Speicher und laden nie neu →
     // beim Zurückkehren aktiv nach einer neuen Version fragen.
     if (document.visibilityState === 'visible') {
-      navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => {})
+      navigator.serviceWorker
+        .getRegistration()
+        .then((r) => r?.update())
+        .catch(() => {})
     }
   })
 }
@@ -76,35 +79,35 @@ const persister = createSyncStoragePersister({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{
-        persister,
-        maxAge: 1000 * 60 * 60 * 24 * 14, // 14 Tage
-        buster: 'v1',
-        dehydrateOptions: {
-          // Pausierte (offline) Mutationen mitsichern, damit sie fortgesetzt werden.
-          shouldDehydrateMutation: (m) => m.state.isPaused,
-          // Kurzlebige Daten (z. B. ablaufende Foto-Links) nicht auf die Platte
-          shouldDehydrateQuery: (q) => defaultShouldDehydrateQuery(q) && q.meta?.persist !== false,
-        },
-      }}
-      onSuccess={() => {
-        // Nach dem Wiederherstellen die offline gepufferten Schreibvorgänge senden.
-        queryClient.resumePausedMutations()
-      }}
-    >
-      <ThemeProvider>
-        <PrefsProvider>
-          <AuthProvider>
-            <BrowserRouter>
-              <ErrorBoundary>
+    <ErrorBoundary>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister,
+          maxAge: 1000 * 60 * 60 * 24 * 14, // 14 Tage
+          buster: 'v1',
+          dehydrateOptions: {
+            // Pausierte (offline) Mutationen mitsichern, damit sie fortgesetzt werden.
+            shouldDehydrateMutation: (m) => m.state.isPaused,
+            // Kurzlebige Daten (z. B. ablaufende Foto-Links) nicht auf die Platte
+            shouldDehydrateQuery: (q) => defaultShouldDehydrateQuery(q) && q.meta?.persist !== false,
+          },
+        }}
+        onSuccess={() => {
+          // Nach dem Wiederherstellen die offline gepufferten Schreibvorgänge senden.
+          queryClient.resumePausedMutations()
+        }}
+      >
+        <ThemeProvider>
+          <PrefsProvider>
+            <AuthProvider>
+              <BrowserRouter>
                 <App />
-              </ErrorBoundary>
-            </BrowserRouter>
-          </AuthProvider>
-        </PrefsProvider>
-      </ThemeProvider>
-    </PersistQueryClientProvider>
+              </BrowserRouter>
+            </AuthProvider>
+          </PrefsProvider>
+        </ThemeProvider>
+      </PersistQueryClientProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

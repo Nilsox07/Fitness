@@ -24,6 +24,39 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Notfall: Startet die App nicht (z. B. Skriptfehler), statt weißem Bildschirm
+      // einen Hinweis mit Fehlermeldung, Neu laden und Zwischenspeicher leeren zeigen.
+      (function () {
+        var errs = []
+        window.addEventListener('error', function (e) { errs.push(String((e && e.message) || e)) })
+        window.addEventListener('unhandledrejection', function (e) { errs.push(String(e && e.reason && (e.reason.message || e.reason))) })
+        setTimeout(function () {
+          var root = document.getElementById('root')
+          if (!root || root.children.length) return
+          var dark = document.documentElement.classList.contains('dark')
+          root.innerHTML =
+            '<div style="font-family:system-ui,sans-serif;padding:32px 24px;text-align:center;color:' + (dark ? '#E5E7EB' : '#111827') + ';background:' + (dark ? '#0B0F19' : '#fff') + ';min-height:100vh">' +
+            '<div style="font-size:44px">🥚💥</div><h1 style="font-size:20px;margin:12px 0 8px">Die App startet gerade nicht</h1>' +
+            '<p style="font-size:14px;opacity:.75;margin:0 0 18px">Deine Daten sind sicher gespeichert.</p>' +
+            '<button id="fx-reload" style="display:block;width:100%;max-width:280px;margin:0 auto 10px;padding:12px;border:0;border-radius:12px;background:#E11D48;color:#fff;font-weight:600;font-size:15px">Neu laden</button>' +
+            '<button id="fx-clear" style="display:block;width:100%;max-width:280px;margin:0 auto;padding:12px;border:1px solid #9CA3AF;border-radius:12px;background:transparent;color:inherit;font-weight:600;font-size:15px">Zwischenspeicher leeren &amp; neu laden</button>' +
+            '<pre style="white-space:pre-wrap;word-break:break-word;font-size:11px;opacity:.7;margin-top:18px;text-align:left">' + (errs.join('\n') || 'Kein Skriptfehler gemeldet – evtl. lädt die neue Version noch.').replace(/</g, '&lt;') + '</pre></div>'
+          document.getElementById('fx-reload').onclick = function () { location.reload() }
+          document.getElementById('fx-clear').onclick = function () {
+            try { localStorage.removeItem('fitness-rq-cache') } catch (e) {}
+            var done = function () { location.reload() }
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+              navigator.serviceWorker.getRegistrations().then(function (rs) {
+                return Promise.all(rs.map(function (r) { return r.unregister() }))
+              }).then(function () {
+                return window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k) })) }) : null
+              }).then(done, done)
+            } else done()
+          }
+        }, 8000)
+      })()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
