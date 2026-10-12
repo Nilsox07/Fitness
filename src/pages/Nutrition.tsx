@@ -165,6 +165,25 @@ function Bar({ value, target }: { value: number; target: number }) {
   )
 }
 
+/** „Anderes Restaurant“ (ohne Kette): Speisekarte fotografieren oder beschreiben. */
+const OTHER_PLACE = 'Restaurant'
+const RECENT_PLACES_KEY = 'recent_places'
+
+/** Zuletzt genutzte Ketten zuerst (schneller unterwegs). */
+function recentFirst(ids: string[]): string[] {
+  let recent: string[] = []
+  try {
+    recent = JSON.parse(localStorage.getItem(RECENT_PLACES_KEY) || '[]')
+  } catch {
+    recent = []
+  }
+  return [...ids].sort((a, b) => {
+    const ia = recent.indexOf(a)
+    const ib = recent.indexOf(b)
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
+  })
+}
+
 /** Anbieter-Chips im Restaurant-Sheet. */
 const PLACES = [
   'Döner',
@@ -750,6 +769,20 @@ export default function Nutrition() {
   }
 
   /** Speisekarte fotografieren → 3 passende Gerichte zum Rest-Budget. */
+  /** Ort wählen (Kette merken, damit sie beim nächsten Mal vorne steht). */
+  function pickPlace(name: string, chainId?: string) {
+    setPlace(name)
+    setOrderQty({})
+    setRestItem('')
+    if (!chainId) return
+    try {
+      const recent: string[] = JSON.parse(localStorage.getItem(RECENT_PLACES_KEY) || '[]')
+      localStorage.setItem(RECENT_PLACES_KEY, JSON.stringify([chainId, ...recent.filter((r) => r !== chainId)].slice(0, 12)))
+    } catch {
+      /* ignore */
+    }
+  }
+
   /** Foto einer Kartenseite hinzufügen (bis zu 4 Seiten). */
   async function addMenuPhoto(files: FileList | null | undefined) {
     if (!files?.length) return
@@ -1845,6 +1878,7 @@ export default function Nutrition() {
           busy={aiBusy}
           footer={
             isNew ? (
+              !place ? undefined : (
               <>
                 <PrimaryButton
                   onClick={estimateOrder}
@@ -1862,6 +1896,7 @@ export default function Nutrition() {
                   Was passt zu meinem Budget?
                 </button>
               </>
+              )
             ) : (
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button className="btn-primary" onClick={estimateOrder} disabled={aiBusy}>
@@ -1886,8 +1921,79 @@ export default function Nutrition() {
               {Math.max(0, (settings?.protein_target ?? 0) - totals.protein)} g Eiweiß
             </p>
           )}
+          {isNew && !place && (
+            <div className="space-y-2">
+              <GroupLabel>Wo isst du?</GroupLabel>
+              <div className="grid grid-cols-4 gap-2">
+                {recentFirst(Object.keys(CHAIN_BADGE)).map((id) => (
+                  <button
+                    key={id}
+                    onClick={() => pickPlace(CHAIN_BADGE[id].name, id)}
+                    className="flex flex-col items-center gap-1 rounded-2xl bg-cream px-1 py-2.5 transition active:scale-95"
+                  >
+                    <ChainBadge id={id} size={36} />
+                    <span className="w-full truncate text-center text-[11px] font-semibold leading-tight">
+                      {CHAIN_BADGE[id].name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {ai?.enabled ? (
+                <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-brand p-3.5 text-on-brand transition active:scale-[0.99]">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/20">
+                    <Camera size={19} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">Anderes Restaurant</span>
+                    <span className="block text-xs opacity-85">Speisekarte fotografieren – KI sucht das Beste raus</span>
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      pickPlace(OTHER_PLACE)
+                      void addMenuPhoto(e.target.files)
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
+              ) : (
+                <button
+                  className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3.5 text-left"
+                  onClick={() => pickPlace(OTHER_PLACE)}
+                >
+                  <Store size={19} className="text-brand" />
+                  <span className="text-sm font-semibold">Anderes Restaurant</span>
+                </button>
+              )}
+            </div>
+          )}
+          {isNew && place && (
+            <button
+              className="flex w-full items-center gap-3 rounded-2xl bg-cream p-2.5 text-left"
+              onClick={() => {
+                setPlace('')
+                setOrderQty({})
+                setRestItem('')
+                setMenuPicks(null)
+                setMenuPhotos([])
+              }}
+            >
+              {activeChain ? (
+                <ChainBadge id={Object.keys(CHAIN_BADGE).find((k) => CHAIN_BADGE[k].name === place) ?? ''} size={32} />
+              ) : (
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-brand/10 text-brand">
+                  <Store size={16} />
+                </span>
+              )}
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold">{place}</span>
+              <span className="text-xs font-semibold text-brand">Ändern</span>
+            </button>
+          )}
+          {!isNew && (
           <div>
-            {isNew && <GroupLabel>Wo isst du?</GroupLabel>}
             <div className={isNew ? '-mx-5 flex gap-2 overflow-x-auto px-5 pb-1' : '-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1'}>
               {[...Object.entries(CHAIN_BADGE).map(([id, b]) => ({ id, name: b.name })), ...PLACES.map((p) => ({ id: '', name: p }))].map(
                 ({ id, name: p }) => (
@@ -1911,24 +2017,8 @@ export default function Nutrition() {
               )}
             </div>
           </div>
-          <div>
-            {isNew && <GroupLabel>Was bestellst du?</GroupLabel>}
-            <div className="flex gap-2">
-              <input
-                className={isNew ? BIG_INPUT : 'input'}
-                placeholder={
-                  activeChain
-                    ? 'Auf der Karte suchen, z. B. Big Mac'
-                    : 'Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis'
-                }
-                value={restItem}
-                onChange={(e) => setRestItem(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && estimateOrder()}
-              />
-              <MicButton onResult={(t) => setRestItem((v) => (v ? v + ' ' + t : t))} />
-            </div>
-          </div>
-          {isNew && ai?.enabled && !activeChain && (
+          )}
+          {isNew && ai?.enabled && place === OTHER_PLACE && (
             <div className="space-y-2">
               <div className="space-y-2.5 rounded-2xl bg-cream p-3.5">
                 <div className="flex items-center gap-3">
@@ -2016,6 +2106,25 @@ export default function Nutrition() {
               )}
             </div>
           )}
+          {(!isNew || place) && (
+          <div>
+            {isNew && <GroupLabel>{activeChain ? 'Auf der Karte suchen' : 'Oder beschreiben, was du bestellst'}</GroupLabel>}
+            <div className="flex gap-2">
+              <input
+                className={isNew ? BIG_INPUT : 'input'}
+                placeholder={
+                  activeChain
+                    ? 'Auf der Karte suchen, z. B. Big Mac'
+                    : 'Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis'
+                }
+                value={restItem}
+                onChange={(e) => setRestItem(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && estimateOrder()}
+              />
+              <MicButton onResult={(t) => setRestItem((v) => (v ? v + ' ' + t : t))} />
+            </div>
+          </div>
+          )}
           {isNew && activeChain && !restItem.trim() && (
             <div className="space-y-2">
               <GroupLabel>{hasTarget ? `Passt in deine ${Math.max(0, kcalTarget - totals.kcal)} kcal` : 'Gute Kombis'}</GroupLabel>
@@ -2068,7 +2177,7 @@ export default function Nutrition() {
               onQty={(name, n) => setOrderQty((q) => ({ ...q, [name]: Math.max(0, n) }))}
             />
           )}
-          {place && chains && !activeChain && chains.length > 0 && (
+          {!isNew && place && chains && !activeChain && chains.length > 0 && (
             <p className="text-xs text-cocoa-muted">Für „{place}" schätzt die KI die Nährwerte.</p>
           )}
           {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}

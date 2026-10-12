@@ -24,6 +24,7 @@ const USER_KEYS = [
   'pokes_sent',
   'buddy_look',
   'season_badges',
+  'recent_places',
 ]
 
 /** Nutzerbezogene Präfixe (pro Workout / Übung / Tag). */
