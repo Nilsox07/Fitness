@@ -109,7 +109,7 @@ import { CustomizeHome } from '../components/home/CustomizeHome'
 import { useHomeCards } from '../lib/homeCards'
 import { fluidOf } from '../lib/fluid'
 import { ChainBadge, ChainMenu } from '../components/food/ChainMenu'
-import { CHAIN_BADGE, findChain, loadChains, menuItemToEstimate, suggestCombo, type Chain } from '../lib/fastfood'
+import { CHAIN_BADGE, findChain, loadChains, menuItemToEstimate, suggestCombo, suggestCombos, type Chain } from '../lib/fastfood'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
 function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
@@ -503,6 +503,7 @@ export default function Nutrition() {
   const [place, setPlace] = useState('')
   const [restItem, setRestItem] = useState('')
   const [menuPicks, setMenuPicks] = useState<{ note: string; picks: MenuPick[] } | null>(null)
+  const [menuPhotos, setMenuPhotos] = useState<string[]>([])
   const [chains, setChains] = useState<Chain[] | null>(null)
   const [orderQty, setOrderQty] = useState<Record<string, number>>({})
   useEffect(() => {
@@ -749,14 +750,23 @@ export default function Nutrition() {
   }
 
   /** Speisekarte fotografieren → 3 passende Gerichte zum Rest-Budget. */
-  async function handleMenuPhoto(file: File | undefined) {
-    if (!file) return
+  /** Foto einer Kartenseite hinzufügen (bis zu 4 Seiten). */
+  async function addMenuPhoto(files: FileList | null | undefined) {
+    if (!files?.length) return
+    setError(null)
+    setMenuPicks(null)
+    const imgs = await Promise.all([...files].slice(0, 4).map((f) => fileToDataUrl(f, 1400)))
+    setMenuPhotos((p) => [...p, ...imgs].slice(0, 4))
+  }
+
+  /** Alle Kartenfotos zusammen auswerten → 3 passende Optionen fürs Rest-Budget. */
+  async function evaluateMenu() {
+    if (!menuPhotos.length) return
     setAiBusy(true)
     setError(null)
     setMenuPicks(null)
     try {
-      const img = await fileToDataUrl(file, 1600)
-      const res = await menuFromPhoto(img, {
+      const res = await menuFromPhoto(menuPhotos, {
         kcal: hasTarget ? Math.max(0, kcalTarget - totals.kcal) : 800,
         protein: Math.max(0, (settings?.protein_target ?? 0) - totals.protein),
       })
@@ -1920,29 +1930,61 @@ export default function Nutrition() {
           </div>
           {isNew && ai?.enabled && !activeChain && (
             <div className="space-y-2">
-              <label
-                className={`flex cursor-pointer items-center gap-3 rounded-2xl bg-cream p-3.5 transition active:scale-[0.99] ${
-                  aiBusy ? 'pointer-events-none opacity-60' : ''
-                }`}
-              >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
-                  {aiBusy ? <Loader2 size={19} className="animate-spin" /> : <Camera size={19} />}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold">Speisekarte fotografieren</span>
-                  <span className="block text-xs text-cocoa-light">Die KI sucht dir die 3 besten Gerichte für heute raus</span>
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => {
-                    void handleMenuPhoto(e.target.files?.[0])
-                    e.target.value = ''
-                  }}
-                />
-              </label>
+              <div className="space-y-2.5 rounded-2xl bg-cream p-3.5">
+                <div className="flex items-center gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+                    <Camera size={19} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">Speisekarte fotografieren</span>
+                    <span className="block text-xs text-cocoa-light">
+                      Alle Seiten fotografieren – die KI sucht die 3 besten Optionen für dein Rest-Budget
+                    </span>
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {menuPhotos.map((src, i) => (
+                    <span key={i} className="relative">
+                      <img src={src} alt={`Seite ${i + 1}`} className="h-16 w-12 rounded-lg object-cover" />
+                      <button
+                        aria-label={`Seite ${i + 1} entfernen`}
+                        className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-cocoa text-bg"
+                        onClick={() => setMenuPhotos((p) => p.filter((_, j) => j !== i))}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                  {menuPhotos.length < 4 && (
+                    <label
+                      className={`grid h-16 w-12 cursor-pointer place-items-center rounded-lg border-2 border-dashed border-sand-dark text-cocoa-light ${
+                        aiBusy ? 'pointer-events-none opacity-60' : ''
+                      }`}
+                      aria-label="Seite hinzufügen"
+                    >
+                      <Plus size={18} />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          void addMenuPhoto(e.target.files)
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+                {menuPhotos.length > 0 && (
+                  <button className="btn-primary w-full gap-2 rounded-xl" onClick={evaluateMenu} disabled={aiBusy}>
+                    {aiBusy ? <Loader2 size={17} className="animate-spin" /> : <Sparkles size={17} />}
+                    {aiBusy
+                      ? 'Karte wird gelesen…'
+                      : `${menuPhotos.length} ${menuPhotos.length === 1 ? 'Seite' : 'Seiten'} auswerten`}
+                  </button>
+                )}
+              </div>
               {menuPicks && (
                 <div className="anim-fade space-y-2">
                   {menuPicks.note && <p className="px-1 text-xs text-cocoa-light">{menuPicks.note}</p>}
@@ -1972,6 +2014,50 @@ export default function Nutrition() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+          {isNew && activeChain && !restItem.trim() && (
+            <div className="space-y-2">
+              <GroupLabel>{hasTarget ? `Passt in deine ${Math.max(0, kcalTarget - totals.kcal)} kcal` : 'Gute Kombis'}</GroupLabel>
+              {suggestCombos(activeChain.items, hasTarget
+                  ? {
+                      kcal: Math.max(0, kcalTarget - totals.kcal),
+                      protein: Math.max(0, (settings?.protein_target ?? 0) - totals.protein),
+                    }
+                  : { kcal: 800, protein: 40 }, 3).map((c, i) => (
+                <button
+                  key={i}
+                  className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left transition active:scale-[0.99]"
+                  onClick={() => {
+                    const items = c.items.map((it) => menuItemToEstimate(it))
+                    showAnalysis(
+                      items,
+                      c.items.filter((it) => it.kcal > 10).map((it) => it.name).join(' + '),
+                      c.fits ? `Passt in dein Rest-Budget – ${c.protein} g Eiweiß.` : 'Dein Budget ist fast aufgebraucht – das ist die kleinste Option.',
+                    )
+                    setAddMode(null)
+                  }}
+                >
+                  <span className="tabular grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-on-brand">
+                    {i + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    {c.tag && (
+                      <span className="mb-0.5 inline-block rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand">
+                        {c.tag}
+                      </span>
+                    )}
+                    <span className="block text-sm font-semibold leading-snug">
+                      {c.items.map((it) => it.name).join(' + ')}
+                    </span>
+                    <span className="tabular block text-xs text-cocoa-light">
+                      {c.kcal} kcal · {c.protein} g Eiweiß{!c.fits && ' · über Budget'}
+                    </span>
+                  </span>
+                  <Plus size={18} className="shrink-0 text-brand" />
+                </button>
+              ))}
+              <GroupLabel>Oder selbst zusammenstellen</GroupLabel>
             </div>
           )}
           {activeChain && (

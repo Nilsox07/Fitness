@@ -84,10 +84,12 @@ function userError(message) {
 
 const THINKING_HEADROOM = 4096
 
-async function callGemini({ system, prompt, json, temperature, image, maxTokens }) {
+async function callGemini({ system, prompt, json, temperature, image, images, maxTokens }) {
   const key = process.env.GEMINI_API_KEY
   const parts = [{ text: prompt }]
   if (image) parts.push(imagePart(image))
+  // Mehrere Bilder (z. B. mehrseitige Speisekarte), höchstens 4
+  if (Array.isArray(images)) for (const img of images.slice(0, 4)) if (typeof img === 'string') parts.push(imagePart(img))
   // maxTokens ist das Budget für die eigentliche Antwort. Gemini zählt sein
   // internes „Denken" mit dazu — deshalb Puffer obendrauf und Denken auf „low"
   // begrenzen (spart Kosten; bezahlt wird nur, was wirklich verbraucht wird).
@@ -197,19 +199,19 @@ export default async function handler(req, res) {
   }
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
-    const { system, prompt, json, temperature, image, maxTokens } = body
+    const { system, prompt, json, temperature, image, images, maxTokens } = body
     if (!prompt || typeof prompt !== 'string') {
       res.status(400).json({ error: 'prompt fehlt' })
       return
     }
-    if (image && PROVIDER === 'groq') {
+    if ((image || images) && PROVIDER === 'groq') {
       res.status(400).json({ error: 'Bild-Analyse wird von diesem Provider nicht unterstützt (Gemini nutzen).' })
       return
     }
     const text =
       PROVIDER === 'groq'
         ? await callGroq({ system, prompt, json, temperature })
-        : await callGemini({ system, prompt, json, temperature, image, maxTokens })
+        : await callGemini({ system, prompt, json, temperature, image, images, maxTokens })
     res.status(200).json({ text })
   } catch (err) {
     if (err?.userMessage) {

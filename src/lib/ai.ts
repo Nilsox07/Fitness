@@ -25,6 +25,8 @@ async function complete(opts: {
   json?: boolean
   temperature?: number
   image?: string
+  /** mehrere Bilder (max. 4), z. B. Seiten einer Speisekarte */
+  images?: string[]
   maxTokens?: number
 }): Promise<string> {
   aiBegin()
@@ -895,22 +897,24 @@ export interface MenuPick extends FoodEstimate {
 
 /** Speisekarte (Foto) lesen und die 3 Gerichte empfehlen, die am besten zum Rest-Budget passen. */
 export async function menuFromPhoto(
-  image: string,
+  images: string[],
   remaining: { kcal: number; protein: number },
 ): Promise<{ note: string; picks: MenuPick[] }> {
   const system =
-    'Du bist Ernährungsberater. Du liest eine fotografierte Speisekarte und empfiehlst Gerichte, ' +
+    'Du bist Ernährungsberater. Du liest eine fotografierte Speisekarte (ggf. mehrere Seiten/Fotos) und empfiehlst Gerichte, ' +
     'die wirklich auf dieser Karte stehen. Schätze realistische Restaurant-Portionen (eher großzügig, ' +
     'mit Öl/Soße). Antworte ausschließlich mit JSON.'
   const prompt =
     `Rest-Budget heute: ~${remaining.kcal} kcal, offenes Eiweiß: ~${remaining.protein} g. ` +
-    'Wähle die 3 besten Gerichte von der Karte (viel Eiweiß, passt ins Budget) und nenne je einen kurzen Grund (why, max 8 Wörter). ' +
+    'Stelle die 3 besten Optionen von der Karte zusammen (viel Eiweiß, passt ins Budget). Eine Option darf eine Kombination sein ' +
+    '(z. B. Hauptgericht + Beilage oder Vorspeise), dann im name mit „ + “ verbinden und die Nährwerte zusammenrechnen. ' +
+    'Nenne je einen kurzen Grund (why, max 8 Wörter). ' +
     'Gibt es kleine Anpassungen (Soße extra, Beilage tauschen), nenne sie in why. ' +
     `${NUTRITION_FORMAT}\n` +
     'Wenn auf dem Bild keine Speisekarte zu erkennen ist: picks leer und note mit dem Grund. ' +
     'Format: {"note":"…","picks":[{"name":"…","why":"…","amount_g":null,"kcal":0,"protein":0,"carbs":0,"fat":0}]}' +
     prefClause()
-  const text = await complete({ system, prompt, image, json: true, temperature: 0.3, maxTokens: 1500 })
+  const text = await complete({ system, prompt, images, json: true, temperature: 0.3, maxTokens: 1500 })
   const raw = parseJson<{ note?: string; picks?: (Partial<FoodEstimate> & { why?: string })[] }>(text)
   return {
     note: String(raw.note ?? ''),

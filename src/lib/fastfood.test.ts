@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findChain, menuItemToEstimate, suggestCombo, type MenuItem } from './fastfood'
+import { findChain, menuItemToEstimate, suggestCombo, suggestCombos, type MenuItem } from './fastfood'
 
 const item = (name: string, category: string, kcal: number, protein: number): MenuItem => ({
   name,
@@ -52,5 +52,31 @@ describe('fastfood helpers', () => {
     const chains = [{ id: 'mcdonalds', name: "McDonald's", items: [] }]
     expect(findChain(chains, "McDonald's")?.id).toBe('mcdonalds')
     expect(findChain(chains, 'Döner')).toBeUndefined()
+  })
+})
+
+describe('suggestCombos', () => {
+  const it_ = (name: string, category: string, kcal: number, protein: number) =>
+    ({ name, category, kcal, protein, carbs: 0, fat: 0 }) as unknown as MenuItem
+  const menu = [
+    it_('Big Mac', 'Burger', 545, 27),
+    it_('Cheeseburger', 'Burger', 307, 16),
+    it_('McChicken', 'Chicken', 451, 18),
+    it_('Pommes klein', 'Beilage', 240, 3),
+    it_('Cola Zero', 'Getränk', 1, 0),
+  ]
+  it('liefert bis zu 3 Kombis mit verschiedenen Hauptgerichten im Budget', () => {
+    const c = suggestCombos(menu, { kcal: 800, protein: 40 }, 3)
+    expect(c.length).toBe(3)
+    expect(c.every((x) => x.kcal <= 801 && x.fits)).toBe(true)
+    const mains = c.map((x) => x.items[0].name)
+    expect(new Set(mains).size).toBe(3)
+    expect(c[0].items[c[0].items.length - 1].name).toBe('Cola Zero')
+  })
+  it('ehrliche Notlösung ohne Budget', () => {
+    const c = suggestCombos(menu, { kcal: 100, protein: 10 })
+    expect(c).toHaveLength(1)
+    expect(c[0].fits).toBe(false)
+    expect(c[0].items[0].name).toBe('Cheeseburger')
   })
 })
