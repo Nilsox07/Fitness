@@ -5,7 +5,7 @@ import { useGiveKudos, useSendPoke } from '../../hooks/useSocial'
 import { effectiveMonthlyPrs, effectiveProteinDays, effectiveSessions } from '../../lib/duel'
 import { useBuddySkin } from '../buddy/useBuddy'
 import { RingAvatar } from './Avatar'
-import { buddyLook, firstName, proteinToday, statusLine, type Person } from './format'
+import { buddyLook, firstName, jointStreak, proteinToday, statusLine, type Person } from './format'
 
 const PRESETS = ['Heute Gym? 💪', 'Kommst du mit?', 'Wo bleibst du? 😄']
 
@@ -90,6 +90,19 @@ export function FriendSheet({
           </div>
         </div>
       </div>
+
+      {/* Gemeinsame Serie: Wochen am Stück, in denen ihr beide trainiert habt */}
+      {!isMe && jointStreak(me, person) >= 1 && (
+        <div className="flex items-center gap-3 rounded-2xl bg-brand/10 p-3">
+          <span className="text-2xl leading-none">🔥</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold text-cocoa">
+              {jointStreak(me, person)} {jointStreak(me, person) === 1 ? 'Woche' : 'Wochen'} gemeinsame Serie
+            </div>
+            <div className="text-xs text-cocoa-light">So lange habt ihr beide jede Woche trainiert. Weiter so!</div>
+          </div>
+        </div>
+      )}
 
       {/* Kennzahlen: Du vs. Name */}
       <div className="rounded-2xl bg-sand-light p-3 ring-1 ring-sand-dark/50">

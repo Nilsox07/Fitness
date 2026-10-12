@@ -83,9 +83,9 @@ export function useKudos() {
     queryKey: ['kudos', user?.id],
     enabled: Boolean(user),
     queryFn: async () => {
-      const { data, error } = await supabase.from('kudos').select('from_user, to_user')
+      const { data, error } = await supabase.from('kudos').select('from_user, to_user, created_at')
       if (error) throw error
-      return data as { from_user: string; to_user: string }[]
+      return data as { from_user: string; to_user: string; created_at?: string }[]
     },
   })
 }

@@ -4,11 +4,11 @@ import { ChevronLeft, Dumbbell, Hand, MessageCircle, Send, Sparkles, Utensils } 
 import { useAuth } from '../lib/auth'
 import { usePrefs } from '../lib/prefs'
 import { dayLabel, localDate } from '../lib/day'
-import { ActivityList } from '../components/feed/ActivityCard'
+import { DigestList } from '../components/feed/ActivityCard'
 import { useAuthorLookup } from '../components/feed/useAuthorLookup'
 import { MyBuddy } from '../components/buddy/MyBuddy'
 import { FilterChips, PageHeader, SectionTitle } from '../components/community/ui'
-import { enter, matchesFilter, type FeedFilter } from '../components/community/communityUtils'
+import { buildDigest, enter, matchesFilter, type FeedFilter } from '../components/community/communityUtils'
 import {
   useActivities,
   useAddComment,
@@ -125,24 +125,26 @@ export default function Feed() {
 
 /** Neues Design: Aktivitäten nach Tagen gruppiert, gleiche Karten wie in der Community. */
 function FeedNew() {
-  const { world, showNutrition } = usePrefs()
+  const { showNutrition } = usePrefs()
+  const { user } = useAuth()
   const { data: activities, isLoading } = useActivities()
   const authorOf = useAuthorLookup()
-  const [filter, setFilter] = useState<FeedFilter>(world)
+  const [filter, setFilter] = useState<FeedFilter>('all')
   // Ernährung ausgeblendet → kein Ernährungs-Filter
   const active: FeedFilter = !showNutrition && filter === 'food' ? 'fitness' : filter
 
+  // Gleicher ruhiger Feed wie in der Community: Freunde pro Tag gebündelt, von dir nur Höhepunkte.
   const groups = useMemo(() => {
-    const out: { day: string; items: Activity[] }[] = []
-    for (const a of activities ?? []) {
-      if (!matchesFilter(a.kind, active)) continue
-      const day = localDate(new Date(a.created_at))
+    const out: { day: string; items: { primary: Activity; extras: Activity[] }[] }[] = []
+    const filtered = (activities ?? []).filter((a) => matchesFilter(a.kind, active))
+    for (const d of buildDigest(filtered, user?.id)) {
+      const day = localDate(new Date(d.primary.created_at))
       const last = out[out.length - 1]
-      if (last && last.day === day) last.items.push(a)
-      else out.push({ day, items: [a] })
+      if (last && last.day === day) last.items.push(d)
+      else out.push({ day, items: [d] })
     }
     return out
-  }, [activities, active])
+  }, [activities, active, user?.id])
   const count = groups.reduce((s, g) => s + g.items.length, 0)
 
   const options: { value: FeedFilter; label: string; icon: ReactNode }[] = [
@@ -155,7 +157,7 @@ function FeedNew() {
     <div className="space-y-5">
       <PageHeader
         title="Aktivitäten"
-        subtitle={isLoading ? 'Lädt…' : `${count} ${count === 1 ? 'Eintrag' : 'Einträge'} von dir & deinen Freunden`}
+        subtitle={isLoading ? 'Lädt…' : 'Trainings deiner Freunde & deine Höhepunkte'}
         style={enter(0)}
       />
 
@@ -166,7 +168,7 @@ function FeedNew() {
       {groups.map((g, i) => (
         <section key={g.day} style={enter(Math.min(i, 4) + 2)}>
           <SectionTitle right={`${g.items.length}`}>{dayLabel(g.day)}</SectionTitle>
-          <ActivityList activities={g.items} authorOf={authorOf} />
+          <DigestList digests={g.items} authorOf={authorOf} />
         </section>
       ))}
 

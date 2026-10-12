@@ -110,3 +110,32 @@ describe('proteinStandings', () => {
     expect(proteinStandings({ user_id: 'me', days: 2, today: 50 }, [b], TODAY).leaderId).toBeNull()
   })
 })
+
+describe('buildDigest', () => {
+  const act = (id: string, user_id: string, kind: string, created_at: string) => ({
+    id, user_id, kind, title: id, detail: null, created_at, author_name: null,
+  })
+  it('bündelt Freunde pro Tag und zeigt eigene nur bei Höhepunkten', async () => {
+    const { buildDigest } = await import('./communityUtils')
+    const list = [
+      act('pr1', 'max', 'pr', '2026-10-12T18:30:00'),
+      act('w1', 'max', 'workout', '2026-10-12T18:40:00'),
+      act('pr2', 'max', 'pr', '2026-10-12T18:20:00'),
+      act('w0', 'max', 'workout', '2026-10-11T18:00:00'),
+      act('mine-w', 'me', 'workout', '2026-10-12T10:00:00'),
+      act('mine-pr', 'me', 'pr', '2026-10-12T10:05:00'),
+      act('mine-cheat', 'me', 'cheat', '2026-10-12T12:00:00'),
+    ]
+    const d = buildDigest(list, 'me')
+    expect(d.map((x) => x.primary.id)).toEqual(['w1', 'mine-pr', 'w0'])
+    expect(d[0].extras.map((x) => x.id)).toEqual(['pr1', 'pr2'])
+  })
+})
+
+describe('jointStreak', () => {
+  it('ist das Minimum beider Wochen-Serien', async () => {
+    const { jointStreak } = await import('../social/format')
+    expect(jointStreak({ week_streak: 5 }, { week_streak: 3 })).toBe(3)
+    expect(jointStreak({ week_streak: 0 }, { week_streak: 7 })).toBe(0)
+  })
+})

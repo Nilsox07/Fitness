@@ -42,12 +42,15 @@ export function GymMeetCard({
   friends,
   today,
   onOpenFriend,
+  compact = false,
   style,
 }: {
   me: Person
   friends: Person[]
   today: string
   onOpenFriend: (u: Person) => void
+  /** Neue Community: Zeitwahl erst auf Tipp, Anstupser stehen in der Glocke */
+  compact?: boolean
   style?: CSSProperties
 }) {
   const setGymStatus = useSetGymStatus()
@@ -55,12 +58,18 @@ export function GymMeetCard({
   const mySkin = useBuddySkin()
   const [custom, setCustom] = useState<string | null>(null)
   const [sent, setSent] = useState<Record<string, string>>({})
+  const [editing, setEditing] = useState(false)
 
   const myPlan = planToday(me, today)
   const isPreset = myPlan != null && PRESETS.includes(myPlan)
 
   function save(text: string) {
-    setGymStatus.mutate(text.trim(), { onSuccess: () => setCustom(null) })
+    setGymStatus.mutate(text.trim(), {
+      onSuccess: () => {
+        setCustom(null)
+        setEditing(false)
+      },
+    })
   }
   function poke(toUser: string, text: string | undefined, label: string) {
     sendPoke.mutate({ toUser, text }, { onSuccess: () => setSent((s) => ({ ...s, [toUser]: label })) })
@@ -75,31 +84,44 @@ export function GymMeetCard({
             <CalendarClock size={17} />
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold">Wann gehst du?</h3>
+            <h3 className="text-sm font-semibold">{compact && myPlan ? `Du: ${myPlan}` : 'Wann gehst du?'}</h3>
             <p className="truncate text-xs text-cocoa-light">
-              {myPlan ? `Freunde sehen: ${myPlan}` : 'Sag Bescheid — vielleicht kommt wer mit.'}
+              {myPlan ? `Deine Freunde sehen das` : 'Sag Bescheid — vielleicht kommt wer mit.'}
             </p>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {PRESETS.map((p) => (
-            <Chip
-              key={p}
-              active={myPlan === p}
-              onClick={() => save(myPlan === p ? '' : p)}
-              disabled={setGymStatus.isPending}
+          {compact && (
+            <button
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${
+                editing ? 'bg-sand text-cocoa' : 'bg-brand text-on-brand'
+              }`}
+              onClick={() => setEditing((e) => !e)}
+              aria-expanded={editing}
             >
-              {p}
-            </Chip>
-          ))}
-          <Chip
-            active={custom !== null || (myPlan != null && !isPreset)}
-            onClick={() => setCustom(custom === null ? (myPlan && !isPreset ? myPlan : '') : null)}
-          >
-            {!(custom !== null || (myPlan != null && !isPreset)) && <Clock size={14} />}
-            <span className="max-w-[10rem] truncate">{myPlan && !isPreset ? myPlan : 'Uhrzeit…'}</span>
-          </Chip>
+              {editing ? 'Fertig' : myPlan ? 'Ändern' : 'Ich gehe …'}
+            </button>
+          )}
         </div>
+        {(!compact || editing) && (
+          <div className="anim-fade flex flex-wrap gap-2">
+            {PRESETS.map((p) => (
+              <Chip
+                key={p}
+                active={myPlan === p}
+                onClick={() => save(myPlan === p ? '' : p)}
+                disabled={setGymStatus.isPending}
+              >
+                {p}
+              </Chip>
+            ))}
+            <Chip
+              active={custom !== null || (myPlan != null && !isPreset)}
+              onClick={() => setCustom(custom === null ? (myPlan && !isPreset ? myPlan : '') : null)}
+            >
+              {!(custom !== null || (myPlan != null && !isPreset)) && <Clock size={14} />}
+              <span className="max-w-[10rem] truncate">{myPlan && !isPreset ? myPlan : 'Uhrzeit…'}</span>
+            </Chip>
+          </div>
+        )}
         {custom !== null && (
           <div className="anim-fade flex gap-2">
             <input
@@ -135,7 +157,12 @@ export function GymMeetCard({
               return (
                 <li key={u.user_id} className="flex items-center gap-3 px-3 py-2.5">
                   <button className="shrink-0" onClick={() => onOpenFriend(u)} aria-label={shortName(u.display_name)}>
-                    <Avatar buddy={buddyLook(u, false, mySkin, today)} name={u.display_name} size={34} className="bg-sand" />
+                    <Avatar
+                      buddy={buddyLook(u, false, mySkin, today)}
+                      name={u.display_name}
+                      size={34}
+                      className="bg-sand"
+                    />
                   </button>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{shortName(u.display_name)}</div>
@@ -182,8 +209,8 @@ export function GymMeetCard({
         </div>
       )}
 
-      {/* Eingehende Anstupser als Chat-Blasen */}
-      <PokeBubbles friends={friends} today={today} />
+      {/* Eingehende Anstupser als Chat-Blasen (neue Community: in der Glocke) */}
+      {!compact && <PokeBubbles friends={friends} today={today} />}
     </div>
   )
 }

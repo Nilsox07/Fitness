@@ -20,6 +20,13 @@ import { isMissingFluidColumn, rememberFluid } from '../lib/fluid'
 async function maybePostCheat(entry: FoodEntry, userId: string, authorName: string | undefined, qc: QueryClient) {
   try {
     if (!shareCheatEnabled() || (entry.kcal ?? 0) < 400) return
+    // Höchstens ein Cheat-Alarm pro Tag – sonst wird der Feed zur Pizza-Chronik.
+    const capKey = `cheat_posted_${entry.date}`
+    try {
+      if (localStorage.getItem(capKey)) return
+    } catch {
+      /* ignore */
+    }
     const res = await judgeCheatMeal({
       name: entry.name,
       kcal: entry.kcal,
@@ -28,6 +35,11 @@ async function maybePostCheat(entry: FoodEntry, userId: string, authorName: stri
       fat: entry.fat,
     })
     if (!res.indulgent) return
+    try {
+      localStorage.setItem(capKey, '1')
+    } catch {
+      /* ignore */
+    }
     const title = `🍕 ${entry.name}`
     const detail = `${Math.round(entry.kcal)} kcal${res.quip ? ` · ${res.quip}` : ''}`
     await supabase

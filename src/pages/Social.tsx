@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  Bell,
   ChevronRight,
   Drumstick,
   Flame,
@@ -16,22 +17,26 @@ import {
   Users,
 } from 'lucide-react'
 import { Sheet } from '../components/workout/Sheet'
-import { ActivityList } from '../components/feed/ActivityCard'
+import { DigestList } from '../components/feed/ActivityCard'
 import { useAuthorLookup } from '../components/feed/useAuthorLookup'
 import { FriendsRow } from '../components/social/FriendsRow'
 import { DuelHero } from '../components/social/DuelHero'
 import { ProteinDuelHero } from '../components/social/ProteinDuelHero'
 import { TeamGoalCard } from '../components/social/TeamGoalCard'
-import { GymMeetCard, PokeBubbles } from '../components/social/GymMeetCard'
+import { GymMeetCard } from '../components/social/GymMeetCard'
+import { WeekCarousel } from '../components/social/WeekCarousel'
+import { InboxSheet } from '../components/social/InboxSheet'
+import { useInbox } from '../hooks/useInbox'
 import { FriendSheet } from '../components/social/FriendSheet'
 import { LeaderboardSection } from '../components/social/LeaderboardSection'
 import { SharedRecipesRow } from '../components/social/SharedRecipesRow'
 import { InviteCard } from '../components/social/InviteCard'
 import { PageHeader, SectionTitle } from '../components/community/ui'
 import {
+  buildDigest,
   communitySubtitle,
+  daysLeftLabel,
   enter,
-  matchesFilter,
   PROTEIN_TEAM_DAYS,
   proteinStandings,
 } from '../components/community/communityUtils'
@@ -89,7 +94,7 @@ export default function Social() {
   const { data: allSets } = useAllSets()
   const { data: food } = useAllFoodEntries()
   const { data: nutritionSettings } = useNutritionSettings()
-  const { showNutrition, isNew, world } = usePrefs()
+  const { showNutrition, isNew } = usePrefs()
   const { data: board } = useLeaderboard()
   const { data: kudos } = useKudos()
   const addFriend = useAddFriend()
@@ -551,16 +556,14 @@ export default function Social() {
   )
   // ── Neues Design ──────────────────────────────────────────────
   const today = localDate()
-  const isFood = world === 'food'
   const [openId, setOpenId] = useState<string | null>(null)
   const { data: activities } = useActivities()
   const authorOf = useAuthorLookup()
-  // Nur Aktivitäten der aktuellen Welt (Training bzw. Ernährung)
-  const worldActivities = useMemo(
-    () => (activities ?? []).filter((a) => matchesFilter(a.kind, world)),
-    [activities, world],
-  )
-  const latest = useMemo(() => worldActivities.slice(0, 5), [worldActivities])
+  // Ruhiger Feed: Freunde pro Tag gebündelt, von dir nur Höhepunkte
+  const digest = useMemo(() => buildDigest(activities ?? [], user?.id), [activities, user?.id])
+  const latest = useMemo(() => digest.slice(0, 5), [digest])
+  const [inboxOpen, setInboxOpen] = useState(false)
+  const { unread } = useInbox()
   const kudosGiven = useMemo(
     () => new Set((kudos ?? []).filter((k) => k.from_user === user?.id).map((k) => k.to_user)),
     [kudos, user?.id],
@@ -620,7 +623,7 @@ export default function Social() {
 
   const hasFriends = friends.length > 0
   const allLink =
-    worldActivities.length > 0 ? (
+    digest.length > 0 ? (
       <button className="flex items-center text-sm font-semibold text-brand" onClick={() => navigate('/feed')}>
         Alle
         <ChevronRight size={16} />
@@ -631,16 +634,30 @@ export default function Social() {
     <div className="space-y-6">
       <PageHeader
         title="Community"
-        subtitle={communitySubtitle(friends as Person[], world, today)}
+        subtitle={communitySubtitle(friends as Person[], 'fitness', today)}
         style={enter(0)}
         action={
-          <button
-            className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
-            onClick={() => setAddOpen(true)}
-            aria-label="Freund hinzufügen"
-          >
-            <UserPlus size={18} />
-          </button>
+          <div className="flex gap-2">
+            <button
+              className="relative grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
+              onClick={() => setInboxOpen(true)}
+              aria-label={unread ? `Nachrichten, ${unread} neu` : 'Nachrichten'}
+            >
+              <Bell size={18} />
+              {unread > 0 && (
+                <span className="tabular absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-bold text-on-brand ring-2 ring-bg">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </button>
+            <button
+              className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
+              onClick={() => setAddOpen(true)}
+              aria-label="Freund hinzufügen"
+            >
+              <UserPlus size={18} />
+            </button>
+          </div>
         }
       />
 
@@ -649,72 +666,87 @@ export default function Social() {
           me={mePerson}
           friends={friends}
           today={today}
-          world={world}
+          combined
           onOpen={(u) => setOpenId(u.user_id)}
           onInvite={() => setAddOpen(true)}
         />
       </div>
 
       {!hasFriends ? (
-        <InviteCard world={world} onAdd={() => setAddOpen(true)} style={enter(2)} />
-      ) : isFood ? (
-        <>
-          <ProteinDuelHero
-            people={people}
-            meId={mePerson.user_id}
-            rows={protein.rows}
-            leaderId={protein.leaderId}
-            maxToday={protein.maxToday}
-            today={today}
-            daysLeft={weekLeft}
-            style={enter(2)}
-          />
-          {(pokes?.length ?? 0) > 0 && (
-            <div className="card" style={enter(3)}>
-              <PokeBubbles friends={friends} today={today} />
-            </div>
-          )}
-          <SharedRecipesRow style={enter(3)} />
-        </>
+        <InviteCard world="fitness" onAdd={() => setAddOpen(true)} style={enter(2)} />
       ) : (
-        <>
-          <DuelHero
-            people={people}
-            meId={mePerson.user_id}
-            standings={standings}
-            includeProtein={includeProtein}
-            today={today}
-            daysLeft={weekLeft}
-            style={enter(2)}
-          />
-          <section style={enter(3)}>
-            <SectionTitle>Gym-Treff</SectionTitle>
-            <GymMeetCard
-              me={mePerson}
-              friends={friends}
+        <section className="space-y-3" style={enter(2)}>
+          <SectionTitle right={<span className="text-xs text-cocoa-muted">{daysLeftLabel(weekLeft)}</span>}>
+            Diese Woche
+          </SectionTitle>
+          <WeekCarousel>
+            <DuelHero
+              people={people}
+              meId={mePerson.user_id}
+              standings={standings}
+              includeProtein={includeProtein}
               today={today}
-              onOpenFriend={(u) => setOpenId(u.user_id)}
+              daysLeft={weekLeft}
             />
-          </section>
-          <TeamGoalCard
-            title="Zusammen diese Woche"
-            icon={<Users size={17} />}
-            done={team.done}
-            target={team.target}
-            unit="Trainings"
+            {showNutrition && (
+              <ProteinDuelHero
+                people={people}
+                meId={mePerson.user_id}
+                rows={protein.rows}
+                leaderId={protein.leaderId}
+                maxToday={protein.maxToday}
+                today={today}
+                daysLeft={weekLeft}
+              />
+            )}
+            <TeamGoalCard
+              title="Zusammen diese Woche"
+              icon={<Users size={17} />}
+              done={team.done}
+              target={team.target}
+              unit="Trainings"
+              people={people}
+              meId={mePerson.user_id}
+            />
+            {showNutrition && (
+              <TeamGoalCard
+                title="Gemeinsam gesund"
+                icon={<HeartPulse size={17} />}
+                done={protein.totalDays}
+                target={PROTEIN_TEAM_DAYS * people.length}
+                unit="Eiweiß-Tage"
+                people={people}
+                meId={mePerson.user_id}
+                tone="success"
+              />
+            )}
+          </WeekCarousel>
+          <LeaderboardSection
             people={people}
             meId={mePerson.user_id}
-            style={enter(4)}
+            today={today}
+            combined
+            withFood={showNutrition}
+            kudosReceived={kudosReceived}
+            kudosGiven={kudosGiven}
+            onKudos={(id) => giveKudos.mutate(id)}
           />
-        </>
+        </section>
       )}
 
-      <section style={enter(5)}>
+      {hasFriends && (
+        <section style={enter(3)}>
+          <SectionTitle>Gym-Treff</SectionTitle>
+          <GymMeetCard compact me={mePerson} friends={friends} today={today} onOpenFriend={(u) => setOpenId(u.user_id)} />
+        </section>
+      )}
+
+      <section style={enter(4)}>
         <SectionTitle right={allLink}>Aktivitäten</SectionTitle>
         {latest.length > 0 ? (
           <>
-            <ActivityList activities={latest} authorOf={authorOf} />
-            {worldActivities.length > latest.length && (
+            <DigestList digests={latest} authorOf={authorOf} />
+            {digest.length > latest.length && (
               <button
                 className="card mt-3 flex w-full items-center justify-between py-3.5 text-sm font-semibold"
                 onClick={() => navigate('/feed')}
@@ -726,39 +758,16 @@ export default function Social() {
           </>
         ) : (
           <div className="rounded-2xl bg-cream p-5 text-center text-sm text-cocoa-light">
-            {isFood
-              ? 'Noch nichts los. Teile ein Rezept — oder beichte dein nächstes Cheat-Meal.'
-              : 'Noch nichts los. Schließ ein Training ab — es erscheint hier.'}
+            {hasFriends
+              ? 'Noch nichts los. Trainings deiner Freunde und deine Rekorde erscheinen hier.'
+              : 'Sobald du Freunde hast, siehst du hier ihre Trainings – und sie deine Rekorde.'}
           </div>
         )}
       </section>
 
-      {hasFriends && isFood && (
-        <TeamGoalCard
-          title="Gemeinsam gesund"
-          icon={<HeartPulse size={17} />}
-          done={protein.totalDays}
-          target={PROTEIN_TEAM_DAYS * people.length}
-          unit="Eiweiß-Tage"
-          people={people}
-          meId={mePerson.user_id}
-          tone="success"
-          style={enter(6)}
-        />
-      )}
+      {hasFriends && showNutrition && <SharedRecipesRow style={enter(5)} />}
 
-      {hasFriends && (
-        <LeaderboardSection
-          people={people}
-          meId={mePerson.user_id}
-          today={today}
-          world={world}
-          kudosReceived={kudosReceived}
-          kudosGiven={kudosGiven}
-          onKudos={(id) => giveKudos.mutate(id)}
-          style={enter(7)}
-        />
-      )}
+      {inboxOpen && <InboxSheet people={people} today={today} onClose={() => setInboxOpen(false)} />}
 
       {openPerson && (
         <FriendSheet

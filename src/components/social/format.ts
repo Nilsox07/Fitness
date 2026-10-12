@@ -101,3 +101,12 @@ export function statusLine(u: Person, today = localDate()): { kind: StatusKind; 
   const d = daysBetween(u.last_workout, today)
   return { kind: 'idle', text: d <= 1 ? 'gestern' : `vor ${d} T.` }
 }
+
+/**
+ * Gemeinsame Serie: Wochen am Stück, in denen BEIDE trainiert haben. Beide
+ * Wochen-Serien enden in der aktuellen Woche → das Minimum ist genau die Zahl
+ * der gemeinsamen Wochen.
+ */
+export function jointStreak(a: Pick<UserStat, 'week_streak'>, b: Pick<UserStat, 'week_streak'>): number {
+  return Math.max(0, Math.min(a.week_streak ?? 0, b.week_streak ?? 0))
+}

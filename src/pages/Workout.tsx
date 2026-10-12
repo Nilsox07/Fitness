@@ -437,11 +437,25 @@ export default function Workout() {
       }
       if (!posted) {
         const exCount = new Set(done.map((s) => s.exercise_id)).size
+        // Übungen fürs „Nachmachen" bei Freunden: Reihenfolge wie trainiert, Arbeitssätze zählen.
+        const order: string[] = []
+        for (const s of done) if (!order.includes(s.exercise_id)) order.push(s.exercise_id)
+        const exercisesMeta = order
+          .map((id) => {
+            const ex = (exercises ?? []).find((e) => e.id === id)
+            const sets = done.filter((s) => s.exercise_id === id && s.set_type !== 'warmup')
+            const top = [...sets].sort((a, b) => b.weight - a.weight)[0]
+            return ex && top
+              ? { name: ex.name, muscle_group: ex.muscle_group, sets: sets.length, reps: top.reps, weight: top.weight }
+              : null
+          })
+          .filter((x): x is NonNullable<typeof x> => x !== null)
         postActivity.mutate({
           kind: 'workout',
           title: 'Training abgeschlossen 💪',
           detail: `${done.length} Sätze · ${exCount} Übungen · ${Math.round(totalVolume(done))} kg`,
           author_name: authorName,
+          ...(exercisesMeta.length ? { meta: { exercises: exercisesMeta } } : {}),
         })
         try {
           localStorage.setItem(key, '1')

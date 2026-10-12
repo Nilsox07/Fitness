@@ -33,6 +33,9 @@ export function LeaderboardSection({
   kudosReceived,
   kudosGiven,
   onKudos,
+  combined = false,
+  withFood = true,
+  defaultOpen = false,
   style,
 }: {
   /** Du (lokal frische Zahlen) + Freunde */
@@ -43,11 +46,19 @@ export function LeaderboardSection({
   kudosReceived: Map<string, number>
   kudosGiven: Set<string>
   onKudos: (userId: string) => void
+  /** Eine Liste für Training und Ernährung (neue Community) */
+  combined?: boolean
+  withFood?: boolean
+  defaultOpen?: boolean
   style?: CSSProperties
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const mySkin = useBuddySkin()
-  const options = world === 'food' ? FOOD : FITNESS
+  const options: { id: Metric; label: string }[] = combined
+    ? [...FITNESS, ...(withFood ? FOOD.filter((f) => f.id !== 'level') : [])]
+    : world === 'food'
+      ? FOOD
+      : FITNESS
   const [picked, setPicked] = useState<Metric | null>(null)
   const metric: Metric = picked && options.some((o) => o.id === picked) ? picked : options[0].id
 
@@ -121,7 +132,11 @@ export function LeaderboardSection({
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold">Bestenliste</span>
           <span className="block truncate text-xs text-cocoa-light">
-            {world === 'food' ? 'Eiweiß-Tage, Eiweiß heute, Level' : 'Fortschritt, Trainings, Streak, Level, Volumen'}
+            {combined
+              ? `Fortschritt, Trainings, Streak, Level${withFood ? ', Eiweiß' : ''}`
+              : world === 'food'
+                ? 'Eiweiß-Tage, Eiweiß heute, Level'
+                : 'Fortschritt, Trainings, Streak, Level, Volumen'}
           </span>
         </span>
         <ChevronDown
@@ -146,7 +161,7 @@ export function LeaderboardSection({
               </button>
             ))}
           </div>
-          {world === 'fitness' && (
+          {(combined || world === 'fitness') && (
             <p className="px-1 text-xs text-cocoa-muted">
               Fair vergleichen: <strong>Fortschritt</strong> (neue Bestleistungen/Monat) &amp;{' '}
               <strong>Trainings</strong> zählen für alle gleich — Volumen hängt vom Kraftniveau ab.

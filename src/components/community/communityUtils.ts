@@ -137,3 +137,42 @@ export const PROTEIN_TEAM_DAYS = 5
 export function daysLeftLabel(n: number): string {
   return n === 0 ? 'letzter Tag' : n === 1 ? 'noch 1 Tag' : `noch ${n} Tage`
 }
+
+/** Ein Feed-Eintrag: Hauptaktivität + weitere vom selben Tag (Rekorde, Cheat …). */
+export interface FeedDigest {
+  primary: { id: string; user_id: string; kind: string; title: string; detail: string | null; created_at: string; author_name: string | null }
+  extras: FeedDigest['primary'][]
+}
+
+/** Eigene Einträge, die es in den Feed schaffen (normale Trainings/Cheats nicht). */
+const OWN_HIGHLIGHT = /pr|record|rekord|level|streak|milestone|meilenstein|recipe|rezept|goal/i
+
+function localDay(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/**
+ * Ruhiger Feed: Freunde → ein Eintrag pro Person und Tag (Training als Hauptkarte,
+ * Rekorde & Co. darunter); eigene Einträge nur Höhepunkte (Rekorde, Level, Serie …).
+ * Neueste zuerst.
+ */
+export function buildDigest(activities: readonly FeedDigest['primary'][], meId: string | undefined): FeedDigest[] {
+  const groups = new Map<string, FeedDigest['primary'][]>()
+  for (const a of activities) {
+    const mine = a.user_id === meId
+    if (mine && !OWN_HIGHLIGHT.test(a.kind)) continue
+    // Eigene Höhepunkte einzeln lassen, Freunde pro Tag bündeln.
+    const key = mine ? `me:${a.id}` : `${a.user_id}:${localDay(a.created_at)}`
+    groups.set(key, [...(groups.get(key) ?? []), a])
+  }
+  const rank = (k: string) => (/workout|training/i.test(k) ? 0 : /pr|rekord|record/i.test(k) ? 1 : 2)
+  return [...groups.values()]
+    .map((list) => {
+      const sorted = [...list].sort((a, b) => rank(a.kind) - rank(b.kind) || b.created_at.localeCompare(a.created_at))
+      const latest = list.reduce((m, a) => (a.created_at > m ? a.created_at : m), list[0].created_at)
+      return { primary: sorted[0], extras: sorted.slice(1), latest }
+    })
+    .sort((a, b) => b.latest.localeCompare(a.latest))
+    .map(({ primary, extras }) => ({ primary, extras }))
+}

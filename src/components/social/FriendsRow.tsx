@@ -3,7 +3,7 @@ import { effectiveProteinDays, effectiveSessions } from '../../lib/duel'
 import { useBuddySkin } from '../buddy/useBuddy'
 import { PROTEIN_TEAM_DAYS, shortName, type FeedWorld } from '../community/communityUtils'
 import { RingAvatar } from './Avatar'
-import { buddyLook, proteinToday, statusLine, type Person } from './format'
+import { buddyLook, jointStreak, proteinToday, statusLine, type Person } from './format'
 
 /**
  * Freunde-Leiste im Stories-Stil: du zuerst, dann Freunde.
@@ -14,6 +14,7 @@ export function FriendsRow({
   friends,
   today,
   world = 'fitness',
+  combined = false,
   onOpen,
   onInvite,
 }: {
@@ -21,12 +22,14 @@ export function FriendsRow({
   friends: Person[]
   today: string
   world?: FeedWorld
+  /** Neue Community: Ring = Trainings, darunter Training oder Eiweiß von heute */
+  combined?: boolean
   onOpen: (u: Person) => void
   onInvite: () => void
 }) {
   const people = [me, ...friends]
   const mySkin = useBuddySkin()
-  const food = world === 'food'
+  const food = !combined && world === 'food'
   return (
     <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 pt-0.5 [scrollbar-width:none]">
       {people.map((u, i) => {
@@ -56,13 +59,23 @@ export function FriendsRow({
                   <Check size={12} strokeWidth={3} />
                 </span>
               )}
+              {combined && !isMe && jointStreak(me, u) >= 2 && (
+                <span
+                  className="tabular absolute -left-1 -top-1 flex items-center rounded-full bg-bg px-1 text-[11px] font-bold shadow ring-1 ring-sand-dark/50"
+                  title="Gemeinsame Serie (Wochen)"
+                >
+                  🔥{jointStreak(me, u)}
+                </span>
+              )}
             </span>
             <span className="w-full min-w-0">
               <span className={`block truncate text-sm font-semibold ${isMe ? 'text-brand' : ''}`}>
                 {isMe ? 'Du' : shortName(u.display_name)}
               </span>
               <span className="block truncate text-[11px] leading-tight text-cocoa-muted">
-                {food ? (
+                {combined && st.kind !== 'trained' && grams > 0 ? (
+                  <span className="tabular text-cocoa-light">{grams} g Eiweiß</span>
+                ) : food ? (
                   grams > 0 ? (
                     <span className="tabular text-cocoa-light">{grams} g Eiweiß</span>
                   ) : (
