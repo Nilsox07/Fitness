@@ -5,6 +5,7 @@
 import type { Meal } from '../types'
 import { DAY_CUTOFF_H } from './day'
 import type { Schedule } from './schedule'
+import { NOTIFY_DEFAULTS, normalizeNotify, type NotifyPrefs } from './notify'
 
 /** Prozent je Mahlzeit (Summe = 100). */
 export type MealSplit = Record<Meal, number>
@@ -16,6 +17,10 @@ export interface UserPrefs {
   mealSplit: MealSplit
   /** Stunde (0–6), ab der ein neuer Trainings-Tag beginnt. */
   dayCutoff: number
+  /** Push-Erinnerungen je Art (Profil → Benachrichtigungen) */
+  notify: NotifyPrefs
+  /** Zeitzone des Geräts – der Server rechnet die Uhrzeiten damit um */
+  tz: string | null
 }
 
 export const DEFAULT_KCAL_BONUS = 250
@@ -26,6 +31,8 @@ export const DEFAULT_PREFS: UserPrefs = {
   kcalBonus: DEFAULT_KCAL_BONUS,
   mealSplit: DEFAULT_MEAL_SPLIT,
   dayCutoff: DAY_CUTOFF_H,
+  notify: NOTIFY_DEFAULTS,
+  tz: null,
 }
 
 const num = (v: unknown, lo: number, hi: number, fallback: number): number => {
@@ -77,5 +84,7 @@ export function normalizePrefs(raw: unknown): UserPrefs {
     kcalBonus: num(r.kcalBonus, 0, 600, DEFAULT_KCAL_BONUS),
     mealSplit,
     dayCutoff: num(r.dayCutoff, 0, 6, DAY_CUTOFF_H),
+    notify: normalizeNotify(r.notify),
+    tz: typeof r.tz === 'string' && r.tz.length < 64 ? r.tz : null,
   }
 }

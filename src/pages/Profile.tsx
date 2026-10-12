@@ -33,7 +33,7 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
-import { enablePush, pushSupported, sendTestPush, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
+import { enablePush, pushSupported, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
 import { computeXp, levelInfo } from '../lib/xp'
 import { buddyLevelInfo } from '../lib/buddyLevel'
 import { localDate } from '../lib/day'
@@ -60,6 +60,7 @@ import { BUDDY_SKIN_EVENT } from '../components/buddy/useBuddy'
 import { NameSheet } from '../components/profile/NameSheet'
 import { useMyProfile } from '../hooks/useSocial'
 import { SettingsEditor } from '../components/profile/SettingsEditor'
+import { NotificationSettings } from '../components/profile/NotificationSettings'
 
 /**
  * Unterseiten des Profils (neue Version), per ?s=… in der URL → Zurück-Geste funktioniert.
@@ -74,7 +75,7 @@ const SUB_TITLE: Record<Sub, string> = {
   review: 'Wochenfazit',
   version: 'App-Version',
   coach: 'Buddy-Ton',
-  push: 'Trainings-Erinnerungen',
+  push: 'Benachrichtigungen',
   export: 'Daten exportieren',
 }
 
@@ -84,7 +85,7 @@ const SUB_SUBTITLE: Record<Sub, string> = {
   review: 'Jeden Montag neu',
   version: 'Klassisch oder Neu',
   coach: 'So spricht dein Buddy',
-  push: 'Push-Benachrichtigungen',
+  push: 'Erinnerungen einzeln einstellen',
   export: 'CSV-Download',
 }
 
@@ -307,46 +308,7 @@ export default function Profile() {
             </SubCard>
           )}
 
-          {sub === 'push' && (
-            <SubCard>
-              <p className="text-sm text-cocoa-light">
-                Buddy erinnert dich abends, wenn du an einem Trainingstag noch nicht im Gym warst – und meldet
-                Cheat-Alarme deiner Freunde.
-              </p>
-              <button
-                className="btn-primary w-full gap-1.5"
-                onClick={activatePush}
-                disabled={pushBusy}
-              >
-                {pushBusy ? (
-                  '…'
-                ) : (
-                  <>
-                    <Bell size={16} />
-                    Aktivieren
-                  </>
-                )}
-              </button>
-              <button
-                className="btn-ghost w-full gap-1.5"
-                onClick={async () => {
-                  setPushBusy(true)
-                  setPushMsg(null)
-                  try {
-                    setPushMsg(await sendTestPush())
-                  } catch {
-                    setPushMsg('Senden fehlgeschlagen.')
-                  } finally {
-                    setPushBusy(false)
-                  }
-                }}
-                disabled={pushBusy}
-              >
-                Test-Benachrichtigung senden
-              </button>
-              {pushMsg && <p className="text-sm text-cocoa-light">{pushMsg}</p>}
-            </SubCard>
-          )}
+          {sub === 'push' && <NotificationSettings />}
 
           {sub === 'export' && (
             <SubCard>
@@ -501,7 +463,7 @@ export default function Profile() {
             />
           )}
           {pushSupported && (
-            <Row icon={Bell} tint="gold" label="Trainings-Erinnerungen" onClick={() => openSub('push')} />
+            <Row icon={Bell} tint="gold" label="Benachrichtigungen" onClick={() => openSub('push')} />
           )}
           <Row
             icon={Palette} tint="gold"

@@ -1087,7 +1087,7 @@ export default function Nutrition() {
           </div>
 
           <WaterRow date={today} style={stagger(8)} />
-          {isToday && homeCards.weight && <BodyWeightCard />}
+          {isToday && (homeCards.weight || params.has('weigh')) && <BodyWeightCard />}
           {isToday && <CustomizeHome area="food" />}
         </>
       ) : (

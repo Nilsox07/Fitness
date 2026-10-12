@@ -40,10 +40,16 @@ export default async function handler(req, res) {
     return
   }
 
+  // Freunde, die Community-Pushes abgeschaltet haben, auslassen
+  const { data: profs } = await db.from('profiles').select('id, prefs').in('id', friendIds)
+  const muted = new Set((profs || []).filter((p) => p.prefs?.notify?.social?.on === false).map((p) => p.id))
   const { data: subs } = await db
     .from('push_subscriptions')
     .select('*')
-    .in('user_id', friendIds)
+    .in(
+      'user_id',
+      friendIds.filter((id) => !muted.has(id)),
+    )
 
   const payload = JSON.stringify({ title, body: text, tag: 'fitness-cheat', url: '/social' })
   let sent = 0
