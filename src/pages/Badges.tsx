@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProgressSwitch } from '../components/ProgressSwitch'
 import { TabHeader } from '../components/ui/TabHeader'
-import { Check, ChevronLeft, Lock } from 'lucide-react'
+import { Check, ChevronLeft, Lock, Share2 } from 'lucide-react'
+import { MonthRecapSheet } from '../components/progress/MonthRecapSheet'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { balanceStats, frequencyStats, onlyWorking, totalVolume } from '../lib/analytics'
@@ -162,6 +163,7 @@ function BuddyPage() {
   const ctx = { level: level.level, prestige: level.prestige, achievements: earned }
   const next = nextUnlocks(ctx, 3)
   const [confirmPrestige, setConfirmPrestige] = useState(false)
+  const [recapOpen, setRecapOpen] = useState(false)
 
   function startPrestige() {
     void save({ prestige: { count: prefs.prestige.count + 1, xpOffset: level.totalXp } })
@@ -236,6 +238,20 @@ function BuddyPage() {
       </section>
 
       <SeasonThemeCard />
+
+      <button
+        className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3.5 text-left transition active:scale-[0.99]"
+        onClick={() => setRecapOpen(true)}
+      >
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+          <Share2 size={19} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold">Monats-Rückblick teilen</span>
+          <span className="block text-xs text-cocoa-light">Deine Zahlen als Story für Instagram & WhatsApp</span>
+        </span>
+      </button>
+      {recapOpen && <MonthRecapSheet onClose={() => setRecapOpen(false)} />}
 
       {/* Wachstum */}
       <section>

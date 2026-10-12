@@ -153,6 +153,10 @@ export function message(kind, ctx = {}, seed = 0) {
         title: 'Buddy: Trinkpause! 💧',
         body: `Erst ${ctx.drankL} von ${ctx.targetL} l – ein großes Glas jetzt?`,
         url: '/nutrition',
+        actions: [
+          { action: 'water250', title: '+250 ml', url: '/nutrition?addwater=250' },
+          { action: 'water500', title: '+500 ml', url: '/nutrition?addwater=500' },
+        ],
       }
     case 'protein':
       return {

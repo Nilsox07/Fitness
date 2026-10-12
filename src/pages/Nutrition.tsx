@@ -76,6 +76,8 @@ import {
   recipeFromFridge,
   recipeFromText,
   suggestOrder,
+  menuFromPhoto,
+  type MenuPick,
   type FoodEstimate,
   type MealAnalysis,
   type MealPlanItem,
@@ -90,6 +92,7 @@ import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
 import { RecentChips } from '../components/nutrition-home/RecentChips'
 import { MealCard } from '../components/nutrition-home/MealCard'
 import { WaterRow } from '../components/nutrition-home/WaterRow'
+import { useSetWater, useWater } from '../hooks/useWater'
 import { FastingCard } from '../components/nutrition-home/FastingCard'
 import { dietShortLabel } from '../lib/dietStyle'
 import { stagger } from '../components/nutrition-home/motion'
@@ -356,6 +359,25 @@ export default function Nutrition() {
   const { isNew } = usePrefs()
   const realToday = todayLocal()
   const paramDate = params.get('date')
+
+  // Schnell-Aktion aus der Trink-Erinnerung (?addwater=250): einmal eintragen, dann Parameter entfernen
+  const { data: waterToday, isFetched: waterLoaded } = useWater(realToday)
+  const setWater = useSetWater()
+  const [waterNote, setWaterNote] = useState<string | null>(null)
+  const addWaterParam = params.get('addwater')
+  useEffect(() => {
+    if (!addWaterParam || !waterLoaded) return
+    const ml = Math.min(2000, Math.max(0, Number(addWaterParam) || 0))
+    const next = new URLSearchParams(params)
+    next.delete('addwater')
+    setParams(next, { replace: true })
+    if (!ml) return
+    setWater.mutate({ date: realToday, ml: (waterToday?.ml ?? 0) + ml })
+    setWaterNote(`+${ml} ml eingetragen 💧`)
+    const t = setTimeout(() => setWaterNote(null), 3500)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addWaterParam, waterLoaded])
   // Vergangene Tage nur im neuen Modus (der klassische hat keine Tagesnavigation).
   const today =
     isNew && paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate < realToday ? paramDate : realToday
@@ -459,6 +481,7 @@ export default function Nutrition() {
   >(null)
   const [place, setPlace] = useState('')
   const [restItem, setRestItem] = useState('')
+  const [menuPicks, setMenuPicks] = useState<{ note: string; picks: MenuPick[] } | null>(null)
   const [chains, setChains] = useState<Chain[] | null>(null)
   const [orderQty, setOrderQty] = useState<Record<string, number>>({})
   useEffect(() => {
@@ -697,6 +720,27 @@ export default function Nutrition() {
         else setAiResults(items)
         setAddMode(null)
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'KI-Fehler')
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  /** Speisekarte fotografieren → 3 passende Gerichte zum Rest-Budget. */
+  async function handleMenuPhoto(file: File | undefined) {
+    if (!file) return
+    setAiBusy(true)
+    setError(null)
+    setMenuPicks(null)
+    try {
+      const img = await fileToDataUrl(file, 1600)
+      const res = await menuFromPhoto(img, {
+        kcal: hasTarget ? Math.max(0, kcalTarget - totals.kcal) : 800,
+        protein: Math.max(0, (settings?.protein_target ?? 0) - totals.protein),
+      })
+      if (res.picks.length === 0) setError(res.note || 'Keine Speisekarte erkannt.')
+      else setMenuPicks(res)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'KI-Fehler')
     } finally {
@@ -1001,6 +1045,12 @@ export default function Nutrition() {
               </button>
             }
           />
+
+          {waterNote && (
+            <div className="anim-fade rounded-full bg-sky-500/15 px-4 py-2 text-center text-sm font-semibold text-sky-700 dark:text-sky-300">
+              {waterNote}
+            </div>
+          )}
 
           <WeekStrip
             date={today}
@@ -1846,6 +1896,62 @@ export default function Nutrition() {
               <MicButton onResult={(t) => setRestItem((v) => (v ? v + ' ' + t : t))} />
             </div>
           </div>
+          {isNew && ai?.enabled && !activeChain && (
+            <div className="space-y-2">
+              <label
+                className={`flex cursor-pointer items-center gap-3 rounded-2xl bg-cream p-3.5 transition active:scale-[0.99] ${
+                  aiBusy ? 'pointer-events-none opacity-60' : ''
+                }`}
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+                  {aiBusy ? <Loader2 size={19} className="animate-spin" /> : <Camera size={19} />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold">Speisekarte fotografieren</span>
+                  <span className="block text-xs text-cocoa-light">Die KI sucht dir die 3 besten Gerichte für heute raus</span>
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    void handleMenuPhoto(e.target.files?.[0])
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+              {menuPicks && (
+                <div className="anim-fade space-y-2">
+                  {menuPicks.note && <p className="px-1 text-xs text-cocoa-light">{menuPicks.note}</p>}
+                  {menuPicks.picks.map((p, i) => (
+                    <button
+                      key={p.name + i}
+                      className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left ring-1 ring-transparent transition active:scale-[0.99]"
+                      onClick={() => {
+                        const { why: _why, ...item } = p
+                        showAnalysis([item], p.name)
+                        setMenuPicks(null)
+                        setAddMode(null)
+                      }}
+                    >
+                      <span className="tabular grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-on-brand">
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">{p.name}</span>
+                        <span className="block text-xs text-cocoa-light">{p.why}</span>
+                        <span className="tabular block text-[11px] text-cocoa-muted">
+                          {p.kcal} kcal · {p.protein} g Eiweiß
+                        </span>
+                      </span>
+                      <Plus size={18} className="shrink-0 text-brand" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {activeChain && (
             <ChainMenu
               chain={activeChain}

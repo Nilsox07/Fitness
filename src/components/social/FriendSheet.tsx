@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { titleLabel } from '../../lib/unlocks'
-import { Check, Hand, Send } from 'lucide-react'
+import { Check, Hand, Handshake, Send } from 'lucide-react'
+import { StakeSheet } from './StakeSheet'
 import { Sheet } from '../workout/Sheet'
 import { useGiveKudos, useSendPoke } from '../../hooks/useSocial'
 import { effectiveMonthlyPrs, effectiveProteinDays, effectiveSessions } from '../../lib/duel'
@@ -32,6 +33,7 @@ export function FriendSheet({
   const giveKudos = useGiveKudos()
   const [text, setText] = useState('')
   const [sent, setSent] = useState<string | null>(null)
+  const [stakeOpen, setStakeOpen] = useState(false)
   const st = statusLine(person, today)
   const mySkin = useBuddySkin()
   // Eigene Zahl ist lokal frisch; bei Freunden nur, wenn sie von heute stammt.
@@ -144,6 +146,28 @@ export function FriendSheet({
 
       {!isMe && (
         <>
+          {/* Wette */}
+          <button
+            className="flex w-full items-center gap-3 rounded-2xl bg-gold/15 p-3.5 text-left transition active:scale-[0.99]"
+            onClick={() => setStakeOpen(true)}
+          >
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gold text-white">
+              <Handshake size={19} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">Wette starten</span>
+              <span className="block text-xs text-cocoa-light">Wer sein Wochenziel verpasst, gibt einen aus</span>
+            </span>
+          </button>
+          {stakeOpen && (
+            <StakeSheet
+              friendId={person.user_id}
+              friendName={name}
+              showNutrition={showNutrition}
+              onClose={() => setStakeOpen(false)}
+            />
+          )}
+
           {/* Anstupsen */}
           <div className="space-y-2">
             <div className="text-sm font-semibold text-cocoa-light">Anstupsen</div>

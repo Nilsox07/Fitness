@@ -30,6 +30,9 @@ import { InboxSheet } from '../components/social/InboxSheet'
 import { useInbox } from '../hooks/useInbox'
 import { FriendSheet } from '../components/social/FriendSheet'
 import { LeaderboardSection } from '../components/social/LeaderboardSection'
+import { StakeCard } from '../components/social/StakeCard'
+import { useChallenges } from '../hooks/useChallenges'
+import { weekStartOf } from '../lib/stakes'
 import { InviteCard } from '../components/social/InviteCard'
 import { SectionTitle } from '../components/community/ui'
 import { TabHeader } from '../components/ui/TabHeader'
@@ -42,7 +45,7 @@ import {
   PROTEIN_TEAM_DAYS,
   proteinStandings,
 } from '../components/community/communityUtils'
-import { kcalToday as friendKcalToday, planToday, proteinToday as friendProteinToday, type Person } from '../components/social/format'
+import { daysBetween, kcalToday as friendKcalToday, planToday, proteinToday as friendProteinToday, type Person } from '../components/social/format'
 import { useActivities } from '../hooks/useFeed'
 import { localDate } from '../lib/day'
 import {
@@ -597,6 +600,13 @@ export default function Social() {
     [people, includeProtein, today],
   )
   const team = useMemo(() => teamGoal(people, today), [people, today])
+  const { data: challengeList } = useChallenges()
+  // Wetten dieser Woche + Ergebnisse der letzten Woche (bis Mittwoch sichtbar)
+  const stakes = useMemo(() => {
+    const thisWeek = weekStartOf(today)
+    const showLast = daysBetween(thisWeek, today) <= 2
+    return (challengeList ?? []).filter((c) => c.week_start === thisWeek || (showLast && c.status === 'active'))
+  }, [challengeList, today])
   const protein = useMemo(
     () =>
       proteinStandings(
@@ -705,6 +715,12 @@ export default function Social() {
             Diese Woche
           </SectionTitle>
           <WeekCarousel>
+            {stakes.map((c) => {
+              const friend = people.find((p) => p.user_id === (c.creator === mePerson.user_id ? c.opponent : c.creator))
+              return (
+                <StakeCard key={c.id} c={c} meId={mePerson.user_id} friendName={shortName(friend?.display_name)} today={today} />
+              )
+            })}
             <DuelHero
               people={people}
               meId={mePerson.user_id}

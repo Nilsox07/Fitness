@@ -35,7 +35,16 @@ self.addEventListener('push', (event) => {
       icon: '/icon.svg',
       badge: '/icon.svg',
       tag,
-      data: { url },
+      // Schnell-Aktionen (z. B. „+250 ml“ bei der Trink-Erinnerung) – je Aktion eine Ziel-URL
+      actions: Array.isArray(data.actions) ? data.actions.slice(0, 2).map((a) => ({ action: a.action, title: a.title })) : [],
+      data: {
+        url,
+        actionUrls: Object.fromEntries(
+          (Array.isArray(data.actions) ? data.actions : [])
+            .filter((a) => typeof a.url === 'string' && a.url.startsWith('/'))
+            .map((a) => [a.action, a.url]),
+        ),
+      },
     }),
   )
 })
@@ -43,7 +52,8 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const data = event.notification.data || {}
-  const url = typeof data.url === 'string' && data.url.startsWith('/') ? data.url : '/'
+  const actionUrl = event.action && data.actionUrls ? data.actionUrls[event.action] : null
+  const url = actionUrl || (typeof data.url === 'string' && data.url.startsWith('/') ? data.url : '/')
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       const client = clients.find((c) => 'focus' in c)

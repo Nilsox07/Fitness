@@ -29,6 +29,13 @@ import Profile from './pages/Profile'
 import QuickWorkout from './pages/QuickWorkout'
 import Body from './pages/Body'
 import { Splash } from './components/Splash'
+import { useChallengeSync } from './hooks/useChallenges'
+
+/** Eigenen Stand in laufenden Wetten im Hintergrund aktuell halten. */
+function ChallengeSync() {
+  useChallengeSync()
+  return null
+}
 
 // Welche Route zu welcher Welt gehört (geteilte Seiten lassen die Welt, wie sie ist).
 const FOOD_ROUTES = ['/nutrition', '/recipes', '/shopping']
@@ -95,6 +102,7 @@ export default function App() {
       <AiActivityBar />
       <SaveStatus />
       {isNew && <TopBar />}
+      {isNew && <ChallengeSync />}
       <main ref={mainRef} className="flex-1 overflow-y-auto px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />
