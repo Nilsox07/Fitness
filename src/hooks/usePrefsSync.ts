@@ -155,8 +155,10 @@ export function useUserPrefs(): {
     [uid, qc, key, query.data, query.isPlaceholderData],
   )
 
+  // Zwischengespeicherte Daten älterer App-Versionen kennen neue Felder nicht → immer normalisieren
+  const prefs = useMemo(() => (query.data?.prefs ? normalizePrefs(query.data.prefs) : DEFAULT_PREFS), [query.data?.prefs])
   return {
-    prefs: query.data?.prefs ?? DEFAULT_PREFS,
+    prefs,
     save,
     source: query.isPlaceholderData ? null : (query.data?.source ?? null),
     isLoading: query.isLoading,

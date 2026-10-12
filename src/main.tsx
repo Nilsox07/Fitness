@@ -11,6 +11,7 @@ import { PrefsProvider } from './lib/prefs'
 import { registerMutationDefaults } from './lib/mutationDefaults'
 import { applyAccent, getAccentId, getDarkStyle } from './lib/cosmetics'
 import { PERSIST_KEY, queryClient } from './lib/queryClient'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import './index.css'
 
 // Freigeschaltete Akzentfarbe anwenden, bevor die App rendert.
@@ -97,7 +98,9 @@ createRoot(document.getElementById('root')!).render(
         <PrefsProvider>
           <AuthProvider>
             <BrowserRouter>
-              <App />
+              <ErrorBoundary>
+                <App />
+              </ErrorBoundary>
             </BrowserRouter>
           </AuthProvider>
         </PrefsProvider>
