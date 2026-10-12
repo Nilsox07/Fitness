@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { BodyScanCard } from '../body/BodyScanCard'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Flame, Target, Trophy } from 'lucide-react'
 import {
@@ -294,6 +295,8 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
           </button>
         </div>
       </section>
+
+      <BodyScanCard style={enter(4)} />
 
       {/* Gamification (kompakt, aufklappbar) — Buddy-Level + Quests */}
       <GameCard

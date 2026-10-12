@@ -27,6 +27,7 @@ import Analytics from './pages/Analytics'
 import Nutrition from './pages/Nutrition'
 import Profile from './pages/Profile'
 import QuickWorkout from './pages/QuickWorkout'
+import Body from './pages/Body'
 import { Splash } from './components/Splash'
 
 // Welche Route zu welcher Welt gehört (geteilte Seiten lassen die Welt, wie sie ist).
@@ -108,6 +109,7 @@ export default function App() {
           <Route path="/feed" element={<Feed />} />
           <Route path="/history" element={<History />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/body" element={<Body />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/quick" element={isNew ? <QuickWorkout /> : <Navigate to="/" replace />} />
           <Route path="/share" element={<ShareTarget />} />

@@ -9,6 +9,7 @@ import { StatsHero } from '../food-progress/StatsHero'
 import { MacroSplitCard } from '../food-progress/MacroSplitCard'
 import { KcalChartCard } from '../food-progress/KcalChartCard'
 import { WeightTrendCard } from '../food-progress/WeightTrendCard'
+import { BodyScanCard } from '../body/BodyScanCard'
 import { ProteinDotsCard } from '../food-progress/ProteinDotsCard'
 import { NutritionGameCard } from '../food-progress/NutritionGameCard'
 import { ProgressHeader, Segmented } from '../progress/ProgressHeader'
@@ -156,6 +157,8 @@ export function FoodStats() {
       )}
 
       <WeightTrendCard style={stagger(i++)} />
+
+      <BodyScanCard style={stagger(i++)} />
 
       {stats.hasAny && <NutritionGameCard style={stagger(i++)} />}
     </div>

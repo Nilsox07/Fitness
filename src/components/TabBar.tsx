@@ -67,7 +67,7 @@ type Tab = { to: string; label: string; Icon: (p: IconProps) => ReactElement; en
 const NUTRITION_TAB: Tab = { to: '/nutrition', label: 'Ernährung', Icon: IconFood, end: true, also: ['/recipes', '/shopping'] }
 const MAIN_TABS: Tab[] = [
   { to: '/', label: 'Training', Icon: IconTrain, end: true, also: ['/plans', '/exercises', '/quick'] },
-  { to: '/analytics', label: 'Fortschritt', Icon: IconChart, also: ['/history', '/badges'] },
+  { to: '/analytics', label: 'Fortschritt', Icon: IconChart, also: ['/history', '/badges', '/body'] },
   { to: '/social', label: 'Community', Icon: IconPeople, also: ['/feed'] },
 ]
 

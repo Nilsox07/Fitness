@@ -4,10 +4,11 @@
 
 import { cleanReviewText, type ReviewData } from './weeklyReview'
 import { supabase } from './supabase'
-import { MUSCLE_GROUPS, type MuscleGroup, type Meal, type PlanDay, type ShoppingCat } from '../types'
+import { MUSCLE_GROUPS, type MuscleGroup, type Meal, type PlanDay, type ShoppingCat, type Sex } from '../types'
 import { aiBegin, aiEnd } from './aiActivity'
 import { dietPromptText, getActiveDiet, type DietStyle } from './dietStyle'
 import type { MealFlags } from './mealScore'
+import { toBodyFatEstimate, type BodyFatEstimate } from './bodyScan'
 
 export interface AiStatus {
   enabled: boolean
@@ -289,6 +290,7 @@ export const ASSISTANT_ROUTES = [
   '/social',
   '/recipes',
   '/badges',
+  '/body',
   '/profile',
 ] as const
 
@@ -1312,4 +1314,39 @@ export async function matchExercisesToLibrary(
     out[it.id] = typeof v === 'string' && allowed.some((c) => c.id === v) ? v : null
   }
   return out
+}
+
+// ---------------------------------------------------------------------------
+// Körperfett aus Foto
+// ---------------------------------------------------------------------------
+
+const BODYFAT_SYSTEM =
+  'Du bist ein erfahrener Sportwissenschaftler und schätzt den Körperfettanteil anhand von Fotos, ' +
+  'so wie es Trainer per Sichtvergleich tun (Definition von Bauch, Schultern, Armen, Fettverteilung). ' +
+  'Sei ehrlich und neutral, ohne Bewertung des Aussehens. Gib immer einen Bereich an, keine Einzelzahl. ' +
+  'Fotos verfälschen: Gegenlicht und Licht von oben lassen definierter wirken, weite Kleidung und schlechte Haltung weniger. ' +
+  'Antworte ausschließlich als JSON.'
+
+/** Körperfett-Bereich aus einem Foto schätzen (image = Data-URL). */
+export async function estimateBodyFat(
+  image: string,
+  ctx: { sex?: Sex; age?: number; height_cm?: number; weight_kg?: number },
+): Promise<BodyFatEstimate> {
+  const facts = [
+    ctx.sex ? `Geschlecht: ${ctx.sex === 'f' ? 'weiblich' : 'männlich'}` : '',
+    ctx.age ? `Alter: ${ctx.age}` : '',
+    ctx.height_cm ? `Größe: ${ctx.height_cm} cm` : '',
+    ctx.weight_kg ? `Gewicht: ${ctx.weight_kg} kg` : '',
+  ]
+    .filter(Boolean)
+    .join(', ')
+  const prompt =
+    `Schätze den Körperfettanteil der Person auf dem Foto. ${facts ? `Angaben: ${facts}. ` : ''}` +
+    'Bereich höchstens 6 Prozentpunkte breit. confidence: "hoch" bei gutem Licht, freiem Oberkörper und frontaler Pose, ' +
+    '"mittel" bei kleinen Mängeln, "niedrig" bei Kleidung, schlechtem Licht oder Teilansicht. ' +
+    'hints: bis zu 3 kurze deutsche Tipps, wie das NÄCHSTE Foto vergleichbarer wird (nur wenn nötig, sonst leer). ' +
+    'Ist keine einzelne Person mit erkennbarem Oberkörper zu sehen, setze ok auf false und nenne in reason kurz den Grund. ' +
+    'Format: {"ok":true,"low":18,"high":22,"confidence":"mittel","hints":["…"],"reason":""}'
+  const text = await complete({ system: BODYFAT_SYSTEM, prompt, image, json: true, temperature: 0.2, maxTokens: 400 })
+  return toBodyFatEstimate(parseJson<unknown>(text))
 }

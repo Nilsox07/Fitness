@@ -172,3 +172,13 @@ body {
   background: rgb(var(--c-ruby));
   animation: ai-bar 1.1s ease-in-out infinite;
 }
+
+/* Scan-Linie über dem Foto während der Körperfett-Schätzung */
+@keyframes scan {
+  from {
+    top: -33%;
+  }
+  to {
+    top: 100%;
+  }
+}

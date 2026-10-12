@@ -16,6 +16,7 @@ export function navInfo(pathname: string, search = ""): NavInfo {
   if (pathname.startsWith("/exercises/")) return { title: "Übung", back: { to: "/exercises", label: "Übungen" } };
   if (pathname === "/quick") return { title: "Home-Workout", back: { to: "/", label: "Training" } };
   if (pathname === "/analytics" || pathname === "/badges") return { title: "Fortschritt" };
+  if (pathname === "/body") return { title: "Körper", back: { to: "/analytics", label: "Fortschritt" } };
   if (pathname === "/history") return { title: "Verlauf", back: { to: "/analytics", label: "Fortschritt" } };
   if (pathname === "/social") return { title: "Community" };
   if (pathname === "/feed") return { title: "Aktivitäten", back: { to: "/social", label: "Community" } };

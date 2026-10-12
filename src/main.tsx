@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { defaultShouldDehydrateQuery } from '@tanstack/react-query'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
@@ -82,6 +83,8 @@ createRoot(document.getElementById('root')!).render(
         dehydrateOptions: {
           // Pausierte (offline) Mutationen mitsichern, damit sie fortgesetzt werden.
           shouldDehydrateMutation: (m) => m.state.isPaused,
+          // Kurzlebige Daten (z. B. ablaufende Foto-Links) nicht auf die Platte
+          shouldDehydrateQuery: (q) => defaultShouldDehydrateQuery(q) && q.meta?.persist !== false,
         },
       }}
       onSuccess={() => {
