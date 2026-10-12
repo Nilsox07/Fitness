@@ -7,8 +7,22 @@
 // noch nicht ausgeführt ist, fehlen die Spalten — dann landet die Auswahl im
 // localStorage (`diet_style_fallback`), damit nichts kaputtgeht.
 
-export type DietMacro = 'balanced' | 'high_protein' | 'low_carb' | 'keto' | 'mediterranean'
-export type DietRestriction = 'vegetarian' | 'vegan' | 'pescetarian' | 'unprocessed'
+export type DietMacro =
+  | 'balanced'
+  | 'high_protein'
+  | 'low_carb'
+  | 'keto'
+  | 'mediterranean'
+  | 'low_fat'
+  | 'zone'
+  | 'psmf'
+export type DietRestriction =
+  | 'vegetarian'
+  | 'vegan'
+  | 'pescetarian'
+  | 'unprocessed'
+  | 'gluten_free'
+  | 'lactose_free'
 export type Fasting = 'none' | '16:8' | '18:6' | '20:4' | '5:2'
 
 export interface DietStyle {
@@ -19,8 +33,27 @@ export interface DietStyle {
   fastingStart: string
 }
 
-export const DIET_MACROS: DietMacro[] = ['balanced', 'high_protein', 'low_carb', 'keto', 'mediterranean']
-export const DIET_RESTRICTIONS: DietRestriction[] = ['vegetarian', 'vegan', 'pescetarian', 'unprocessed']
+export const DIET_MACROS: DietMacro[] = [
+  'balanced',
+  'high_protein',
+  'low_carb',
+  'keto',
+  'mediterranean',
+  'low_fat',
+  'zone',
+  'psmf',
+]
+export const DIET_RESTRICTIONS: DietRestriction[] = [
+  'vegetarian',
+  'vegan',
+  'pescetarian',
+  'unprocessed',
+  'gluten_free',
+  'lactose_free',
+]
+
+/** Einschränkungen, die der Rezept-Katalog kennt (die übrigen beachtet nur die KI). */
+export const CATALOG_RESTRICTIONS: DietRestriction[] = ['vegetarian', 'vegan', 'pescetarian', 'unprocessed']
 export const FASTING_OPTIONS: Fasting[] = ['none', '16:8', '18:6', '20:4', '5:2']
 
 export const DIET_MACRO_LABEL: Record<DietMacro, string> = {
@@ -29,6 +62,9 @@ export const DIET_MACRO_LABEL: Record<DietMacro, string> = {
   low_carb: 'Low Carb',
   keto: 'Keto',
   mediterranean: 'Mediterran',
+  low_fat: 'Low Fat',
+  zone: 'Zone 40/30/30',
+  psmf: 'PSMF',
 }
 
 export const DIET_MACRO_HINT: Record<DietMacro, string> = {
@@ -37,6 +73,9 @@ export const DIET_MACRO_HINT: Record<DietMacro, string> = {
   low_carb: 'Nur ~22 % der Kalorien aus Kohlenhydraten, mehr Fett.',
   keto: 'Höchstens 30 g KH am Tag, Fett füllt den Rest auf.',
   mediterranean: '~35 % Fett, v. a. Olivenöl, Nüsse, Fisch — ungesättigte Fette.',
+  low_fat: 'Nur ~20 % der Kalorien aus Fett, dafür mehr Kohlenhydrate.',
+  zone: '40 % KH, 30 % Eiweiß, 30 % Fett — jede Mahlzeit ausbalanciert.',
+  psmf: 'Crash-Diät: fast nur Eiweiß, ~1000 kcal. Max. 2–6 Wochen.',
 }
 
 export const DIET_RESTRICTION_LABEL: Record<DietRestriction, string> = {
@@ -44,6 +83,8 @@ export const DIET_RESTRICTION_LABEL: Record<DietRestriction, string> = {
   vegan: 'Vegan',
   pescetarian: 'Pescetarisch',
   unprocessed: 'Unverarbeitet',
+  gluten_free: 'Glutenfrei',
+  lactose_free: 'Laktosefrei',
 }
 
 export const FASTING_LABEL: Record<Fasting, string> = {
@@ -198,6 +239,9 @@ const MACRO_PROMPT: Record<DietMacro, string> = {
   low_carb: 'Low Carb (~20–25 % der Kalorien aus Kohlenhydraten, wenig Zucker/Stärke)',
   keto: 'Keto (höchstens 30 g Kohlenhydrate pro Tag, fettreich, keine Brot/Nudeln/Reis/Kartoffeln/Zucker)',
   mediterranean: 'Mediterran (~35 % Fett v. a. aus Olivenöl, Nüssen, Fisch; viel Gemüse, Hülsenfrüchte, Vollkorn)',
+  low_fat: 'Low Fat (nur ~20 % der Kalorien aus Fett, magere Eiweißquellen, wenig Öl/Butter/Käse)',
+  zone: 'Zone-Diät (jede Mahlzeit ~40 % Kohlenhydrate, 30 % Eiweiß, 30 % Fett)',
+  psmf: 'PSMF (Protein-Sparing Modified Fast: fast nur mageres Eiweiß und Gemüse, kaum Fett und Kohlenhydrate, ca. 1000 kcal am Tag)',
 }
 
 const RESTRICTION_PROMPT: Record<DietRestriction, string> = {
@@ -205,6 +249,8 @@ const RESTRICTION_PROMPT: Record<DietRestriction, string> = {
   vegan: 'vegan (keinerlei tierische Produkte: kein Fleisch, Fisch, Milch, Käse, Ei, Honig)',
   pescetarian: 'pescetarisch (kein Fleisch, Fisch/Meeresfrüchte erlaubt)',
   unprocessed: 'unverarbeitet/Clean Eating (keine stark verarbeiteten Fertigprodukte)',
+  gluten_free: 'glutenfrei (kein Weizen, Dinkel, Roggen, Gerste; nur glutenfreie Getreide)',
+  lactose_free: 'laktosefrei (keine laktosehaltigen Milchprodukte, laktosefreie Alternativen ok)',
 }
 
 /** Prompt-Zusatz zur Ernährungsweise ('' bei Standard). */

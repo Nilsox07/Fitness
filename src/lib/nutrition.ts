@@ -85,6 +85,20 @@ export function computeTargets(input: TargetInput): MacroTargets {
     // Low Carb: ~22 % der kcal aus KH, Fett füllt den Rest
     carbs = Math.min(rest(Math.round((kcal * 0.22) / 4)), rest(Math.round((kcal - protein * 4) / 4)))
     fat = rest(Math.round((kcal - protein * 4 - carbs * 4) / 9))
+  } else if (diet === 'psmf') {
+    // PSMF: fast nur Eiweiß, Kalorien ergeben sich aus den Makros (bewusst ohne Ziel-Anpassung)
+    const protein = Math.round(2.2 * weight_kg)
+    const fat = 25
+    const carbs = 30
+    return { kcal: protein * 4 + fat * 9 + carbs * 4, protein, carbs, fat }
+  } else if (diet === 'zone') {
+    // Zone: 40 % KH, 30 % Eiweiß, 30 % Fett
+    const p = Math.round((kcal * 0.3) / 4)
+    return { kcal, protein: p, carbs: Math.round((kcal * 0.4) / 4), fat: Math.round((kcal * 0.3) / 9) }
+  } else if (diet === 'low_fat') {
+    // Low Fat: ~20 % der kcal aus Fett, KH = Rest
+    fat = Math.min(Math.round((kcal * 0.2) / 9), rest(Math.round((kcal - protein * 4) / 9)))
+    carbs = rest(Math.round((kcal - protein * 4 - fat * 9) / 4))
   } else if (diet === 'mediterranean') {
     // Mediterran: ~35 % der kcal aus (v. a. ungesättigtem) Fett, KH = Rest
     fat = Math.min(Math.round((kcal * 0.35) / 9), rest(Math.round((kcal - protein * 4) / 9)))

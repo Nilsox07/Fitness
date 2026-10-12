@@ -188,6 +188,16 @@ export function scoreMeal(t: MealTotals, opts: MealScoreOptions = {}): MealScore
       score -= 12
       dietWarn.push({ kind: 'warn', text: 'Zu viele KH für Keto' })
     } else good.push({ kind: 'good', text: 'Keto-tauglich' })
+  } else if (diet?.macro === 'psmf') {
+    if (carbs > 15 || pos(t.fat) > 12) {
+      score -= 10
+      dietWarn.push({ kind: 'warn', text: 'Zu viel Fett/KH für PSMF' })
+    } else good.push({ kind: 'good', text: 'PSMF-tauglich' })
+  } else if (diet?.macro === 'low_fat') {
+    if (pos(t.fat) > 20) {
+      score -= 6
+      dietWarn.push({ kind: 'warn', text: 'Viel Fett für Low Fat' })
+    }
   } else if (diet?.macro === 'low_carb') {
     if (carbs > 30) {
       score -= 8

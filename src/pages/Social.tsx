@@ -650,27 +650,18 @@ export default function Social() {
         title="Community"
         style={enter(0)}
         action={
-          <div className="flex gap-2">
-            <button
-              className="relative grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
-              onClick={() => setInboxOpen(true)}
-              aria-label={unread ? `Nachrichten, ${unread} neu` : 'Nachrichten'}
-            >
-              <Bell size={18} />
-              {unread > 0 && (
-                <span className="tabular absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-bold text-on-brand ring-2 ring-bg">
-                  {unread > 9 ? '9+' : unread}
-                </span>
-              )}
-            </button>
-            <button
-              className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
-              onClick={() => setAddOpen(true)}
-              aria-label="Freund hinzufügen"
-            >
-              <UserPlus size={18} />
-            </button>
-          </div>
+          <button
+            className="relative grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
+            onClick={() => setInboxOpen(true)}
+            aria-label={unread ? `Nachrichten, ${unread} neu` : 'Nachrichten'}
+          >
+            <Bell size={18} />
+            {unread > 0 && (
+              <span className="tabular absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-bold text-on-brand ring-2 ring-bg">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </button>
         }
       />
 

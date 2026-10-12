@@ -25,10 +25,13 @@ export function WeekCarousel({ children, style }: { children: ReactNode; style?:
       <div
         ref={ref}
         onScroll={onScroll}
-        className="-mx-4 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto scroll-px-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto scroll-px-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {slides.map((s, i) => (
-          <div key={i} className={`shrink-0 snap-start ${slides.length > 1 ? 'w-[88%]' : 'w-full'}`}>
+          <div
+            key={i}
+            className={`flex shrink-0 snap-start flex-col [&>*]:flex-1 ${slides.length > 1 ? 'w-[88%]' : 'w-full'}`}
+          >
             {s}
           </div>
         ))}

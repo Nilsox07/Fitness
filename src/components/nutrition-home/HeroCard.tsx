@@ -56,21 +56,27 @@ export function HeroCard({
   }
 
   return (
-    <section className="card space-y-4 pt-5" style={style}>
-      <div className="flex items-center justify-between gap-2">
+    <section
+      className="relative space-y-4 overflow-hidden rounded-3xl bg-cocoa p-4 pt-5 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none"
+      style={style}
+    >
+      {/* dezenter Brand-Schimmer wie beim Training */}
+      <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
+      <div className="relative flex items-center justify-between gap-2">
         <Side label="Gegessen" value={fmtInt(eatenAnim)} />
         <Ring
           size={168}
           stroke={12}
           progress={eatenAnim / targets.kcal}
           transition={false}
-          trackClass="stroke-sand-dark/45"
+          trackClass="stroke-bg/15 dark:stroke-sand-dark/45"
         >
           <div className="flex flex-col items-center leading-none">
-            <span className={`tabular text-[2.5rem] font-bold tracking-tight ${over ? 'text-gold' : 'text-cocoa'}`}>
+            <span className={`tabular text-[2.5rem] font-bold tracking-tight ${over ? 'text-gold' : ''}`}>
               {fmtInt(leftAnim)}
             </span>
-            <span className={`mt-1.5 text-xs font-medium ${over ? 'text-gold' : 'text-cocoa-light'}`}>
+            <span className={`mt-1.5 text-xs font-medium ${over ? 'text-gold' : 'text-bg/60 dark:text-cocoa-light'}`}>
               kcal {over ? 'drüber' : 'übrig'}
             </span>
           </div>
@@ -82,15 +88,15 @@ export function HeroCard({
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="relative grid grid-cols-3 gap-3">
         <Macro label="Eiweiß" value={totals.protein} target={targets.protein} bar="bg-brand" successWhenDone />
         <Macro label="Kohlenhydrate" value={totals.carbs} target={targets.carbs} bar="bg-gold" />
-        <Macro label="Fett" value={totals.fat} target={targets.fat} bar="bg-cocoa-light" />
+        <Macro label="Fett" value={totals.fat} target={targets.fat} bar="bg-bg/70 dark:bg-cocoa-light" />
       </div>
 
-      <div className="border-t border-sand-dark/40 pt-2">
+      <div className="relative border-t border-bg/10 pt-2 dark:border-sand-dark/40">
         <button
-          className="flex w-full items-center justify-between py-1 text-sm text-cocoa-light"
+          className="flex w-full items-center justify-between py-1 text-sm text-bg/60 dark:text-cocoa-light"
           onClick={() => setMoreOpen((o) => !o)}
           aria-expanded={moreOpen}
         >
@@ -101,7 +107,7 @@ export function HeroCard({
           />
         </button>
         {moreOpen && (
-          <div className="anim-fade tabular mt-2 grid grid-cols-4 gap-2 rounded-xl bg-sand-light p-2 text-center text-[11px] text-cocoa-light">
+          <div className="anim-fade tabular mt-2 grid grid-cols-4 gap-2 rounded-xl bg-bg/10 p-2 text-center text-[11px] text-bg/60 dark:bg-white/5 dark:text-cocoa-light">
             <Micro label="Ballaststoffe" value={totals.fiber} />
             <Micro label="Zucker" value={totals.sugar} />
             <Micro label="ges. Fett" value={totals.sat_fat} />
@@ -116,8 +122,8 @@ export function HeroCard({
 function Side({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="flex w-16 flex-col items-center text-center">
-      <span className="tabular text-lg font-semibold text-cocoa">{value}</span>
-      <span className="text-[11px] text-cocoa-light">{label}</span>
+      <span className="tabular text-lg font-semibold">{value}</span>
+      <span className="text-[11px] text-bg/60 dark:text-cocoa-light">{label}</span>
       {hint && <span className="mt-0.5 text-[10px] leading-tight text-brand">{hint}</span>}
     </div>
   )
@@ -140,15 +146,15 @@ function Macro({
   const done = successWhenDone && target > 0 && value >= target
   return (
     <div className="min-w-0">
-      <div className="truncate text-xs font-medium text-cocoa">{label}</div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-sand-dark/45">
+      <div className="truncate text-xs font-medium">{label}</div>
+      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-bg/15 dark:bg-sand-dark/45">
         <div
           className={`h-full rounded-full transition-[width] duration-500 ease-out ${done ? 'bg-success' : bar}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="tabular mt-1 text-[11px] text-cocoa-light">
-        <span className="font-semibold text-cocoa">{Math.round(value)}</span>
+      <div className="tabular mt-1 text-[11px] text-bg/60 dark:text-cocoa-light">
+        <span className="font-semibold text-bg dark:text-cocoa">{Math.round(value)}</span>
         {target > 0 ? ` / ${Math.round(target)} g` : ' g'}
       </div>
     </div>
@@ -158,7 +164,7 @@ function Macro({
 function Micro({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="font-semibold text-cocoa">{String(value).replace('.', ',')} g</div>
+      <div className="font-semibold text-bg dark:text-cocoa">{String(value).replace('.', ',')} g</div>
       {label}
     </div>
   )

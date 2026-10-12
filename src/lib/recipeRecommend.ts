@@ -3,7 +3,7 @@
 // Rest-Budget des Tages, Eiweiß und Zubereitungszeit. Rein, ohne KI.
 
 import type { DietStyle } from './dietStyle'
-import { DIET_MACRO_LABEL, DIET_RESTRICTION_LABEL } from './dietStyle'
+import { CATALOG_RESTRICTIONS, DIET_MACRO_LABEL, DIET_RESTRICTION_LABEL } from './dietStyle'
 import type { CatalogRecipe } from './recipeCatalog'
 import type { Meal, NutritionGoal, SavedRecipe } from '../types'
 
@@ -19,9 +19,11 @@ export interface RecommendContext {
 
 /** Passt das Rezept zur Ernährungsweise? Einschränkungen und Keto/Low Carb sind hart. */
 export function fitsDiet(r: CatalogRecipe, diet: DietStyle): boolean {
-  if (!diet.restrictions.every((x) => r.restrictions.includes(x))) return false
+  // Glutenfrei/laktosefrei kennt der Katalog nicht – darauf achtet nur die KI.
+  if (!diet.restrictions.every((x) => !CATALOG_RESTRICTIONS.includes(x) || r.restrictions.includes(x))) return false
   if (diet.macro === 'keto' && !r.macros.includes('keto')) return false
   if (diet.macro === 'low_carb' && !r.macros.includes('low_carb') && !r.macros.includes('keto')) return false
+  if (diet.macro === 'psmf' && (!r.macros.includes('low_carb') || proteinShare(r) < 0.4)) return false
   return true
 }
 

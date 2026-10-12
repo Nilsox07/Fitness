@@ -240,14 +240,7 @@ export default function Profile() {
             />
           )}
 
-          {sub === 'goal' && (
-            <SubCard>
-              <p className="text-xs text-cocoa-light">
-                Passe deine Angaben und dein Ziel an — die Nährwerte werden automatisch berechnet.
-              </p>
-              <GoalEditor onSaved={closeSub} />
-            </SubCard>
-          )}
+          {sub === 'goal' && <GoalEditor onSaved={closeSub} />}
 
           {sub === 'review' && (
             <SubCard>

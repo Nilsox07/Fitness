@@ -10,6 +10,7 @@ import {
   GOAL_HINT,
   computeTargets,
   defaultWaterTarget,
+  type MacroTargets,
 } from '../lib/nutrition'
 import { getDietAvoid, setDietAvoid } from '../lib/ai'
 import { usePrefs } from '../lib/prefs'
@@ -28,7 +29,25 @@ import {
   type DietStyle,
 } from '../lib/dietStyle'
 import type { ActivityLevel, NutritionGoal, Sex } from '../types'
-import { Droplet, Salad, Target, User } from 'lucide-react'
+import {
+  Activity,
+  Ban,
+  Check,
+  Clock,
+  Droplet,
+  Leaf,
+  Minus,
+  Plus,
+  RefreshCw,
+  Salad,
+  Scale,
+  TrendingDown,
+  TrendingUp,
+  type LucideIcon,
+} from 'lucide-react'
+import { Group, IconTile, Row } from './profile/ui'
+import { PremiumSheet } from './ui/PremiumSheet'
+import { ChoiceSheet, FastingSheet, MacroSheet, RestrictionSheet, Warning } from './goal/DietPickers'
 import { ErrorNote } from './ui/GroupList'
 
 const EMPTY: NutritionSettingsInput = {
@@ -132,32 +151,6 @@ function DietSection({ diet, onChange }: { diet: DietStyle; onChange: (d: DietSt
   )
 }
 
-/** Abschnitt der neuen Darstellung: Versal-Überschrift mit Icon, durch Linie getrennt. */
-function GoalSection({
-  icon,
-  title,
-  right,
-  children,
-}: {
-  icon: ReactNode
-  title: string
-  right?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
-          <span className="text-brand">{icon}</span>
-          {title}
-        </h3>
-        {right}
-      </div>
-      {children}
-    </section>
-  )
-}
-
 /** Abweichung zum ausgewogenen Stil (nur bei anderem Makro-Stil). */
 function Delta({ show, value }: { show: boolean; value: number }) {
   if (!show || value === 0) return null
@@ -166,6 +159,71 @@ function Delta({ show, value }: { show: boolean; value: number }) {
       {value > 0 ? '+' : '−'}
       {Math.abs(value)}
     </span>
+  )
+}
+
+const GOAL_ICON: Record<NutritionGoal, LucideIcon> = {
+  lose: TrendingDown,
+  maintain: Scale,
+  gain: TrendingUp,
+  recomp: RefreshCw,
+}
+
+/** Live-Ergebnis oben: Tagesziel aus allen Angaben unten. */
+function TargetHero({
+  t,
+  base,
+  showDelta,
+  dietLabel,
+}: {
+  t: MacroTargets
+  base: MacroTargets
+  showDelta: boolean
+  dietLabel: string
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-3xl bg-cocoa p-4 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
+      <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-brand/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-brand/10 blur-3xl" />
+      <div className="relative">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
+            Dein Tagesziel
+          </span>
+          <span className="truncate rounded-full bg-bg/10 px-2 py-0.5 text-[11px] font-semibold dark:bg-white/5">
+            {dietLabel}
+            {showDelta && <span className="font-normal text-bg/60 dark:text-cocoa-light"> · vs. Ausgewogen</span>}
+          </span>
+        </div>
+        <div className="mt-1 flex items-baseline gap-1.5">
+          <span className="tabular text-4xl font-bold tracking-tight">{t.kcal.toLocaleString('de-DE')}</span>
+          <span className="text-sm text-bg/70 dark:text-cocoa-light">kcal</span>
+          <Delta show={showDelta} value={t.kcal - base.kcal} />
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {(
+            [
+              ['protein', 'Eiweiß', 'bg-brand'],
+              ['carbs', 'Kohlenhydrate', 'bg-gold'],
+              ['fat', 'Fett', 'bg-bg/50 dark:bg-cocoa-light'],
+            ] as const
+          ).map(([k, label, dot]) => (
+            <div key={k} className="rounded-2xl bg-bg/10 px-2.5 py-2 dark:bg-white/5">
+              <div className="flex items-center gap-1.5 text-[11px] text-bg/70 dark:text-cocoa-light">
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+                <span className="truncate">{label}</span>
+              </div>
+              <div className="mt-0.5 flex items-baseline gap-1">
+                <span className="tabular text-lg font-bold">{t[k]}</span>
+                <span className="text-xs text-bg/60 dark:text-cocoa-light">g</span>
+                <Delta show={showDelta} value={t[k] - base[k]} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2.5 text-[11px] text-bg/50 dark:text-cocoa-muted">Rechnet live mit, während du unten etwas änderst.</p>
+      </div>
+    </div>
   )
 }
 
@@ -222,6 +280,7 @@ export function GoalEditor({
   const base = computeTargets(form)
   const showDelta = isNew && diet.macro !== 'balanced'
   const [error, setError] = useState<string | null>(null)
+  const [sheet, setSheet] = useState<'activity' | 'macro' | 'restrict' | 'fasting' | 'avoid' | null>(null)
 
   // Plausibilitätsprüfung (DB: Alter 10–100, Größe/Gewicht > 0, Trinkziel ≥ 0).
   const fieldError = {
@@ -272,193 +331,167 @@ export function GoalEditor({
   }
 
   if (isNew) {
-    const num = (key: 'age' | 'height_cm' | 'weight_kg', label: string, unit: string, mode: 'numeric' | 'decimal') => (
-      <div className="min-w-0">
-        <label className="label text-xs" htmlFor={`goal-${key}`}>
-          {label}
-        </label>
-        <div className="relative">
-          <input
-            id={`goal-${key}`}
-            type="number"
-            inputMode={mode}
-            aria-invalid={!!fieldError[key]}
-            className={`input tabular rounded-2xl py-3 pr-8 text-base ${fieldError[key] ? 'ring-red-400' : ''}`}
-            value={form[key]}
-            onFocus={(e) => e.currentTarget.select()}
-            onChange={(e) => setForm({ ...form, [key]: Number(e.target.value) })}
-          />
-          <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-cocoa-muted">
-            {unit}
-          </span>
-        </div>
-      </div>
-    )
     const bodyErrors = [fieldError.age, fieldError.height_cm, fieldError.weight_kg].filter(Boolean) as string[]
+    const numRow = (key: 'age' | 'height_cm' | 'weight_kg', label: string, unit: string, mode: 'numeric' | 'decimal') => (
+      <label className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2" htmlFor={`goal-${key}`}>
+        <span className="flex-1 text-[15px] font-semibold">{label}</span>
+        <input
+          id={`goal-${key}`}
+          type="number"
+          inputMode={mode}
+          aria-invalid={!!fieldError[key]}
+          className={`tabular w-20 rounded-xl bg-sand px-2.5 py-1.5 text-right text-base font-semibold outline-none focus:ring-2 focus:ring-ruby ${
+            fieldError[key] ? 'ring-2 ring-red-400' : ''
+          }`}
+          value={form[key]}
+          onFocus={(e) => e.currentTarget.select()}
+          onChange={(e) => setForm({ ...form, [key]: Number(e.target.value) })}
+        />
+        <span className="w-10 text-sm text-cocoa-light">{unit}</span>
+      </label>
+    )
+    const [actLabel] = ACTIVITY_LABEL[form.activity].split(' (')
+    const waterSuggest = defaultWaterTarget(form.weight_kg)
 
     return (
       <div className="space-y-6">
-        <GoalSection icon={<User size={14} />} title="Körperdaten">
-          <div className="grid grid-cols-2 rounded-full bg-sand p-1" role="radiogroup" aria-label="Geschlecht">
-            {(
-              [
-                ['m', 'männlich'],
-                ['f', 'weiblich'],
-              ] as const
-            ).map(([k, label]) => (
-              <button
-                key={k}
-                type="button"
-                role="radio"
-                aria-checked={form.sex === k}
-                onClick={() => setForm({ ...form, sex: k as Sex })}
-                className={`h-9 rounded-full text-sm font-semibold transition-all duration-200 ${
-                  form.sex === k ? 'bg-bg text-cocoa shadow-sm' : 'text-cocoa-light'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {num('age', 'Alter', 'J.', 'numeric')}
-            {num('height_cm', 'Größe', 'cm', 'numeric')}
-            {num('weight_kg', 'Gewicht', 'kg', 'decimal')}
-          </div>
-          {bodyErrors.map((m) => (
-            <FieldError key={m} msg={m} />
-          ))}
-          <div>
-            <label className="label text-xs" htmlFor="goal-activity">
-              Aktivität
-            </label>
-            <select
-              id="goal-activity"
-              className="input rounded-2xl py-3 text-base"
-              value={form.activity}
-              onChange={(e) => setForm({ ...form, activity: e.target.value as ActivityLevel })}
-            >
-              {Object.entries(ACTIVITY_LABEL).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </div>
-        </GoalSection>
+        <TargetHero t={t} base={base} showDelta={showDelta} dietLabel={DIET_MACRO_LABEL[diet.macro]} />
+        {diet.macro === 'psmf' && (
+          <Warning>
+            PSMF ist eine Crash-Diät mit sehr wenig Kalorien: höchstens 2–6 Wochen, vorher ärztlich abklären. Nicht für
+            Jugendliche, Schwangere oder bei Vorerkrankungen.
+          </Warning>
+        )}
 
-        <GoalSection icon={<Target size={14} />} title="Ziel">
-          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Ziel">
-            {(Object.entries(GOAL_LABEL) as [NutritionGoal, string][]).map(([k, v]) => (
-              <button
-                key={k}
-                type="button"
-                role="radio"
-                aria-checked={form.goal === k}
-                onClick={() => setForm({ ...form, goal: k })}
-                className={`min-h-[3rem] rounded-2xl px-3 py-2 text-sm font-semibold leading-tight transition active:scale-[0.97] ${
-                  form.goal === k ? 'bg-brand text-on-brand shadow-md shadow-brand/20' : 'bg-sand text-cocoa'
-                }`}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
-          <p className="px-1 text-xs text-cocoa-light">{GOAL_HINT[form.goal]}</p>
-        </GoalSection>
-
-        <GoalSection icon={<Salad size={14} />} title="Ernährungsweise">
-          <DietSection diet={diet} onChange={setDiet} />
-          <div>
-            <label className="label" htmlFor="goal-avoid">
-              Das esse ich nicht / Allergien
-            </label>
-            <textarea
-              id="goal-avoid"
-              className="input rounded-2xl text-base"
-              rows={2}
-              placeholder="z. B. keine Pilze, Laktose, Erdnüsse, kein Schweinefleisch…"
-              value={avoid}
-              onChange={(e) => setAvoid(e.target.value)}
-            />
-            <p className="mt-1 text-xs text-cocoa-light">
-              Die KI meidet diese Zutaten bei Rezepten, Essensplan, Einkaufsliste &amp; Restaurant-Vorschlägen.
-            </p>
-          </div>
-        </GoalSection>
-
-        <GoalSection
-          icon={<Droplet size={14} />}
-          title="Trinken"
-          right={
-            <button
-              type="button"
-              className="rounded-full bg-brand/10 px-2.5 py-1 text-xs font-semibold normal-case tracking-normal text-brand"
-              onClick={() => setForm({ ...form, water_target_ml: defaultWaterTarget(form.weight_kg) })}
-            >
-              Vorschlag: {defaultWaterTarget(form.weight_kg)} ml
-            </button>
-          }
-        >
-          <div className="relative">
-            <input
-              type="number"
-              inputMode="numeric"
-              step={250}
-              aria-label="Trinkziel in ml pro Tag"
-              aria-invalid={!!fieldError.water_target_ml}
-              className="input tabular rounded-2xl py-3 pr-16 text-base"
-              value={form.water_target_ml}
-              onFocus={(e) => e.currentTarget.select()}
-              onChange={(e) => setForm({ ...form, water_target_ml: Number(e.target.value) })}
-            />
-            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-cocoa-muted">
-              ml/Tag
-            </span>
-          </div>
-          <FieldError msg={fieldError.water_target_ml} />
-        </GoalSection>
-
-        {/* Tagesziel als Mini-Hero */}
-        <div className="relative overflow-hidden rounded-3xl bg-cocoa p-4 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
-          <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-brand/30 blur-3xl" />
-          <div className="relative">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-                Dein Tagesziel
-              </span>
-              {showDelta && (
-                <span className="truncate text-[11px] text-bg/60 dark:text-cocoa-light">vs. Ausgewogen</span>
-              )}
-            </div>
-            <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="tabular text-4xl font-bold tracking-tight">{t.kcal}</span>
-              <span className="text-sm text-bg/70 dark:text-cocoa-light">kcal</span>
-              <Delta show={showDelta} value={t.kcal - base.kcal} />
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
+        <Group title="Körperdaten">
+          <div className="px-4 py-3">
+            <div className="grid grid-cols-2 rounded-full bg-sand p-1" role="radiogroup" aria-label="Geschlecht">
               {(
                 [
-                  ['protein', 'Eiweiß', 'bg-brand'],
-                  ['carbs', 'Kohlenhydrate', 'bg-gold'],
-                  ['fat', 'Fett', 'bg-bg/50 dark:bg-cocoa-light'],
+                  ['m', 'Männlich'],
+                  ['f', 'Weiblich'],
                 ] as const
-              ).map(([k, label, dot]) => (
-                <div key={k} className="rounded-2xl bg-bg/10 px-2.5 py-2 dark:bg-white/5">
-                  <div className="flex items-center gap-1.5 text-[11px] text-bg/70 dark:text-cocoa-light">
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
-                    <span className="truncate">{label}</span>
-                  </div>
-                  <div className="mt-0.5 flex items-baseline gap-1">
-                    <span className="tabular text-lg font-bold">{t[k]}</span>
-                    <span className="text-xs text-bg/60 dark:text-cocoa-light">g</span>
-                    <Delta show={showDelta} value={t[k] - base[k]} />
-                  </div>
-                </div>
+              ).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="radio"
+                  aria-checked={form.sex === k}
+                  onClick={() => setForm({ ...form, sex: k as Sex })}
+                  className={`h-9 rounded-full text-sm font-semibold transition-all duration-200 ${
+                    form.sex === k ? 'bg-bg text-cocoa shadow-sm' : 'text-cocoa-light'
+                  }`}
+                >
+                  {label}
+                </button>
               ))}
             </div>
           </div>
-        </div>
+          {numRow('age', 'Alter', 'Jahre', 'numeric')}
+          {numRow('height_cm', 'Größe', 'cm', 'numeric')}
+          {numRow('weight_kg', 'Gewicht', 'kg', 'decimal')}
+          <Row icon={Activity} label="Aktivität" value={actLabel} onClick={() => setSheet('activity')} />
+        </Group>
+        {bodyErrors.map((m) => (
+          <FieldError key={m} msg={m} />
+        ))}
+
+        <Group title="Dein Ziel">
+          {(Object.entries(GOAL_LABEL) as [NutritionGoal, string][]).map(([k, v]) => {
+            const Icon = GOAL_ICON[k]
+            const on = form.goal === k
+            return (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setForm({ ...form, goal: k })}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-sand-light"
+              >
+                <IconTile icon={Icon} tint={on ? 'brand' : 'neutral'} />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold">{v}</span>
+                  <span className="block text-xs leading-snug text-cocoa-light">{GOAL_HINT[k]}</span>
+                </span>
+                <span
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${
+                    on ? 'bg-brand text-on-brand' : 'ring-2 ring-inset ring-sand-dark'
+                  }`}
+                >
+                  {on && <Check size={14} strokeWidth={3} />}
+                </span>
+              </button>
+            )
+          })}
+        </Group>
+
+        <Group title="Ernährung" footer="Tippe auf eine Zeile – bei jeder Option steht, was dahinter steckt.">
+          <Row icon={Salad} label="Ernährungsweise" value={DIET_MACRO_LABEL[diet.macro]} onClick={() => setSheet('macro')} />
+          <Row
+            icon={Leaf}
+            tint="success"
+            label="Einschränkungen"
+            value={diet.restrictions.length ? diet.restrictions.map((r) => DIET_RESTRICTION_LABEL[r]).join(', ') : 'Keine'}
+            onClick={() => setSheet('restrict')}
+          />
+          <Row
+            icon={Clock}
+            tint="violet"
+            label="Intervallfasten"
+            value={diet.fasting === 'none' ? 'Aus' : diet.fasting}
+            onClick={() => setSheet('fasting')}
+          />
+          <Row
+            icon={Ban}
+            tint="gold"
+            label="Das esse ich nicht"
+            value={avoid.trim() || 'Nichts'}
+            onClick={() => setSheet('avoid')}
+          />
+        </Group>
+
+        <Group
+          title="Trinken"
+          footer={
+            form.water_target_ml !== waterSuggest ? (
+              <button
+                type="button"
+                className="font-semibold text-brand"
+                onClick={() => setForm({ ...form, water_target_ml: waterSuggest })}
+              >
+                Empfehlung für {form.weight_kg} kg übernehmen: {waterSuggest} ml
+              </button>
+            ) : (
+              'Entspricht der Empfehlung für dein Gewicht (~35 ml pro kg).'
+            )
+          }
+        >
+          <div className="flex min-h-[3.5rem] items-center gap-3 px-4 py-2">
+            <IconTile icon={Droplet} tint="sky" />
+            <span className="flex-1 text-[15px] font-semibold">Trinkziel</span>
+            <button
+              type="button"
+              aria-label="250 ml weniger"
+              className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa active:scale-90"
+              onClick={() => setForm({ ...form, water_target_ml: Math.max(0, form.water_target_ml - 250) })}
+            >
+              <Minus size={16} />
+            </button>
+            <span className="tabular w-[4.5rem] text-center text-base font-semibold">
+              {(form.water_target_ml / 1000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} l
+            </span>
+            <button
+              type="button"
+              aria-label="250 ml mehr"
+              className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa active:scale-90"
+              onClick={() => setForm({ ...form, water_target_ml: Math.min(10000, form.water_target_ml + 250) })}
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+        </Group>
+        <FieldError msg={fieldError.water_target_ml} />
 
         <ErrorNote error={error} />
 
@@ -476,6 +509,41 @@ export function GoalEditor({
             {upsert.isPending ? 'Speichert…' : 'Speichern'}
           </button>
         </div>
+
+        {sheet === 'activity' && (
+          <ChoiceSheet
+            title="Aktivität"
+            subtitle="Alltag und Sport zusammen"
+            value={form.activity}
+            options={(Object.entries(ACTIVITY_LABEL) as [ActivityLevel, string][]).map(([k, v]) => {
+              const [label, hint] = v.split(' (')
+              return { value: k, label, hint: hint?.replace(/\)$/, '') }
+            })}
+            onChange={(v) => setForm({ ...form, activity: v })}
+            onClose={() => setSheet(null)}
+          />
+        )}
+        {sheet === 'macro' && <MacroSheet diet={diet} onChange={setDiet} onClose={() => setSheet(null)} />}
+        {sheet === 'restrict' && <RestrictionSheet diet={diet} onChange={setDiet} onClose={() => setSheet(null)} />}
+        {sheet === 'fasting' && <FastingSheet diet={diet} onChange={setDiet} onClose={() => setSheet(null)} />}
+        {sheet === 'avoid' && (
+          <PremiumSheet title="Das esse ich nicht" subtitle="Allergien, Unverträglichkeiten, Abneigungen" onClose={() => setSheet(null)}>
+            <textarea
+              className="input rounded-2xl text-base"
+              rows={4}
+              autoFocus
+              placeholder="z. B. keine Pilze, Erdnüsse, kein Schweinefleisch…"
+              value={avoid}
+              onChange={(e) => setAvoid(e.target.value)}
+            />
+            <p className="text-xs text-cocoa-light">
+              Die KI meidet diese Zutaten bei Rezepten, Essensplan, Einkaufsliste &amp; Restaurant-Vorschlägen.
+            </p>
+            <button className="btn-primary w-full rounded-2xl py-3" onClick={() => setSheet(null)}>
+              Fertig
+            </button>
+          </PremiumSheet>
+        )}
       </div>
     )
   }
