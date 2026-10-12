@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react'
-import { ChevronDown, Hand, Medal } from 'lucide-react'
+import { Check, ChevronDown, Hand, Medal } from 'lucide-react'
 import { Buddy } from '../buddy/Buddy'
 import { useBuddySkin } from '../buddy/useBuddy'
 import { shortName } from '../community/communityUtils'
@@ -40,14 +40,19 @@ export function LeaderboardHero({
     ...(withFood ? FOOD.filter((f) => f.id !== 'level') : []),
   ]
   const [metric, setMetric] = useState<Metric>('monthly_prs')
+  const [menu, setMenu] = useState(false)
+  const val = (u: Person) => metricValue(metric, u, meId, today)
   const ranked = useMemo(
     () => [...people].sort((a, b) => metricValue(metric, b, meId, today) - metricValue(metric, a, meId, today)),
     [people, metric, meId, today],
   )
+  // Gleichstand = geteilter Platz (1, 1, 3 …)
+  const rankOf = (u: Person) => 1 + ranked.filter((x) => val(x) > val(u)).length
   const top = ranked.slice(0, 3)
   const rest = ranked.slice(3)
-  // Podest-Reihenfolge: 2 – 1 – 3
-  const podium = [top[1], top[0], top[2]].map((u, i) => (u ? { u, place: [1, 0, 2][i] } : null))
+  // Podest-Reihenfolge: 2 – 1 – 3 (Farbe & Höhe nach echtem Platz)
+  const podium = [top[1], top[0], top[2]].map((u) => (u ? { u, place: Math.min(rankOf(u), 3) - 1 } : null))
+  const current = options.find((o) => o.id === metric)?.label ?? ''
 
   const name = (u: Person) => (u.user_id === meId ? 'Du' : shortName(u.display_name, 'Athlet'))
 
@@ -61,25 +66,57 @@ export function LeaderboardHero({
         <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
           <Medal size={14} className="text-gold" /> Bestenliste
         </span>
-        <label className="relative">
-          <span className="sr-only">Kategorie</span>
-          <select
-            value={metric}
-            onChange={(e) => setMetric(e.target.value as Metric)}
-            className="appearance-none rounded-full bg-bg/10 py-1.5 pl-3 pr-8 text-sm font-semibold text-bg outline-none dark:bg-white/5 dark:text-cocoa"
-          >
-            {options.map((o) => (
-              <option key={o.id} value={o.id} className="text-cocoa">
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={15}
-            className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-bg/70 dark:text-cocoa-light"
-          />
-        </label>
+        <button
+          type="button"
+          onClick={() => setMenu((m) => !m)}
+          aria-haspopup="listbox"
+          aria-expanded={menu}
+          className="flex items-center gap-1.5 rounded-full bg-bg/10 py-1.5 pl-3.5 pr-2.5 text-sm font-semibold transition active:scale-95 dark:bg-white/5"
+        >
+          {current}
+          <ChevronDown size={15} className={`transition-transform duration-200 ${menu ? 'rotate-180' : ''}`} />
+        </button>
       </div>
+
+      {/* Auswahl öffnet sich über die Kartenbreite (statt der System-Auswahl) */}
+      {menu && (
+        <>
+          <button
+            type="button"
+            aria-label="Auswahl schließen"
+            className="absolute inset-0 z-10 cursor-default"
+            onClick={() => setMenu(false)}
+          />
+          <ul
+            role="listbox"
+            aria-label="Kategorie"
+            className="anim-fade absolute inset-x-4 top-[4.25rem] z-20 grid grid-cols-2 gap-1 overflow-hidden rounded-2xl bg-[#1E2638] p-1.5 shadow-2xl ring-1 ring-white/10 dark:bg-cream dark:ring-sand-dark"
+          >
+            {options.map((o) => {
+              const on = o.id === metric
+              return (
+                <li key={o.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={on}
+                    onClick={() => {
+                      setMetric(o.id)
+                      setMenu(false)
+                    }}
+                    className={`flex w-full items-center justify-between gap-1 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                      on ? 'bg-white/10 dark:bg-sand' : 'active:bg-white/5'
+                    }`}
+                  >
+                    {o.label}
+                    {on && <Check size={16} strokeWidth={3} className="text-brand" />}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      )}
 
       {/* Podest */}
       <div className="relative grid grid-cols-3 items-end gap-2">
@@ -138,10 +175,10 @@ export function LeaderboardHero({
 
       {rest.length > 0 && (
         <ol className="relative space-y-1.5">
-          {rest.map((u, i) => (
+          {rest.map((u) => (
             <li key={u.user_id} className="flex items-center gap-3 rounded-2xl bg-bg/10 px-3 py-2 dark:bg-white/5">
               <span className="tabular w-5 text-center text-sm font-bold text-bg/60 dark:text-cocoa-light">
-                {i + 4}
+                {rankOf(u)}
               </span>
               <span
                 className={`min-w-0 flex-1 truncate text-sm font-semibold ${u.user_id === meId ? 'text-brand' : ''}`}
