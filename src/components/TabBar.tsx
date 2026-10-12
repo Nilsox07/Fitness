@@ -50,31 +50,6 @@ function IconList({ className = S }: IconProps) {
     </svg>
   )
 }
-function IconPlan({ className = S }: IconProps) {
-  return (
-    <svg className={className} {...common}>
-      <rect x="4" y="4" width="16" height="16" rx="2" />
-      <path d="M8 9h8M8 13h8M8 17h5" />
-    </svg>
-  )
-}
-function IconBook({ className = S }: IconProps) {
-  return (
-    <svg className={className} {...common}>
-      <path d="M5 5.5A1.5 1.5 0 0 1 6.5 4H19v14H6.5A1.5 1.5 0 0 0 5 19.5V5.5Z" />
-      <path d="M5 19.5A1.5 1.5 0 0 1 6.5 18H19v2.5H6.5A1.5 1.5 0 0 1 5 19.5Z" />
-    </svg>
-  )
-}
-function IconCart({ className = S }: IconProps) {
-  return (
-    <svg className={className} {...common}>
-      <path d="M4 5h2l1.5 9.5A2 2 0 0 0 9.5 16h7a2 2 0 0 0 2-1.6L20 8H7" />
-      <circle cx="10" cy="20" r="1" />
-      <circle cx="17" cy="20" r="1" />
-    </svg>
-  )
-}
 function IconPeople({ className = S }: IconProps) {
   return (
     <svg className={className} {...common}>
@@ -87,23 +62,17 @@ function IconPeople({ className = S }: IconProps) {
 
 type Tab = { to: string; label: string; Icon: (p: IconProps) => ReactElement; end?: boolean; also?: string[] }
 
-const FITNESS_TABS: Tab[] = [
-  { to: '/', label: 'Heute', Icon: IconTrain, end: true },
-  { to: '/plans', label: 'Pläne', Icon: IconPlan },
-  { to: '/analytics', label: 'Fortschritt', Icon: IconChart, also: ['/history'] },
-  { to: '/social', label: 'Community', Icon: IconPeople },
-]
-
-const FOOD_TABS: Tab[] = [
-  { to: '/nutrition', label: 'Heute', Icon: IconFood, end: true },
-  { to: '/recipes', label: 'Rezepte', Icon: IconBook },
-  { to: '/shopping', label: 'Plan', Icon: IconCart },
-  { to: '/analytics', label: 'Fortschritt', Icon: IconChart, also: ['/history'] },
-  { to: '/social', label: 'Community', Icon: IconPeople },
+// Neue App: vier feste Bereiche. Unterseiten zählen zu ihrem Bereich (also),
+// Zurück geht über die obere Leiste – höchstens zwei Ebenen.
+const NUTRITION_TAB: Tab = { to: '/nutrition', label: 'Ernährung', Icon: IconFood, end: true, also: ['/recipes', '/shopping'] }
+const MAIN_TABS: Tab[] = [
+  { to: '/', label: 'Training', Icon: IconTrain, end: true, also: ['/plans', '/exercises', '/quick'] },
+  { to: '/analytics', label: 'Fortschritt', Icon: IconChart, also: ['/history', '/badges'] },
+  { to: '/social', label: 'Community', Icon: IconPeople, also: ['/feed'] },
 ]
 
 export function TabBar() {
-  const { showNutrition, isNew, world } = usePrefs()
+  const { showNutrition, isNew } = usePrefs()
   const { pathname } = useLocation()
 
   // Klassisch = alte, schlanke App
@@ -115,7 +84,7 @@ export function TabBar() {
     { to: '/exercises', label: 'Übungen', Icon: IconList },
   ]
 
-  const tabs = !isNew ? classicTabs : world === 'food' ? FOOD_TABS : FITNESS_TABS
+  const tabs = !isNew ? classicTabs : showNutrition ? [NUTRITION_TAB, ...MAIN_TABS] : MAIN_TABS
 
   if (isNew) return <FloatingTabBar tabs={tabs} pathname={pathname} />
 
@@ -146,7 +115,7 @@ export function TabBar() {
 }
 
 function isTabActive(t: Tab, pathname: string): boolean {
-  if (t.also?.includes(pathname)) return true
+  if (t.also?.some((p) => pathname === p || pathname.startsWith(p + '/'))) return true
   if (t.end) return pathname === t.to
   return pathname === t.to || pathname.startsWith(t.to + '/')
 }

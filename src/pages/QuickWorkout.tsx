@@ -130,14 +130,16 @@ export default function QuickWorkout() {
   return (
     <div className="space-y-4">
       <header className="flex items-start gap-2" style={enter(0)}>
-        <button
-          type="button"
-          onClick={() => (phase === 'preview' ? setPhase('setup') : navigate(-1))}
-          className="-ml-1 mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa transition active:scale-95"
-          aria-label="Zurück"
-        >
-          <ChevronLeft size={18} />
-        </button>
+        {phase === 'preview' && (
+          <button
+            type="button"
+            onClick={() => setPhase('setup')}
+            className="-ml-1 mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa transition active:scale-95"
+            aria-label="Zurück zur Auswahl"
+          >
+            <ChevronLeft size={18} />
+          </button>
+        )}
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">Schnell-Workout</h1>
           <p className="text-sm text-cocoa-light">

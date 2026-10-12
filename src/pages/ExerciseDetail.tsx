@@ -304,7 +304,8 @@ export default function ExerciseDetail() {
     navigate("/exercises", { replace: true });
   }
 
-  const backButton = (
+  // Neue App: Zurück steht oben in der Leiste.
+  const backButton = isNew ? null : (
     <button
       className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa"
       onClick={() => navigate(-1)}
@@ -358,13 +359,15 @@ export default function ExerciseDetail() {
           <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
           <div className="relative flex items-start gap-3">
-            <button
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-bg/10 text-bg transition active:scale-90 dark:bg-white/5 dark:text-cocoa"
-              onClick={() => navigate(-1)}
-              aria-label="Zurück"
-            >
-              <ChevronLeft size={20} />
-            </button>
+            {!isNew && (
+              <button
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-bg/10 text-bg transition active:scale-90 dark:bg-white/5 dark:text-cocoa"
+                onClick={() => navigate(-1)}
+                aria-label="Zurück"
+              >
+                <ChevronLeft size={20} />
+              </button>
+            )}
             <div className="min-w-0 flex-1 pt-0.5">
               <h1 className="text-2xl font-bold leading-tight tracking-tight">{exercise.name}</h1>
               {chips}

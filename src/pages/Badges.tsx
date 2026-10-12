@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ProgressSwitch } from '../components/ProgressSwitch'
 import { Check, ChevronLeft, Lock } from 'lucide-react'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
@@ -134,7 +135,6 @@ export default function Badges() {
 
 /** Neue App: „Buddy" — Level, Wachstum, Meilensteine und Freischaltungen an einem Ort. */
 function BuddyPage() {
-  const navigate = useNavigate()
   const { data: allSets } = useAllSets()
   const { showNutrition } = usePrefs()
   const buddy = useBuddy()
@@ -160,15 +160,9 @@ function BuddyPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center gap-2">
-        <button
-          className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
-          onClick={() => navigate(-1)}
-          aria-label="Zurück"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <h1 className="text-xl font-bold">Buddy</h1>
+      <header className="space-y-3">
+        <h1 className="text-2xl font-bold tracking-tight">Fortschritt</h1>
+        <ProgressSwitch />
       </header>
 
       {/* Hero: großer Buddy + Level + XP */}

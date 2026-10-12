@@ -125,7 +125,6 @@ export default function Feed() {
 
 /** Neues Design: Aktivitäten nach Tagen gruppiert, gleiche Karten wie in der Community. */
 function FeedNew() {
-  const goBack = useGoBack()
   const { world, showNutrition } = usePrefs()
   const { data: activities, isLoading } = useActivities()
   const authorOf = useAuthorLookup()
@@ -157,7 +156,6 @@ function FeedNew() {
       <PageHeader
         title="Aktivitäten"
         subtitle={isLoading ? 'Lädt…' : `${count} ${count === 1 ? 'Eintrag' : 'Einträge'} von dir & deinen Freunden`}
-        onBack={goBack}
         style={enter(0)}
       />
 

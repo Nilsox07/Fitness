@@ -149,18 +149,21 @@ export function SubHeader({
 }: {
   title: string
   subtitle?: ReactNode
-  onBack: () => void
+  /** Eigener Zurück-Knopf (neue App: Zurück steht oben in der Leiste) */
+  onBack?: () => void
 }) {
   return (
     <header className="flex items-center gap-3">
-      <button
-        type="button"
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
-        onClick={onBack}
-        aria-label="Zurück"
-      >
-        <ChevronLeft size={20} />
-      </button>
+      {onBack && (
+        <button
+          type="button"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
+          onClick={onBack}
+          aria-label="Zurück"
+        >
+          <ChevronLeft size={20} />
+        </button>
+      )}
       <div className="min-w-0">
         <h1 className="truncate text-2xl font-bold leading-tight tracking-tight">{title}</h1>
         {subtitle && <p className="truncate text-sm text-cocoa-light">{subtitle}</p>}

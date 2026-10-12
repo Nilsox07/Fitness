@@ -22,6 +22,9 @@ import {
   UtensilsCrossed,
   X,
   type LucideIcon,
+  BookOpen,
+  CalendarDays,
+  ShoppingBasket,
 } from 'lucide-react'
 import { Sheet } from '../components/workout/Sheet'
 import { PremiumSheet } from '../components/ui/PremiumSheet'
@@ -94,6 +97,7 @@ import { kcalByDate, mealRecommendation } from '../lib/nutritionHome'
 import { dayLabel } from '../lib/day'
 import type { FoodEntry } from '../types'
 import { useNutritionPrefs } from '../hooks/usePrefsSync'
+import { ToolTiles } from '../components/home/ToolTiles'
 import { ChainBadge, ChainMenu } from '../components/food/ChainMenu'
 import { CHAIN_BADGE, findChain, loadChains, menuItemToEstimate, suggestCombo, type Chain } from '../lib/fastfood'
 
@@ -1049,6 +1053,17 @@ export default function Nutrition() {
           />
 
           <RecentChips items={recent} onAdd={quickAdd} style={stagger(3)} />
+
+          {isToday && (
+            <ToolTiles
+              style={stagger(3)}
+              items={[
+                { to: '/recipes', label: 'Rezepte', sub: 'Entdecken & eigene', Icon: BookOpen },
+                { to: '/shopping?view=plan', label: 'Wochenplan', sub: 'Essen planen', Icon: CalendarDays },
+                { to: '/shopping?view=shopping', label: 'Einkauf', sub: 'Einkaufsliste', Icon: ShoppingBasket },
+              ]}
+            />
+          )}
 
           <div className="space-y-3">
             {MEALS.map((meal, i) => (

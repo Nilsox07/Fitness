@@ -231,7 +231,7 @@ export default function Profile() {
     if (sub) {
       return (
         <div className="anim-fade space-y-4">
-          <SubHeader title={SUB_TITLE[sub]} subtitle={SUB_SUBTITLE[sub]} onBack={closeSub} />
+          <SubHeader title={SUB_TITLE[sub]} subtitle={SUB_SUBTITLE[sub]} />
 
           {sub === 'settings' && (
             <SettingsEditor
@@ -395,14 +395,7 @@ export default function Profile() {
 
     return (
       <div className="space-y-5">
-        <header className="flex items-center gap-2">
-          <button
-            className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
-            onClick={goBack}
-            aria-label="Zurück"
-          >
-            <ChevronLeft size={20} />
-          </button>
+        <header>
           <h1 className="text-2xl font-bold tracking-tight">Profil</h1>
         </header>
 
@@ -525,21 +518,10 @@ export default function Profile() {
           />
         </Group>
 
-        <Group title="Mehr">
-          <Row icon={Dumbbell} tint="brand" label="Übungen" onClick={() => navigate('/exercises')} />
-          <Row
-            icon={Award} tint="gold"
-            label="Buddy"
-            value={<span className="tabular">Lv {level}</span>}
-            onClick={() => navigate('/badges')}
-          />
-          <Row icon={Users} tint="sky" label="Community" onClick={() => navigate('/social')} />
-          <Row icon={Download} tint="neutral" label="Daten exportieren" value="CSV" onClick={() => openSub('export')} />
-        </Group>
-
         <Group title="Konto">
           <Row icon={PenLine} tint="neutral" label="Name" value={myProfile?.display_name || '—'} onClick={() => setNameOpen(true)} />
           <Row icon={User} tint="neutral" label="Angemeldet als" value={user?.email ?? '—'} />
+          <Row icon={Download} tint="neutral" label="Daten exportieren" value="CSV" onClick={() => openSub('export')} />
           <Row
             icon={LogOut}
             label="Abmelden"

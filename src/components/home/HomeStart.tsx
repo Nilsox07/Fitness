@@ -29,7 +29,8 @@ import { ChallengeCard } from './ChallengeCard'
 import { RestDayCard } from './RestDayCard'
 import { RhythmPrompt } from './RhythmPrompt'
 import { enter } from './motion'
-import { QuickWorkoutCard } from '../quick/QuickWorkoutCard'
+import { ToolTiles } from './ToolTiles'
+import { ClipboardList, Dumbbell, Timer } from 'lucide-react'
 
 const SKIP_MUSCLES = new Set<MuscleGroup>(['Sonstige', 'Ganzkörper'])
 
@@ -176,7 +177,14 @@ export function HomeStart({
           buddy={buddy}
         />
       )}
-      {plans !== undefined && <QuickWorkoutCard style={enter(++i)} />}
+      <ToolTiles
+        style={enter(++i)}
+        items={[
+          { to: '/plans', label: 'Pläne', sub: 'Rhythmus & Pläne', Icon: ClipboardList },
+          { to: '/exercises', label: 'Übungen', sub: 'Bibliothek', Icon: Dumbbell },
+          { to: '/quick', label: 'Home-Workout', sub: 'Ohne Geräte', Icon: Timer },
+        ]}
+      />
       <RecoveryCard items={muscleStates} index={++i} />
       {last && <LastWorkoutCard stats={last} today={today} names={lastNames} index={++i} />}
       <NutritionRow allSets={allSets} index={++i} />

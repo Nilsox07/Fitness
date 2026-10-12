@@ -20,7 +20,6 @@ import { MyBuddy } from '../buddy/MyBuddy'
 import { AiPlanGeneratorBody } from './AiPlanGenerator'
 import { PlanCard } from './PlanCard'
 import { PlanEditor } from './PlanEditor'
-import { QuickWorkoutCard } from '../quick/QuickWorkoutCard'
 
 /**
  * Pläne im Routine-Stil (Neu-Modus): Liste mit Play-Knopf, Editor per ?edit=<id>,
@@ -119,7 +118,7 @@ export default function PlansNew() {
   if (rhythmOpen) {
     return (
       <div className="anim-fade space-y-4">
-        <SubHeader title="Trainingsrhythmus" subtitle="Wann du trainierst" onBack={closeEditor} />
+        <SubHeader title="Trainingsrhythmus" subtitle="Wann du trainierst" />
         <RhythmEditor />
       </div>
     )
@@ -177,7 +176,6 @@ export default function PlansNew() {
 
       {!isLoading && hasPlans && <RhythmCard onOpen={openRhythm} style={enter(idx++)} />}
 
-      {!isLoading && <QuickWorkoutCard title="Schnell-Workout · keine Zeit?" style={enter(idx++)} />}
 
       {hasPlans && (
         <ul className="space-y-3">

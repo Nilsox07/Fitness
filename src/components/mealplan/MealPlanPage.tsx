@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import {
   CalendarDays,
@@ -78,7 +79,12 @@ export function MealPlanPage() {
   const addEntry = useAddFoodEntry()
   const addEntries = useAddFoodEntries()
 
-  const [tab, setTabState] = useState<PlanTab>(loadTab)
+  // Kachel „Wochenplan" / „Einkauf" auf der Ernährungsseite wählt den Reiter vor.
+  const [params] = useSearchParams()
+  const view = params.get('view')
+  const [tab, setTabState] = useState<PlanTab>(() =>
+    view === 'shopping' || view === 'plan' ? (view as PlanTab) : loadTab(),
+  )
   const setTab = (t: PlanTab) => {
     setTabState(t)
     saveTab(t)
