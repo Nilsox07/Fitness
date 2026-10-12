@@ -8,13 +8,14 @@ create table if not exists public.body_scans (
   user_id uuid not null references auth.users (id) on delete cascade,
   date date not null default current_date,
   photo_path text,
-  bf_low numeric(4, 1) check (bf_low between 2 and 70),
-  bf_high numeric(4, 1) check (bf_high between 2 and 70),
-  weight_kg numeric(6, 2),
+  bf_low numeric,
+  bf_high numeric,
+  weight_kg numeric,
   confidence text,
   source text not null default 'ai',
   created_at timestamptz not null default now()
 );
+
 create index if not exists body_scans_user_date_idx on public.body_scans (user_id, date);
 
 alter table public.body_scans enable row level security;
@@ -28,14 +29,15 @@ insert into storage.buckets (id, name, public)
 values ('body-photos', 'body-photos', false)
 on conflict (id) do update set public = false;
 
+-- Jeder darf nur in seinem eigenen Ordner „<user-id>/…“ lesen, hochladen, löschen
 drop policy if exists "body_photos_select_own" on storage.objects;
 create policy "body_photos_select_own" on storage.objects
-  for select using (bucket_id = 'body-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+  for select using (bucket_id = 'body-photos' and name like auth.uid()::text || '/%');
 
 drop policy if exists "body_photos_insert_own" on storage.objects;
 create policy "body_photos_insert_own" on storage.objects
-  for insert with check (bucket_id = 'body-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+  for insert with check (bucket_id = 'body-photos' and name like auth.uid()::text || '/%');
 
 drop policy if exists "body_photos_delete_own" on storage.objects;
 create policy "body_photos_delete_own" on storage.objects
-  for delete using (bucket_id = 'body-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+  for delete using (bucket_id = 'body-photos' and name like auth.uid()::text || '/%');
