@@ -5,6 +5,8 @@ export interface FoodProduct {
   barcode: string | null
   name: string
   brand: string | null
+  /** Getränk (Angaben pro 100 ml) → Menge zählt zur Trinkmenge */
+  isDrink?: boolean
   /** Nährwerte pro 100 g */
   per100: {
     kcal: number
@@ -35,6 +37,16 @@ interface OffProduct {
   product_name_de?: string
   brands?: string
   nutriments?: OffNutriments
+  categories_tags?: string[]
+  quantity?: string
+  nutrition_data_per?: string
+}
+
+/** Getränk? Kategorie „beverages", Angaben pro 100 ml oder Packungsgröße in ml/l. */
+function isBeverage(p: OffProduct): boolean {
+  if ((p.categories_tags ?? []).some((t) => /beverages|getränke|boissons|drinks/.test(t))) return true
+  if ((p.nutrition_data_per ?? '').includes('ml')) return true
+  return /\d\s*(ml|cl|l)\b/i.test(p.quantity ?? '')
 }
 
 function normalize(p: OffProduct): FoodProduct {
@@ -43,6 +55,7 @@ function normalize(p: OffProduct): FoodProduct {
     barcode: p.code ?? null,
     name: p.product_name_de || p.product_name || 'Unbenanntes Produkt',
     brand: p.brands ?? null,
+    isDrink: isBeverage(p),
     per100: {
       kcal: Math.round(n['energy-kcal_100g'] ?? 0),
       protein: Math.round((n.proteins_100g ?? 0) * 10) / 10,
@@ -56,7 +69,7 @@ function normalize(p: OffProduct): FoodProduct {
   }
 }
 
-const FIELDS = 'code,product_name,product_name_de,brands,nutriments'
+const FIELDS = 'code,product_name,product_name_de,brands,nutriments,categories_tags,quantity,nutrition_data_per'
 
 /** Produkt per Barcode holen. null, wenn nicht gefunden. */
 export async function fetchProductByBarcode(barcode: string): Promise<FoodProduct | null> {

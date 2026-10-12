@@ -212,6 +212,8 @@ export interface FoodEntry {
   salt: number
   barcode: string | null
   meal: Meal | null
+  /** Getränk: Flüssigkeit in ml (zählt zur Trinkmenge), sonst null */
+  fluid_ml?: number | null
   created_at: string
 }
 

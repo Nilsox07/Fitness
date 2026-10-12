@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { fluidOf } from '../lib/fluid'
 import { useNavigate } from 'react-router-dom'
 import { Check, ChevronRight, Droplet } from 'lucide-react'
 import { useAllFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
@@ -28,7 +29,12 @@ export function FoodDays() {
   const d = useMemo(() => {
     const totals = foodTotalsByDate(entries)
     const kcalBy = new Map([...totals].map(([k, v]) => [k, v.kcal]))
+    // Wasser + Getränke aus dem Tagebuch
     const waterBy = new Map((water ?? []).map((w) => [w.date, w.ml]))
+    for (const e of entries ?? []) {
+      const f = fluidOf(e)
+      if (f > 0) waterBy.set(e.date, (waterBy.get(e.date) ?? 0) + f)
+    }
     const trainedDates = new Set((allSets ?? []).map((s) => s.date))
     // Kalorienziel des Tages inkl. Trainingsbonus (gleiche Regel wie auf „Ernährung")
     const targetFor = (date: string) => kcalTargetFor(settings, trainedDates.has(date), kcalBonus)

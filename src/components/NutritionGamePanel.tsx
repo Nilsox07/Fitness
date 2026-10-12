@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { fluidTotal } from '../lib/fluid'
 import { CalendarDays, Check, Flame, Target } from 'lucide-react'
 import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useAllWater, useWater } from '../hooks/useWater'
@@ -90,7 +91,7 @@ export function NutritionGamePanel({ compact = false }: { compact?: boolean } = 
         proteinTarget,
         kcal: totalsToday.kcal,
         kcalTarget,
-        waterMl: water?.ml ?? 0,
+        waterMl: (water?.ml ?? 0) + fluidTotal(todayEntries ?? []),
         waterTarget,
       }),
       weekly: nutritionWeeklyQuests(entries, proteinTarget),

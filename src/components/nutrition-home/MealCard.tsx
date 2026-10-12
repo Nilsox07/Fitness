@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { fluidOf } from '../../lib/fluid'
 import { Coffee, Cookie, Moon, Plus, Sun, type LucideIcon } from 'lucide-react'
 import { MEAL_LABEL, type FoodEntry, type Meal } from '../../types'
 import { fmtInt } from '../../lib/nutritionHome'
@@ -78,7 +79,7 @@ export function MealCard({
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{e.name}</div>
                   <div className="tabular text-[11px] text-cocoa-muted">
-                    {e.amount_g ? `${fmtInt(e.amount_g)} g · ` : ''}E {Math.round(e.protein)} · K {Math.round(e.carbs)} · F{' '}
+                    {fluidOf(e) > 0 ? `💧 ${fmtInt(fluidOf(e))} ml · ` : e.amount_g ? `${fmtInt(e.amount_g)} g · ` : ''}E {Math.round(e.protein)} · K {Math.round(e.carbs)} · F{' '}
                     {Math.round(e.fat)}
                   </div>
                 </div>

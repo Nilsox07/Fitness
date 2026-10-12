@@ -1,4 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react'
+import { fluidTotal } from '../../lib/fluid'
 import { ChevronDown, Flame, Target } from 'lucide-react'
 import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
 import { useWater } from '../../hooks/useWater'
@@ -45,7 +46,7 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
         proteinTarget,
         kcal: totals.kcal,
         kcalTarget,
-        waterMl: water?.ml ?? 0,
+        waterMl: (water?.ml ?? 0) + fluidTotal(todayEntries ?? []),
         waterTarget: settings?.water_target_ml || 2500,
       }),
       ...nutritionWeeklyQuests(entries, proteinTarget),

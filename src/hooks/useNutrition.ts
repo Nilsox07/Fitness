@@ -13,6 +13,7 @@ import {
   type DietStyle,
 } from '../lib/dietStyle'
 import type { FoodEntry, NutritionSettings } from '../types'
+import { isMissingFluidColumn, rememberFluid } from '../lib/fluid'
 
 /** Prüft ein geloggtes Lebensmittel und postet bei echten „Cheats" einen
  *  Freunde-Alarm (Feed + Push). Läuft im Hintergrund, Fehler werden ignoriert. */
@@ -157,20 +158,38 @@ export type FoodEntryInput = Pick<
   | 'salt'
   | 'barcode'
   | 'meal'
->
+> & { fluid_ml?: number | null }
+
+// Spalte fluid_ml (Migration 0029) fehlt? Wird beim ersten Fehler gemerkt.
+let fluidColumnMissing = false
+
+/** Einträge speichern; fehlt die Spalte fluid_ml noch, Getränke-ml lokal merken. */
+async function insertFood(rows: (FoodEntryInput & { user_id: string })[]): Promise<FoodEntry[]> {
+  const strip = (r: FoodEntryInput & { user_id: string }) => {
+    const { fluid_ml: _f, ...rest } = r
+    void _f
+    return rest
+  }
+  if (!fluidColumnMissing) {
+    const res = await supabase.from('food_entries').insert(rows).select()
+    if (!res.error) return res.data as FoodEntry[]
+    if (!isMissingFluidColumn(res.error)) throw res.error
+    fluidColumnMissing = true
+  }
+  const res = await supabase.from('food_entries').insert(rows.map(strip)).select()
+  if (res.error) throw res.error
+  const data = res.data as FoodEntry[]
+  data.forEach((d, i) => rememberFluid(d.id, rows[i]?.fluid_ml ?? 0))
+  return data
+}
 
 export function useAddFoodEntry() {
   const qc = useQueryClient()
   const { user } = useAuth()
   return useMutation({
     mutationFn: async (input: FoodEntryInput) => {
-      const { data, error } = await supabase
-        .from('food_entries')
-        .insert({ ...input, user_id: user!.id })
-        .select()
-        .single()
-      if (error) throw error
-      return data as FoodEntry
+      const [row] = await insertFood([{ ...input, user_id: user!.id }])
+      return row
     },
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ['food_entries'] })
@@ -187,12 +206,7 @@ export function useAddFoodEntries() {
   return useMutation({
     mutationFn: async (inputs: FoodEntryInput[]) => {
       if (inputs.length === 0) return [] as FoodEntry[]
-      const { data, error } = await supabase
-        .from('food_entries')
-        .insert(inputs.map((i) => ({ ...i, user_id: user!.id })))
-        .select()
-      if (error) throw error
-      return data as FoodEntry[]
+      return insertFood(inputs.map((i) => ({ ...i, user_id: user!.id })))
     },
     onSuccess: (rows) => {
       qc.invalidateQueries({ queryKey: ['food_entries'] })

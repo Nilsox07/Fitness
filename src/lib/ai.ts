@@ -709,6 +709,8 @@ export interface FoodEstimate {
   sugar: number
   sat_fat: number
   salt: number
+  /** Nur Getränke: Flüssigkeit in ml (zählt zur Trinkmenge) */
+  fluid_ml?: number
 }
 
 const NUTRITION_SYSTEM =
@@ -718,8 +720,9 @@ const NUTRITION_SYSTEM =
 const NUTRITION_FORMAT =
   'Format: {"items":[{"name":"...","amount_g":<Zahl oder null>,"kcal":<Zahl>,' +
   '"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g Ballaststoffe>,"sugar":<g Zucker>,' +
-  '"sat_fat":<g gesättigte Fettsäuren>,"salt":<g Salz>}]}. Zahlen gerundet, realistische ' +
-  'Schätzung. Mehrere Bestandteile = mehrere items.'
+  '"sat_fat":<g gesättigte Fettsäuren>,"salt":<g Salz>,"fluid_ml":<ml>}]}. Zahlen gerundet, realistische ' +
+  'Schätzung. Mehrere Bestandteile = mehrere items. fluid_ml NUR bei Getränken (Wasser, Saft, Softdrink, ' +
+  'Kaffee, Tee, Milch, Proteinshake, Smoothie, Bier …) = getrunkene Menge in ml, sonst 0 (auch Suppe = 0).'
 
 /** Menge in g (oder null, wenn unbekannt/unlesbar). */
 function amountG(v: unknown): number | null {
@@ -751,6 +754,7 @@ function toEstimateList(items: Partial<FoodEstimate>[] | undefined): FoodEstimat
     carbs: Math.round(nn(i.carbs)),
     fat: Math.round(nn(i.fat)),
     ...micros(i),
+    ...(nn(i.fluid_ml) > 0 ? { fluid_ml: Math.min(3000, Math.round(nn(i.fluid_ml))) } : {}),
   }))
 }
 

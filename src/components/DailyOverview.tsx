@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { fluidTotal } from '../lib/fluid'
 import { Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { usePrefs, type World } from '../lib/prefs'
@@ -74,7 +75,8 @@ export function DailyOverview() {
   const kcalLeft = kcalTarget ? kcalTarget - totals.kcal : 0
   const proteinTarget = settings?.protein_target ?? 0
   const goalWater = settings?.water_target_ml || 2500
-  const waterPct = Math.min(100, Math.round(((water?.ml ?? 0) / goalWater) * 100))
+  const drankMl = (water?.ml ?? 0) + fluidTotal(entries ?? [])
+  const waterPct = Math.min(100, Math.round((drankMl / goalWater) * 100))
 
   const go = (w: World, to: string) => {
     setWorld(w)
@@ -113,7 +115,7 @@ export function DailyOverview() {
         <Tile
           label="Wasser"
           value={`${waterPct}%`}
-          sub={`${((water?.ml ?? 0) / 1000).toFixed(1).replace('.', ',')} l`}
+          sub={`${(drankMl / 1000).toFixed(1).replace('.', ',')} l`}
           done={waterPct >= 100}
           onClick={() => go('food', '/nutrition')}
         />

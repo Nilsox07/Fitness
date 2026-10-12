@@ -3,6 +3,7 @@
 // Budget-Vorschlag wird lokal berechnet (kostet nichts, ist sofort da).
 
 import type { FoodEstimate } from './ai'
+import { volumeFromName } from './fluid'
 
 export interface MenuItem {
   name: string
@@ -79,6 +80,9 @@ export function menuItemToEstimate(item: MenuItem, qty = 1): FoodEstimate {
     sugar: r1(item.sugar),
     sat_fat: r1(item.sat_fat),
     salt: Math.round((Number(item.salt) || 0) * qty * 100) / 100,
+    ...(DRINK.test(item.category) && volumeFromName(item.name)
+      ? { fluid_ml: Math.round((volumeFromName(item.name) ?? 0) * qty) }
+      : {}),
   }
 }
 

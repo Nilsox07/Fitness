@@ -1,22 +1,29 @@
 import { useRef, type CSSProperties } from 'react'
 import { GlassWater, Minus, Plus } from 'lucide-react'
 import { useWater, useSetWater } from '../../hooks/useWater'
-import { useNutritionSettings } from '../../hooks/useNutrition'
+import { useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
+import { fluidTotal } from '../../lib/fluid'
 import { filledGlasses, fmtLiters } from '../../lib/nutritionHome'
 
 const DEFAULT_GOAL_ML = 2500
 const STEP = 250
 const GLASSES = 8
 
-/** Kompakte Wasser-Karte: 8 Gläser füllen sich bis zum Tagesziel, ± in 250-ml-Schritten. */
+/**
+ * Kompakte Trink-Karte: 8 Gläser füllen sich bis zum Tagesziel, ± in 250-ml-Schritten.
+ * Getränke aus dem Ernährungstagebuch (Shake, Kaffee, Cola …) zählen automatisch mit.
+ */
 export function WaterRow({ date, style }: { date: string; style?: CSSProperties }) {
   const { data: water } = useWater(date)
   const { data: settings } = useNutritionSettings()
   const setWater = useSetWater()
   const goalMl = settings?.water_target_ml || DEFAULT_GOAL_ML
+  const { data: entries } = useFoodEntries(date)
   const ml = water?.ml ?? 0
-  const filled = filledGlasses(ml, goalMl, GLASSES)
-  const done = ml >= goalMl
+  const fromDrinks = fluidTotal(entries ?? [])
+  const total = ml + fromDrinks
+  const filled = filledGlasses(total, goalMl, GLASSES)
+  const done = total >= goalMl
 
   // Zuletzt angeforderter Wert: schnelle Taps bauen darauf auf, auch wenn der
   // (optimistische) Cache-Wert noch nicht neu gerendert wurde.
@@ -36,9 +43,16 @@ export function WaterRow({ date, style }: { date: string; style?: CSSProperties 
   return (
     <section className="card space-y-3" style={style}>
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">Wasser</h2>
+        <div>
+          <h2 className="font-semibold">Trinken</h2>
+          {fromDrinks > 0 && (
+            <p className="tabular text-xs text-cocoa-muted">
+              {fmtLiters(ml)} l Wasser + {fmtLiters(fromDrinks)} l aus Getränken
+            </p>
+          )}
+        </div>
         <span className="tabular text-sm text-cocoa-light">
-          <span className={`font-semibold ${done ? 'text-success' : 'text-cocoa'}`}>{fmtLiters(ml)}</span> /{' '}
+          <span className={`font-semibold ${done ? 'text-success' : 'text-cocoa'}`}>{fmtLiters(total)}</span> /{' '}
           {fmtLiters(goalMl)} l
         </span>
       </div>

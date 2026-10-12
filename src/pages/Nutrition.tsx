@@ -98,6 +98,7 @@ import { dayLabel } from '../lib/day'
 import type { FoodEntry } from '../types'
 import { useNutritionPrefs } from '../hooks/usePrefsSync'
 import { ToolTiles } from '../components/home/ToolTiles'
+import { fluidOf } from '../lib/fluid'
 import { ChainBadge, ChainMenu } from '../components/food/ChainMenu'
 import { CHAIN_BADGE, findChain, loadChains, menuItemToEstimate, suggestCombo, type Chain } from '../lib/fastfood'
 
@@ -390,6 +391,7 @@ export default function Nutrition() {
         barcode: e.barcode,
         // wie alle anderen Wege: Mahlzeit nach aktueller Uhrzeit
         meal: currentMeal(),
+        ...(fluidOf(e) > 0 ? { fluid_ml: fluidOf(e) } : {}),
       },
       { onError: (err) => setError(saveError(err)) },
     )
@@ -404,6 +406,7 @@ export default function Nutrition() {
         barcode: e.barcode,
         name: e.name,
         brand: null,
+        isDrink: fluidOf(e) > 0,
         per100: {
           kcal: Math.round(e.kcal * k),
           protein: r1(e.protein),
@@ -431,6 +434,7 @@ export default function Nutrition() {
         ...micro(e),
         barcode: e.barcode,
         meal: addMeal(),
+        ...(fluidOf(e) > 0 ? { fluid_ml: fluidOf(e) } : {}),
       },
       { onSuccess: () => go(null), onError: (err) => setError(saveError(err)) },
     )
@@ -832,6 +836,7 @@ export default function Nutrition() {
     ...micro(it),
     barcode: null,
     meal: addMeal(),
+    ...(it.fluid_ml ? { fluid_ml: it.fluid_ml } : {}),
   })
 
   /** Alle Schätzungen in einem Insert übernehmen. */
@@ -911,6 +916,7 @@ export default function Nutrition() {
         ...micro(m),
         barcode: pending.barcode,
         meal: addMeal(),
+        ...(pending.isDrink && amount > 0 ? { fluid_ml: Math.round(amount) } : {}),
       })
       setPending(null)
       setAddMode(null)
@@ -1587,7 +1593,14 @@ export default function Nutrition() {
                     </div>
                   </div>
                   <div>
-                    <Stepper label="Menge (g)" value={amount} onChange={setAmount} step={10} min={0} suffix="g" />
+                    <Stepper
+                      label={pending.isDrink ? 'Menge (ml)' : 'Menge (g)'}
+                      value={amount}
+                      onChange={setAmount}
+                      step={10}
+                      min={0}
+                      suffix={pending.isDrink ? 'ml' : 'g'}
+                    />
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {[50, 100, 150, 200, 250].map((g) => (
                         <button
