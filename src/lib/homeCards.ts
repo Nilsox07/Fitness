@@ -2,12 +2,13 @@
 // und Training. Standard = aufgeräumt (alles aus), wie bei Apple Fitness.
 import { useSyncExternalStore } from 'react'
 
-export type HomeCard = 'recent' | 'weight' | 'recovery' | 'lastWorkout' | 'nutrition' | 'challenge'
+export type HomeCard = 'recent' | 'weight' | 'supplements' | 'recovery' | 'lastWorkout' | 'nutrition' | 'challenge'
 
 export const HOME_CARDS: Record<'food' | 'training', { id: HomeCard; label: string; hint: string }[]> = {
   food: [
     { id: 'recent', label: 'Zuletzt gegessen', hint: 'Schnell nochmal eintragen (steht auch in der Suche)' },
     { id: 'weight', label: 'Körpergewicht', hint: 'Gewicht eintragen (Verlauf im Fortschritt)' },
+    { id: 'supplements', label: 'Supplemente', hint: 'Kreatin & Co. abhaken – mit Erinnerung' },
   ],
   training: [
     { id: 'recovery', label: 'Erholung', hint: 'Welche Muskeln bereit sind' },

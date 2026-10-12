@@ -92,6 +92,8 @@ import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
 import { RecentChips } from '../components/nutrition-home/RecentChips'
 import { MealCard } from '../components/nutrition-home/MealCard'
 import { WaterRow } from '../components/nutrition-home/WaterRow'
+import { SupplementCard } from '../components/nutrition-home/SupplementCard'
+import { useSupplements, useToggleDose } from '../hooks/useSupplements'
 import { useSetWater, useWater } from '../hooks/useWater'
 import { FastingCard } from '../components/nutrition-home/FastingCard'
 import { dietShortLabel } from '../lib/dietStyle'
@@ -378,6 +380,24 @@ export default function Nutrition() {
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addWaterParam, waterLoaded])
+
+  // „Genommen“ aus der Supplement-Erinnerung (?supp=<id>&slot=HH:MM)
+  const toggleDose = useToggleDose()
+  const suppParam = params.get('supp')
+  const slotParam = params.get('slot')
+  useEffect(() => {
+    if (!suppParam || !slotParam) return
+    const next = new URLSearchParams(params)
+    next.delete('supp')
+    next.delete('slot')
+    setParams(next, { replace: true })
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(slotParam)) return
+    toggleDose.mutate({ supplementId: suppParam, date: realToday, slot: slotParam, taken: true })
+    setWaterNote('💊 Als genommen abgehakt')
+    const t = setTimeout(() => setWaterNote(null), 3500)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suppParam, slotParam])
   // Vergangene Tage nur im neuen Modus (der klassische hat keine Tagesnavigation).
   const today =
     isNew && paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate < realToday ? paramDate : realToday
@@ -387,6 +407,7 @@ export default function Nutrition() {
   const { data: settings } = useNutritionSettings()
   const diet = useDietStyle()
   const [homeCards] = useHomeCards()
+  const { data: supplements } = useSupplements()
   const dietLabel = dietShortLabel(diet)
   const { data: entries } = useFoodEntries(today)
   const { data: allEntries } = useAllFoodEntries()
@@ -1140,6 +1161,7 @@ export default function Nutrition() {
           </div>
 
           <WaterRow date={today} style={stagger(8)} />
+          {(homeCards.supplements || (supplements?.length ?? 0) > 0) && <SupplementCard date={today} />}
           {isToday && (homeCards.weight || params.has('weigh')) && <BodyWeightCard />}
           {isToday && <CustomizeHome area="food" />}
         </>

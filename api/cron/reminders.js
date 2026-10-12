@@ -13,7 +13,7 @@
 import webpush from 'web-push'
 import { SUPABASE_URL } from '../_supabase.js'
 import { createClient } from '@supabase/supabase-js'
-import { fastingDue, localNow, message, normalizeNotify, dueKinds } from '../_notify.js'
+import { fastingDue, inWindow, localNow, message, normalizeNotify, dueKinds, toMin } from '../_notify.js'
 
 const DAYS_THRESHOLD = 3
 
@@ -119,6 +119,35 @@ async function remindUser(db, userId, subs, prefs, now) {
   }
 
   let count = 0
+
+  // Supplemente: eigene Uhrzeiten pro Supplement
+  if (notify.supplements.on) {
+    const { data: supps } = await db
+      .from('supplements')
+      .select('id, name, dose, times, days, remind')
+      .eq('user_id', userId)
+      .eq('remind', true)
+    for (const s of supps || []) {
+      if (!Array.isArray(s.days) || !s.days.includes(local.weekday)) continue
+      for (const slot of s.times || []) {
+        if (!inWindow(local.min, toMin(slot))) continue
+        const { data: taken } = await db
+          .from('supplement_log')
+          .select('slot')
+          .eq('supplement_id', s.id)
+          .eq('date', today)
+          .eq('slot', slot)
+          .limit(1)
+        if (taken?.length) continue
+        const kind = `supp:${s.id}:${slot}`
+        const { error } = await db.from('notification_log').insert({ user_id: userId, kind, day: today })
+        if (error) continue
+        const msg = message('supplement', { id: s.id, slot, name: s.name, dose: s.dose })
+        if (msg) count += await send(db, subs, { ...msg, tag: `fitness-supp-${s.id}` })
+      }
+    }
+  }
+
   for (const kind of kinds) {
     const ctx = await check(kind, { db, userId, today, local, prefs, settings, food, workouts })
     if (!ctx) continue

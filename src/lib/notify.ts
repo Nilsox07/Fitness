@@ -9,6 +9,7 @@ export type NotifyKind =
   | 'water'
   | 'protein'
   | 'fasting'
+  | 'supplements'
   | 'workout'
   | 'streak'
   | 'weigh'
@@ -33,6 +34,7 @@ export const NOTIFY_DEFAULTS: NotifyPrefs = {
   water: { on: true, time: '16:00' },
   protein: { on: true, time: '20:00' },
   fasting: { on: false },
+  supplements: { on: true },
   workout: { on: true, time: '17:30' },
   streak: { on: true, time: '19:00' },
   weigh: { on: false, time: '08:00', days: [0] },
@@ -58,6 +60,12 @@ export const NOTIFY_ITEMS: NotifyItem[] = [
   { kind: 'water', group: 'Ernährung', label: 'Trinken', hint: 'Wenn du unter der Hälfte deines Ziels bist' },
   { kind: 'protein', group: 'Ernährung', label: 'Eiweiß', hint: 'Wenn noch mehr als ¼ deines Ziels fehlt' },
   { kind: 'fasting', group: 'Ernährung', label: 'Essensfenster', hint: 'Beim Öffnen und 30 min vor dem Schließen' },
+  {
+    kind: 'supplements',
+    group: 'Ernährung',
+    label: 'Supplemente',
+    hint: 'Zu den Uhrzeiten deiner Supplemente (pro Supplement abschaltbar)',
+  },
   {
     kind: 'workout',
     group: 'Training',

@@ -10,6 +10,7 @@ export const NOTIFY_DEFAULTS = {
   water: { on: true, time: '16:00' },
   protein: { on: true, time: '20:00' },
   fasting: { on: false },
+  supplements: { on: true },
   workout: { on: true, time: '17:30' },
   streak: { on: true, time: '19:00' },
   weigh: { on: false, time: '08:00', days: [0] },
@@ -208,6 +209,13 @@ export function message(kind, ctx = {}, seed = 0) {
             ),
             url: '/',
           }
+    case 'supplement':
+      return {
+        title: `💊 Zeit für ${ctx.name}`,
+        body: ctx.dose ? `${ctx.dose} – kurz abhaken, wenn erledigt.` : 'Kurz abhaken, wenn erledigt.',
+        url: '/nutrition',
+        actions: [{ action: 'taken', title: '✓ Genommen', url: `/nutrition?supp=${ctx.id}&slot=${ctx.slot}` }],
+      }
     case 'weigh':
       return {
         title: 'Kurz auf die Waage ⚖️',
