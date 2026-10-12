@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import { ChevronRight, Crown, Dumbbell, Swords, Target, Drumstick } from 'lucide-react'
+import { ChevronRight, Dumbbell, Swords, Target, Drumstick } from 'lucide-react'
 import { DUEL_POINTS, WEEKLY_GOAL, type DuelScore, type DuelStandings } from '../../lib/duel'
 import { Buddy, type BuddyMood } from '../buddy/Buddy'
 import { useBuddySkin } from '../buddy/useBuddy'
@@ -70,13 +70,6 @@ export function DuelHero({
           <span className={`relative block ${isMe ? '' : '-scale-x-100'}`}>
             <Buddy size={84} stage={look.stage} skin={look.skin} mood={mood(u.user_id, look.mood)} />
           </span>
-          {leaderId === u.user_id && (
-            <Crown
-              size={22}
-              className={`absolute -top-1 fill-gold text-gold drop-shadow ${isMe ? 'right-0 rotate-12' : 'left-0 -rotate-12'}`}
-              aria-label="Führt"
-            />
-          )}
         </div>
         <div className={`mt-1 w-full truncate text-sm font-semibold ${isMe ? 'text-brand' : ''}`}>
           {isMe ? 'Du' : shortName(u.display_name)}
@@ -93,11 +86,11 @@ export function DuelHero({
   }
 
   return (
-    <section style={style}>
+    <section style={style} className="flex flex-col">
       <div
         role="button"
         tabIndex={0}
-        className="relative w-full cursor-pointer overflow-hidden rounded-3xl bg-cocoa p-5 text-left text-bg shadow-lg shadow-black/10 transition active:scale-[0.99] dark:bg-sand-light dark:text-cocoa dark:shadow-none"
+        className="relative w-full flex-1 cursor-pointer overflow-hidden rounded-3xl bg-cocoa p-5 text-left text-bg shadow-lg shadow-black/10 transition active:scale-[0.99] dark:bg-sand-light dark:text-cocoa dark:shadow-none"
         onClick={() => setOpen(true)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -214,9 +207,6 @@ function DuelSheet({
                 <span className="tabular w-4 text-center text-sm font-bold text-cocoa-muted">{i + 1}</span>
                 <span className="relative">
                   <Avatar buddy={buddyLook(u, isMe, mySkin)} name={u.display_name} size={36} />
-                  {s.user_id === standings.leaderId && (
-                    <Crown size={14} className="absolute -right-1 -top-1.5 rotate-12 fill-gold text-gold" aria-label="Führt" />
-                  )}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className={`block truncate text-sm font-semibold ${isMe ? 'text-brand' : ''}`}>

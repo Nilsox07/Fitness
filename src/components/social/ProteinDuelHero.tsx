@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { Crown, Drumstick } from 'lucide-react'
+import { Drumstick } from 'lucide-react'
 import { Ring } from '../nutrition-home/Ring'
 import { useBuddySkin } from '../buddy/useBuddy'
 import { useCountUp } from '../food/useCountUp'
@@ -97,9 +97,6 @@ export function ProteinDuelHero({
                     size={38}
                     className="bg-bg/10 dark:bg-white/5"
                   />
-                  {r.user_id === leaderId && (
-                    <Crown size={15} className="absolute -right-1.5 -top-1.5 rotate-12 fill-gold text-gold" aria-label="Führt" />
-                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">

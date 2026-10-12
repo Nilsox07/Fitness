@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Check } from 'lucide-react'
 import { useBuddySkin } from '../buddy/useBuddy'
 import { Avatar } from './Avatar'
+import { Ring } from '../nutrition-home/Ring'
 import { buddyLook, type Person } from './format'
 
 /** Schlanke Karte für ein gemeinsames Wochenziel (Trainings oder Eiweiß-Tage). */
@@ -30,41 +31,59 @@ export function TeamGoalCard({
   const mySkin = useBuddySkin()
   const reached = target > 0 && done >= target
   const pct = target > 0 ? Math.min(100, Math.round((done / target) * 100)) : 0
-  const bar = reached || tone === 'success' ? 'bg-success' : 'bg-brand'
   return (
-    <div className="card space-y-2.5 py-3.5" style={style}>
+    <div className="card flex flex-col justify-between gap-4 p-5" style={style}>
       <div className="flex items-center gap-3">
         <span
-          className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
-            reached ? 'bg-success text-white' : tone === 'success' ? 'bg-success/10 text-success' : 'bg-brand/10 text-brand'
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+            reached
+              ? 'bg-success text-white'
+              : tone === 'success'
+                ? 'bg-success/10 text-success'
+                : 'bg-brand/10 text-brand'
           }`}
         >
-          {reached ? <Check size={17} strokeWidth={3} className="anim-check" /> : icon}
+          {reached ? <Check size={18} strokeWidth={3} className="anim-check" /> : icon}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">{title}</div>
-          <div className="tabular truncate text-xs text-cocoa-light">
-            {reached ? 'Teamziel geschafft!' : `Noch ${target - done} ${unit} bis zum Teamziel`}
-          </div>
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-cocoa-muted">Teamziel</div>
+          <div className="truncate text-lg font-bold leading-tight">{title}</div>
         </div>
+      </div>
+
+      <div className="flex justify-center">
+        <Ring
+          size={150}
+          stroke={12}
+          progress={pct / 100}
+          trackClass="stroke-sand-dark/45"
+          barClass={reached || tone === 'success' ? 'stroke-success' : 'stroke-brand'}
+        >
+          <div className="flex flex-col items-center leading-none">
+            <span className="tabular text-4xl font-bold tracking-tight">
+              {done}
+              <span className="text-lg font-semibold text-cocoa-muted">/{target}</span>
+            </span>
+            <span className="mt-1.5 text-xs font-medium text-cocoa-light">{unit}</span>
+          </div>
+        </Ring>
+      </div>
+
+      <div className="flex items-center gap-3">
         <span className="flex shrink-0 -space-x-2" aria-hidden>
-          {people.slice(0, 4).map((u) => (
+          {people.slice(0, 5).map((u) => (
             <Avatar
               key={u.user_id}
               buddy={buddyLook(u, u.user_id === meId, mySkin)}
               name={u.display_name}
-              size={24}
+              size={30}
               className="bg-sand ring-2 ring-cream"
             />
           ))}
         </span>
-        <span className="tabular shrink-0 text-base font-bold">
-          {done}
-          <span className="text-xs font-semibold text-cocoa-muted">/{target}</span>
+        <span className="tabular min-w-0 flex-1 text-sm text-cocoa-light">
+          {reached ? 'Geschafft – stark gemacht, Team!' : `Noch ${target - done} ${unit} – jeder zählt mit.`}
         </span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-sand" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-        <div className={`h-full rounded-full transition-[width] duration-700 ease-out ${bar}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   )

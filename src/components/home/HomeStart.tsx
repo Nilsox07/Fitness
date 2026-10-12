@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { QuestStrip } from '../buddy/QuestStrip'
 import { useExercises } from '../../hooks/useExercises'
 import { usePlans } from '../../hooks/usePlans'
 import { useAllSets, useWorkouts } from '../../hooks/useWorkouts'
@@ -145,6 +146,7 @@ export function HomeStart({
     <div className="space-y-4">
       <HomeHeader name={profile?.display_name ?? null} dateLabel={dateLabel} streak={streak} />
       <WeekStrip today={today} trainedDates={trainedDates} goal={rhythm.goal} planned={planned} index={++i} />
+      <QuestStrip area="training" style={enter(++i)} />
       {showPrompt && <RhythmPrompt index={++i} />}
       {plans === undefined ? (
         <div className="h-72 animate-pulse rounded-3xl bg-sand" aria-hidden />

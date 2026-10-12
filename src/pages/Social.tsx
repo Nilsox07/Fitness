@@ -719,7 +719,7 @@ export default function Social() {
               />
             )}
             <TeamGoalCard
-              title="Zusammen diese Woche"
+              title="Zusammen trainieren"
               icon={<Users size={17} />}
               done={team.done}
               target={team.target}

@@ -99,6 +99,7 @@ import type { FoodEntry } from '../types'
 import { useNutritionPrefs } from '../hooks/usePrefsSync'
 import { ToolTiles } from '../components/home/ToolTiles'
 import { TabHeader } from '../components/ui/TabHeader'
+import { QuestStrip } from '../components/buddy/QuestStrip'
 import { CustomizeHome } from '../components/home/CustomizeHome'
 import { useHomeCards } from '../lib/homeCards'
 import { fluidOf } from '../lib/fluid'
@@ -1008,6 +1009,8 @@ export default function Nutrition() {
             kcalByDate={dayKcal}
             targetFor={(d) => kcalTargetFor(settings, trainedOn(d, allSets), kcalBonus)}
           />
+
+          {isToday && <QuestStrip area="food" />}
 
           {!isToday && (
             <div className="anim-fade flex items-center justify-between gap-2 rounded-full bg-sand px-3 py-1.5 text-xs text-cocoa-light">
