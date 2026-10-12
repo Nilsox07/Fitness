@@ -56,3 +56,11 @@ describe('weekBodyweight', () => {
     expect(weekBodyweight(w.slice(0, 2), '2026-09-21', '2026-09-27')).toBeNull()
   })
 })
+
+describe('cleanReviewText', () => {
+  it('entfernt Markdown-Sternchen und Rauten', async () => {
+    const { cleanReviewText } = await import('./weeklyReview')
+    expect(cleanReviewText('**Training:** 3 Sessions')).toBe('Training: 3 Sessions')
+    expect(cleanReviewText('## Fokus\n* mehr Eiweiß\n* *früher* schlafen')).toBe('Fokus\n• mehr Eiweiß\n• früher schlafen')
+  })
+})

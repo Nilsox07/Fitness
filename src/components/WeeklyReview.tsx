@@ -6,7 +6,8 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useBodyWeights } from '../hooks/useBodyWeight'
-import { combinedWeeklyReview } from '../lib/ai'
+import { weeklyReviewData } from '../lib/ai'
+import { WeeklyReviewView } from './review/WeeklyReviewView'
 import { GOAL_LABEL } from '../lib/nutrition'
 import { sessionDates, totalVolume } from '../lib/analytics'
 import { useWeeklyGoal } from '../hooks/usePrefsSync'
@@ -19,6 +20,7 @@ import {
   lastWeekRange,
   markSeen,
   storeReview,
+  type StoredReview,
   weekBodyweight,
   weekPrCount,
 } from '../lib/weeklyReview'
@@ -37,9 +39,12 @@ export function WeeklyReview() {
   const { data: weights, isPending: weightsLoading } = useBodyWeights()
   const { showNutrition } = usePrefs()
 
-  const [text, setText] = useState<string | null>(null)
+  const [review, setReview] = useState<StoredReview | null>(null)
   const [open, setOpen] = useState(false)
   const tried = useRef(false)
+
+  // Erst nach der Start-Animation zeigen, damit man das Einfliegen von unten sieht.
+  const show = () => window.setTimeout(() => setOpen(true), 1400)
 
   useEffect(() => {
     if (tried.current) return
@@ -49,10 +54,11 @@ export function WeeklyReview() {
     const weekId = isoWeekId()
     const stored = getStoredReview()
 
-    // Schon für diese Woche erstellt → ggf. nur Popup zeigen.
-    if (stored && stored.weekId === weekId) {
-      setText(stored.text)
-      if (getSeenWeekId() !== weekId) setOpen(true)
+    // Schon für diese Woche im neuen Format erstellt → ggf. nur Popup zeigen.
+    // (Altes Fließtext-Fazit dieser Woche wird einmal im neuen Format neu erzeugt.)
+    if (stored && stored.weekId === weekId && stored.data) {
+      setReview(stored)
+      if (getSeenWeekId() !== weekId) show()
       return
     }
 
@@ -94,9 +100,23 @@ export function WeeklyReview() {
     // Gewichtsverlauf NUR innerhalb der ausgewerteten Woche (erste vs. letzte Messung).
     const bodyweight = weekBodyweight(weights ?? [], start, end)
 
+    const sessions = new Set(weekSets.map((s) => s.date)).size
+    const stats = {
+      sessions,
+      sessionGoal: weeklyGoal,
+      volumeKg: Math.round(totalVolume(weekSets)),
+      prs: weekPrCount(allSets, start, end),
+      daysLogged: showNutrition ? daysLogged : null,
+      avgKcal: showNutrition && daysLogged ? avgKcal : null,
+      kcalTarget: showNutrition && settings?.kcal_target ? settings.kcal_target : null,
+      avgProtein: showNutrition && daysLogged ? avgProtein : null,
+      proteinTarget: showNutrition && settings?.protein_target ? settings.protein_target : null,
+      weightDelta: bodyweight ? Math.round((bodyweight.current - bodyweight.start) * 10) / 10 : null,
+    }
+
     ;(async () => {
       try {
-        const out = await combinedWeeklyReview({
+        const data = await weeklyReviewData({
           weekLabel: label,
           goalLabel: settings ? GOAL_LABEL[settings.goal] : 'kein Ziel gesetzt',
           training: {
@@ -116,14 +136,16 @@ export function WeeklyReview() {
             : null,
           bodyweight,
         })
-        storeReview({ weekId, text: out, createdAt: new Date().toISOString() })
-        setText(out)
-        if (getSeenWeekId() !== weekId) setOpen(true)
+        const r: StoredReview = { weekId, text: '', createdAt: new Date().toISOString(), data, stats }
+        storeReview(r)
+        setReview(r)
+        if (getSeenWeekId() !== weekId) show()
       } catch {
         /* still im Hintergrund – nächster Öffnen-Versuch probiert erneut */
         tried.current = false
       }
     })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ai?.enabled, allSets, foodEntries, exercises, settings, weights, weightsLoading, showNutrition])
 
   // Buddy ist stolz, wenn die Vorwoche das (persönliche) Wochenziel erreicht hat.
@@ -137,12 +159,7 @@ export function WeeklyReview() {
     setOpen(false)
   }
 
-  if (!open || !text) return null
-
-  const paragraphs = text
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean)
+  if (!open || !review) return null
 
   return (
     <PremiumSheet
@@ -170,17 +187,7 @@ export function WeeklyReview() {
           </span>
         </div>
       )}
-      <div className="space-y-3 rounded-2xl bg-cream p-4">
-        {paragraphs.map((p, i) => (
-          <p
-            key={i}
-            className="whitespace-pre-wrap text-[15px] leading-relaxed text-cocoa"
-            style={{ animation: 'fade-in .3s ease-out both', animationDelay: `${120 + i * 70}ms` }}
-          >
-            {p}
-          </p>
-        ))}
-      </div>
+      <WeeklyReviewView review={review} />
     </PremiumSheet>
   )
 }

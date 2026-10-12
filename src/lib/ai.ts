@@ -2,6 +2,7 @@
 // Serverless-Funktion /api/ai (dort liegt der Key). Die Prompts sind nicht
 // geheim und leben deshalb hier — pro Feature ein typisierter Helfer.
 
+import { cleanReviewText, type ReviewData } from './weeklyReview'
 import { supabase } from './supabase'
 import { MUSCLE_GROUPS, type MuscleGroup, type Meal, type PlanDay, type ShoppingCat } from '../types'
 import { aiBegin, aiEnd } from './aiActivity'
@@ -235,6 +236,38 @@ export async function combinedWeeklyReview(input: WeeklyReviewInput): Promise<st
     '3) 🎯 Fokus nächste Woche: 2–3 konkrete, umsetzbare Empfehlungen.\n' +
     'Ehrlich aber motivierend, per „du". Nutze ein paar Emojis.'
   return complete({ system: coachSystem(), prompt, temperature: 0.5 })
+}
+
+/** Strukturiertes Wochenfazit (JSON) – die Zahlen zeigt die App selbst, die KI liefert Worte. */
+export async function weeklyReviewData(input: WeeklyReviewInput): Promise<ReviewData> {
+  const withFood = !!input.nutrition
+  const prompt =
+    `Wochendaten (JSON) für ${input.weekLabel}:\n${JSON.stringify(input)}\n\n` +
+    (withFood
+      ? 'Schreib ein Wochenfazit über Training UND Ernährung, abgestimmt auf das Ziel (goalLabel). '
+      : 'Schreib ein Wochenfazit NUR über das Training – erwähne Ernährung, Kalorien oder Eiweiß nicht. ') +
+    'Ehrlich, motivierend, per „du", kurz und konkret. KEIN Markdown, keine Sternchen, keine Aufzählungszeichen ' +
+    'im Text – höchstens 1 Emoji pro Feld. Antworte ausschließlich mit JSON im Format:\n' +
+    '{"headline":"max. 6 Wörter, knackig","summary":"1–2 Sätze Gesamteindruck",' +
+    '"training":"2–3 Sätze zu Sessions, Volumen, Rekorden, Auffälligkeiten",' +
+    `"nutrition":${withFood ? '"2–3 Sätze zu Kalorien-/Eiweißtreue und Gewichtstrend"' : 'null'},` +
+    '"wins":["2–3 kurze Dinge, die gut liefen (je max. 8 Wörter)"],' +
+    '"focus":["2–3 konkrete Ziele für nächste Woche (je max. 10 Wörter)"]}'
+  const text = await complete({ system: coachSystem(), prompt, json: true, temperature: 0.5 })
+  const r = parseJson<Partial<ReviewData>>(text)
+  const list = (v: unknown) =>
+    (Array.isArray(v) ? v : [])
+      .map((x) => cleanReviewText(String(x)))
+      .filter(Boolean)
+      .slice(0, 4)
+  return {
+    headline: cleanReviewText(String(r.headline ?? 'Deine Woche')),
+    summary: cleanReviewText(String(r.summary ?? '')),
+    training: cleanReviewText(String(r.training ?? '')),
+    nutrition: withFood && r.nutrition ? cleanReviewText(String(r.nutrition)) : null,
+    wins: list(r.wins),
+    focus: list(r.focus),
+  }
 }
 
 export interface ChatMsg {

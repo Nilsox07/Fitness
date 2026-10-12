@@ -7,10 +7,52 @@ import type { SetWithDate } from '../types'
 const KEY = 'weekly_review'
 const SEEN_KEY = 'weekly_review_seen'
 
+/** Strukturiertes Fazit von der KI (statt Fließtext mit Markdown). */
+export interface ReviewData {
+  /** Kurze Überschrift, z. B. „Starke Woche – 4 von 4 Trainings!" */
+  headline: string
+  /** 1–2 Sätze Gesamteindruck */
+  summary: string
+  training: string
+  /** null = Ernährung ausgeblendet */
+  nutrition: string | null
+  wins: string[]
+  focus: string[]
+}
+
+/** Von der App selbst berechnete Kennzahlen der Woche (keine KI). */
+export interface ReviewStats {
+  sessions: number
+  sessionGoal: number
+  volumeKg: number
+  prs: number
+  daysLogged: number | null
+  avgKcal: number | null
+  kcalTarget: number | null
+  avgProtein: number | null
+  proteinTarget: number | null
+  weightDelta: number | null
+}
+
 export interface StoredReview {
   weekId: string
+  /** Altes Format (Fließtext) – bleibt lesbar */
   text: string
   createdAt: string
+  data?: ReviewData
+  stats?: ReviewStats
+}
+
+/** Markdown-Reste (Sternchen, Rauten, Unterstriche) aus altem Fließtext entfernen. */
+export function cleanReviewText(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/^\s*[*-]\s+/gm, '• ')
+    .replace(/(^|\s)\*(\S[^*]*?)\*(?=\s|[.,!?]|$)/g, '$1$2')
+    .replace(/\*/g, '')
+    .trim()
 }
 
 /** ISO-Wochen-ID wie "2026-W38". */

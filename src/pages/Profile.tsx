@@ -51,6 +51,7 @@ import {
 } from '../lib/cosmetics'
 import { GoalEditor } from '../components/GoalEditor'
 import { getStoredReview } from '../lib/weeklyReview'
+import { WeeklyReviewView } from '../components/review/WeeklyReviewView'
 import { useNutritionSettings } from '../hooks/useNutrition'
 import { GOAL_LABEL } from '../lib/nutrition'
 import { Group, Row, SEG_TRACK, SubCard, SubHeader, TILE, Toggle, segBtn } from '../components/profile/ui'
@@ -253,7 +254,7 @@ export default function Profile() {
               {(() => {
                 const r = getStoredReview()
                 return r ? (
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{r.text}</p>
+                  <WeeklyReviewView review={r} />
                 ) : (
                   <p className="text-xs text-cocoa-light">{reviewHint}</p>
                 )
@@ -632,7 +633,7 @@ export default function Profile() {
           {(() => {
             const r = getStoredReview()
             return r ? (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-cocoa">{r.text}</p>
+              <WeeklyReviewView review={r} />
             ) : (
               <p className="text-xs text-cocoa-light">{reviewHint}</p>
             )
