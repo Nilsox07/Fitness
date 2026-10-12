@@ -505,6 +505,40 @@ export async function recipeFromPost(post: SharedPost | null, pastedText = ''): 
   return toImported(text, post?.source ?? 'Text', post?.url ?? null, post?.image ?? null)
 }
 
+export type ImportPhase = 'loading-post' | 'reading'
+
+/** Kompletter Import aus geteiltem Text/Link: Beitrag laden, dann Rezept erkennen. */
+export async function importRecipe(input: string, onPhase?: (p: ImportPhase) => void): Promise<ImportedRecipe> {
+  const value = input.trim()
+  const url = extractUrl(value)
+  const rest = url ? value.replace(url, '').trim() : value
+  let post: SharedPost | null = null
+  if (url) {
+    onPhase?.('loading-post')
+    post = await fetchSharedPost(url)
+  }
+  onPhase?.('reading')
+  // Längerer Zusatztext (z. B. kopierte Bildunterschrift) geht mit an die KI.
+  return recipeFromPost(post, rest.length > 20 ? rest : '')
+}
+
+/** Quelle aus einem Link erkennen (für die Ladeanzeige). */
+export function sourceLabel(text: string): string | null {
+  const url = extractUrl(text)
+  if (!url) return null
+  try {
+    const h = new URL(url).hostname
+    if (/tiktok\.com$/.test(h)) return 'TikTok'
+    if (/instagram\.com$/.test(h)) return 'Instagram'
+    if (/(youtube\.com|youtu\.be)$/.test(h)) return 'YouTube'
+    if (/pinterest\.|pin\.it$/.test(h)) return 'Pinterest'
+    if (/facebook\.com$|fb\.watch$/.test(h)) return 'Facebook'
+    return h.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+}
+
 /** Rezept aus einem Screenshot (z. B. Rezept-Slide aus Instagram oder Text im Video). */
 export async function recipeFromScreenshot(image: string): Promise<ImportedRecipe> {
   const system =

@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { endWorkout, touchWorkout } from '../lib/activeWorkout'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
 import { usePlans } from '../hooks/usePlans'
@@ -277,6 +278,7 @@ export default function Workout() {
     if (todaysWorkout || (creatingFor.current === today && !createWorkout.isError)) return false
     creatingFor.current = today
     createWorkout.mutate({ id: newId(), date: today })
+    touchWorkout(today)
     return true
   }
 
@@ -422,6 +424,7 @@ export default function Workout() {
   }
 
   function finishWorkout() {
+    endWorkout()
     // Nur erledigte Sätze zählen; ohne einen einzigen erledigten Satz kein Feed-Post.
     const done = (workoutSets ?? []).filter(isPerformed)
     if (isNew && done.length) {
@@ -787,6 +790,7 @@ export default function Workout() {
   }
 
   function onSetDone(exId: string, s: WorkoutSet) {
+    touchWorkout(today)
     const list = setsOf(exId)
     const idx = list.findIndex((x) => x.id === s.id)
     // Der gerade abgehakte Satz gilt als erledigt, auch wenn das (optimistische)

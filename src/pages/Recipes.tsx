@@ -17,6 +17,7 @@ import { ForYouCard, RecipeGridCard } from '../components/recipes/RecipeCards'
 import { RecipeDetailSheet, type RecipeDayContext } from '../components/recipes/RecipeDetailSheet'
 import { RecipeDiscover } from '../components/recipes/RecipeDiscover'
 import { ImportedRecipeSheet } from '../components/recipes/ImportedRecipeSheet'
+import { ShareImportOverlay } from '../components/recipes/ShareImportOverlay'
 import type { ImportedRecipe } from '../lib/ai'
 import type { RecommendContext } from '../lib/recipeRecommend'
 import {
@@ -208,6 +209,9 @@ function NewRecipes() {
   const [sheet, setSheet] = useState<CreateMode | null>(null)
   const [importText, setImportText] = useState('')
   const [imported, setImported] = useState<ImportedRecipe | null>(null)
+  // Über das Teilen-Menü gekommen → direkt Ladebildschirm statt Formular
+  const [shareText, setShareText] = useState<string | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
   const [params, setParams] = useSearchParams()
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -239,10 +243,13 @@ function NewRecipes() {
       }
     }
     if (!shared || aiPending) return // erst wissen, ob die KI verfügbar ist
-    setImportText(shared)
-    setSheet('link')
+    if (aiOn) setShareText(shared)
+    else {
+      setImportText(shared)
+      setSheet('link')
+    }
     if (params.get('import')) setParams({}, { replace: true })
-  }, [params, setParams, aiPending])
+  }, [params, setParams, aiPending, aiOn])
 
   // Neues eigenes Rezept gespeichert → „Meine Rezepte" zeigen.
   const prevMine = useRef<number | null>(null)
@@ -549,16 +556,40 @@ function NewRecipes() {
           initial={sheet}
           initialText={importText}
           aiEnabled={aiOn}
+          initialError={importError}
           onClose={() => {
             clearPendingImport()
             setSheet(null)
             setImportText('')
+            setImportError(null)
           }}
           onImported={(r) => {
             clearPendingImport()
             setSheet(null)
             setImportText('')
+            setImportError(null)
             setImported(r)
+          }}
+        />
+      )}
+      {shareText && (
+        <ShareImportOverlay
+          text={shareText}
+          onDone={(r) => {
+            clearPendingImport()
+            setShareText(null)
+            setImported(r)
+          }}
+          onError={(msg) => {
+            clearPendingImport()
+            setImportText(shareText)
+            setImportError(msg)
+            setShareText(null)
+            setSheet('link')
+          }}
+          onCancel={() => {
+            clearPendingImport()
+            setShareText(null)
           }}
         />
       )}

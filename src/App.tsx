@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { isWorkoutRunning } from './lib/activeWorkout'
 import { useAuth } from './lib/auth'
 import { usePrefs } from './lib/prefs'
 import { TabBar } from './components/TabBar'
@@ -43,6 +44,31 @@ export default function App() {
   useEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0
   }, [pathname, search])
+
+  // Startbereich: Die App wird meist zum Essen-Tracken geöffnet → Ernährung,
+  // außer es läuft gerade ein Training. Gilt beim Start und wenn die App nach
+  // längerer Pause (30 min) wieder in den Vordergrund kommt.
+  const navigate = useNavigate()
+  const startChecked = useRef(false)
+  const pathRef = useRef(pathname)
+  pathRef.current = pathname
+  useEffect(() => {
+    if (!session || !isNew || !showNutrition) return
+    const goHome = () => {
+      if (pathRef.current === '/' && !isWorkoutRunning()) navigate('/nutrition', { replace: true })
+    }
+    if (!startChecked.current) {
+      startChecked.current = true
+      goHome()
+    }
+    let hiddenAt = 0
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') hiddenAt = Date.now()
+      else if (hiddenAt && Date.now() - hiddenAt > 30 * 60 * 1000) goHome()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [session, isNew, showNutrition, navigate])
 
   // Top-Umschalter mit der aktuellen Seite synchron halten.
   useEffect(() => {

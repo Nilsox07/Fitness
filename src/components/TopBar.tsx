@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { MessageCircle, Sparkles, X } from "lucide-react";
+import { useAiStatus } from "../hooks/useAi";
 import { usePrefs, type World } from "../lib/prefs";
 import { BuddyFace } from "./buddy/BuddyFace";
 import { openBuddySheet } from "./buddy/BuddySheet";
@@ -55,10 +58,37 @@ function IconUser({ className = "h-5 w-5" }: { className?: string }) {
 /** Zielseite beim Welt-Wechsel (jeweils „Heute" der Welt). */
 const HOME: Record<World, string> = { fitness: "/", food: "/nutrition" };
 
+const HINT_KEY = "buddy_ai_hint_seen";
+
+function hintSeen(): boolean {
+  try {
+    return localStorage.getItem(HINT_KEY) === "1";
+  } catch {
+    return true;
+  }
+}
+
 export function TopBar() {
   const { world, setWorld, showNutrition } = usePrefs();
   const buddy = useBuddy();
   const navigate = useNavigate();
+  const { data: ai } = useAiStatus();
+  const aiOn = !!ai?.enabled;
+  const [showHint, setShowHint] = useState(() => !hintSeen());
+
+  function dismissHint() {
+    setShowHint(false);
+    try {
+      localStorage.setItem(HINT_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function openBuddy() {
+    dismissHint();
+    openBuddySheet();
+  }
 
   function switchTo(w: World) {
     if (w !== world) {
@@ -113,15 +143,21 @@ export function TopBar() {
             </button>
           </div>
         )}
-        {/* Buddy-Gesicht: öffnet das Buddy-Sheet (Stimmung, Tipps, Chat) */}
+        {/* Buddy = KI-Coach: öffnet das Buddy-Sheet (Stimmung, Tipps, Chat) */}
         <button
           type="button"
-          onClick={openBuddySheet}
-          aria-label="Buddy öffnen"
-          title={buddy.line}
+          onClick={openBuddy}
+          aria-label={aiOn ? "KI-Coach Buddy fragen" : "Buddy öffnen"}
+          title={aiOn ? "Frag Buddy – dein KI-Coach" : buddy.line}
           className="relative shrink-0 rounded-full bg-brand/15 ring-2 ring-brand/30 transition active:scale-90"
         >
           <BuddyFace size={36} mood={buddy.mood} stage={buddy.stage} skin={buddy.skin} />
+          {aiOn && (
+            <span className="absolute -bottom-1 -right-1.5 flex items-center gap-px rounded-full bg-brand px-1 py-px text-[9px] font-black leading-none text-on-brand shadow ring-2 ring-bg">
+              <Sparkles size={8} strokeWidth={3} />
+              KI
+            </span>
+          )}
         </button>
         <button
           type="button"
@@ -132,6 +168,34 @@ export function TopBar() {
           <IconUser />
         </button>
       </div>
+      {aiOn && showHint && (
+        <div className="anim-fade absolute right-14 top-full z-30 w-64">
+          <div className="relative rounded-2xl bg-cocoa p-3 pr-8 text-cream shadow-xl">
+            <span className="absolute -top-1.5 right-5 h-3 w-3 rotate-45 bg-cocoa" />
+            <button
+              type="button"
+              onClick={openBuddy}
+              className="flex items-start gap-2 text-left"
+            >
+              <MessageCircle size={18} className="mt-0.5 shrink-0 text-brand" />
+              <span>
+                <span className="block text-sm font-bold">Frag Buddy – deinen KI-Coach</span>
+                <span className="block text-xs opacity-80">
+                  Fragen zu Training, Essen & Plänen – oder einfach „Was soll ich heute essen?"
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={dismissHint}
+              aria-label="Hinweis schließen"
+              className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full opacity-70"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

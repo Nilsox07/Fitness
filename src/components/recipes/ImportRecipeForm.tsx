@@ -2,13 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ClipboardPaste, ExternalLink, Image as ImageIcon, Link2, Loader2, TriangleAlert } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
 import { useAddRecipe } from '../../hooks/useRecipes'
-import {
-  extractUrl,
-  fetchSharedPost,
-  recipeFromPost,
-  recipeFromScreenshot,
-  type ImportedRecipe,
-} from '../../lib/ai'
+import { importRecipe, recipeFromScreenshot, type ImportedRecipe } from '../../lib/ai'
 
 /** Bild verkleinern (spart KI-Kosten und Upload-Zeit). */
 function fileToDataUrl(file: File, maxDim = 1280): Promise<string> {
@@ -43,10 +37,13 @@ type Phase = 'idle' | 'loading-post' | 'reading' | 'done'
  */
 export function ImportRecipeForm({
   initialText = '',
+  initialError = null,
   onDone,
   onRecognized,
 }: {
   initialText?: string
+  /** Fehler aus dem Lade-Bildschirm (dann nicht automatisch neu starten) */
+  initialError?: string | null
   onDone: () => void
   /** Erkanntes Rezept an die große Detail-Ansicht übergeben (statt Vorschau hier) */
   onRecognized?: (r: ImportedRecipe) => void
@@ -55,7 +52,7 @@ export function ImportRecipeForm({
   const addRecipe = useAddRecipe()
   const [text, setText] = useState(initialText)
   const [phase, setPhase] = useState<Phase>('idle')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(initialError)
   const [recipe, setRecipe] = useState<ImportedRecipe | null>(null)
   const started = useRef(false)
   const busy = phase === 'loading-post' || phase === 'reading'
@@ -66,16 +63,7 @@ export function ImportRecipeForm({
     setError(null)
     setRecipe(null)
     try {
-      const url = extractUrl(value)
-      const rest = url ? value.replace(url, '').trim() : value
-      let post = null
-      if (url) {
-        setPhase('loading-post')
-        post = await fetchSharedPost(url)
-      }
-      setPhase('reading')
-      // Längerer Zusatztext (z. B. kopierte Bildunterschrift) geht mit an die KI.
-      show(await recipeFromPost(post, rest.length > 20 ? rest : ''))
+      show(await importRecipe(value, setPhase))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Import fehlgeschlagen')
       setPhase('idle')
@@ -103,7 +91,7 @@ export function ImportRecipeForm({
 
   // Über das Teilen-Menü geöffnet → direkt loslegen.
   useEffect(() => {
-    if (started.current || !initialText.trim()) return
+    if (started.current || !initialText.trim() || initialError) return
     started.current = true
     void run(initialText)
     // eslint-disable-next-line react-hooks/exhaustive-deps

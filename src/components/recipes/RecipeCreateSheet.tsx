@@ -12,6 +12,7 @@ export type CreateMode = 'menu' | 'ai' | 'manual' | 'link'
 export function RecipeCreateSheet({
   initial = 'menu',
   initialText = '',
+  initialError = null,
   aiEnabled,
   onClose,
   onImported,
@@ -19,6 +20,7 @@ export function RecipeCreateSheet({
   initial?: CreateMode
   /** Geteilter Text/Link (Teilen-Menü) für den Import */
   initialText?: string
+  initialError?: string | null
   aiEnabled: boolean
   onClose: () => void
   /** Erkanntes Import-Rezept in der großen Ansicht zeigen */
@@ -64,7 +66,12 @@ export function RecipeCreateSheet({
       )}
       {mode === 'ai' && <AiRecipeForm onDone={onClose} />}
       {mode === 'manual' && <ManualRecipeForm onDone={onClose} />}
-      {mode === 'link' && <ImportRecipeForm initialText={initialText} onDone={onClose} onRecognized={onImported} />}
+      {mode === 'link' && <ImportRecipeForm
+          initialText={initialText}
+          initialError={initialError}
+          onDone={onClose}
+          onRecognized={onImported}
+        />}
     </Sheet>
   )
 }
