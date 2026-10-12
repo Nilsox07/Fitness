@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { enter } from '../home/motion'
 import { ProgressSwitch } from '../ProgressSwitch'
+import { TabHeader } from '../ui/TabHeader'
 
-/** Kopf des Fortschritt-Tabs: großer Titel + Untertitel, rechts ein Slot, darunter Verlauf | Statistik. */
+/** Kopf des Fortschritt-Tabs: einheitlicher Tab-Kopf (Zeitraum rechts), darunter Training · Ernährung · Erfolge. */
 export function ProgressHeader({
   title,
   subtitle,
@@ -14,14 +15,8 @@ export function ProgressHeader({
 }) {
   return (
     <div className="space-y-3" style={enter(0)}>
-      <header className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-bold tracking-tight">{title}</h1>
-          {subtitle && <p className="tabular truncate text-sm text-cocoa-light">{subtitle}</p>}
-        </div>
-        {action && <div className="shrink-0">{action}</div>}
-      </header>
-      <ProgressSwitch />
+      <TabHeader overline={subtitle} title={title} />
+      <ProgressSwitch extra={action} />
     </div>
   )
 }

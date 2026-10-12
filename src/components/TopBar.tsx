@@ -1,26 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, Sparkles } from "lucide-react";
-import { useAiStatus } from "../hooks/useAi";
-import { BuddyFace } from "./buddy/BuddyFace";
-import { openBuddySheet } from "./buddy/BuddySheet";
-import { useBuddy } from "./buddy/useBuddy";
-
-function IconUser({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="8" r="3.5" />
-      <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
-    </svg>
-  );
-}
+import { ChevronLeft } from "lucide-react";
 
 /** Bereich (Tab) bzw. übergeordnete Seite zur aktuellen Route – für Titel und Zurück-Pfeil. */
 type NavInfo = { title: string; back?: { to: string; label: string } }
@@ -44,64 +23,31 @@ export function navInfo(pathname: string, search = ""): NavInfo {
   return { title: "" };
 }
 
+/**
+ * Schmale Zurück-Zeile – nur auf Unterseiten (Rezepte, Pläne, Verlauf, Profil …).
+ * Hauptseiten haben keine eigene Leiste: Buddy & Profil sitzen dort in der
+ * Titelzeile (TabHeader), damit der Inhalt höher beginnt.
+ */
 export function TopBar() {
-  const buddy = useBuddy();
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const nav = navInfo(pathname, search);
   // Profil-Unterseiten (?s=…) gehen zurück zur Profil-Übersicht
   const back = pathname === "/profile" && search.includes("s=") ? { to: "/profile", label: "Profil" } : nav.back;
-  const { data: ai } = useAiStatus();
-  const aiOn = !!ai?.enabled;
-
-  function openBuddy() {
-    openBuddySheet();
-  }
+  if (!back) return null;
 
   return (
     <header className="sticky top-0 z-20 bg-bg/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="flex items-center gap-2 py-2.5">
-        {/* Links: Bereichstitel bzw. Zurück zur übergeordneten Seite */}
-        {back ? (
-          <button
-            type="button"
-            onClick={() =>
-              back.to ? navigate(back.to, { replace: back.to === "/profile" || back.to === "/plans" }) : navigate(-1)
-            }
-            className="-ml-1 flex min-w-0 flex-1 items-center gap-0.5 py-1 text-base font-semibold text-brand"
-          >
-            <ChevronLeft size={22} strokeWidth={2.5} className="shrink-0" />
-            <span className="truncate">{back.label}</span>
-          </button>
-        ) : (
-          // Hauptseiten haben ihre eigene große Überschrift → hier frei lassen
-          <div className="flex-1" />
-        )}
-        {/* Buddy = KI-Coach: öffnet das Buddy-Sheet (Stimmung, Tipps, Chat) */}
+      <div className="flex items-center py-1.5">
         <button
           type="button"
-          onClick={openBuddy}
-          aria-label={aiOn ? "KI-Coach Buddy fragen" : "Buddy öffnen"}
-          title={aiOn ? "Frag Buddy – dein KI-Coach" : buddy.line}
-          className={`relative flex shrink-0 items-center gap-1.5 rounded-full transition active:scale-95 ${
-            aiOn ? "bg-brand/10 py-0.5 pl-0.5 pr-3 ring-1 ring-brand/25" : "bg-brand/15 ring-2 ring-brand/30"
-          }`}
+          onClick={() =>
+            back.to ? navigate(back.to, { replace: back.to === "/profile" || back.to === "/plans" }) : navigate(-1)
+          }
+          className="-ml-1 flex min-w-0 items-center gap-0.5 py-1.5 pr-3 text-base font-semibold text-brand"
         >
-          <BuddyFace size={aiOn ? 32 : 36} mood={buddy.mood} stage={buddy.stage} skin={buddy.skin} />
-          {aiOn && (
-            <span className="flex items-center gap-1 text-sm font-semibold text-brand">
-              <Sparkles size={14} strokeWidth={2.5} />
-              Frag Buddy
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate("/profile")}
-          aria-label="Profil"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa"
-        >
-          <IconUser />
+          <ChevronLeft size={22} strokeWidth={2.5} className="shrink-0" />
+          <span className="truncate">{back.label}</span>
         </button>
       </div>
     </header>

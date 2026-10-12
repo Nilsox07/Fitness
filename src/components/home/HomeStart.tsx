@@ -30,6 +30,8 @@ import { RestDayCard } from './RestDayCard'
 import { RhythmPrompt } from './RhythmPrompt'
 import { enter } from './motion'
 import { ToolTiles } from './ToolTiles'
+import { CustomizeHome } from './CustomizeHome'
+import { useHomeCards } from '../../lib/homeCards'
 import { ClipboardList, Dumbbell, Timer } from 'lucide-react'
 
 const SKIP_MUSCLES = new Set<MuscleGroup>(['Sonstige', 'Ganzkörper'])
@@ -59,6 +61,7 @@ export function HomeStart({
   onStartPlan: (p: PlanWithExercises) => void
   onStartFree: () => void
 }) {
+  const [homeCards] = useHomeCards()
   const { data: workouts } = useWorkouts()
   const { data: allSets } = useAllSets()
   const { data: exercises } = useExercises()
@@ -185,10 +188,11 @@ export function HomeStart({
           { to: '/quick', label: 'Home-Workout', sub: 'Ohne Geräte', Icon: Timer },
         ]}
       />
-      <RecoveryCard items={muscleStates} index={++i} />
-      {last && <LastWorkoutCard stats={last} today={today} names={lastNames} index={++i} />}
-      <NutritionRow allSets={allSets} index={++i} />
-      <ChallengeCard index={++i} />
+      {homeCards.recovery && <RecoveryCard items={muscleStates} index={++i} />}
+      {homeCards.lastWorkout && last && <LastWorkoutCard stats={last} today={today} names={lastNames} index={++i} />}
+      {homeCards.nutrition && <NutritionRow allSets={allSets} index={++i} />}
+      {homeCards.challenge && <ChallengeCard index={++i} />}
+      <CustomizeHome area="training" />
     </div>
   )
 }

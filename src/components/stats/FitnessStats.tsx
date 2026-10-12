@@ -27,6 +27,7 @@ import { BuddyLevelUp } from '../buddy/BuddyLevelUp'
 import { useBuddyLevel } from '../buddy/useBuddy'
 import { enter } from '../home/motion'
 import { ProgressHeader, SectionLabel, Segmented } from '../progress/ProgressHeader'
+import { useProgressPeriod } from '../../lib/progressPeriod'
 import { StatsHero } from '../progress/StatsHero'
 import { MuscleBalance } from '../progress/MuscleBalance'
 import { MiniSpark } from '../progress/Sparklines'
@@ -64,7 +65,7 @@ interface ExerciseRow {
 
 export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]; exercises: Exercise[] }) {
   const navigate = useNavigate()
-  const [period, setPeriod] = useState<Period>('month')
+  const [period, setPeriod] = useProgressPeriod()
   // „Heute" = Trainings-Tag (Wechsel um 4 Uhr, wie im Training)
   const today = trainingDay()
   // Nur ausgeführte Sätze — leere Vorlagen-Sätze (0 Wdh) zählen nirgends.

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Bell,
+  CalendarClock,
   ChevronRight,
   Drumstick,
   Flame,
@@ -29,12 +30,13 @@ import { InboxSheet } from '../components/social/InboxSheet'
 import { useInbox } from '../hooks/useInbox'
 import { FriendSheet } from '../components/social/FriendSheet'
 import { LeaderboardSection } from '../components/social/LeaderboardSection'
-import { SharedRecipesRow } from '../components/social/SharedRecipesRow'
 import { InviteCard } from '../components/social/InviteCard'
-import { PageHeader, SectionTitle } from '../components/community/ui'
+import { SectionTitle } from '../components/community/ui'
+import { TabHeader } from '../components/ui/TabHeader'
 import {
   buildDigest,
   communitySubtitle,
+  shortName,
   daysLeftLabel,
   enter,
   PROTEIN_TEAM_DAYS,
@@ -563,6 +565,7 @@ export default function Social() {
   const digest = useMemo(() => buildDigest(activities ?? [], user?.id), [activities, user?.id])
   const latest = useMemo(() => digest.slice(0, 5), [digest])
   const [inboxOpen, setInboxOpen] = useState(false)
+  const [gymOpen, setGymOpen] = useState(false)
   const { unread } = useInbox()
   const kudosGiven = useMemo(
     () => new Set((kudos ?? []).filter((k) => k.from_user === user?.id).map((k) => k.to_user)),
@@ -621,6 +624,16 @@ export default function Social() {
     )
   }
 
+  // Kurzfassung für den Gym-Treff-Knopf: wer heute wann geht
+  const gymSummary = (() => {
+    const going = (friends as Person[])
+      .map((u) => ({ u, plan: planToday(u, today) }))
+      .filter((x) => x.plan && !/nicht/i.test(x.plan))
+    const mine = planToday(mePerson, today)
+    if (going.length)
+      return `${shortName(going[0].u.display_name)}: ${going[0].plan}${going.length > 1 ? ` +${going.length - 1}` : ''}`
+    return mine ? `Du: ${mine}` : 'Wann gehst du heute?'
+  })()
   const hasFriends = friends.length > 0
   const allLink =
     digest.length > 0 ? (
@@ -632,9 +645,9 @@ export default function Social() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
+      <TabHeader
+        overline={communitySubtitle(friends as Person[], 'fitness', today)}
         title="Community"
-        subtitle={communitySubtitle(friends as Person[], 'fitness', today)}
         style={enter(0)}
         action={
           <div className="flex gap-2">
@@ -660,6 +673,21 @@ export default function Social() {
           </div>
         }
       />
+
+      {hasFriends && (
+        <button
+          className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left transition active:scale-[0.99]"
+          onClick={() => setGymOpen(true)}
+          style={enter(1)}
+        >
+          <CalendarClock size={18} className="shrink-0 text-brand" />
+          <span className="min-w-0 flex-1 truncate text-sm">
+            <span className="font-semibold text-cocoa">Gym-Treff</span>
+            <span className="text-cocoa-light"> · {gymSummary}</span>
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
+        </button>
+      )}
 
       <div style={enter(1)}>
         <FriendsRow
@@ -720,25 +748,33 @@ export default function Social() {
                 tone="success"
               />
             )}
+            <LeaderboardSection
+              people={people}
+              meId={mePerson.user_id}
+              today={today}
+              combined
+              withFood={showNutrition}
+              defaultOpen
+              kudosReceived={kudosReceived}
+              kudosGiven={kudosGiven}
+              onKudos={(id) => giveKudos.mutate(id)}
+            />
           </WeekCarousel>
-          <LeaderboardSection
-            people={people}
-            meId={mePerson.user_id}
-            today={today}
-            combined
-            withFood={showNutrition}
-            kudosReceived={kudosReceived}
-            kudosGiven={kudosGiven}
-            onKudos={(id) => giveKudos.mutate(id)}
-          />
         </section>
       )}
 
-      {hasFriends && (
-        <section style={enter(3)}>
-          <SectionTitle>Gym-Treff</SectionTitle>
-          <GymMeetCard compact me={mePerson} friends={friends} today={today} onOpenFriend={(u) => setOpenId(u.user_id)} />
-        </section>
+      {gymOpen && (
+        <Sheet title="Gym-Treff" onClose={() => setGymOpen(false)}>
+          <GymMeetCard
+            me={mePerson}
+            friends={friends}
+            today={today}
+            onOpenFriend={(u) => {
+              setGymOpen(false)
+              setOpenId(u.user_id)
+            }}
+          />
+        </Sheet>
       )}
 
       <section style={enter(4)}>
@@ -765,7 +801,6 @@ export default function Social() {
         )}
       </section>
 
-      {hasFriends && showNutrition && <SharedRecipesRow style={enter(5)} />}
 
       {inboxOpen && <InboxSheet people={people} today={today} onClose={() => setInboxOpen(false)} />}
 

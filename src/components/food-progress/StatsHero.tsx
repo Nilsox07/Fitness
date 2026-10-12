@@ -43,7 +43,7 @@ export function StatsHero({
 
       <div className="relative">
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-          <Sparkles size={13} className="text-brand" />Ø kcal / Tag · {windowDays} Tage
+          <Sparkles size={13} className="text-brand" />Ø kcal / Tag · {windowDays} {windowDays === 1 ? 'Tag' : 'Tage'}
         </p>
 
         <div className="mt-1 flex items-center justify-between gap-3">
@@ -79,7 +79,7 @@ export function StatsHero({
         <div className="tabular mt-4 flex flex-wrap items-center gap-1.5 text-xs">
           {n === 0 ? (
             <span className="text-bg/70 dark:text-cocoa-light">
-              Noch kein abgeschlossener Tag in den letzten {windowDays} Tagen.
+              Noch kein abgeschlossener Tag in diesem Zeitraum.
             </span>
           ) : (
             <>

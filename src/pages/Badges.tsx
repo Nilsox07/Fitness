@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProgressSwitch } from '../components/ProgressSwitch'
+import { TabHeader } from '../components/ui/TabHeader'
 import { Check, ChevronLeft, Lock } from 'lucide-react'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
@@ -160,10 +161,10 @@ function BuddyPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <h1 className="text-2xl font-bold tracking-tight">Fortschritt</h1>
+      <div className="space-y-3">
+        <TabHeader overline="Level, Meilensteine & Freischaltungen" title="Fortschritt" />
         <ProgressSwitch />
-      </header>
+      </div>
 
       {/* Hero: großer Buddy + Level + XP */}
       <section className="card flex flex-col items-center text-center">

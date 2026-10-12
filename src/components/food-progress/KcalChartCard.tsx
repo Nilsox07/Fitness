@@ -10,8 +10,12 @@ export function KcalChartCard({
   data,
   showTarget,
   style,
+  title = 'Kalorien pro Tag',
+  right,
 }: {
   data: KcalDay[]
+  title?: string
+  right?: string
   showTarget: boolean
   style?: CSSProperties
 }) {
@@ -27,7 +31,7 @@ export function KcalChartCard({
   }
   return (
     <section style={style}>
-      <SectionTitle right={`${data.length} Tage`}>Kalorien pro Tag</SectionTitle>
+      <SectionTitle right={right ?? `${data.length} Tage`}>{title}</SectionTitle>
       <div className="card px-2 pb-2 pt-3">
         <ResponsiveContainer width="100%" height={180}>
           <ComposedChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: 0 }}>

@@ -11,10 +11,12 @@ import { KcalChartCard } from '../food-progress/KcalChartCard'
 import { WeightTrendCard } from '../food-progress/WeightTrendCard'
 import { ProteinDotsCard } from '../food-progress/ProteinDotsCard'
 import { NutritionGameCard } from '../food-progress/NutritionGameCard'
-import { PageHeader } from '../food-progress/ui'
+import { ProgressHeader, Segmented } from '../progress/ProgressHeader'
 import { useNutritionPrefs } from '../../hooks/usePrefsSync'
-
-const WINDOW = 14
+import { useProgressPeriod } from '../../lib/progressPeriod'
+import { periodRange, PERIOD_LABELS, type Period } from '../../lib/periods'
+import { daysBetween } from '../social/format'
+import { isoWeekNumber, MONTHS_LONG } from '../progress/progressUtils'
 
 const ddmm = (date: string) => `${date.slice(8, 10)}.${date.slice(5, 7)}`
 
@@ -25,6 +27,8 @@ export function FoodStats() {
   const { data: settings } = useNutritionSettings()
   const { data: allSets } = useAllSets()
   const today = localDate()
+  const [period, setPeriod] = useProgressPeriod()
+  const range = useMemo(() => periodRange(period, today), [period, today])
   const proteinTarget = settings?.protein_target ?? 0
   const hasKcalTarget = kcalTargetFor(settings, false) > 0
 
@@ -33,27 +37,33 @@ export function FoodStats() {
     const trainedDates = new Set((allSets ?? []).map((s) => s.date))
     // Kalorienziel je Tag (inkl. Trainingsbonus) — gleiche Regel wie auf der Ernährungsseite.
     const targetOn = (date: string) => kcalTargetFor(settings, trainedDates.has(date), kcalBonus)
-    // Ø nur über abgeschlossene Tage mit Einträgen (ohne heute, ohne Lücken)
-    const complete = [...days.entries()].filter(([d]) => d >= shiftDate(today, -WINDOW) && d < today)
+    // Ø nur über abgeschlossene Tage mit Einträgen im Zeitraum (ohne heute, ohne Lücken)
+    const complete = [...days.entries()].filter(([d]) => d >= range.start && d < today)
     const n = complete.length
     const avg = (f: (v: (typeof complete)[number][1]) => number) =>
       n ? Math.round(complete.reduce((s, [, v]) => s + f(v), 0) / n) : null
     // Ø-Ziel über dieselben Tage (ohne Tage → Ziel von heute)
     const avgTarget = n ? Math.round(complete.reduce((s, [d]) => s + targetOn(d), 0) / n) : targetOn(today)
     const inTarget = complete.filter(([d, v]) => kcalStatus(v.kcal, targetOn(d), true) === 'ok').length
-    const from = shiftDate(today, -(WINDOW - 1))
-    const data = Array.from({ length: WINDOW }, (_, i) => {
-      const date = shiftDate(from, i)
+    // Woche/Monat: ein Balken pro Tag des Zeitraums. Jahr: Ø pro Woche (sonst 365 Balken).
+    const dayBar = (date: string) => {
       const v = days.get(date)
       const target = targetOn(date)
-      return {
-        date,
-        label: ddmm(date),
-        kcal: v ? Math.round(v.kcal) : 0,
-        target: target > 0 ? target : null,
-        today: date === today,
+      return { date, label: ddmm(date), kcal: v ? Math.round(v.kcal) : 0, target: target > 0 ? target : null, today: date === today }
+    }
+    let data
+    if (period === 'year') {
+      data = []
+      for (let w = range.start; w <= today; w = shiftDate(w, 7)) {
+        const span = Array.from({ length: 7 }, (_, i) => shiftDate(w, i)).filter((d) => d <= today && days.has(d))
+        const kcal = span.length ? Math.round(span.reduce((s2, d) => s2 + (days.get(d)?.kcal ?? 0), 0) / span.length) : 0
+        const target = targetOn(w)
+        data.push({ date: w, label: ddmm(w), kcal, target: target > 0 ? target : null, today: shiftDate(w, 7) > today })
       }
-    })
+    } else {
+      data = Array.from({ length: daysBetween(range.start, range.periodEnd) + 1 }, (_, i) => dayBar(shiftDate(range.start, i)))
+    }
+    const elapsed = daysBetween(range.start, today) + 1
     return {
       n,
       avgKcal: avg((v) => v.kcal),
@@ -63,21 +73,33 @@ export function FoodStats() {
       avgTarget,
       inTarget,
       data,
-      dots: proteinDots(days, today, proteinTarget, WINDOW),
+      elapsed,
+      dots: proteinDots(days, today, proteinTarget, Math.min(elapsed, 31)),
       streak: proteinStreak(days, today, proteinTarget),
       hasAny: days.size > 0,
     }
-  }, [entries, settings, allSets, today, proteinTarget, kcalBonus])
+  }, [entries, settings, allSets, today, proteinTarget, kcalBonus, range, period])
+
+  const [, sm] = range.start.split('-').map(Number)
+  const periodName =
+    period === 'week' ? `KW ${isoWeekNumber(range.start)}` : period === 'month' ? MONTHS_LONG[sm - 1] : range.start.slice(0, 4)
 
   if (isLoading) return <p className="text-cocoa-light">Lädt…</p>
 
   let i = 1
   return (
     <div className="space-y-5">
-      <PageHeader
+      <ProgressHeader
         title="Fortschritt"
-        subtitle={stats.hasAny ? `Letzte ${WINDOW} Tage` : undefined}
-        style={stagger(0)}
+        subtitle={`${periodName} · ${stats.n} ${stats.n === 1 ? 'Tag' : 'Tage'} erfasst`}
+        action={
+          <Segmented
+            label="Zeitraum"
+            value={period}
+            onChange={setPeriod}
+            options={(Object.keys(PERIOD_LABELS) as Period[]).map((p) => ({ value: p, label: PERIOD_LABELS[p] }))}
+          />
+        }
       />
 
       {!stats.hasAny && (
@@ -87,7 +109,7 @@ export function FoodStats() {
       {stats.hasAny && (
         <>
           <StatsHero
-            windowDays={WINDOW}
+            windowDays={stats.elapsed}
             n={stats.n}
             avgKcal={stats.avgKcal}
             avgTarget={stats.avgTarget}
@@ -111,7 +133,13 @@ export function FoodStats() {
             />
           )}
 
-          <KcalChartCard data={stats.data} showTarget={hasKcalTarget} style={stagger(i++)} />
+          <KcalChartCard
+            data={stats.data}
+            showTarget={hasKcalTarget}
+            title={period === 'year' ? 'Ø Kalorien pro Woche' : 'Kalorien pro Tag'}
+            right={period === 'year' ? `${stats.data.length} Wochen` : periodName}
+            style={stagger(i++)}
+          />
 
           {proteinTarget > 0 && (
             <ProteinDotsCard

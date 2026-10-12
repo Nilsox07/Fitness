@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import {
   Bot,
   Camera,
@@ -98,6 +98,9 @@ import { dayLabel } from '../lib/day'
 import type { FoodEntry } from '../types'
 import { useNutritionPrefs } from '../hooks/usePrefsSync'
 import { ToolTiles } from '../components/home/ToolTiles'
+import { TabHeader } from '../components/ui/TabHeader'
+import { CustomizeHome } from '../components/home/CustomizeHome'
+import { useHomeCards } from '../lib/homeCards'
 import { fluidOf } from '../lib/fluid'
 import { ChainBadge, ChainMenu } from '../components/food/ChainMenu'
 import { CHAIN_BADGE, findChain, loadChains, menuItemToEstimate, suggestCombo, type Chain } from '../lib/fastfood'
@@ -360,6 +363,7 @@ export default function Nutrition() {
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null)
   const { data: settings } = useNutritionSettings()
   const diet = useDietStyle()
+  const [homeCards] = useHomeCards()
   const dietLabel = dietShortLabel(diet)
   const { data: entries } = useFoodEntries(today)
   const { data: allEntries } = useAllFoodEntries()
@@ -973,35 +977,29 @@ export default function Nutrition() {
 
       {isNew ? (
         <>
-          <header className="flex items-start justify-between gap-2" style={stagger(0)}>
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold tracking-tight">{isToday ? 'Heute' : dayLabel(today, realToday)}</h1>
-              <p className="text-sm text-cocoa-light">
-                {new Date(`${today}T12:00:00`).toLocaleDateString('de-DE', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
-              </p>
-              {dietLabel && (
-                <Link
-                  to="/profile?s=goal"
-                  className="mt-1.5 inline-flex max-w-full items-center rounded-full bg-sand px-2.5 py-0.5 text-xs font-semibold text-cocoa transition active:scale-95"
-                  title="Ernährungsweise ändern"
-                >
-                  <span className="truncate">{dietLabel}</span>
-                </Link>
-              )}
-            </div>
-            <button
-              className="grid h-10 w-10 place-items-center rounded-full bg-cream text-cocoa transition active:scale-90"
-              onClick={openSetup}
-              aria-label={hasTarget ? 'Ziel bearbeiten' : 'Ziel festlegen'}
-              title="Ziel"
-            >
-              <Target size={20} />
-            </button>
-          </header>
+          <TabHeader
+            style={stagger(0)}
+            overline={
+              isToday
+                ? new Date(`${today}T12:00:00`).toLocaleDateString('de-DE', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })
+                : dayLabel(today, realToday)
+            }
+            title="Ernährung"
+            action={
+              <button
+                className="flex max-w-[11rem] items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
+                onClick={openSetup}
+                aria-label={hasTarget ? 'Ziel & Ernährungsweise bearbeiten' : 'Ziel festlegen'}
+              >
+                <Target size={15} className="shrink-0 text-brand" />
+                <span className="truncate">{dietLabel || (hasTarget ? 'Ziel' : 'Ziel festlegen')}</span>
+              </button>
+            }
+          />
 
           <WeekStrip
             date={today}
@@ -1058,8 +1056,6 @@ export default function Nutrition() {
             style={stagger(2)}
           />
 
-          <RecentChips items={recent} onAdd={quickAdd} style={stagger(3)} />
-
           {isToday && (
             <ToolTiles
               style={stagger(3)}
@@ -1070,6 +1066,8 @@ export default function Nutrition() {
               ]}
             />
           )}
+
+          {homeCards.recent && <RecentChips items={recent} onAdd={quickAdd} style={stagger(3)} />}
 
           <div className="space-y-3">
             {MEALS.map((meal, i) => (
@@ -1089,7 +1087,8 @@ export default function Nutrition() {
           </div>
 
           <WaterRow date={today} style={stagger(8)} />
-          {isToday && <BodyWeightCard />}
+          {isToday && homeCards.weight && <BodyWeightCard />}
+          {isToday && <CustomizeHome area="food" />}
         </>
       ) : (
         <>

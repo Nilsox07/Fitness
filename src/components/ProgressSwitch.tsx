@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Apple, CalendarDays, ChevronRight, Dumbbell, Trophy } from 'lucide-react'
 import { usePrefs } from '../lib/prefs'
@@ -7,7 +8,7 @@ import { usePrefs } from '../lib/prefs'
  * Der Verlauf ist eine Unterseite (Knopf darunter), damit es nur eine
  * Auswahlleiste gibt.
  */
-export function ProgressSwitch() {
+export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
   const { world, setWorld, showNutrition } = usePrefs()
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -47,17 +48,17 @@ export function ProgressSwitch() {
         ))}
       </div>
       {!onBadges && (
-        <Link
-          to="/history"
-          className="flex items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-sm transition active:scale-[0.99]"
-        >
-          <CalendarDays size={18} className="text-brand" />
-          <span className="flex-1 font-semibold text-cocoa">
-            {world === 'food' ? 'Alle Ernährungstage' : 'Alle Trainings'}
-          </span>
-          <span className="text-xs text-cocoa-muted">Verlauf</span>
-          <ChevronRight size={16} className="text-cocoa-muted" />
-        </Link>
+        <div className="flex items-center justify-between gap-2">
+          {extra ?? <span />}
+          <Link
+            to="/history"
+            className="flex items-center gap-1 rounded-full bg-cream px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
+          >
+            <CalendarDays size={15} className="text-brand" />
+            {world === 'food' ? 'Alle Tage' : 'Verlauf'}
+            <ChevronRight size={15} className="text-cocoa-muted" />
+          </Link>
+        </div>
       )}
     </div>
   )

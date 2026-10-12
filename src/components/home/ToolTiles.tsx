@@ -9,23 +9,18 @@ export interface ToolTile {
   Icon: LucideIcon
 }
 
-/** Drei große Kacheln zu den Werkzeugen eines Bereichs (eine Ebene tiefer, Zurück oben links). */
+/** Werkzeuge eines Bereichs als schmale Zeile (eine Ebene tiefer, Zurück oben links). */
 export function ToolTiles({ items, style }: { items: ToolTile[]; style?: CSSProperties }) {
   return (
-    <nav className="grid grid-cols-3 gap-2" style={style} aria-label="Werkzeuge">
-      {items.map(({ to, label, sub, Icon }) => (
+    <nav className="flex gap-2" style={style} aria-label="Werkzeuge">
+      {items.map(({ to, label, Icon }) => (
         <Link
           key={to}
           to={to}
-          className="flex flex-col items-start gap-2 rounded-2xl bg-cream p-3 transition active:scale-[0.97]"
+          className="flex min-w-0 flex-auto items-center justify-center gap-1 whitespace-nowrap rounded-full bg-cream px-2.5 py-2.5 text-[13px] font-semibold text-cocoa transition active:scale-[0.97]"
         >
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10 text-brand">
-            <Icon size={19} />
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold text-cocoa">{label}</span>
-            {sub && <span className="block truncate text-[11px] text-cocoa-muted">{sub}</span>}
-          </span>
+          <Icon size={15} className="shrink-0 text-brand" />
+          <span>{label}</span>
         </Link>
       ))}
     </nav>
