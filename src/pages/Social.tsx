@@ -29,8 +29,8 @@ import { WeekCarousel } from '../components/social/WeekCarousel'
 import { InboxSheet } from '../components/social/InboxSheet'
 import { useInbox } from '../hooks/useInbox'
 import { FriendSheet } from '../components/social/FriendSheet'
-import { LeaderboardSection } from '../components/social/LeaderboardSection'
 import { StakeCard } from '../components/social/StakeCard'
+import { LeaderboardHero } from '../components/social/LeaderboardHero'
 import { useChallenges } from '../hooks/useChallenges'
 import { weekStartOf } from '../lib/stakes'
 import { InviteCard } from '../components/social/InviteCard'
@@ -761,14 +761,11 @@ export default function Social() {
                 tone="success"
               />
             )}
-            <LeaderboardSection
+            <LeaderboardHero
               people={people}
               meId={mePerson.user_id}
               today={today}
-              combined
               withFood={showNutrition}
-              defaultOpen
-              kudosReceived={kudosReceived}
               kudosGiven={kudosGiven}
               onKudos={(id) => giveKudos.mutate(id)}
             />

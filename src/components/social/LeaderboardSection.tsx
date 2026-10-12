@@ -8,22 +8,59 @@ import { Avatar } from './Avatar'
 import { buddyLook, proteinToday, type Person } from './format'
 
 // Reihenfolge = faire Kennzahlen zuerst; Volumen (kraftabhängig) zuletzt.
-type FitnessMetric = 'monthly_prs' | 'total_sessions' | 'week_streak' | 'level' | 'weekly_volume'
-type FoodMetric = 'protein_days' | 'protein_today' | 'level'
-type Metric = FitnessMetric | FoodMetric
+export type FitnessMetric = 'monthly_prs' | 'total_sessions' | 'week_streak' | 'level' | 'weekly_volume'
+export type FoodMetric = 'protein_days' | 'protein_today' | 'level'
+export type Metric = FitnessMetric | FoodMetric
 
-const FITNESS: { id: FitnessMetric; label: string }[] = [
+export const FITNESS: { id: FitnessMetric; label: string }[] = [
   { id: 'monthly_prs', label: 'Fortschritt' },
   { id: 'total_sessions', label: 'Trainings' },
   { id: 'week_streak', label: 'Streak' },
   { id: 'level', label: 'Level' },
   { id: 'weekly_volume', label: 'Volumen' },
 ]
-const FOOD: { id: FoodMetric; label: string }[] = [
+export const FOOD: { id: FoodMetric; label: string }[] = [
   { id: 'protein_days', label: 'Eiweiß-Tage' },
   { id: 'protein_today', label: 'Eiweiß heute' },
   { id: 'level', label: 'Level' },
 ]
+
+/** Wert einer Person für eine Kennzahl (Wochen-/Monatswerte nur aus dem aktuellen Zeitraum). */
+export function metricValue(metric: Metric, u: Person, meId: string, today: string): number {
+  const isMe = u.user_id === meId
+  switch (metric) {
+    case 'weekly_volume':
+      return effectiveWeeklyVolume(u, today)
+    case 'monthly_prs':
+      return effectiveMonthlyPrs(u, today)
+    case 'protein_days':
+      return isMe ? Math.round(u.protein_week ?? 0) : effectiveProteinDays(u, today)
+    case 'protein_today':
+      return isMe ? Math.round(u.protein_today ?? 0) : proteinToday(u, today)
+    default:
+      return (u[metric] as number) ?? 0
+  }
+}
+
+/** Kurzer Anzeigetext eines Werts. */
+export function metricText(metric: Metric, v: number): string {
+  switch (metric) {
+    case 'monthly_prs':
+      return `${v} ${v === 1 ? 'Rekord' : 'Rekorde'}`
+    case 'level':
+      return `Lvl ${v || 1}`
+    case 'weekly_volume':
+      return `${v.toLocaleString('de-DE')} kg`
+    case 'week_streak':
+      return `${v} ${v === 1 ? 'Woche' : 'Wochen'}`
+    case 'protein_days':
+      return `${v}/7 Tage`
+    case 'protein_today':
+      return `${v} g`
+    default:
+      return `${v}`
+  }
+}
 
 /** Aufklappbare Bestenliste — Kennzahlen passend zur Welt (Training bzw. Ernährung). */
 export function LeaderboardSection({
