@@ -41,8 +41,12 @@ export default async function handler(req, res) {
     return
   }
   const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, SUPABASE_SERVICE_ROLE_KEY } = process.env
-  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    res.status(503).json({ error: 'Push nicht konfiguriert' })
+  // Nur die NAMEN fehlender Variablen melden (nie Werte), damit man sie in Vercel nachtragen kann
+  const missing = Object.entries({ VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY })
+    .filter(([, v]) => !v)
+    .map(([k]) => k)
+  if (missing.length) {
+    res.status(503).json({ error: 'Push nicht konfiguriert', missing })
     return
   }
 
