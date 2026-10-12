@@ -182,3 +182,12 @@ body {
     top: 100%;
   }
 }
+
+/* Freischaltbares Theme „Midnight“: tiefschwarz mit Blaustich (nur im Dunkelmodus) */
+.dark.midnight {
+  --c-bg: 2 4 10;
+  --c-cream: 12 16 30;
+  --c-sand-light: 18 24 42;
+  --c-sand: 22 30 54;
+  --c-sand-dark: 38 50 82;
+}

@@ -22,6 +22,8 @@ export interface UserStat {
   protein_today: number
   kcal_today: number
   protein_week: number
+  /** geteiltes Buddy-Outfit (Migration 0033) */
+  look?: Partial<import('../lib/unlocks').BuddyLookPrefs> | null
 }
 
 export function useMyProfile() {
@@ -64,11 +66,20 @@ export function useAddFriend() {
   })
 }
 
+/** Eigenes Buddy-Outfit für Freunde teilen (fehlt die Spalte noch: still ignorieren). */
+export async function shareMyLook(userId: string, look: import('../lib/unlocks').BuddyLookPrefs) {
+  try {
+    await supabase.from('user_stats').upsert({ user_id: userId, look })
+  } catch {
+    /* optional */
+  }
+}
+
 /** Eigene Aggregat-Statistik teilen (upsert). */
 export function useSyncMyStats() {
   const { user } = useAuth()
   return useMutation({
-    mutationFn: async (stats: Omit<UserStat, 'user_id' | 'gym_status'>) => {
+    mutationFn: async (stats: Omit<UserStat, 'user_id' | 'gym_status' | 'look'>) => {
       const { error } = await supabase
         .from('user_stats')
         .upsert({ user_id: user!.id, ...stats, updated_at: new Date().toISOString() })
@@ -147,7 +158,15 @@ export function useSendPoke() {
         .insert({ from_user: user!.id, to_user: input.toUser, text: input.text ?? null })
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['pokes'] }),
+    onSuccess: () => {
+      // Für den Erfolg „Motivator“ mitzählen (Empfänger können Anstupser löschen)
+      try {
+        localStorage.setItem('pokes_sent', String((Number(localStorage.getItem('pokes_sent')) || 0) + 1))
+      } catch {
+        /* ignore */
+      }
+      qc.invalidateQueries({ queryKey: ['pokes'] })
+    },
   })
 }
 

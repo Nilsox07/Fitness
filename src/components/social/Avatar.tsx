@@ -1,6 +1,8 @@
 import { WEEKLY_GOAL } from '../../lib/duel'
 import { Buddy } from '../buddy/Buddy'
 import type { BuddyLook } from './format'
+import { FRAME_RING } from '../../lib/unlocks'
+import { accessoryProps } from '../../lib/seasonBadges'
 
 /** Rundes Avatar: Buddy-Figur (aus den geteilten Stats) oder Initiale. */
 export function Avatar({
@@ -17,13 +19,23 @@ export function Avatar({
   const initial = (name?.trim()?.[0] ?? '?').toUpperCase()
   return (
     <span
-      className={`grid shrink-0 place-items-center overflow-hidden rounded-full font-semibold text-cocoa ${className}`}
+      className={`grid shrink-0 place-items-center overflow-hidden rounded-full font-semibold text-cocoa ${className} ${
+        buddy?.frame && FRAME_RING[buddy.frame] ? `ring-2 ${FRAME_RING[buddy.frame]}` : ''
+      }`}
       style={{ width: size, height: size, fontSize: size * 0.42 }}
       aria-hidden
     >
       {buddy ? (
         // Kleine Avatare in Listen: statisch (keine Animation)
-        <Buddy size={size + 2} stage={buddy.stage} mood={buddy.mood} skin={buddy.skin} animate={false} />
+        <Buddy
+          size={size + 2}
+          stage={buddy.stage}
+          mood={buddy.mood}
+          skin={buddy.skin}
+          variant={buddy.variant}
+          {...accessoryProps(buddy.accessory)}
+          animate={false}
+        />
       ) : (
         initial
       )}
@@ -80,10 +92,19 @@ export function RingAvatar({
       </svg>
       {buddy ? (
         <span
-          className={`grid shrink-0 place-items-center rounded-full ${innerClassName}`}
+          className={`grid shrink-0 place-items-center rounded-full ${innerClassName} ${
+            buddy.frame && FRAME_RING[buddy.frame] ? `ring-[3px] ${FRAME_RING[buddy.frame]}` : ''
+          }`}
           style={{ width: size - stroke * 2 - 6, height: size - stroke * 2 - 6 }}
         >
-          <Buddy size={size - stroke * 2 - 4} stage={buddy.stage} mood={buddy.mood} skin={buddy.skin} />
+          <Buddy
+            size={size - stroke * 2 - 4}
+            stage={buddy.stage}
+            mood={buddy.mood}
+            skin={buddy.skin}
+            variant={buddy.variant}
+            {...accessoryProps(buddy.accessory)}
+          />
         </span>
       ) : (
         <Avatar name={name} size={size - stroke * 2 - 6} className={innerClassName} />

@@ -1,4 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react'
+import { titleLabel } from '../../lib/unlocks'
 import { ChevronDown, Drumstick, Flame, Hand, Medal, Trophy } from 'lucide-react'
 import { effectiveMonthlyPrs, effectiveProteinDays, effectiveWeeklyVolume } from '../../lib/duel'
 import { useBuddySkin } from '../buddy/useBuddy'
@@ -117,7 +118,7 @@ export function LeaderboardSection({
   const sub = (u: Person) =>
     world === 'food'
       ? `Level ${u.level ?? 1}`
-      : `${u.rank_title ? `${u.rank_title} · ` : ''}${u.total_sessions ?? 0} Trainings`
+      : `${titleLabel(u.look?.title) || u.rank_title ? `${titleLabel(u.look?.title) || u.rank_title} · ` : ''}${u.total_sessions ?? 0} Trainings`
 
   return (
     <section className="space-y-3" style={style}>

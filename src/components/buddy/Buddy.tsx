@@ -17,8 +17,14 @@ export interface BuddyProps {
   mood?: BuddyMood
   /** 0 = Ei … 5 = Champion (aus mascotStageIndex) */
   stage?: number
-  /** SKINS-ID: classic | beast | robot | cat */
+  /** SKINS-ID: classic | beast | robot | cat | penguin | panda | fox */
   skin?: string
+  /** Farb-Variante: normal | gold | neon | pink */
+  variant?: string
+  /** Accessoire (siehe lib/unlocks), z. B. sunglasses, cap, cape … */
+  accessory?: string
+  /** Saison-Anstecker (Emoji) auf der Brust */
+  pin?: string
   className?: string
   animate?: boolean
   title?: string
@@ -33,6 +39,13 @@ const GOLD = '#FBBF24'
 const WATER = '#8FD0F5'
 
 const f = (fill: string): CSSProperties => ({ fill })
+
+/** Farb-Varianten: überschreiben die Akzent-Variablen nur innerhalb der Figur. */
+const VARIANT_STYLE: Record<string, CSSProperties | undefined> = {
+  gold: { '--c-ruby': '234 170 20', '--c-ruby-dark': '180 115 8', '--c-ruby-light': '253 224 120' } as CSSProperties,
+  pink: { '--c-ruby': '236 72 153', '--c-ruby-dark': '190 24 93', '--c-ruby-light': '249 168 212' } as CSSProperties,
+  neon: { filter: 'drop-shadow(0 0 5px rgb(var(--c-ruby-light))) saturate(1.4) brightness(1.08)' },
+}
 
 const BODY = 'M60 24C84 24 98 46 99 70C100 92 84 106 60 106C36 106 20 92 21 70C22 46 36 24 60 24Z'
 const EGG = 'M60 18C80 18 95 50 95 74C95 94 80 106 60 106C40 106 25 94 25 74C25 50 40 18 60 18Z'
@@ -155,7 +168,16 @@ function Eyes({
         return (
           <g key={x}>
             {robot ? (
-              <rect x={x - 9} y={EYE_Y - 9} width={18} height={18} rx={5} fill="#fff" stroke="rgba(0,0,0,.12)" strokeWidth={0.8} />
+              <rect
+                x={x - 9}
+                y={EYE_Y - 9}
+                width={18}
+                height={18}
+                rx={5}
+                fill="#fff"
+                stroke="rgba(0,0,0,.12)"
+                strokeWidth={0.8}
+              />
             ) : (
               <ellipse cx={x} cy={EYE_Y} rx={rx} ry={ry} fill="#fff" stroke="rgba(0,0,0,.12)" strokeWidth={0.8} />
             )}
@@ -213,7 +235,13 @@ function Brows({ mood }: { mood: BuddyMood }) {
 // ---------------------------------------------------------------------------
 
 function Mouth({ mood }: { mood: BuddyMood }) {
-  const line = { fill: 'none', stroke: INK, strokeWidth: 3, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const line = {
+    fill: 'none',
+    stroke: INK,
+    strokeWidth: 3,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  }
   switch (mood) {
     case 'proud':
       return (
@@ -264,7 +292,16 @@ function Arm({ up, muscle, band, mirror }: { up: boolean; muscle: boolean; band:
       <rect x={-6} y={-6} width={12} height={26} rx={6} style={f(BASE)} />
       {muscle && <circle cx={-4.6} cy={6} r={6.2} style={f(BASE)} />}
       <circle cx={0} cy={21} r={6.6} style={f(BASE)} />
-      {muscle && <path d="M-7.5 3.5Q-5 0.5 -2 2" fill="none" stroke="#fff" strokeOpacity={0.35} strokeWidth={1.4} strokeLinecap="round" />}
+      {muscle && (
+        <path
+          d="M-7.5 3.5Q-5 0.5 -2 2"
+          fill="none"
+          stroke="#fff"
+          strokeOpacity={0.35}
+          strokeWidth={1.4}
+          strokeLinecap="round"
+        />
+      )}
       {band && <rect x={-7.2} y={12.5} width={14.4} height={5} rx={2.2} fill="#fff" fillOpacity={0.94} />}
       {band && <rect x={-7.2} y={14.4} width={14.4} height={1.3} style={f(DARK)} />}
     </g>
@@ -326,6 +363,9 @@ export function Buddy({
   mood = 'happy',
   stage = 1,
   skin = 'classic',
+  variant = 'normal',
+  accessory = 'none',
+  pin,
   className = '',
   animate = true,
   title,
@@ -345,11 +385,14 @@ export function Buddy({
   const isRobot = skin === 'robot'
   const isCat = skin === 'cat'
   const isBeast = skin === 'beast'
-  const isClassic = !isRobot && !isCat && !isBeast
+  const isPenguin = skin === 'penguin'
+  const isPanda = skin === 'panda'
+  const isFox = skin === 'fox'
+  const isClassic = !isRobot && !isCat && !isBeast && !isPenguin && !isPanda && !isFox
 
   const showArms = st >= 2 || (mood === 'cheer' && st >= 1)
   const armsUp = mood === 'cheer'
-  const headband = st >= 3 || mood === 'focus'
+  const headband = st >= 3 || mood === 'focus' || accessory === 'headband'
 
   // Hinter dem Körper: Arme, Ohren, Hörner, Antenne, Federschopf
   const back: ReactNode[] = []
@@ -378,7 +421,15 @@ export function Buddy({
       back.push(
         <g key="horns">
           {[undefined, MIRROR].map((t, i) => (
-            <path key={i} transform={t} d="M40 35Q33 24 33 12Q42 20 50 28Z" fill="#F4E3C3" stroke="#D9C29A" strokeWidth={1} strokeLinejoin="round" />
+            <path
+              key={i}
+              transform={t}
+              d="M40 35Q33 24 33 12Q42 20 50 28Z"
+              fill="#F4E3C3"
+              stroke="#D9C29A"
+              strokeWidth={1}
+              strokeLinejoin="round"
+            />
           ))}
           <path d="M50 28L54 17L58 26ZM56 26L60 13L64 26ZM62 26L66 17L70 28Z" style={f(DARK)} strokeLinejoin="round" />
         </g>,
@@ -392,6 +443,37 @@ export function Buddy({
           <rect x={14.5} y={53} width={10} height={17} rx={3.5} fill="#AEB6C4" />
           <rect x={95.5} y={53} width={10} height={17} rx={3.5} fill="#AEB6C4" />
         </g>,
+      )
+    }
+    if (isPanda) {
+      back.push(
+        <g key="panda-ears" fill={INK}>
+          <circle cx={33} cy={33} r={11} />
+          <circle cx={87} cy={33} r={11} />
+        </g>,
+      )
+    }
+    if (isFox) {
+      back.push(
+        <g key="fox-ears" strokeLinejoin="round">
+          {[undefined, MIRROR].map((t, i) => (
+            <g key={i} transform={t}>
+              <path d="M31 46L26 6L56 28Z" style={{ fill: DARK, stroke: DARK }} strokeWidth={4} />
+              <path d="M35 34L32 15L48 27Z" fill="#fff" opacity={0.85} />
+            </g>
+          ))}
+        </g>,
+      )
+    }
+    if (accessory === 'cape') {
+      back.unshift(
+        <path
+          key="cape"
+          d="M30 46Q8 98 20 112H100Q112 98 90 46Q60 60 30 46Z"
+          fill="#7C3AED"
+          stroke="#5B21B6"
+          strokeWidth={1.2}
+        />,
       )
     }
     if (isClassic && st < 5) {
@@ -414,7 +496,17 @@ export function Buddy({
         {/* Bauch / Panel */}
         {isRobot ? (
           <g>
-            <rect x={42} y={79} width={36} height={18} rx={5} fill="#fff" fillOpacity={0.22} style={{ stroke: DARK }} strokeWidth={1.2} />
+            <rect
+              x={42}
+              y={79}
+              width={36}
+              height={18}
+              rx={5}
+              fill="#fff"
+              fillOpacity={0.22}
+              style={{ stroke: DARK }}
+              strokeWidth={1.2}
+            />
             <circle cx={49.5} cy={88} r={2.3} fill="#34D399" />
             <circle cx={56.5} cy={88} r={2.3} fill={GOLD} />
             <path d="M63 85.5H72M63 90.5H69" style={{ stroke: DARK }} strokeWidth={1.6} strokeLinecap="round" />
@@ -450,13 +542,135 @@ export function Buddy({
             <path d="M93 37Q101 31 106 33Q101 37 94 40ZM93 40Q100 43 103 49Q97 47 92 42Z" style={f(DARK)} />
           </g>
         )}
+        {isPenguin && (
+          <path
+            d="M60 38C80 38 90 54 89 72C88 92 76 104 60 104C44 104 32 92 31 72C30 54 40 38 60 38Z"
+            fill="#fff"
+            opacity={0.92}
+          />
+        )}
+        {isPanda && (
+          <g fill={INK} opacity={0.88}>
+            <ellipse cx={46} cy={60} rx={12.5} ry={14.5} transform="rotate(24 46 60)" />
+            <ellipse cx={74} cy={60} rx={12.5} ry={14.5} transform="rotate(-24 74 60)" />
+          </g>
+        )}
+        {isFox && <path d="M36 66Q60 100 84 66Q78 88 60 92Q42 88 36 66Z" fill="#fff" opacity={0.9} />}
+        {accessory === 'belt' && (
+          <g>
+            <g clipPath={`url(#${clip})`}>
+              <rect x={10} y={88} width={100} height={9} fill="#7C4A1E" />
+            </g>
+            <rect x={53} y={86.5} width={14} height={12} rx={2} fill="none" stroke={GOLD} strokeWidth={2.4} />
+          </g>
+        )}
+        {accessory === 'chain' && (
+          <g>
+            <path d="M36 74Q60 94 84 74" fill="none" stroke={GOLD} strokeWidth={2.2} strokeDasharray="2.5 1.5" />
+            <rect x={53} y={89} width={14} height={2.6} rx={1} fill="#9CA3AF" />
+            <rect x={50} y={85.5} width={4} height={9.5} rx={1.2} fill="#4B5563" />
+            <rect x={66} y={85.5} width={4} height={9.5} rx={1.2} fill="#4B5563" />
+          </g>
+        )}
+        {pin && (
+          <g>
+            <circle cx={80} cy={86} r={8} fill="#fff" stroke="rgba(0,0,0,.15)" strokeWidth={1} />
+            <text x={80} y={89.6} fontSize={10} textAnchor="middle">
+              {pin}
+            </text>
+          </g>
+        )}
         <Brows mood={mood} />
         <Eyes mood={mood} robot={isRobot} bodyFill={bodyFill} blinkDelay={blinkDelay} />
         {/* Bäckchen */}
-        <ellipse cx={35} cy={69} rx={6} ry={3.6} fill={PINK} opacity={mood === 'sad' || mood === 'tired' ? 0.3 : 0.55} />
-        <ellipse cx={85} cy={69} rx={6} ry={3.6} fill={PINK} opacity={mood === 'sad' || mood === 'tired' ? 0.3 : 0.55} />
-        {isCat && <path d="M57.4 65.2H62.6L60 68.2Z" fill={PINK} stroke={PINK} strokeWidth={1} strokeLinejoin="round" />}
+        <ellipse
+          cx={35}
+          cy={69}
+          rx={6}
+          ry={3.6}
+          fill={PINK}
+          opacity={mood === 'sad' || mood === 'tired' ? 0.3 : 0.55}
+        />
+        <ellipse
+          cx={85}
+          cy={69}
+          rx={6}
+          ry={3.6}
+          fill={PINK}
+          opacity={mood === 'sad' || mood === 'tired' ? 0.3 : 0.55}
+        />
+        {isCat && (
+          <path d="M57.4 65.2H62.6L60 68.2Z" fill={PINK} stroke={PINK} strokeWidth={1} strokeLinejoin="round" />
+        )}
         <Mouth mood={mood} />
+        {isPenguin && (
+          <path d="M54.5 65.5H65.5L60 72Z" fill="#F59E0B" stroke="#D97706" strokeWidth={1} strokeLinejoin="round" />
+        )}
+        {accessory === 'sunglasses' && (
+          <g>
+            <rect x={35} y={50} width={23} height={15} rx={6} fill={INK} opacity={0.94} />
+            <rect x={62} y={50} width={23} height={15} rx={6} fill={INK} opacity={0.94} />
+            <path d="M58 55H62M35 54L25 51M85 54L95 51" stroke={INK} strokeWidth={2.4} strokeLinecap="round" />
+            <path
+              d="M39 53L45 53M66 53L72 53"
+              stroke="#fff"
+              strokeOpacity={0.5}
+              strokeWidth={1.6}
+              strokeLinecap="round"
+            />
+          </g>
+        )}
+        {accessory === 'headphones' && (
+          <g>
+            <path d="M22 58Q20 14 60 13Q100 14 98 58" fill="none" stroke={INK} strokeWidth={5} strokeLinecap="round" />
+            <rect x={13} y={50} width={13} height={22} rx={6} fill={INK} />
+            <rect x={94} y={50} width={13} height={22} rx={6} fill={INK} />
+            <rect x={16} y={54} width={4} height={14} rx={2} style={f(BASE)} />
+            <rect x={100} y={54} width={4} height={14} rx={2} style={f(BASE)} />
+          </g>
+        )}
+        {accessory === 'cap' && (
+          <g>
+            <path d="M33 36Q35 13 60 13Q85 13 87 36Z" fill={INK} />
+            <path d="M58 34Q92 30 106 39Q90 42 60 38Z" fill={INK} />
+            <circle cx={60} cy={14} r={2.4} fill={INK} />
+            <path
+              d="M55 26L60 21L65 26"
+              fill="none"
+              style={{ stroke: BASE }}
+              strokeWidth={2.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </g>
+        )}
+        {accessory === 'laurel' && (
+          <g fill="#65A30D" stroke="#3F6212" strokeWidth={0.6}>
+            {[0, 1, 2, 3, 4].map((i) => {
+              const a = (-160 + i * 22) * (Math.PI / 180)
+              const x = 60 + 40 * Math.cos(a)
+              const y = 44 + 30 * Math.sin(a)
+              return (
+                <g key={i}>
+                  <ellipse cx={x} cy={y} rx={6} ry={2.8} transform={`rotate(${-160 + i * 22 + 70} ${x} ${y})`} />
+                  <ellipse
+                    cx={120 - x}
+                    cy={y}
+                    rx={6}
+                    ry={2.8}
+                    transform={`rotate(${-(-160 + i * 22 + 70)} ${120 - x} ${y})`}
+                  />
+                </g>
+              )
+            })}
+          </g>
+        )}
+        {accessory === 'megaphone' && (
+          <g>
+            <path d="M95 66L113 56V86L95 76Z" fill={GOLD} stroke="#D97706" strokeWidth={1.2} strokeLinejoin="round" />
+            <rect x={90} y={66} width={7} height={10} rx={2} fill="#D97706" />
+          </g>
+        )}
         {isCat && (
           <g stroke={INK} strokeOpacity={0.45} strokeWidth={1.3} strokeLinecap="round">
             <path d="M31 70L19 67.5M31 73.5L19 75" />
@@ -537,6 +751,7 @@ export function Buddy({
       viewBox="0 0 120 120"
       width={size}
       height={size}
+      style={VARIANT_STYLE[variant]}
       className={`${anim ? 'buddy-anim ' : ''}overflow-visible ${className}`}
       role="img"
       aria-label={title ?? 'Buddy'}

@@ -21,6 +21,9 @@ const USER_KEYS = [
   'shopping_checked',
   'diet_avoid',
   'body_photo_consent',
+  'pokes_sent',
+  'buddy_look',
+  'season_badges',
 ]
 
 /** Nutzerbezogene Präfixe (pro Workout / Übung / Tag). */

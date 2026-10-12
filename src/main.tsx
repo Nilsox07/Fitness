@@ -9,12 +9,13 @@ import { AuthProvider } from './lib/auth'
 import { ThemeProvider } from './lib/theme'
 import { PrefsProvider } from './lib/prefs'
 import { registerMutationDefaults } from './lib/mutationDefaults'
-import { applyAccent, getAccentId } from './lib/cosmetics'
+import { applyAccent, getAccentId, getDarkStyle } from './lib/cosmetics'
 import { PERSIST_KEY, queryClient } from './lib/queryClient'
 import './index.css'
 
 // Freigeschaltete Akzentfarbe anwenden, bevor die App rendert.
 applyAccent(getAccentId())
+document.documentElement.classList.toggle('midnight', getDarkStyle() === 'midnight')
 
 // Wenn ein neuer Service Worker die Kontrolle übernimmt (nach einem Update),
 // die Seite EINMAL neu laden. So landet man nie in einem halb aktualisierten

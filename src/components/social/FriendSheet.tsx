@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { titleLabel } from '../../lib/unlocks'
 import { Check, Hand, Send } from 'lucide-react'
 import { Sheet } from '../workout/Sheet'
 import { useGiveKudos, useSendPoke } from '../../hooks/useSocial'
@@ -82,7 +83,7 @@ export function FriendSheet({
           <div className="text-lg font-bold">{isMe ? firstName(person) : name}</div>
           <div className="text-sm text-cocoa-light">
             Level {person.level ?? 1}
-            {person.rank_title ? ` · ${person.rank_title}` : ''}
+            {titleLabel(person.look?.title) || person.rank_title ? ` · ${titleLabel(person.look?.title) || person.rank_title}` : ''}
           </div>
           <div className="mt-0.5 flex items-center justify-center gap-1 text-xs text-cocoa-muted">
             {st.kind === 'trained' && <span className="h-1.5 w-1.5 rounded-full bg-success" />}

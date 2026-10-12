@@ -8,21 +8,31 @@ import { useExercises } from '../hooks/useExercises'
 import { balanceStats, frequencyStats, onlyWorking, totalVolume } from '../lib/analytics'
 import { achievements, rankForSessions } from '../lib/gamification'
 import { computeXp, levelInfo } from '../lib/xp'
-import {
-  ACCENTS,
-  SKINS,
-  applyAccent,
-  getAccentId,
-  mascotEmoji,
-  setAccentId,
-  setSkinId,
-} from '../lib/cosmetics'
+import { ACCENTS, SKINS, mascotEmoji } from '../lib/cosmetics'
+import { ACHIEVEMENTS, PRESTIGE_LEVEL, UNLOCKS, nextUnlocks, titleLabel, type UnlockKind } from '../lib/unlocks'
+import { accessoryProps } from '../lib/seasonBadges'
+import { Wardrobe } from '../components/buddy/Wardrobe'
+import { SeasonThemeCard } from '../components/buddy/SeasonThemeCard'
+import { BuddyBackdrop } from '../components/buddy/BuddyBackdrop'
+import { useAchievements } from '../hooks/useAchievements'
+import { useUserPrefs } from '../hooks/usePrefsSync'
 import { usePrefs } from '../lib/prefs'
 import { milestones } from '../lib/milestones'
 import { Buddy, BUDDY_STAGE_SESSIONS } from '../components/buddy/Buddy'
-import { BUDDY_SKIN_EVENT, useBuddy, useBuddyLevel } from '../components/buddy/useBuddy'
+import { useBuddy, useBuddyLevel, useLookPrefs } from '../components/buddy/useBuddy'
 
 const STAGE_LABELS = ['Ei', 'Küken', 'im Aufbau', 'Kraftpaket', 'Athlet', 'Champion']
+
+const KIND_LABEL: Record<UnlockKind, string> = {
+  accessory: 'Accessoire',
+  skin: 'Skin',
+  frame: 'Rahmen',
+  background: 'Hintergrund',
+  title: 'Titel',
+  accent: 'App-Farbe',
+  theme: 'Theme',
+  variant: 'Variante',
+}
 
 /** Klassische Sammlung (alter App-Modus) — unverändert. */
 function ClassicBadges() {
@@ -140,23 +150,27 @@ function BuddyPage() {
   const { showNutrition } = usePrefs()
   const buddy = useBuddy()
   const level = useBuddyLevel()
-  const [accent, setAccent] = useState(getAccentId)
   const sessions = level.sessions
   const stage = buddy.stage
   const rank = rankForSessions(sessions)
   const list = useMemo(() => milestones(allSets ?? []), [allSets])
   const doneCount = list.filter((m) => m.done).length
 
-  function chooseAccent(id: string, min: number) {
-    if (level.level < min) return
-    setAccent(id)
-    setAccentId(id)
-    applyAccent(id)
-  }
-  function chooseSkin(id: string, min: number) {
-    if (level.level < min) return
-    setSkinId(id)
-    window.dispatchEvent(new Event(BUDDY_SKIN_EVENT))
+  const look = useLookPrefs()
+  const { progress, earned } = useAchievements()
+  const { prefs, save } = useUserPrefs()
+  const ctx = { level: level.level, prestige: level.prestige, achievements: earned }
+  const next = nextUnlocks(ctx, 3)
+  const [confirmPrestige, setConfirmPrestige] = useState(false)
+
+  function startPrestige() {
+    void save({ prestige: { count: prefs.prestige.count + 1, xpOffset: level.totalXp } })
+    try {
+      localStorage.setItem('seen_buddy_level', '1')
+    } catch {
+      /* ignore */
+    }
+    setConfirmPrestige(false)
   }
 
   return (
@@ -168,7 +182,29 @@ function BuddyPage() {
 
       {/* Hero: großer Buddy + Level + XP */}
       <section className="card flex flex-col items-center text-center">
-        <Buddy size={132} stage={stage} skin={buddy.skin} mood={buddy.mood} className="-mt-1" />
+        <BuddyBackdrop background={look.background} className="-mx-1 -mt-1 mb-1 h-40 w-[calc(100%+0.5rem)] rounded-2xl">
+          <Buddy
+            size={132}
+            stage={stage}
+            skin={look.skin}
+            variant={look.variant}
+            {...accessoryProps(look.accessory)}
+            mood={buddy.mood}
+            className="-mt-1"
+          />
+        </BuddyBackdrop>
+        {(titleLabel(look.title) || level.prestige > 0) && (
+          <div className="mt-1 flex items-center gap-1.5">
+            {level.prestige > 0 && (
+              <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-bold text-violet-600 dark:text-violet-400">
+                {'⭐'.repeat(Math.min(level.prestige, 5))} Prestige {level.prestige}
+              </span>
+            )}
+            {titleLabel(look.title) && (
+              <span className="rounded-full bg-gold/15 px-2 py-0.5 text-xs font-bold text-gold">{titleLabel(look.title)}</span>
+            )}
+          </div>
+        )}
         <p className="mt-1 max-w-[18rem] text-sm text-cocoa-light">„{buddy.line}“</p>
         <div className="tabular mt-3 text-2xl font-bold text-cocoa">Buddy-Level {level.level}</div>
         <div className="tabular text-xs text-cocoa-light">
@@ -198,6 +234,8 @@ function BuddyPage() {
           </p>
         </div>
       </section>
+
+      <SeasonThemeCard />
 
       {/* Wachstum */}
       <section>
@@ -261,79 +299,105 @@ function BuddyPage() {
         </ul>
       </section>
 
-      {/* Skins */}
-      <section>
-        <h2 className="mb-2 px-1 text-sm font-semibold text-cocoa-light">Skins</h2>
-        <div className="grid grid-cols-4 gap-2">
-          {SKINS.map((s) => {
-            const locked = level.level < s.minLevel
-            const active = s.id === buddy.skin
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => chooseSkin(s.id, s.minLevel)}
-                disabled={locked}
-                aria-pressed={active}
-                aria-label={locked ? `${s.label} – ab Level ${s.minLevel}` : s.label}
-                className={`relative flex flex-col items-center rounded-2xl px-1 pb-1.5 pt-1 transition-colors duration-200 ${
-                  active ? 'bg-sand-light ring-2 ring-cocoa dark:bg-sand-dark' : 'bg-sand'
-                }`}
-              >
-                <Buddy
-                  size={56}
-                  stage={Math.max(2, stage)}
-                  skin={s.id}
-                  animate={active}
-                  className={locked ? 'opacity-45 saturate-[.6]' : ''}
-                />
-                <span className="text-[11px] font-medium text-cocoa-light">
-                  {locked ? `Lv ${s.minLevel}` : s.label}
+      {/* Als Nächstes */}
+      {next.length > 0 && (
+        <section>
+          <h2 className="mb-2 px-1 text-sm font-semibold text-cocoa-light">Als Nächstes</h2>
+          <div className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
+            {next.map((u) => (
+              <div key={u.kind + u.id} className="flex items-center gap-3 px-4 py-2.5">
+                <span className="tabular grid h-9 w-12 shrink-0 place-items-center rounded-xl bg-sand text-xs font-bold">
+                  Lv {u.level}
                 </span>
-                {locked && <Lock size={13} className="absolute right-1.5 top-1.5 text-cocoa-light" />}
-              </button>
+                <span className="min-w-0 flex-1 text-sm font-semibold">{u.label}</span>
+                <span className="text-xs text-cocoa-muted">{KIND_LABEL[u.kind]}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Garderobe */}
+      <section>
+        <h2 className="mb-2 px-1 text-sm font-semibold text-cocoa-light">Garderobe</h2>
+        <Wardrobe ctx={ctx} stage={stage} />
+      </section>
+
+      {/* Erfolge */}
+      <section>
+        <div className="mb-2 flex items-baseline justify-between px-1">
+          <h2 className="text-sm font-semibold text-cocoa-light">Erfolge</h2>
+          <span className="tabular text-xs text-cocoa-muted">
+            {ACHIEVEMENTS.filter((a) => earned.has(a.id)).length}/{ACHIEVEMENTS.length}
+          </span>
+        </div>
+        <div className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
+          {ACHIEVEMENTS.map((a) => {
+            const done = earned.has(a.id)
+            const val = Math.min(a.goal, progress[a.id].value)
+            const reward = UNLOCKS.find((u) => u.achievement === a.id)
+            return (
+              <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                <span
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+                    done ? 'bg-success text-white' : 'bg-sand text-cocoa-muted'
+                  }`}
+                >
+                  {done ? <Check size={17} strokeWidth={3} /> : <Lock size={15} />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold">{a.label}</span>
+                  <span className="block text-xs text-cocoa-light">
+                    {a.hint}
+                    {reward && ` · 🎁 ${reward.label}`}
+                  </span>
+                  {!done && a.id !== 'prestige1' && (
+                    <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-sand-dark/40">
+                      <span className="block h-full rounded-full bg-brand/70" style={{ width: `${(val / a.goal) * 100}%` }} />
+                    </span>
+                  )}
+                </span>
+                {!done && a.id !== 'prestige1' && (
+                  <span className="tabular shrink-0 text-xs text-cocoa-muted">
+                    {a.id === 'photo8w' ? `${Math.round(val / 7)}/8 Wo.` : `${val}/${a.goal}`}
+                  </span>
+                )}
+              </div>
             )
           })}
         </div>
       </section>
 
-      {/* Akzentfarben */}
-      <section>
-        <h2 className="mb-2 px-1 text-sm font-semibold text-cocoa-light">Akzentfarbe</h2>
-        <div className="card flex flex-wrap gap-3">
-          {ACCENTS.map((a) => {
-            const locked = level.level < a.minLevel
-            const active = accent === a.id
-            return (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => chooseAccent(a.id, a.minLevel)}
-                disabled={locked}
-                aria-pressed={active}
-                aria-label={locked ? `${a.label} – ab Level ${a.minLevel}` : a.label}
-                className="flex w-10 flex-col items-center gap-1"
-              >
-                <span
-                  className={`relative grid h-9 w-9 place-items-center rounded-full ring-2 ring-offset-2 ring-offset-cream ${
-                    active ? 'ring-cocoa' : 'ring-transparent'
-                  } ${locked ? 'opacity-40' : ''}`}
-                  style={{ background: a.swatch }}
-                >
-                  {locked ? (
-                    <Lock size={14} className="text-white" />
-                  ) : (
-                    active && <Check size={16} strokeWidth={3} className="text-white" />
-                  )}
-                </span>
-                <span className="tabular text-[10px] leading-tight text-cocoa-light">
-                  {locked ? `Lv ${a.minLevel}` : a.label}
-                </span>
+      {/* Prestige */}
+      {level.level >= PRESTIGE_LEVEL && (
+        <section className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg dark:bg-sand-light dark:text-cocoa">
+          <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-violet-500/30 blur-3xl" />
+          <div className="relative space-y-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
+              Prestige {level.prestige + 1}
+            </div>
+            <h2 className="text-xl font-bold">Level {PRESTIGE_LEVEL} geschafft ⭐</h2>
+            <p className="text-sm leading-snug text-bg/75 dark:text-cocoa-light">
+              Starte dein Level neu bei 1: Alles Freigeschaltete bleibt, du bekommst einen Stern neben deinem Namen und
+              den Prestige-Rahmen.
+            </p>
+            {confirmPrestige ? (
+              <div className="flex gap-2 pt-1">
+                <button className="btn flex-1 bg-bg/10 text-bg dark:bg-white/5 dark:text-cocoa" onClick={() => setConfirmPrestige(false)}>
+                  Abbrechen
+                </button>
+                <button className="btn-primary flex-1" onClick={startPrestige}>
+                  Ja, Prestige starten
+                </button>
+              </div>
+            ) : (
+              <button className="btn-primary w-full" onClick={() => setConfirmPrestige(true)}>
+                Prestige starten
               </button>
-            )
-          })}
-        </div>
-      </section>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

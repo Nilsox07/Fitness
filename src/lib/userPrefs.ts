@@ -6,6 +6,7 @@ import type { Meal } from '../types'
 import { DAY_CUTOFF_H } from './day'
 import type { Schedule } from './schedule'
 import { NOTIFY_DEFAULTS, normalizeNotify, type NotifyPrefs } from './notify'
+import { normalizePrestige, type PrestigeState } from './unlocks'
 
 /** Prozent je Mahlzeit (Summe = 100). */
 export type MealSplit = Record<Meal, number>
@@ -21,6 +22,10 @@ export interface UserPrefs {
   notify: NotifyPrefs
   /** Zeitzone des Geräts – der Server rechnet die Uhrzeiten damit um */
   tz: string | null
+  /** Prestige-Runden ab Level 50 */
+  prestige: PrestigeState
+  /** jemals erreichte Erfolge (bleiben, auch wenn z. B. die Serie reißt) */
+  achievements: string[]
 }
 
 export const DEFAULT_KCAL_BONUS = 250
@@ -33,6 +38,8 @@ export const DEFAULT_PREFS: UserPrefs = {
   dayCutoff: DAY_CUTOFF_H,
   notify: NOTIFY_DEFAULTS,
   tz: null,
+  prestige: { count: 0, xpOffset: 0 },
+  achievements: [],
 }
 
 const num = (v: unknown, lo: number, hi: number, fallback: number): number => {
@@ -86,5 +93,9 @@ export function normalizePrefs(raw: unknown): UserPrefs {
     dayCutoff: num(r.dayCutoff, 0, 6, DAY_CUTOFF_H),
     notify: normalizeNotify(r.notify),
     tz: typeof r.tz === 'string' && r.tz.length < 64 ? r.tz : null,
+    prestige: normalizePrestige(r.prestige),
+    achievements: Array.isArray(r.achievements)
+      ? [...new Set(r.achievements.filter((a): a is string => typeof a === 'string' && a.length < 40))]
+      : [],
   }
 }

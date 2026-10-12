@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { Check, ChevronRight, Sparkles } from 'lucide-react'
 import { PremiumSheet } from '../ui/PremiumSheet'
+import { SeasonThemeCard } from './SeasonThemeCard'
 import { Ring } from '../nutrition-home/Ring'
 import { MyBuddy } from './MyBuddy'
 import { useBuddyLevel } from './useBuddy'
@@ -77,6 +78,7 @@ export function QuestStrip({ area, style }: { area: 'training' | 'food'; style?:
               <div className="h-full rounded-full bg-brand" style={{ width: `${Math.round(pct * 100)}%` }} />
             </div>
           </div>
+          <SeasonThemeCard compact />
           {quests.food && <QuestGroup title="Ernährung · heute" quests={quests.food.daily} />}
           <QuestGroup title="Training · heute" quests={quests.training.daily} />
           {quests.food && <QuestGroup title="Ernährung · diese Woche" quests={quests.food.weekly} />}

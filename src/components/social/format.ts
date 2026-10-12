@@ -2,7 +2,8 @@
 
 import type { UserStat } from '../../hooks/useSocial'
 import { localDate } from '../../lib/day'
-import { mascotStageIndex } from '../../lib/cosmetics'
+import { getLook, mascotStageIndex } from '../../lib/cosmetics'
+import { normalizeLook, type BuddyLookPrefs } from '../../lib/unlocks'
 import { friendBuddyMood, type BuddyMood } from '../../lib/buddyMood'
 import { parseGymStatus } from '../../lib/gymStatus'
 
@@ -34,23 +35,32 @@ export interface BuddyLook {
   stage: number
   mood: BuddyMood
   skin: string
+  variant?: string
+  accessory?: string
+  frame?: string
+  title?: string
 }
 
 /**
  * Buddy einer Person aus den geteilten Stats: Stufe = Trainings gesamt, Stimmung =
- * letztes Training. Eigener Buddy mit gewähltem Skin; Skins der Freunde werden nicht
- * geteilt → Standard-Skin.
+ * letztes Training. Outfit (Skin, Variante, Accessoire, Rahmen, Titel) teilt jeder
+ * über user_stats.look; der eigene Buddy nimmt die lokale Auswahl.
  */
 export function buddyLook(
-  u: Pick<UserStat, 'total_sessions' | 'last_workout'>,
+  u: Pick<UserStat, 'total_sessions' | 'last_workout'> & { look?: Partial<BuddyLookPrefs> | null },
   isMe: boolean,
   mySkin: string,
   today = localDate(),
 ): BuddyLook {
+  const look = isMe ? getLook() : normalizeLook(u.look ?? {})
   return {
     stage: mascotStageIndex(u.total_sessions ?? 0),
     mood: friendBuddyMood(u.last_workout, today),
-    skin: isMe ? mySkin : 'classic',
+    skin: isMe ? mySkin : look.skin,
+    variant: look.variant,
+    accessory: look.accessory,
+    frame: look.frame,
+    title: look.title,
   }
 }
 

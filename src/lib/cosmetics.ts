@@ -1,3 +1,5 @@
+import { normalizeLook, type BuddyLookPrefs } from './unlocks'
+
 // Freischaltbare Kosmetik: Akzentfarben & Maskottchen-Skins (per Level).
 
 export interface Accent {
@@ -21,6 +23,8 @@ export const ACCENTS: Accent[] = [
   { id: 'violet', label: 'Violett', minLevel: 8, base: '139 92 246', dark: '124 58 237', light: '167 139 250', swatch: '#8B5CF6' },
   { id: 'amber', label: 'Gold', minLevel: 12, base: '245 158 11', dark: '217 119 6', light: '251 191 36', swatch: '#F59E0B', onAccent: '11 15 25' },
   { id: 'slate', label: 'Stahl', minLevel: 16, base: '100 116 139', dark: '71 85 105', light: '148 163 184', swatch: '#64748B' },
+  { id: 'teal', label: 'Türkis', minLevel: 18, base: '20 184 166', dark: '13 148 136', light: '45 212 191', swatch: '#14B8A6' },
+  { id: 'sunset', label: 'Sunset', minLevel: 27, base: '249 115 22', dark: '234 88 12', light: '251 146 60', swatch: '#F97316' },
 ]
 
 export interface Skin {
@@ -36,6 +40,9 @@ export const SKINS: Skin[] = [
   { id: 'beast', label: 'Bestie', minLevel: 4, stages: ['🥚', '🦎', '🐊', '🐉', '🐲', '🔥'] },
   { id: 'robot', label: 'Roboter', minLevel: 7, stages: ['🔩', '⚙️', '🤖', '🦾', '🛸', '🌌'] },
   { id: 'cat', label: 'Katze', minLevel: 10, stages: ['🥚', '🐱', '😼', '🐯', '🦁', '👑'] },
+  { id: 'penguin', label: 'Pinguin', minLevel: 14, stages: ['🥚', '🐣', '🐧', '🐧', '🐧', '🐧'] },
+  { id: 'panda', label: 'Panda', minLevel: 20, stages: ['🥚', '🐼', '🐼', '🐼', '🐼', '🐼'] },
+  { id: 'fox', label: 'Fuchs', minLevel: 30, stages: ['🥚', '🦊', '🦊', '🦊', '🦊', '🦊'] },
 ]
 
 export function mascotStageIndex(sessions: number): number {
@@ -66,6 +73,28 @@ export const getAccentId = () => get('accent', 'ruby')
 export const setAccentId = (id: string) => set('accent', id)
 export const getSkinId = () => get('skin', 'classic')
 export const setSkinId = (id: string) => set('skin', id)
+
+/** Komplettes Buddy-Aussehen (Skin weiter unter 'skin' für ältere Stellen). */
+export function getLook(): BuddyLookPrefs {
+  let raw: unknown = {}
+  try {
+    raw = JSON.parse(get('buddy_look', '{}'))
+  } catch {
+    raw = {}
+  }
+  return { ...normalizeLook(raw), skin: getSkinId() }
+}
+export function setLook(look: BuddyLookPrefs) {
+  set('buddy_look', JSON.stringify(look))
+  setSkinId(look.skin)
+}
+
+/** Dunkles Theme „Midnight“ (freischaltbar) – wirkt nur im Dunkelmodus. */
+export const getDarkStyle = () => get('dark_style', 'default')
+export function setDarkStyle(v: 'default' | 'midnight') {
+  set('dark_style', v)
+  document.documentElement.classList.toggle('midnight', v === 'midnight')
+}
 
 export function applyAccent(id: string) {
   const a = ACCENTS.find((x) => x.id === id) ?? ACCENTS[0]

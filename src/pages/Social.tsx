@@ -71,7 +71,9 @@ import {
   useSendPoke,
   useSetGymStatus,
   useSyncMyStats,
+  shareMyLook,
 } from '../hooks/useSocial'
+import { getLook } from '../lib/cosmetics'
 import { frequencyStats, isoWeekKey, monthlyPrCount, totalVolume, weeklyVolume } from '../lib/analytics'
 import { rankForSessions } from '../lib/gamification'
 import { computeXp, levelInfo } from '../lib/xp'
@@ -102,6 +104,10 @@ export default function Social() {
   const addFriend = useAddFriend()
   const giveKudos = useGiveKudos()
   const syncStats = useSyncMyStats()
+  // Eigenes Outfit (Rahmen, Titel, Accessoire) für Freunde teilen
+  useEffect(() => {
+    if (user) void shareMyLook(user.id, getLook())
+  }, [user])
   const setGymStatus = useSetGymStatus()
   const sendPoke = useSendPoke()
   const dismissPoke = useDismissPoke()

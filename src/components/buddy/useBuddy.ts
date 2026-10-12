@@ -4,12 +4,13 @@ import { useExercises } from '../../hooks/useExercises'
 import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
 import { useStreakState } from '../../hooks/useStreak'
 import { usePrefs } from '../../lib/prefs'
-import { getSkinId, mascotStageIndex } from '../../lib/cosmetics'
+import { getLook, getSkinId, mascotStageIndex } from '../../lib/cosmetics'
+import type { BuddyLookPrefs } from '../../lib/unlocks'
 import { lastTrainedPerMuscle, sessionDates } from '../../lib/analytics'
 import { weekStreakWithFreezes } from '../../lib/streaks'
 import { weekPrCount } from '../../lib/weeklyReview'
 import { recoveryLevel, sessionsInWeek } from '../../lib/home'
-import { useWeeklyGoal } from '../../hooks/usePrefsSync'
+import { useUserPrefs, useWeeklyGoal } from '../../hooks/usePrefsSync'
 import { localDate, trainingDay } from '../../lib/day'
 import { buddyMood, type BuddyState } from '../../lib/buddyMood'
 import { buddyXpParts, checkBuddyLevelUp } from '../../lib/buddyLevel'
@@ -38,12 +39,35 @@ export function useBuddySkin(): string {
   return skin
 }
 
-/** Aussehen des eigenen Buddys: Wachstumsstufe (Trainings gesamt) + Skin. */
-export function useBuddyLook(): { stage: number; skin: string } {
+/** Komplettes Aussehen (Skin, Variante, Accessoire, Hintergrund, Rahmen, Titel). */
+export function useLookPrefs(): BuddyLookPrefs {
+  const [look, setLook] = useState(getLook)
+  useEffect(() => {
+    const sync = () => setLook(getLook())
+    window.addEventListener(BUDDY_SKIN_EVENT, sync)
+    window.addEventListener('focus', sync)
+    window.addEventListener('storage', sync)
+    return () => {
+      window.removeEventListener(BUDDY_SKIN_EVENT, sync)
+      window.removeEventListener('focus', sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
+  return look
+}
+
+/** Aussehen des eigenen Buddys: Wachstumsstufe (Trainings gesamt) + gewähltes Outfit. */
+export function useBuddyLook(): { stage: number; skin: string; variant: string; accessory: string; background: string } {
   const { data: allSets } = useAllSets()
-  const skin = useBuddySkin()
+  const look = useLookPrefs()
   const sessions = useMemo(() => sessionDates(allSets ?? []).length, [allSets])
-  return { stage: mascotStageIndex(sessions), skin }
+  return {
+    stage: mascotStageIndex(sessions),
+    skin: look.skin,
+    variant: look.variant,
+    accessory: look.accessory,
+    background: look.background,
+  }
 }
 
 /** Stimmung + Spruch des eigenen Buddys aus den echten Daten. */
@@ -136,7 +160,12 @@ export function useBuddyLevel(): LevelInfo & {
   sessions: number
   fitnessXp: number
   nutritionXp: number
+  /** XP insgesamt (ohne Prestige-Abzug) */
+  totalXp: number
+  /** Prestige-Runden */
+  prestige: number
 } {
+  const { prefs } = useUserPrefs()
   const { data: sets } = useAllSets()
   const { data: food } = useAllFoodEntries()
   const { data: settings } = useNutritionSettings()
@@ -157,12 +186,16 @@ export function useBuddyLevel(): LevelInfo & {
   const sessions = useMemo(() => sessionDates(sets ?? []).length, [sets])
   // settings: undefined = lädt noch, null = keine Einstellungen gespeichert
   const ready = Boolean(sets) && (!showNutrition || (Boolean(food) && settings !== undefined))
+  // Nach Prestige zählt das Level ab dem damaligen XP-Stand neu
+  const offset = Math.min(prefs.prestige.xpOffset, parts.total)
   return {
-    ...levelInfo(parts.total),
+    ...levelInfo(parts.total - offset),
     ready,
     sessions,
     fitnessXp: parts.fitness,
     nutritionXp: parts.nutrition,
+    totalXp: parts.total,
+    prestige: prefs.prestige.count,
   }
 }
 
