@@ -8,8 +8,14 @@
 //
 // GET  /api/ai            -> { enabled, provider, model }  (für die UI)
 // POST /api/ai { system, prompt, json, temperature } -> { text }
+//
+// Schutz (api/_aiguard.js): nur angemeldete Nutzer, Größenlimits, feste
+// Themen-Grenze (nur Fitness/Ernährung) und Limits pro Minute/Tag
+// (Tabelle ai_calls, Migration 0036). Ohne Limit: AI_UNLIMITED_EMAILS (kommagetrennt).
 
+import { createClient } from '@supabase/supabase-js'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from './_supabase.js'
+import { envList, quotaError, sanitizeRequest } from './_aiguard.js'
 const PROVIDER = (process.env.AI_PROVIDER || 'gemini').toLowerCase()
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 
@@ -65,7 +71,12 @@ async function geminiOnce({ model, key, body, json }) {
   if (reason === 'MAX_TOKENS' && (json || !text.trim())) {
     throw userError('Die KI-Antwort war zu lang und wurde abgeschnitten — bitte nochmal versuchen.')
   }
-  if (reason === 'SAFETY' || reason === 'PROHIBITED_CONTENT' || reason === 'BLOCKLIST' || data?.promptFeedback?.blockReason) {
+  if (
+    reason === 'SAFETY' ||
+    reason === 'PROHIBITED_CONTENT' ||
+    reason === 'BLOCKLIST' ||
+    data?.promptFeedback?.blockReason
+  ) {
     throw userError('Die KI hat die Anfrage aus Sicherheitsgründen abgelehnt. Bitte anders formulieren.')
   }
   if (!text.trim()) {
@@ -89,7 +100,8 @@ async function callGemini({ system, prompt, json, temperature, image, images, ma
   const parts = [{ text: prompt }]
   if (image) parts.push(imagePart(image))
   // Mehrere Bilder (z. B. mehrseitige Speisekarte), höchstens 4
-  if (Array.isArray(images)) for (const img of images.slice(0, 4)) if (typeof img === 'string') parts.push(imagePart(img))
+  if (Array.isArray(images))
+    for (const img of images.slice(0, 4)) if (typeof img === 'string') parts.push(imagePart(img))
   // maxTokens ist das Budget für die eigentliche Antwort. Gemini zählt sein
   // internes „Denken" mit dazu — deshalb Puffer obendrauf und Denken auf „low"
   // begrenzen (spart Kosten; bezahlt wird nur, was wirklich verbraucht wird).
@@ -139,10 +151,7 @@ async function callGroq({ system, prompt, json, temperature }) {
     body: JSON.stringify({
       model: GROQ_MODEL,
       temperature: temperature ?? 0.4,
-      messages: [
-        ...(system ? [{ role: 'system', content: system }] : []),
-        { role: 'user', content: prompt },
-      ],
+      messages: [...(system ? [{ role: 'system', content: system }] : []), { role: 'user', content: prompt }],
       ...(json ? { response_format: { type: 'json_object' } } : {}),
     }),
   })
@@ -159,24 +168,53 @@ async function callGroq({ system, prompt, json, temperature }) {
 
 /**
  * Nur angemeldete Nutzer dürfen die KI nutzen (sonst könnte jeder das Kontingent verbrauchen).
- * Prüft das Supabase-Access-Token. Fehlt die Supabase-Konfiguration auf dem Server,
- * wird nicht blockiert (damit die App nicht komplett ausfällt).
+ * Prüft das Supabase-Access-Token und liefert den Nutzer ({ id, email }) oder null.
  */
-async function isAuthorized(req) {
-  const url = SUPABASE_URL
-  const anon = SUPABASE_ANON_KEY
-  if (!url || !anon) return true
+async function currentUser(req) {
   const auth = req.headers.authorization || ''
-  if (!auth.startsWith('Bearer ')) return false
+  if (!auth.startsWith('Bearer ')) return null
   try {
-    const r = await fetch(`${url.replace(/\/$/, '')}/auth/v1/user`, {
-      headers: { apikey: anon, authorization: auth },
+    const r = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_ANON_KEY, authorization: auth },
     })
-    return r.ok
+    if (!r.ok) return null
+    const u = await r.json()
+    return u?.id ? { id: u.id, email: String(u.email || '').toLowerCase() } : null
   } catch {
-    // Supabase nicht erreichbar → nicht an der KI scheitern lassen
-    return true
+    return null
   }
+}
+
+/**
+ * Limits pro Nutzer zählen und den Aufruf vermerken. Ohne Service-Role-Key oder
+ * fehlende Tabelle wird nicht blockiert (nur geloggt), damit die KI nicht ausfällt.
+ */
+async function checkQuota(user) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key) return null
+  const unlimited = envList(process.env.AI_UNLIMITED_EMAILS).includes(user.email)
+  try {
+    const db = createClient(SUPABASE_URL, key, { auth: { persistSession: false } })
+    const since = (ms) => new Date(Date.now() - ms).toISOString()
+    const count = async (ms) => {
+      const { count: n, error } = await db
+        .from('ai_calls')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('at', since(ms))
+      if (error) throw error
+      return n || 0
+    }
+    if (!unlimited) {
+      const [lastMinute, today] = await Promise.all([count(60_000), count(86_400_000)])
+      const err = quotaError({ lastMinute, today, unlimited })
+      if (err) return err
+    }
+    await db.from('ai_calls').insert({ user_id: user.id })
+  } catch (e) {
+    console.error('ai quota', e?.message)
+  }
+  return null
 }
 
 export default async function handler(req, res) {
@@ -188,7 +226,8 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
-  if (!(await isAuthorized(req))) {
+  const user = await currentUser(req)
+  if (!user) {
     res.status(401).json({ error: 'Bitte neu anmelden, um die KI zu nutzen.' })
     return
   }
@@ -199,9 +238,15 @@ export default async function handler(req, res) {
   }
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
-    const { system, prompt, json, temperature, image, images, maxTokens } = body
-    if (!prompt || typeof prompt !== 'string') {
-      res.status(400).json({ error: 'prompt fehlt' })
+    const checked = sanitizeRequest(body)
+    if (checked.error) {
+      res.status(400).json({ error: checked.error })
+      return
+    }
+    const { system, prompt, json, temperature, image, images, maxTokens } = checked.req
+    const limited = await checkQuota(user)
+    if (limited) {
+      res.status(429).json({ error: limited })
       return
     }
     if ((image || images) && PROVIDER === 'groq') {

@@ -45,18 +45,8 @@ Empfehlung: zuerst Ghost + ETA + „Heute vor einem Jahr“, dann Scan, Wrapped 
 | 26 | Überraschungs-Belohnung | Überraschungsei | Nach dem Training manchmal ein zufälliges Extra (Buddy-Outfit, Sticker) – nie kaufbar | klein |
 | 27 | Technik-Häppchen | Duolingo | 1-Minuten-Lektionen pro Übung mit kurzer Frage, passend zu den Figuren | mittel |
 
-## Native App vor dem Store – Updates
-- Capacitor-Hülle lädt die Web-App (Vercel-URL oder Live-Update-Plugin) → jedes Deploy kommt automatisch an, wie jetzt
-- Neu installieren nur bei Änderungen an der Hülle selbst (neue native Plugins wie Health Connect)
-- Android: Play Console (einmalig 25 $), interner Test-Track → nicht öffentlich, aber Auto-Updates über den Play Store; alternativ APK drüberinstallieren
-- iOS: TestFlight braucht Apple-Entwicklerkonto (99 €/Jahr), Builds laufen nach 90 Tagen ab
-
-## Server / Hosting für den Launch
-- Supabase (PostgreSQL) bleibt – Branchenstandard, Open Source, später selbst hostbar (z. B. Hetzner) ohne App-Umbau. Kein Wechsel auf MySQL.
-- Supabase-Projekt in EU-Region (Frankfurt), AVV/DPA abschließen, Pro-Plan (Free pausiert bei Inaktivität, keine Backups)
-- Ein gemeinsames Projekt in einer Supabase-Organisation statt zwei Privatkonten
-- Vercel Hobby ist nur nicht-kommerziell → beim Launch Vercel Pro oder Frontend zu Cloudflare Pages / Hetzner
-- Gemini: bezahlte Stufe nutzen (Gratis-Stufe darf Daten zum Training verwenden – bei Gesundheitsdaten tabu)
+## Store-Launch (Android)
+Entscheidungen und Fahrplan stehen in [UEBERGABE.md](UEBERGABE.md): nur Android zuerst, Supabase Edge Functions statt Vercel, KI nur gegen Werbevideo / Testphase / Pro, Widgets und Sperrbildschirm nativ.
 
 ## Im Hinterkopf (nicht jetzt)
 - **Einsatz-Challenge** unter Freunden (statt Krypto-Token)

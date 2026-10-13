@@ -80,3 +80,15 @@ describe('suggestCombos', () => {
     expect(c[0].items[0].name).toBe('Cheeseburger')
   })
 })
+
+describe('matchChains', () => {
+  it('findet Ketten auch umgangssprachlich', async () => {
+    const { matchChains } = await import('./fastfood')
+    expect(matchChains('mäces')).toEqual(['mcdonalds'])
+    expect(matchChains("McDonald's")).toEqual(['mcdonalds'])
+    expect(matchChains('burger k')).toEqual(['burgerking'])
+    expect(matchChains('dean & david')).toEqual(['deananddavid'])
+    expect(matchChains('Italiener')).toEqual([])
+    expect(matchChains('')).toEqual([])
+  })
+})

@@ -24,6 +24,7 @@ import {
   type LucideIcon,
   BookOpen,
   CalendarDays,
+  ChevronDown,
   ShoppingBasket,
 } from 'lucide-react'
 import { Sheet } from '../components/workout/Sheet'
@@ -109,7 +110,17 @@ import { CustomizeHome } from '../components/home/CustomizeHome'
 import { useHomeCards } from '../lib/homeCards'
 import { fluidOf } from '../lib/fluid'
 import { ChainBadge, ChainMenu } from '../components/food/ChainMenu'
-import { CHAIN_BADGE, findChain, loadChains, menuItemToEstimate, suggestCombo, suggestCombos, type Chain } from '../lib/fastfood'
+import {
+  CHAIN_BADGE,
+  findChain,
+  loadChains,
+  matchChains,
+  menuItemToEstimate,
+  suggestCombo,
+  suggestCombos,
+  type Chain,
+  type Combo,
+} from '../lib/fastfood'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
 function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
@@ -525,6 +536,10 @@ export default function Nutrition() {
   const [menuPhotos, setMenuPhotos] = useState<string[]>([])
   const [chains, setChains] = useState<Chain[] | null>(null)
   const [orderQty, setOrderQty] = useState<Record<string, number>>({})
+  // Neues Restaurant-Sheet: Ort eintippen, Alternativen/Karte erst auf Wunsch
+  const [placeQuery, setPlaceQuery] = useState('')
+  const [showAlts, setShowAlts] = useState(false)
+  const [showChainMenu, setShowChainMenu] = useState(false)
   useEffect(() => {
     if (addMode !== 'restaurant' || chains) return
     loadChains()
@@ -774,6 +789,11 @@ export default function Nutrition() {
     setPlace(name)
     setOrderQty({})
     setRestItem('')
+    setPlaceQuery('')
+    setShowAlts(false)
+    setShowChainMenu(false)
+    setMenuPicks(null)
+    setMenuPhotos([])
     if (!chainId) return
     try {
       const recent: string[] = JSON.parse(localStorage.getItem(RECENT_PLACES_KEY) || '[]')
@@ -781,6 +801,31 @@ export default function Nutrition() {
     } catch {
       /* ignore */
     }
+  }
+
+  /** Eingetippten Ort übernehmen: bekannte Kette → exakte Karte, sonst freier Ort (KI). */
+  function pickTypedPlace() {
+    const q = placeQuery.trim()
+    if (!q) return
+    const [id] = matchChains(q)
+    if (id) pickPlace(CHAIN_BADGE[id].name, id)
+    else pickPlace(q)
+  }
+
+  /** Eine Kombi von der Kettenkarte eintragen (exakte Werte, keine KI). */
+  function logCombo(c: Combo) {
+    const items = c.items.map((it) => menuItemToEstimate(it))
+    showAnalysis(
+      items,
+      c.items
+        .filter((it) => it.kcal > 10)
+        .map((it) => it.name)
+        .join(' + '),
+      c.fits
+        ? `Passt in dein Rest-Budget – ${c.protein} g Eiweiß.`
+        : 'Dein Budget ist fast aufgebraucht – das ist die kleinste Option.',
+    )
+    setAddMode(null)
   }
 
   /** Foto einer Kartenseite hinzufügen (bis zu 4 Seiten). */
@@ -1878,25 +1923,19 @@ export default function Nutrition() {
           busy={aiBusy}
           footer={
             isNew ? (
-              !place ? undefined : (
-              <>
-                <PrimaryButton
-                  onClick={estimateOrder}
-                  disabled={aiBusy || (!!activeChain && orderItems.length === 0 && !restItem.trim())}
-                  busy={aiBusy}
-                >
+              !place ? undefined : orderItems.length > 0 || restItem.trim() ? (
+                <PrimaryButton onClick={estimateOrder} disabled={aiBusy} busy={aiBusy}>
                   {orderItems.length > 0
-                    ? `${orderItems.length} ${orderItems.length === 1 ? 'Artikel' : 'Artikel'} eintragen · ${orderKcal} kcal`
+                    ? `${orderItems.length} Artikel eintragen · ${orderKcal} kcal`
                     : activeChain
                       ? 'Nicht dabei? Mit KI schätzen'
-                      : 'Bestellung schätzen'}
+                      : 'Eintragen (KI schätzt)'}
                 </PrimaryButton>
-                <button className="btn-ghost w-full gap-1.5 rounded-2xl py-3" onClick={suggestForBudget} disabled={aiBusy}>
-                  <Bot size={16} className="text-brand" />
-                  Was passt zu meinem Budget?
-                </button>
-              </>
-              )
+              ) : !activeChain && menuPhotos.length === 0 ? (
+                <PrimaryButton onClick={suggestForBudget} disabled={aiBusy} busy={aiBusy}>
+                  Was soll ich hier nehmen?
+                </PrimaryButton>
+              ) : undefined
             ) : (
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button className="btn-primary" onClick={estimateOrder} disabled={aiBusy}>
@@ -1922,30 +1961,65 @@ export default function Nutrition() {
             </p>
           )}
           {isNew && !place && (
-            <div className="space-y-2">
-              <GroupLabel>Wo isst du?</GroupLabel>
-              <div className="grid grid-cols-4 gap-2">
-                {recentFirst(Object.keys(CHAIN_BADGE)).map((id) => (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  className={BIG_INPUT}
+                  placeholder="Wo isst du? z. B. McDonald's, Italiener"
+                  value={placeQuery}
+                  enterKeyHint="go"
+                  onChange={(e) => setPlaceQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && pickTypedPlace()}
+                />
+                <MicButton onResult={(t) => setPlaceQuery(t)} />
+              </div>
+              {placeQuery.trim() ? (
+                <div className="anim-fade divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
+                  {matchChains(placeQuery).map((id) => (
+                    <button
+                      key={id}
+                      className="flex w-full items-center gap-3 px-3.5 py-3 text-left active:bg-sand/60"
+                      onClick={() => pickPlace(CHAIN_BADGE[id].name, id)}
+                    >
+                      <Store size={17} className="shrink-0 text-brand" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">{CHAIN_BADGE[id].name}</span>
+                        <span className="block text-xs text-cocoa-light">Exakte Nährwerte von der Karte</span>
+                      </span>
+                    </button>
+                  ))}
                   <button
-                    key={id}
-                    onClick={() => pickPlace(CHAIN_BADGE[id].name, id)}
-                    className="flex flex-col items-center gap-1 rounded-2xl bg-cream px-1 py-2.5 transition active:scale-95"
+                    className="flex w-full items-center gap-3 px-3.5 py-3 text-left active:bg-sand/60"
+                    onClick={() => pickPlace(placeQuery.trim())}
                   >
-                    <ChainBadge id={id} size={36} />
-                    <span className="w-full truncate text-center text-[11px] font-semibold leading-tight">
-                      {CHAIN_BADGE[id].name}
+                    <Sparkles size={17} className="shrink-0 text-brand" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">„{placeQuery.trim()}“</span>
+                      <span className="block text-xs text-cocoa-light">KI kennt die typischen Gerichte</span>
                     </span>
                   </button>
-                ))}
-              </div>
-              {ai?.enabled ? (
-                <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-brand p-3.5 text-on-brand transition active:scale-[0.99]">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/20">
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {recentFirst(Object.keys(CHAIN_BADGE)).map((id) => (
+                    <button
+                      key={id}
+                      onClick={() => pickPlace(CHAIN_BADGE[id].name, id)}
+                      className="rounded-full bg-cream px-3.5 py-2 text-sm font-semibold transition active:scale-95"
+                    >
+                      {CHAIN_BADGE[id].name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {ai?.enabled && (
+                <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-cream p-3.5 transition active:scale-[0.99]">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
                     <Camera size={19} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">Anderes Restaurant</span>
-                    <span className="block text-xs opacity-85">Speisekarte fotografieren – KI sucht das Beste raus</span>
+                    <span className="block text-sm font-semibold">Speisekarte fotografieren</span>
+                    <span className="block text-xs text-cocoa-light">Jedes Restaurant – die KI sucht das Beste raus</span>
                   </span>
                   <input
                     type="file"
@@ -1953,42 +2027,30 @@ export default function Nutrition() {
                     capture="environment"
                     className="hidden"
                     onChange={(e) => {
-                      pickPlace(OTHER_PLACE)
-                      void addMenuPhoto(e.target.files)
+                      const files = e.target.files
+                      pickPlace(placeQuery.trim() || OTHER_PLACE)
+                      void addMenuPhoto(files)
                       e.target.value = ''
                     }}
                   />
                 </label>
-              ) : (
-                <button
-                  className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3.5 text-left"
-                  onClick={() => pickPlace(OTHER_PLACE)}
-                >
-                  <Store size={19} className="text-brand" />
-                  <span className="text-sm font-semibold">Anderes Restaurant</span>
-                </button>
               )}
             </div>
           )}
           {isNew && place && (
             <button
-              className="flex w-full items-center gap-3 rounded-2xl bg-cream p-2.5 text-left"
-              onClick={() => {
-                setPlace('')
-                setOrderQty({})
-                setRestItem('')
-                setMenuPicks(null)
-                setMenuPhotos([])
-              }}
+              className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left"
+              onClick={() => pickPlace('')}
             >
-              {activeChain ? (
-                <ChainBadge id={Object.keys(CHAIN_BADGE).find((k) => CHAIN_BADGE[k].name === place) ?? ''} size={32} />
-              ) : (
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-brand/10 text-brand">
-                  <Store size={16} />
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+                <Store size={17} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{place}</span>
+                <span className="block text-xs text-cocoa-light">
+                  {activeChain ? 'Exakte Werte von der Karte' : 'Werte schätzt die KI'}
                 </span>
-              )}
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold">{place}</span>
+              </span>
               <span className="text-xs font-semibold text-brand">Ändern</span>
             </button>
           )}
@@ -2018,7 +2080,7 @@ export default function Nutrition() {
             </div>
           </div>
           )}
-          {isNew && ai?.enabled && place === OTHER_PLACE && (
+          {isNew && ai?.enabled && place && !activeChain && (
             <div className="space-y-2">
               <div className="space-y-2.5 rounded-2xl bg-cream p-3.5">
                 <div className="flex items-center gap-3">
@@ -2106,7 +2168,7 @@ export default function Nutrition() {
               )}
             </div>
           )}
-          {(!isNew || place) && (
+          {(!isNew || (place && (!activeChain || showChainMenu))) && (
           <div>
             {isNew && <GroupLabel>{activeChain ? 'Auf der Karte suchen' : 'Oder beschreiben, was du bestellst'}</GroupLabel>}
             <div className="flex gap-2">
@@ -2115,7 +2177,9 @@ export default function Nutrition() {
                 placeholder={
                   activeChain
                     ? 'Auf der Karte suchen, z. B. Big Mac'
-                    : 'Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis'
+                    : isNew
+                      ? 'Gericht, z. B. Pasta Carbonara'
+                      : 'Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis'
                 }
                 value={restItem}
                 onChange={(e) => setRestItem(e.target.value)}
@@ -2125,51 +2189,105 @@ export default function Nutrition() {
             </div>
           </div>
           )}
-          {isNew && activeChain && !restItem.trim() && (
-            <div className="space-y-2">
-              <GroupLabel>{hasTarget ? `Passt in deine ${Math.max(0, kcalTarget - totals.kcal)} kcal` : 'Gute Kombis'}</GroupLabel>
-              {suggestCombos(activeChain.items, hasTarget
-                  ? {
-                      kcal: Math.max(0, kcalTarget - totals.kcal),
-                      protein: Math.max(0, (settings?.protein_target ?? 0) - totals.protein),
-                    }
-                  : { kcal: 800, protein: 40 }, 3).map((c, i) => (
-                <button
-                  key={i}
-                  className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left transition active:scale-[0.99]"
-                  onClick={() => {
-                    const items = c.items.map((it) => menuItemToEstimate(it))
-                    showAnalysis(
-                      items,
-                      c.items.filter((it) => it.kcal > 10).map((it) => it.name).join(' + '),
-                      c.fits ? `Passt in dein Rest-Budget – ${c.protein} g Eiweiß.` : 'Dein Budget ist fast aufgebraucht – das ist die kleinste Option.',
-                    )
-                    setAddMode(null)
-                  }}
-                >
-                  <span className="tabular grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-on-brand">
-                    {i + 1}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    {c.tag && (
-                      <span className="mb-0.5 inline-block rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand">
-                        {c.tag}
-                      </span>
+          {isNew &&
+            activeChain &&
+            !restItem.trim() &&
+            (() => {
+              const remaining = hasTarget
+                ? {
+                    kcal: Math.max(0, kcalTarget - totals.kcal),
+                    protein: Math.max(0, (settings?.protein_target ?? 0) - totals.protein),
+                  }
+                : { kcal: 800, protein: 40 }
+              const [best, ...alts] = suggestCombos(activeChain.items, remaining, 3)
+              if (!best) return null
+              return (
+                <div className="space-y-2">
+                  <section className="anim-fade relative overflow-hidden rounded-3xl bg-cocoa p-4 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
+                    <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-brand/25 blur-3xl" />
+                    <span className="relative flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
+                      <Sparkles size={13} className="text-brand" />
+                      {best.fits ? 'Beste Wahl für dein Budget' : 'Kleinste sinnvolle Option'}
+                    </span>
+                    <ul className="relative mt-2 space-y-0.5">
+                      {best.items.map((it, i) => (
+                        <li key={it.name + i} className="text-[15px] font-semibold leading-snug">
+                          {it.name}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="relative mt-3 flex items-end justify-between gap-3">
+                      <div className="flex gap-4">
+                        <span>
+                          <span className="tabular block text-2xl font-black leading-none">{best.kcal}</span>
+                          <span className="text-[11px] text-bg/60 dark:text-cocoa-light">kcal</span>
+                        </span>
+                        <span>
+                          <span className="tabular block text-2xl font-black leading-none">{best.protein} g</span>
+                          <span className="text-[11px] text-bg/60 dark:text-cocoa-light">Eiweiß</span>
+                        </span>
+                      </div>
+                      <button
+                        className="btn-primary gap-1.5 rounded-2xl px-4 py-2.5"
+                        onClick={() => logCombo(best)}
+                      >
+                        <Plus size={17} /> Eintragen
+                      </button>
+                    </div>
+                    {hasTarget && (
+                      <p className="relative mt-2.5 text-xs text-bg/60 dark:text-cocoa-light">
+                        {best.fits
+                          ? `Danach noch ${Math.max(0, remaining.kcal - best.kcal)} kcal übrig`
+                          : `${best.kcal - remaining.kcal} kcal über deinem Rest-Budget`}
+                      </p>
                     )}
-                    <span className="block text-sm font-semibold leading-snug">
-                      {c.items.map((it) => it.name).join(' + ')}
-                    </span>
-                    <span className="tabular block text-xs text-cocoa-light">
-                      {c.kcal} kcal · {c.protein} g Eiweiß{!c.fits && ' · über Budget'}
-                    </span>
-                  </span>
-                  <Plus size={18} className="shrink-0 text-brand" />
-                </button>
-              ))}
-              <GroupLabel>Oder selbst zusammenstellen</GroupLabel>
-            </div>
-          )}
-          {activeChain && (
+                  </section>
+                  {alts.length > 0 && (
+                    <button
+                      className="flex w-full items-center justify-between rounded-2xl px-1 py-1.5 text-sm font-semibold text-brand"
+                      onClick={() => setShowAlts((v) => !v)}
+                      aria-expanded={showAlts}
+                    >
+                      {showAlts ? 'Alternativen ausblenden' : `${alts.length} Alternativen`}
+                      <ChevronDown size={16} className={`transition-transform ${showAlts ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
+                  {showAlts &&
+                    alts.map((c, i) => (
+                      <button
+                        key={i}
+                        className="anim-fade flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left transition active:scale-[0.99]"
+                        onClick={() => logCombo(c)}
+                      >
+                        <span className="min-w-0 flex-1">
+                          {c.tag && (
+                            <span className="mb-0.5 inline-block text-[11px] font-semibold uppercase tracking-wide text-brand">
+                              {c.tag}
+                            </span>
+                          )}
+                          <span className="block text-sm font-semibold leading-snug">
+                            {c.items.map((it) => it.name).join(' + ')}
+                          </span>
+                          <span className="tabular block text-xs text-cocoa-light">
+                            {c.kcal} kcal · {c.protein} g Eiweiß{!c.fits && ' · über Budget'}
+                          </span>
+                        </span>
+                        <Plus size={18} className="shrink-0 text-brand" />
+                      </button>
+                    ))}
+                  {!showChainMenu && (
+                    <button
+                      className="flex w-full items-center justify-between rounded-2xl px-1 py-1.5 text-sm font-semibold text-cocoa-light"
+                      onClick={() => setShowChainMenu(true)}
+                    >
+                      Selbst von der Karte wählen
+                      <ChevronDown size={16} />
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
+          {activeChain && (!isNew || showChainMenu || !!restItem.trim()) && (
             <ChainMenu
               chain={activeChain}
               query={restItem}

@@ -46,6 +46,34 @@ export const CHAIN_BADGE: Record<string, { name: string; short: string; bg: stri
   vapiano: { name: 'Vapiano', short: 'Va', bg: '#E2001A', fg: '#FFFFFF' },
 }
 
+/** Umgangssprachliche Namen, damit „Mäces“ oder „BK“ auch passen. */
+const CHAIN_ALIASES: Record<string, string[]> = {
+  mcdonalds: ['mc', 'mces', 'maces', 'mackes', 'meces', 'mcdoof'],
+  burgerking: ['bk'],
+  dominos: ['domino'],
+  deananddavid: ['deandavid', 'dd'],
+  fiveguys: ['5guys'],
+}
+
+const normName = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]/g, '')
+
+/** Ketten-IDs, die zu einer Eingabe wie „mcdonalds“ oder „Burger K“ passen. */
+export function matchChains(query: string): string[] {
+  const q = normName(query)
+  if (!q) return []
+  return Object.keys(CHAIN_BADGE).filter((id) => {
+    const n = normName(CHAIN_BADGE[id].name)
+    if (n.startsWith(q) || (q.length >= 3 && n.includes(q)) || (n.length >= 3 && q.includes(n))) return true
+    return (CHAIN_ALIASES[id] ?? []).some((a) => a === q || (q.length >= 3 && a.startsWith(q)))
+  })
+}
+
 let cache: Promise<Chain[]> | null = null
 
 /** Speisekarten laden (eigenes Bundle-Stück, erst bei Bedarf). */
