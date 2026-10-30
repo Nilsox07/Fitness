@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { apiUrl } from './native'
 
 export const fitbitClientId = import.meta.env.VITE_FITBIT_CLIENT_ID as string | undefined
 
@@ -32,7 +33,7 @@ export interface FitbitStatus {
 
 export async function fitbitStatus(): Promise<FitbitStatus> {
   try {
-    const r = await fetch('/api/fitbit/status', {
+    const r = await fetch(apiUrl('/api/fitbit/status'), {
       headers: { authorization: `Bearer ${await accessToken()}` },
     })
     if (!r.ok) return { connected: false, configured: false }
@@ -51,7 +52,7 @@ export interface FitbitSync {
 }
 
 export async function fitbitSync(): Promise<FitbitSync> {
-  const r = await fetch('/api/fitbit/sync', {
+  const r = await fetch(apiUrl('/api/fitbit/sync'), {
     method: 'POST',
     headers: { authorization: `Bearer ${await accessToken()}` },
   })

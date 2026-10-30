@@ -5,6 +5,7 @@
 //
 // POST /api/recipe-import { url } -> { source, url, title, caption, author, image, recipe }
 import { userFromAuth } from './_fitbit.js'
+import { cors } from './_cors.js'
 
 const UA =
   'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36'
@@ -143,6 +144,7 @@ async function imageAsDataUrl(src) {
 }
 
 export default async function handler(req, res) {
+  if (cors(req, res)) return
   try {
     await importHandler(req, res)
   } catch (e) {

@@ -8,9 +8,10 @@ import { useUserPrefs } from './usePrefsSync'
 import { byDay } from '../lib/nutritionXp'
 import { seasonProgress, type SeasonTheme } from '../lib/seasonTheme'
 import { rememberSeasonBadge } from '../lib/seasonBadges'
+import { apiUrl } from '../lib/native'
 
 async function fetchSeason(): Promise<SeasonTheme> {
-  const r = await fetch('/api/season')
+  const r = await fetch(apiUrl('/api/season'))
   if (!r.ok) throw new Error('Saison nicht verfügbar')
   return (await r.json()) as SeasonTheme
 }

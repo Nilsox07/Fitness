@@ -9,6 +9,7 @@ import { aiBegin, aiEnd } from './aiActivity'
 import { dietPromptText, getActiveDiet, type DietStyle } from './dietStyle'
 import type { MealFlags } from './mealScore'
 import { toBodyFatEstimate, type BodyFatEstimate } from './bodyScan'
+import { apiUrl } from './native'
 
 export interface AiStatus {
   enabled: boolean
@@ -35,7 +36,7 @@ async function complete(opts: {
   try {
     const { data: sess } = await supabase.auth.getSession()
     const token = sess.session?.access_token
-    const res = await fetch('/api/ai', {
+    const res = await fetch(apiUrl('/api/ai'), {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -65,7 +66,7 @@ async function complete(opts: {
 
 export async function getAiStatus(): Promise<AiStatus> {
   try {
-    const res = await fetch('/api/ai')
+    const res = await fetch(apiUrl('/api/ai'))
     if (!res.ok) return { enabled: false, provider: '', model: '' }
     return (await res.json()) as AiStatus
   } catch {
@@ -463,7 +464,7 @@ export function extractUrl(text: string): string | null {
 /** Link-Infos vom Server holen (Bildunterschrift, Vorschaubild, strukturiertes Rezept). */
 export async function fetchSharedPost(url: string): Promise<SharedPost> {
   const call = (token: string | undefined) =>
-    fetch('/api/recipe-import', {
+    fetch(apiUrl('/api/recipe-import'), {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({ url }),

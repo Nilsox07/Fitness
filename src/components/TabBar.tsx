@@ -60,19 +60,33 @@ function IconPeople({ className = S }: IconProps) {
   )
 }
 
+function IconToday({ className = S }: IconProps) {
+  return (
+    <svg className={className} {...common}>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="2" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="2" />
+      <rect x="3.5" y="13.5" width="17" height="7" rx="2" />
+    </svg>
+  )
+}
+
 type Tab = { to: string; label: string; Icon: (p: IconProps) => ReactElement; end?: boolean; also?: string[] }
 
-// Neue App: vier feste Bereiche. Unterseiten zählen zu ihrem Bereich (also),
+// Neue App: Heute + Bereiche je nach Modulen. Unterseiten zählen zu ihrem Bereich (also),
 // Zurück geht über die obere Leiste – höchstens zwei Ebenen.
 const NUTRITION_TAB: Tab = { to: '/nutrition', label: 'Ernährung', Icon: IconFood, end: true, also: ['/recipes', '/shopping'] }
-const MAIN_TABS: Tab[] = [
-  { to: '/', label: 'Training', Icon: IconTrain, end: true, also: ['/plans', '/exercises', '/quick'] },
-  { to: '/analytics', label: 'Fortschritt', Icon: IconChart, also: ['/history', '/badges', '/body'] },
-  { to: '/social', label: 'Community', Icon: IconPeople, also: ['/feed'] },
-]
+const TODAY_TAB: Tab = { to: '/today', label: 'Heute', Icon: IconToday, end: true }
+const TRAINING_TAB: Tab = { to: '/', label: 'Training', Icon: IconTrain, end: true, also: ['/plans', '/exercises', '/quick'] }
+const PROGRESS_TAB: Tab = {
+  to: '/analytics',
+  label: 'Fortschritt',
+  Icon: IconChart,
+  also: ['/history', '/badges', '/body', '/cardio', '/sleep'],
+}
+const SOCIAL_TAB: Tab = { to: '/social', label: 'Community', Icon: IconPeople, also: ['/feed'] }
 
 export function TabBar() {
-  const { showNutrition, isNew } = usePrefs()
+  const { showNutrition, showSocial, isNew } = usePrefs()
   const { pathname } = useLocation()
 
   // Klassisch = alte, schlanke App
@@ -84,7 +98,15 @@ export function TabBar() {
     { to: '/exercises', label: 'Übungen', Icon: IconList },
   ]
 
-  const tabs = !isNew ? classicTabs : showNutrition ? [NUTRITION_TAB, ...MAIN_TABS] : MAIN_TABS
+  // Neue App: höchstens fünf Bereiche – ausgeblendete Module verschwinden
+  const newTabs: Tab[] = [
+    TODAY_TAB,
+    TRAINING_TAB,
+    ...(showNutrition ? [NUTRITION_TAB] : []),
+    PROGRESS_TAB,
+    ...(showSocial ? [SOCIAL_TAB] : []),
+  ]
+  const tabs = !isNew ? classicTabs : newTabs
 
   if (isNew) return <FloatingTabBar tabs={tabs} pathname={pathname} />
 

@@ -3,6 +3,8 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 const KEY = 'pref_show_nutrition'
 const MODE_KEY = 'pref_app_mode'
 const WORLD_KEY = 'pref_world'
+const SOCIAL_KEY = 'pref_show_social'
+const WATCH_KEY = 'pref_has_watch'
 
 /**
  * App-Modus für die Übergangsphase:
@@ -23,6 +25,12 @@ interface Prefs {
   isNew: boolean
   world: World
   setWorld: (v: World) => void
+  /** Modul Community (Freunde, Bestenliste, Duelle) */
+  showSocial: boolean
+  setShowSocial: (v: boolean) => void
+  /** Modul Smartwatch: Ausdauer, Schlaf, Tagesform, Schritte – nur für Leute mit Uhr sichtbar */
+  hasWatch: boolean
+  setHasWatch: (v: boolean) => void
 }
 
 const PrefsContext = createContext<Prefs>({
@@ -33,7 +41,28 @@ const PrefsContext = createContext<Prefs>({
   isNew: false,
   world: 'fitness',
   setWorld: () => {},
+  showSocial: true,
+  setShowSocial: () => {},
+  hasWatch: false,
+  setHasWatch: () => {},
 })
+
+function readFlag(key: string, fallback: boolean): boolean {
+  try {
+    const v = localStorage.getItem(key)
+    return v == null ? fallback : v === 'true'
+  } catch {
+    return fallback
+  }
+}
+
+function writeFlag(key: string, v: boolean) {
+  try {
+    localStorage.setItem(key, v ? 'true' : 'false')
+  } catch {
+    /* ignore */
+  }
+}
 
 function readMode(): AppMode {
   try {
@@ -55,6 +84,8 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
   const [showNutrition, setShow] = useState(() => localStorage.getItem(KEY) !== 'false')
   const [appMode, setMode] = useState<AppMode>(readMode)
   const [world, setWorldState] = useState<World>(readWorld)
+  const [showSocial, setSocial] = useState(() => readFlag(SOCIAL_KEY, true))
+  const [hasWatch, setWatch] = useState(() => readFlag(WATCH_KEY, false))
 
   function setShowNutrition(v: boolean) {
     localStorage.setItem(KEY, v ? 'true' : 'false')
@@ -90,6 +121,16 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         // Ernährung ausgeblendet → es gibt nur die Fitness-Welt
         world: showNutrition ? world : 'fitness',
         setWorld,
+        showSocial,
+        setShowSocial: (v: boolean) => {
+          writeFlag(SOCIAL_KEY, v)
+          setSocial(v)
+        },
+        hasWatch,
+        setHasWatch: (v: boolean) => {
+          writeFlag(WATCH_KEY, v)
+          setWatch(v)
+        },
       }}
     >
       {children}

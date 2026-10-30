@@ -1,8 +1,10 @@
 // Schickt einen Push an alle Freunde des Nutzers (z. B. Cheat-Meal-Alarm).
 import webpush from 'web-push'
 import { admin, userFromAuth } from '../_fitbit.js'
+import { cors } from '../_cors.js'
 
 export default async function handler(req, res) {
+  if (cors(req, res)) return
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'method' })
     return

@@ -28,6 +28,10 @@ import Nutrition from './pages/Nutrition'
 import Profile from './pages/Profile'
 import QuickWorkout from './pages/QuickWorkout'
 import Body from './pages/Body'
+import Today from './pages/Today'
+import Cardio from './pages/Cardio'
+import Sleep from './pages/Sleep'
+import { NativeSync } from './components/NativeSync'
 import { Splash } from './components/Splash'
 import { useChallengeSync } from './hooks/useChallenges'
 
@@ -43,7 +47,7 @@ const FITNESS_ROUTES = ['/', '/plans', '/exercises']
 
 export default function App() {
   const { session, loading, recovery } = useAuth()
-  const { isNew, world, setWorld, showNutrition } = usePrefs()
+  const { isNew, world, setWorld, showNutrition, showSocial, hasWatch } = usePrefs()
   const { pathname, search } = useLocation()
   const mainRef = useRef<HTMLElement>(null)
 
@@ -53,17 +57,17 @@ export default function App() {
     if (mainRef.current) mainRef.current.scrollTop = 0
   }, [pathname, search])
 
-  // Startbereich: Die App wird meist zum Essen-Tracken geöffnet → Ernährung,
-  // außer es läuft gerade ein Training. Gilt beim Start und wenn die App nach
-  // längerer Pause (30 min) wieder in den Vordergrund kommt.
+  // Startbereich: „Heute“ (persönliches Dashboard), außer es läuft gerade ein
+  // Training. Gilt beim Start und wenn die App nach längerer Pause (30 min)
+  // wieder in den Vordergrund kommt.
   const navigate = useNavigate()
   const startChecked = useRef(false)
   const pathRef = useRef(pathname)
   pathRef.current = pathname
   useEffect(() => {
-    if (!session || !isNew || !showNutrition) return
+    if (!session || !isNew) return
     const goHome = () => {
-      if (pathRef.current === '/' && !isWorkoutRunning()) navigate('/nutrition', { replace: true })
+      if (pathRef.current === '/' && !isWorkoutRunning()) navigate('/today', { replace: true })
     }
     if (!startChecked.current) {
       startChecked.current = true
@@ -76,7 +80,7 @@ export default function App() {
     }
     document.addEventListener('visibilitychange', onVis)
     return () => document.removeEventListener('visibilitychange', onVis)
-  }, [session, isNew, showNutrition, navigate])
+  }, [session, isNew, navigate])
 
   // Top-Umschalter mit der aktuellen Seite synchron halten.
   useEffect(() => {
@@ -102,15 +106,19 @@ export default function App() {
       <AiActivityBar />
       <SaveStatus />
       {isNew && <TopBar />}
-      {isNew && <ChallengeSync />}
+      {isNew && showSocial && <ChallengeSync />}
+      {isNew && <NativeSync />}
       <main ref={mainRef} className="flex-1 overflow-y-auto px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />
+          <Route path="/today" element={isNew ? <Today /> : <Navigate to="/" replace />} />
+          <Route path="/cardio" element={hasWatch ? <Cardio /> : <Navigate to="/analytics" replace />} />
+          <Route path="/sleep" element={hasWatch ? <Sleep /> : <Navigate to="/analytics" replace />} />
           <Route path="/nutrition" element={showNutrition ? <Nutrition /> : <Navigate to="/" replace />} />
           <Route path="/exercises" element={<Exercises />} />
           <Route path="/exercises/:id" element={<ExerciseDetail />} />
           <Route path="/plans" element={<Plans />} />
-          <Route path="/social" element={<Social />} />
+          <Route path="/social" element={!isNew || showSocial ? <Social /> : <Navigate to="/today" replace />} />
           <Route path="/badges" element={<Badges />} />
           <Route path="/recipes" element={showNutrition ? <Recipes /> : <Navigate to="/" replace />} />
           <Route path="/shopping" element={showNutrition ? <Shopping /> : <Navigate to="/" replace />} />

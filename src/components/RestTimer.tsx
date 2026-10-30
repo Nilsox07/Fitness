@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { cancelRestDone, liveStart, liveStop, scheduleRestDone } from '../lib/native'
 
 export interface RestTimerHandle {
   start: (seconds?: number) => void
@@ -64,6 +65,25 @@ export const RestTimer = forwardRef<RestTimerHandle>(function RestTimer(_props, 
       }
     },
   }))
+
+  // Android: Countdown auf dem Sperrbildschirm + Hinweis, wenn die Pause vorbei ist
+  // (nur bei Start/±15 s neu senden, nicht bei jedem Sekunden-Tick)
+  const endRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (left == null || left <= 0) {
+      if (endRef.current) {
+        endRef.current = null
+        void liveStop('rest')
+        if (left == null) void cancelRestDone()
+      }
+      return
+    }
+    const end = Date.now() + left * 1000
+    if (endRef.current && Math.abs(end - endRef.current) < 1500) return
+    endRef.current = end
+    void liveStart({ kind: 'rest', title: 'Satzpause', body: 'Gleich geht’s weiter', endsAt: end })
+    void scheduleRestDone(end)
+  }, [left])
 
   useEffect(() => {
     if (left == null) return

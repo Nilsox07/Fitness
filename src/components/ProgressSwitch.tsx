@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Apple, CalendarDays, ChevronRight, Dumbbell, Trophy } from 'lucide-react'
+import { Activity, Apple, BedDouble, CalendarDays, ChevronRight, Dumbbell, Trophy } from 'lucide-react'
 import { usePrefs } from '../lib/prefs'
 
 /**
@@ -9,7 +9,7 @@ import { usePrefs } from '../lib/prefs'
  * Auswahlleiste gibt.
  */
 export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
-  const { world, setWorld, showNutrition } = usePrefs()
+  const { world, setWorld, showNutrition, hasWatch } = usePrefs()
   const { pathname } = useLocation()
   const navigate = useNavigate()
   if (pathname === '/history') return null
@@ -57,6 +57,19 @@ export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
             <CalendarDays size={15} className="text-brand" />
             {world === 'food' ? 'Alle Tage' : 'Verlauf'}
             <ChevronRight size={15} className="text-cocoa-muted" />
+          </Link>
+        </div>
+      )}
+      {/* Uhr-Auswertungen – nur sichtbar, wenn eine Smartwatch verbunden ist */}
+      {hasWatch && !onBadges && world === 'fitness' && (
+        <div className="grid grid-cols-2 gap-2">
+          <Link to="/cardio" className="flex items-center gap-2 rounded-2xl bg-cream px-3 py-2.5 text-sm font-semibold active:scale-[0.98]">
+            <Activity size={16} className="text-orange-500" /> Ausdauer
+            <ChevronRight size={15} className="ml-auto text-cocoa-muted" />
+          </Link>
+          <Link to="/sleep" className="flex items-center gap-2 rounded-2xl bg-cream px-3 py-2.5 text-sm font-semibold active:scale-[0.98]">
+            <BedDouble size={16} className="text-indigo-500" /> Schlaf
+            <ChevronRight size={15} className="ml-auto text-cocoa-muted" />
           </Link>
         </div>
       )}

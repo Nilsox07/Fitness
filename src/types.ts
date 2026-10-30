@@ -244,3 +244,49 @@ export interface WaterIntake {
   ml: number
   created_at: string
 }
+
+/** Ausdauer-Einheit von Smartwatch / Health Connect (Migration 0037). */
+export type ActivityType = 'run' | 'ride' | 'walk' | 'hike' | 'swim' | 'row' | 'other'
+
+export interface HealthActivity {
+  id: string
+  user_id: string
+  source_id: string
+  source: string | null
+  type: ActivityType
+  title: string | null
+  started_at: string
+  duration_s: number
+  distance_m: number | null
+  kcal: number | null
+  avg_hr: number | null
+  max_hr: number | null
+  elevation_m: number | null
+  /** vereinfachte Strecke [[lat, lng], …] */
+  route: [number, number][] | null
+}
+
+/** Eine Nacht Schlaf (date = Aufwach-Tag). */
+export interface HealthSleep {
+  user_id: string
+  date: string
+  start_at: string
+  end_at: string
+  asleep_min: number
+  deep_min: number | null
+  rem_min: number | null
+  light_min: number | null
+  awake_min: number | null
+  source: string | null
+}
+
+/** Tageswerte von der Uhr. */
+export interface HealthDaily {
+  user_id: string
+  date: string
+  steps: number | null
+  active_kcal: number | null
+  resting_hr: number | null
+  hrv_ms: number | null
+  vo2max: number | null
+}

@@ -16,10 +16,10 @@ import {
   Target,
   User,
   Users,
-  Utensils,
   Volume2,
   Flame,
   Layers,
+  LayoutGrid,
   ClipboardList,
   SlidersHorizontal,
 } from 'lucide-react'
@@ -61,13 +61,14 @@ import { NameSheet } from '../components/profile/NameSheet'
 import { useMyProfile } from '../hooks/useSocial'
 import { SettingsEditor } from '../components/profile/SettingsEditor'
 import { NotificationSettings } from '../components/profile/NotificationSettings'
+import { ModuleSettings } from '../components/profile/ModuleSettings'
 
 /**
  * Unterseiten des Profils (neue Version), per ?s=… in der URL → Zurück-Geste funktioniert.
  * Der Trainingsrhythmus liegt jetzt bei den Plänen (/plans?rhythm=1); alte Links
  * auf ?s=rhythm werden dorthin umgeleitet.
  */
-type Sub = 'settings' | 'goal' | 'review' | 'version' | 'coach' | 'push' | 'export'
+type Sub = 'settings' | 'goal' | 'review' | 'version' | 'coach' | 'push' | 'export' | 'modules'
 
 const SUB_TITLE: Record<Sub, string> = {
   settings: 'Meine Einstellungen',
@@ -77,6 +78,7 @@ const SUB_TITLE: Record<Sub, string> = {
   coach: 'Buddy-Ton',
   push: 'Benachrichtigungen',
   export: 'Daten exportieren',
+  modules: 'Bereiche',
 }
 
 const SUB_SUBTITLE: Record<Sub, string> = {
@@ -87,6 +89,7 @@ const SUB_SUBTITLE: Record<Sub, string> = {
   coach: 'So spricht dein Buddy',
   push: 'Erinnerungen einzeln einstellen',
   export: 'CSV-Download',
+  modules: 'Ein- und ausblenden, Uhr verbinden',
 }
 
 const MODES: { v: ThemeMode; label: string }[] = [
@@ -199,6 +202,7 @@ export default function Profile() {
     coach: Boolean(ai?.enabled),
     push: pushSupported,
     export: true,
+    modules: true,
     // Fitbit ist in der neuen App ausgeblendet (Code bleibt für die klassische Version).
   }
   const rawSub = params.get('s') as Sub | null
@@ -242,6 +246,8 @@ export default function Profile() {
           )}
 
           {sub === 'goal' && <GoalEditor onSaved={closeSub} />}
+
+          {sub === 'modules' && <ModuleSettings />}
 
           {sub === 'review' && (
             <SubCard>
@@ -411,16 +417,10 @@ export default function Profile() {
             }
           />
           <Row
-            icon={Utensils} tint="success"
-            label="Ernährungstracking"
-            hint={'Zeigt den „Essen"-Tab und die Ernährungs-Auswertung.'}
-            trailing={
-              <Toggle
-                label="Ernährungstracking"
-                checked={showNutrition}
-                onChange={setShowNutrition}
-              />
-            }
+            icon={LayoutGrid} tint="success"
+            label="Bereiche"
+            hint="Ernährung, Community & Smartwatch ein- oder ausblenden"
+            onClick={() => openSub('modules')}
           />
           <Row
             icon={Volume2} tint="sky"

@@ -7,6 +7,9 @@ type NavInfo = { title: string; back?: { to: string; label: string } }
 export function navInfo(pathname: string, search = ""): NavInfo {
   if (pathname === "/plans" && /[?&](edit|rhythm)=/.test(search))
     return { title: "Plan", back: { to: "/plans", label: "Pläne" } };
+  if (pathname === "/today") return { title: "Heute" };
+  if (pathname === "/cardio") return { title: "Ausdauer", back: { to: "/analytics", label: "Fortschritt" } };
+  if (pathname === "/sleep") return { title: "Schlaf & Erholung", back: { to: "/analytics", label: "Fortschritt" } };
   if (pathname === "/nutrition") return { title: "Ernährung" };
   if (pathname === "/recipes") return { title: "Rezepte", back: { to: "/nutrition", label: "Ernährung" } };
   if (pathname === "/shopping") return { title: "Wochenplan", back: { to: "/nutrition", label: "Ernährung" } };

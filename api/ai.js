@@ -16,6 +16,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from './_supabase.js'
 import { envList, quotaError, sanitizeRequest } from './_aiguard.js'
+import { cors } from './_cors.js'
 const PROVIDER = (process.env.AI_PROVIDER || 'gemini').toLowerCase()
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 
@@ -218,6 +219,7 @@ async function checkQuota(user) {
 }
 
 export default async function handler(req, res) {
+  if (cors(req, res)) return
   if (req.method === 'GET') {
     res.status(200).json({ enabled: Boolean(activeKey()), provider: PROVIDER, model: activeModel() })
     return

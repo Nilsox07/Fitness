@@ -26,6 +26,8 @@ export interface UserPrefs {
   prestige: PrestigeState
   /** jemals erreichte Erfolge (bleiben, auch wenn z. B. die Serie reißt) */
   achievements: string[]
+  /** Reihenfolge der Widgets auf „Heute“ (null = Standard je nach Modulen) */
+  dashboard: string[] | null
 }
 
 export const DEFAULT_KCAL_BONUS = 250
@@ -40,6 +42,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   tz: null,
   prestige: { count: 0, xpOffset: 0 },
   achievements: [],
+  dashboard: null,
 }
 
 const num = (v: unknown, lo: number, hi: number, fallback: number): number => {
@@ -97,5 +100,8 @@ export function normalizePrefs(raw: unknown): UserPrefs {
     achievements: Array.isArray(r.achievements)
       ? [...new Set(r.achievements.filter((a): a is string => typeof a === 'string' && a.length < 40))]
       : [],
+    dashboard: Array.isArray(r.dashboard)
+      ? [...new Set(r.dashboard.filter((a): a is string => typeof a === 'string' && a.length < 40))].slice(0, 40)
+      : null,
   }
 }

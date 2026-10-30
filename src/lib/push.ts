@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { apiUrl } from './native'
 
 export const pushSupported =
   typeof navigator !== 'undefined' &&
@@ -28,7 +29,7 @@ export async function notifyFriendsCheat(title: string, body: string): Promise<v
     const { data } = await supabase.auth.getSession()
     const token = data.session?.access_token
     if (!token) return
-    await fetch('/api/push/cheat', {
+    await fetch(apiUrl('/api/push/cheat'), {
       method: 'POST',
       headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
       body: JSON.stringify({ title, body }),
@@ -105,7 +106,7 @@ export async function sendTestPush(): Promise<string> {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
   if (!token) return 'Nicht angemeldet.'
-  const r = await fetch('/api/push/test', {
+  const r = await fetch(apiUrl('/api/push/test'), {
     method: 'POST',
     headers: { authorization: `Bearer ${token}` },
   })

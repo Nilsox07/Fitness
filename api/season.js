@@ -5,6 +5,7 @@
 
 import { admin } from './_fitbit.js'
 import { FALLBACK_THEMES, normalizeTheme, seasonPrompt } from './_season.js'
+import { cors } from './_cors.js'
 
 const MODELS = Array.from(
   new Set(
@@ -52,6 +53,7 @@ async function generate(month) {
 }
 
 export default async function handler(req, res) {
+  if (cors(req, res)) return
   const q = String(req.query?.month || '')
   const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(q) ? q : berlinMonth()
   res.setHeader('cache-control', 'public, max-age=600, s-maxage=3600')

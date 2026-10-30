@@ -1,8 +1,10 @@
 // Schickt eine Test-Benachrichtigung an alle Geräte des angemeldeten Nutzers.
 import webpush from 'web-push'
 import { admin, userFromAuth } from '../_fitbit.js'
+import { cors } from '../_cors.js'
 
 export default async function handler(req, res) {
+  if (cors(req, res)) return
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'method' })
     return
