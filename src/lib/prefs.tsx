@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
+import { Capacitor } from '@capacitor/core'
 
 const KEY = 'pref_show_nutrition'
 const MODE_KEY = 'pref_app_mode'
@@ -65,10 +66,16 @@ function writeFlag(key: string, v: boolean) {
 }
 
 function readMode(): AppMode {
+  // Android-App: immer die neue Version, solange niemand bewusst „Klassisch“ gewählt hat
+  const fallback: AppMode = Capacitor.isNativePlatform() ? 'new' : 'classic'
   try {
-    return localStorage.getItem(MODE_KEY) === 'new' ? 'new' : 'classic'
+    const v = localStorage.getItem(MODE_KEY)
+    if (v === 'new' || v === 'classic') return v
+    // Merken, damit auch Code außerhalb von React (z. B. Tageswechsel) denselben Modus sieht
+    if (fallback === 'new') localStorage.setItem(MODE_KEY, 'new')
+    return fallback
   } catch {
-    return 'classic'
+    return fallback
   }
 }
 
