@@ -378,11 +378,17 @@ export function estimateMaxHr(age: number | null | undefined, list: readonly { m
 }
 
 export const ZONES = [
-  { zone: 1, label: 'Locker', from: 0.5, color: '#94a3b8', info: 'Aufwärmen, Regeneration' },
-  { zone: 2, label: 'Grundlage', from: 0.6, color: '#22c55e', info: 'Fettstoffwechsel, Ausdauerbasis' },
-  { zone: 3, label: 'Tempo', from: 0.7, color: '#f2b705', info: 'Aerobe Fitness' },
-  { zone: 4, label: 'Schwelle', from: 0.8, color: '#f97316', info: 'Tempohärte, Laktatschwelle' },
-  { zone: 5, label: 'Maximum', from: 0.9, color: '#ef4444', info: 'Sprints, maximale Leistung' },
+  { zone: 1, label: 'Locker', from: 0.5, color: 'rgb(var(--c-ruby) / 0.25)', info: 'Aufwärmen, Regeneration' },
+  {
+    zone: 2,
+    label: 'Grundlage',
+    from: 0.6,
+    color: 'rgb(var(--c-ruby) / 0.45)',
+    info: 'Fettstoffwechsel, Ausdauerbasis',
+  },
+  { zone: 3, label: 'Tempo', from: 0.7, color: 'rgb(var(--c-ruby) / 0.65)', info: 'Aerobe Fitness' },
+  { zone: 4, label: 'Schwelle', from: 0.8, color: 'rgb(var(--c-ruby) / 0.85)', info: 'Tempohärte, Laktatschwelle' },
+  { zone: 5, label: 'Maximum', from: 0.9, color: 'rgb(var(--c-ruby) / 1)', info: 'Sprints, maximale Leistung' },
 ] as const
 
 /** Sekunden je Pulszone (1–5) aus einer Puls-Zeitreihe [[sekunde, bpm]]. */
@@ -514,11 +520,11 @@ export function elevationProfile(route: readonly RoutePoint[] | null | undefined
 // ---------- Schlaf im Detail ----------
 
 export const STAGE = {
-  1: { label: 'Wach', color: '#f97316', normal: [0, 10] },
-  2: { label: 'Leicht', color: '#93c5fd', normal: [45, 60] },
-  3: { label: 'Tief', color: '#4f46e5', normal: [13, 23] },
-  4: { label: 'REM', color: '#a855f7', normal: [20, 25] },
-  5: { label: 'Schlaf', color: '#818cf8', normal: [0, 100] },
+  1: { label: 'Wach', color: 'rgb(var(--c-gold))', normal: [0, 10] },
+  2: { label: 'Leicht', color: 'rgb(var(--c-ruby) / 0.3)', normal: [45, 60] },
+  3: { label: 'Tief', color: 'rgb(var(--c-ruby))', normal: [13, 23] },
+  4: { label: 'REM', color: 'rgb(var(--c-ruby) / 0.6)', normal: [20, 25] },
+  5: { label: 'Schlaf', color: 'rgb(var(--c-ruby) / 0.45)', normal: [0, 100] },
 } as const
 
 export interface SleepScore {

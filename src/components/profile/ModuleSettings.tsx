@@ -123,7 +123,7 @@ export function ModuleSettings() {
       <section className="space-y-2">
         <ModuleRow
           icon={<Dumbbell size={19} />}
-          tint="bg-brand/10 text-brand"
+          tint="bg-sand text-cocoa-light"
           title="Krafttraining"
           hint="Pläne, Sätze, Fortschritt – immer dabei"
         >
@@ -131,7 +131,7 @@ export function ModuleSettings() {
         </ModuleRow>
         <ModuleRow
           icon={<Utensils size={19} />}
-          tint="bg-success/15 text-success"
+          tint="bg-sand text-cocoa-light"
           title="Ernährung"
           hint="Kalorien, Eiweiß, Wasser, Rezepte, Supplemente"
         >
@@ -139,7 +139,7 @@ export function ModuleSettings() {
         </ModuleRow>
         <ModuleRow
           icon={<Users size={19} />}
-          tint="bg-violet-500/15 text-violet-500"
+          tint="bg-sand text-cocoa-light"
           title="Community"
           hint="Freunde, Bestenliste, Duelle, Challenges"
         >
@@ -147,7 +147,7 @@ export function ModuleSettings() {
         </ModuleRow>
         <ModuleRow
           icon={<Watch size={19} />}
-          tint="bg-orange-500/15 text-orange-500"
+          tint="bg-sand text-cocoa-light"
           title="Smartwatch"
           hint="Laufen, Rad, Schlaf, Schritte & Tagesform"
         >
@@ -216,7 +216,7 @@ export function ModuleSettings() {
       {native && showNutrition && (
         <ModuleRow
           icon={<Lock size={19} />}
-          tint="bg-sky-500/15 text-sky-500"
+          tint="bg-sand text-cocoa-light"
           title="Fasten auf dem Sperrbildschirm"
           hint="Countdown bis zum Essensfenster dauerhaft anzeigen"
         >

@@ -14,6 +14,10 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
 - Der **klassische Modus** (`pref_app_mode = 'classic'`) bleibt erhalten – nichts davon löschen.
 - Bestehende Dateien nicht blind überschreiben (vorher lesen). Keine fremden Dateien umformatieren.
 - Sprache in der App: Deutsch, du-Form, kurz und freundlich.
+- **Design einheitlich:** Rubin (`brand`) ist die einzige Akzentfarbe, Abstufungen über Transparenz; `success` nur für
+  „gut“, `gold` für Hinweise. Keine weiteren Farben (kein Blau/Orange/Lila …). Seiten beginnen mit der dunklen
+  Hero-Karte, Abschnitte mit `SectionLabel`, Listen gruppiert, Symbole neutral (`bg-sand`). Bausteine:
+  `src/components/health/ui.tsx`.
 
 ## Arbeitsweise
 

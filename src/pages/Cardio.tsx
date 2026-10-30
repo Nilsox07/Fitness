@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Activity, Heart, Trophy } from 'lucide-react'
-import { ProgressHeader } from '../components/progress/ProgressHeader'
+import { Trophy } from 'lucide-react'
 import { enter } from '../components/home/motion'
+import { ProgressHeader, SectionLabel } from '../components/progress/ProgressHeader'
+import { Group, GroupRow, Hero, HeroPill, IconBox, ruby } from '../components/health/ui'
 import { useHealthActivities } from '../hooks/useHealth'
 import { localDate, shiftDate, dayLabel } from '../lib/day'
 import { weekDates } from '../lib/home'
@@ -12,14 +13,13 @@ import {
   activityBests,
   cardioSummary,
   durationText,
-  hrZone,
   kmText,
   paceText,
   routePath,
 } from '../lib/health'
 import type { ActivityType, HealthActivity } from '../types'
 
-const ZONE_COLOR = ['', '#94a3b8', '#22c55e', '#f2b705', '#f97316', '#ef4444']
+const km = (m: number) => (m / 1000).toLocaleString('de-DE', { maximumFractionDigits: m >= 10000 ? 1 : 2 })
 
 /** Fortschritt → Ausdauer: Läufe, Radtouren & Co. von der Uhr. */
 export default function Cardio() {
@@ -35,100 +35,121 @@ export default function Cardio() {
   const month = cardioSummary(shown, shiftDate(today, -29), today)
   const bests = type !== 'all' ? activityBests(list, type) : null
 
-  // Kilometer der letzten 8 Wochen für das Balkendiagramm
+  // Kilometer der letzten 8 Wochen
   const weeks = Array.from({ length: 8 }, (_, i) => {
     const from = shiftDate(week[0], -7 * (7 - i))
     const w = cardioSummary(shown, from, shiftDate(from, 6))
-    return { from, km: w.distance_m / 1000, min: w.duration_s / 60 }
+    return { from, km: w.distance_m / 1000 }
   })
   const maxKm = Math.max(1, ...weeks.map((w) => w.km))
+  const trend =
+    lastWeek.distance_m > 0
+      ? Math.round(((thisWeek.distance_m - lastWeek.distance_m) / lastWeek.distance_m) * 100)
+      : null
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <ProgressHeader title="Fortschritt" subtitle="Ausdauer · von deiner Uhr" />
+
       {types.length > 1 && (
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" style={enter(0)}>
+        <div className="flex gap-1 overflow-x-auto rounded-full bg-sand p-1 [scrollbar-width:none]" style={enter(1)}>
           {(['all', ...types] as const).map((t) => (
             <button
               key={t}
               onClick={() => setType(t)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold ${type === t ? 'bg-cocoa text-bg' : 'bg-sand'}`}
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                type === t ? 'bg-sand-light text-cocoa shadow-sm dark:bg-sand-dark' : 'text-cocoa-light'
+              }`}
             >
-              {t === 'all' ? 'Alle' : `${ACTIVITY_EMOJI[t]} ${ACTIVITY_LABEL[t]}`}
+              {t === 'all' ? 'Alle' : ACTIVITY_LABEL[t]}
             </button>
           ))}
         </div>
       )}
 
-      <section className="card space-y-3" style={enter(1)}>
-        <div className="flex items-end justify-between">
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-cocoa-muted">Diese Woche</div>
-            <div className="tabular text-3xl font-black">{kmText(thisWeek.distance_m)}</div>
-            <div className="text-sm text-cocoa-light">
-              {thisWeek.count}× · {durationText(thisWeek.duration_s)}
-              {lastWeek.distance_m > 0 && (
-                <span className={thisWeek.distance_m >= lastWeek.distance_m ? 'text-success' : ''}>
-                  {' '}
-                  · Vorwoche {kmText(lastWeek.distance_m)}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="text-right text-xs text-cocoa-light">
-            30 Tage
-            <div className="tabular text-base font-bold text-cocoa">{kmText(month.distance_m)}</div>
-          </div>
-        </div>
-        <div className="flex h-24 items-end gap-1.5" aria-label="Kilometer pro Woche">
+      <Hero
+        overline="Strecke · diese Woche"
+        value={km(thisWeek.distance_m)}
+        unit="km"
+        right={
+          trend != null && (
+            <span
+              className={`tabular rounded-full px-2 py-0.5 text-xs font-semibold ${
+                trend > 0 ? 'bg-success/20 text-success' : 'bg-bg/10 text-bg/70 dark:bg-white/5 dark:text-cocoa-light'
+              }`}
+            >
+              {trend > 0 ? '+' : ''}
+              {trend} % zur Vorwoche
+            </span>
+          )
+        }
+      >
+        <div className="mt-3 flex h-16 items-end gap-1.5" aria-label="Kilometer pro Woche">
           {weeks.map((w, i) => (
-            <div key={w.from} className="flex flex-1 flex-col items-center gap-1">
-              <div
-                className={`w-full rounded-md ${i === 7 ? 'bg-orange-500' : 'bg-orange-500/30'}`}
-                style={{ height: `${Math.max(4, (w.km / maxKm) * 80)}px` }}
-                title={`${w.km.toFixed(1)} km`}
-              />
-              <span className="text-[9px] text-cocoa-muted">{Number(w.from.slice(8))}.</span>
-            </div>
+            <div
+              key={w.from}
+              className="flex-1 rounded-md"
+              style={{ height: `${Math.max(4, (w.km / maxKm) * 64)}px`, background: ruby(i === 7 ? 1 : 0.35) }}
+              title={`${w.km.toFixed(1)} km`}
+            />
           ))}
         </div>
-      </section>
+        <div className="mt-1.5 flex justify-between text-[10px] text-bg/45 dark:text-cocoa-muted">
+          <span>vor 8 Wochen</span>
+          <span>diese Woche</span>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <HeroPill value={thisWeek.count} label={thisWeek.count === 1 ? 'Einheit' : 'Einheiten'} />
+          <HeroPill value={durationText(thisWeek.duration_s)} label="Zeit" />
+          <HeroPill value={`${km(month.distance_m)} km`} label="30 Tage" />
+        </div>
+      </Hero>
 
       {bests && (
-        <section className="grid grid-cols-2 gap-3" style={enter(2)}>
-          <div className="card">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-cocoa-light">
-              <Trophy size={14} className="text-gold" /> Längste
-            </div>
-            <div className="tabular text-xl font-black">{kmText(bests.longest.distance_m)}</div>
-            <div className="text-xs text-cocoa-muted">{dayLabel(bests.longest.started_at.slice(0, 10))}</div>
-          </div>
-          <div className="card">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-cocoa-light">
-              <Trophy size={14} className="text-gold" /> Schnellste
-            </div>
-            <div className="tabular text-xl font-black">{bests.fastest ? paceText(bests.fastest) : '–'}</div>
-            <div className="text-xs text-cocoa-muted">
-              {bests.fastest
-                ? `${kmText(bests.fastest.distance_m)} · ${dayLabel(bests.fastest.started_at.slice(0, 10))}`
-                : 'ab 3 km'}
-            </div>
-          </div>
+        <section style={enter(2)}>
+          <SectionLabel>Bestwerte · {ACTIVITY_LABEL[type as ActivityType]}</SectionLabel>
+          <Group>
+            <GroupRow
+              leading={
+                <IconBox>
+                  <Trophy size={18} className="text-gold" />
+                </IconBox>
+              }
+              title={`Längste: ${kmText(bests.longest.distance_m)}`}
+              sub={dayLabel(bests.longest.started_at.slice(0, 10))}
+              onClick={() => navigate(`/cardio/${bests.longest.id}`)}
+            />
+            {bests.fastest && (
+              <GroupRow
+                leading={
+                  <IconBox>
+                    <Trophy size={18} className="text-gold" />
+                  </IconBox>
+                }
+                title={`Schnellste: ${paceText(bests.fastest)}`}
+                sub={`${kmText(bests.fastest.distance_m)} · ${dayLabel(bests.fastest.started_at.slice(0, 10))}`}
+                onClick={() => navigate(`/cardio/${bests.fastest!.id}`)}
+              />
+            )}
+          </Group>
         </section>
       )}
 
-      <section className="space-y-2" style={enter(3)}>
-        <h2 className="px-1 text-sm font-semibold text-cocoa-light">Aktivitäten</h2>
+      <section style={enter(3)}>
+        <SectionLabel>Aktivitäten</SectionLabel>
         {isLoading ? (
-          <div className="h-40 animate-pulse rounded-3xl bg-sand" />
+          <div className="h-40 animate-pulse rounded-2xl bg-sand" />
         ) : shown.length === 0 ? (
-          <div className="card text-center text-sm text-cocoa-light">
-            <Activity className="mx-auto mb-2 text-orange-500" />
+          <p className="card text-sm text-cocoa-light">
             Noch keine Aktivitäten. Sobald deine Uhr einen Lauf oder eine Radtour an Health Connect gibt, taucht sie
             hier auf.
-          </div>
+          </p>
         ) : (
-          shown.slice(0, 60).map((a) => <ActivityRow key={a.id} a={a} onOpen={() => navigate(`/cardio/${a.id}`)} />)
+          <Group>
+            {shown.slice(0, 60).map((a) => (
+              <ActivityRow key={a.id} a={a} onOpen={() => navigate(`/cardio/${a.id}`)} />
+            ))}
+          </Group>
         )}
       </section>
     </div>
@@ -136,37 +157,42 @@ export default function Cardio() {
 }
 
 function ActivityRow({ a, onOpen }: { a: HealthActivity; onOpen: () => void }) {
-  const d = routePath(a.route, 56, 44, 4)
+  const d = routePath(a.route, 40, 40, 5)
   return (
-    <button onClick={onOpen} className="card flex w-full items-center gap-3 text-left transition active:scale-[0.99]">
-      {d ? (
-        <svg width={56} height={44} className="shrink-0 rounded-xl bg-sand/60">
-          <path d={d} fill="none" stroke="#f97316" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-        </svg>
-      ) : (
-        <span className="grid h-11 w-14 shrink-0 place-items-center rounded-xl bg-orange-500/10 text-2xl">
-          {ACTIVITY_EMOJI[a.type]}
-        </span>
-      )}
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">
-          {a.title || ACTIVITY_LABEL[a.type]}
-          <span className="font-normal text-cocoa-muted"> · {dayLabel(a.started_at.slice(0, 10))}</span>
-        </span>
-        <span className="tabular block text-xs text-cocoa-light">
-          {[a.distance_m ? kmText(a.distance_m) : null, durationText(a.duration_s), paceText(a)]
+    <GroupRow
+      onClick={onOpen}
+      leading={
+        <IconBox>
+          {d ? (
+            <svg width={40} height={40}>
+              <path
+                d={d}
+                fill="none"
+                style={{ stroke: ruby() }}
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            </svg>
+          ) : (
+            <span className="text-lg">{ACTIVITY_EMOJI[a.type]}</span>
+          )}
+        </IconBox>
+      }
+      title={a.title || ACTIVITY_LABEL[a.type]}
+      sub={
+        <span className="tabular">
+          {[dayLabel(a.started_at.slice(0, 10)), a.distance_m ? kmText(a.distance_m) : null, durationText(a.duration_s)]
             .filter(Boolean)
             .join(' · ')}
         </span>
-      </span>
-      {a.avg_hr && (
-        <span
-          className="tabular flex items-center gap-1 text-xs font-semibold"
-          style={{ color: ZONE_COLOR[hrZone(a.avg_hr) ?? 0] }}
-        >
-          <Heart size={13} /> {a.avg_hr}
+      }
+      right={
+        <span className="shrink-0 text-right">
+          {paceText(a) && <span className="tabular block text-sm font-semibold">{paceText(a)}</span>}
+          {a.avg_hr && <span className="tabular block text-xs text-cocoa-muted">Ø {a.avg_hr} bpm</span>}
         </span>
-      )}
-    </button>
+      }
+    />
   )
 }

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { BedDouble, ChevronDown, Gauge, HeartPulse, Info } from 'lucide-react'
+import { ChevronDown, Info } from 'lucide-react'
 import { enter } from '../components/home/motion'
-import { ProgressHeader } from '../components/progress/ProgressHeader'
+import { ProgressHeader, SectionLabel } from '../components/progress/ProgressHeader'
+import { Hero, Stat } from '../components/health/ui'
 import { Hypnogram, MetricCard, SeriesChart, StatusChip } from '../components/health/Charts'
 import { useHealthDaily, useHealthSleep } from '../hooks/useHealth'
 import { useToday } from '../hooks/useToday'
@@ -35,7 +36,6 @@ export default function Sleep() {
   const dayOf = daily.find((d) => d.date === selDate)
   const r = t.readiness
   const missingIn = t.caps ? missingReadinessInputs(t.caps) : []
-  const color = !r ? '#94a3b8' : r.level === 'hoch' ? '#22c55e' : r.level === 'mittel' ? '#f2b705' : '#ef4444'
 
   const days = Array.from({ length: 14 }, (_, i) => shiftDate(today, i - 13))
   const byDate = new Map(nights.map((n) => [n.date, n]))
@@ -45,37 +45,47 @@ export default function Sleep() {
       <ProgressHeader title="Fortschritt" subtitle="Schlaf & Erholung" />
 
       {/* Tagesform – in Worten statt Punkten */}
-      <section className="card space-y-3" style={enter(1)}>
-        <div className="flex items-center gap-2 text-sm font-semibold text-cocoa-light">
-          <Gauge size={16} style={{ color }} /> Tagesform heute
-        </div>
-        {r ? (
-          <>
-            <div className="flex items-center gap-3">
-              <span className="tabular text-5xl font-black" style={{ color }}>
-                {r.score}
-              </span>
-              <p className="text-sm font-semibold leading-snug">{r.advice}</p>
-            </div>
-            <ul className="space-y-1.5">
-              {r.factors.map((f) => (
-                <FactorRow key={f.key} f={f} />
-              ))}
-            </ul>
-            {missingIn.length > 0 && (
-              <p className="text-[11px] text-cocoa-muted">
-                Nicht von deiner Uhr gemessen: {missingIn.join(', ')} – die Tagesform nutzt die übrigen Werte.
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="text-sm text-cocoa-light">
-            {t.caps?.known && !t.caps.has.sleep && !t.caps.has.hrv && !t.caps.has.restingHr
+      <Hero
+        overline="Tagesform · heute"
+        value={r ? r.score : '–'}
+        unit={r ? '/ 100' : undefined}
+        right={
+          r && (
+            <span className="rounded-full bg-bg/10 px-2 py-0.5 text-xs font-semibold capitalize text-bg/80 dark:bg-white/5 dark:text-cocoa-light">
+              {r.level}
+            </span>
+          )
+        }
+      >
+        <p className="mt-2 text-sm font-semibold leading-snug">
+          {r
+            ? r.advice
+            : t.caps?.known && !t.caps.has.sleep && !t.caps.has.hrv && !t.caps.has.restingHr
               ? 'Deine Uhr liefert weder Schlaf noch Ruhepuls oder HRV – dafür lässt sich keine Tagesform berechnen.'
               : 'Sobald deine Uhr eine Nacht aufgezeichnet hat, siehst du hier, wie erholt du bist.'}
-          </p>
+        </p>
+        {r && (
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-bg/10 dark:bg-white/10">
+            <div className="h-full rounded-full bg-brand" style={{ width: `${r.score}%` }} />
+          </div>
         )}
-      </section>
+      </Hero>
+
+      {r && r.factors.length > 0 && (
+        <section style={enter(2)}>
+          <SectionLabel>Was deine Tagesform beeinflusst</SectionLabel>
+          <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
+            {r.factors.map((f) => (
+              <FactorRow key={f.key} f={f} />
+            ))}
+          </ul>
+          {missingIn.length > 0 && (
+            <p className="mt-2 px-1 text-[11px] text-cocoa-muted">
+              Nicht von deiner Uhr gemessen: {missingIn.join(', ')} – die Tagesform nutzt die übrigen Werte.
+            </p>
+          )}
+        </section>
+      )}
 
       {/* Nacht auswählen */}
       {sorted.length > 0 && (
@@ -87,7 +97,7 @@ export default function Sleep() {
               <button
                 key={n.date}
                 onClick={() => setParams({ d: n.date }, { replace: true })}
-                className={`flex shrink-0 flex-col items-center rounded-2xl px-3 py-1.5 ${on ? 'bg-indigo-600 text-white' : 'bg-sand'}`}
+                className={`flex shrink-0 flex-col items-center rounded-2xl px-3 py-1.5 ${on ? 'bg-cocoa text-bg dark:bg-sand-dark dark:text-cocoa' : 'bg-sand text-cocoa-light'}`}
               >
                 <span className="text-[10px] font-semibold opacity-80">
                   {n.date === today ? 'Heute' : d.toLocaleDateString('de-DE', { weekday: 'short' })}
@@ -109,85 +119,90 @@ export default function Sleep() {
         </p>
       ) : (
         <>
-          <section className="card space-y-3" style={enter(3)}>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-sm font-semibold text-cocoa-light">
-                <BedDouble size={16} className="text-indigo-500" />
-                {new Date(night.date + 'T00:00:00').toLocaleDateString('de-DE', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
-              </span>
-              <span className="text-xs text-cocoa-muted">
-                {clock(night.start_at)} – {clock(night.end_at)}
-              </span>
-            </div>
-            <div className="flex items-end gap-4">
-              <div>
-                <div className="tabular text-4xl font-black">{hoursText(night.asleep_min)}</div>
-                <div className="text-xs text-cocoa-light">
-                  geschlafen{night.in_bed_min ? ` · ${hoursText(night.in_bed_min)} im Bett` : ''}
+          <section style={enter(3)}>
+            <SectionLabel
+              right={
+                <span className="text-xs text-cocoa-muted">
+                  {clock(night.start_at)} – {clock(night.end_at)}
+                </span>
+              }
+            >
+              Nacht ·{' '}
+              {new Date(night.date + 'T00:00:00').toLocaleDateString('de-DE', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+              })}
+            </SectionLabel>
+            <div className="card space-y-3">
+              <div className="flex items-end gap-4">
+                <div>
+                  <div className="tabular text-4xl font-bold">{hoursText(night.asleep_min)}</div>
+                  <div className="text-xs text-cocoa-light">
+                    geschlafen{night.in_bed_min ? ` · ${hoursText(night.in_bed_min)} im Bett` : ''}
+                  </div>
                 </div>
+                {score.detailed && (
+                  <div className="ml-auto text-right">
+                    <div className="tabular text-3xl font-bold text-brand">{score.score}</div>
+                    <div className="text-xs font-semibold text-cocoa-light">{score.label}</div>
+                  </div>
+                )}
               </div>
-              {score.detailed && (
-                <div className="ml-auto text-right">
-                  <div className="tabular text-3xl font-black text-indigo-500">{score.score}</div>
-                  <div className="text-xs font-semibold text-cocoa-light">{score.label}</div>
+              {!score.detailed && (
+                <p className="rounded-xl bg-sand-light px-3 py-2 text-xs text-cocoa-light dark:bg-sand">
+                  Deine Uhr liefert keine Schlafphasen (Tief, REM, Leicht) – deshalb siehst du nur Dauer und Zeiten.
+                </p>
+              )}
+              {night.stages && night.stages.length > 0 && <Hypnogram stages={night.stages} start={night.start_at} />}
+              {score.pct.deep != null && (
+                <div className="grid grid-cols-4 gap-2">
+                  {(
+                    [
+                      [3, night.deep_min],
+                      [4, night.rem_min],
+                      [2, night.light_min],
+                      [1, night.awake_min],
+                    ] as const
+                  ).map(([code, min]) => {
+                    const st = STAGE[code]
+                    const pct = min != null && night.asleep_min ? Math.round((min / night.asleep_min) * 100) : null
+                    return (
+                      <div key={code} className="rounded-xl bg-sand-light p-2 dark:bg-sand">
+                        <div className="flex items-center gap-1 text-[11px] font-semibold">
+                          <span className="h-2 w-2 rounded-full" style={{ background: st.color }} />
+                          {st.label}
+                        </div>
+                        <div className="tabular text-sm font-bold">{min != null ? hoursText(min) : '–'}</div>
+                        {code !== 1 && pct != null && (
+                          <div className="text-[10px] leading-tight text-cocoa-muted">
+                            <span className="font-semibold text-cocoa-light">{pct} %</span>
+                            <br />
+                            Ziel {st.normal[0]}–{st.normal[1]} %
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
+              <ul className="divide-y divide-sand-dark/40">
+                {score.parts.map((p) => (
+                  <li key={p.label} className="flex items-center gap-3 py-2 text-sm">
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold">{p.label}</span>
+                      <span className="block text-[11px] text-cocoa-muted">{p.hint}</span>
+                    </span>
+                    <span className="tabular font-semibold">{p.value}</span>
+                    <StatusChip status={p.status} />
+                  </li>
+                ))}
+              </ul>
             </div>
-            {!score.detailed && (
-              <p className="rounded-xl bg-cream px-3 py-2 text-xs text-cocoa-light">
-                Deine Uhr liefert keine Schlafphasen (Tief, REM, Leicht) – deshalb siehst du nur Dauer und Zeiten.
-              </p>
-            )}
-            {night.stages && night.stages.length > 0 && <Hypnogram stages={night.stages} start={night.start_at} />}
-            {score.pct.deep != null && (
-              <div className="grid grid-cols-4 gap-2">
-                {(
-                  [
-                    [3, night.deep_min],
-                    [4, night.rem_min],
-                    [2, night.light_min],
-                    [1, night.awake_min],
-                  ] as const
-                ).map(([code, min]) => {
-                  const st = STAGE[code]
-                  const pct = min != null && night.asleep_min ? Math.round((min / night.asleep_min) * 100) : null
-                  return (
-                    <div key={code} className="rounded-xl bg-cream p-2">
-                      <div className="flex items-center gap-1 text-[11px] font-semibold">
-                        <span className="h-2 w-2 rounded-full" style={{ background: st.color }} />
-                        {st.label}
-                      </div>
-                      <div className="tabular text-sm font-bold">{min != null ? hoursText(min) : '–'}</div>
-                      {code !== 1 && pct != null && (
-                        <div className="text-[10px] text-cocoa-muted">
-                          {pct} % · normal {st.normal[0]}–{st.normal[1]} %
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-            <ul className="divide-y divide-sand-dark/40">
-              {score.parts.map((p) => (
-                <li key={p.label} className="flex items-center gap-3 py-2 text-sm">
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">{p.label}</span>
-                    <span className="block text-[11px] text-cocoa-muted">{p.hint}</span>
-                  </span>
-                  <span className="tabular font-semibold">{p.value}</span>
-                  <StatusChip status={p.status} />
-                </li>
-              ))}
-            </ul>
           </section>
 
           {(night.hr_avg || night.hrv_avg || night.spo2_avg || night.resp_rate || night.skin_temp_delta != null) && (
-            <MetricCard icon={<HeartPulse size={16} className="text-red-500" />} title="Körper in der Nacht">
+            <MetricCard title="Körper in der Nacht">
               <div className="grid grid-cols-3 gap-2">
                 {(
                   [
@@ -213,22 +228,18 @@ export default function Sleep() {
                 )
                   .filter(([, v]) => v)
                   .map(([l, v]) => (
-                    <div key={l} className="rounded-xl bg-cream p-2.5">
-                      <div className="tabular text-sm font-bold">{v}</div>
-                      <div className="text-[11px] text-cocoa-muted">{l}</div>
-                    </div>
+                    <Stat key={l} value={v} label={l} />
                   ))}
               </div>
               {night.hr_series && night.hr_series.length > 1 && (
                 <SeriesChart
                   data={night.hr_series}
-                  color="#ef4444"
                   height={100}
                   xLabel={(m) => clock(new Date(new Date(night.start_at).getTime() + m * 60000).toISOString())}
                 />
               )}
               {night.spo2_min != null && night.spo2_min < 90 && (
-                <p className="rounded-xl bg-gold/15 px-3 py-2 text-xs">
+                <p className="rounded-xl bg-gold/20 px-3 py-2 text-xs">
                   Sauerstoff fiel nachts auf {night.spo2_min.toLocaleString('de-DE')} %. Wiederholt sich das, lass es
                   ärztlich abklären.
                 </p>
@@ -241,13 +252,12 @@ export default function Sleep() {
       {/* 14 Nächte */}
       {nights.length > 0 && (
         <MetricCard
-          icon={<BedDouble size={16} className="text-indigo-500" />}
           title="Letzte 14 Nächte"
           right={stats && <span className="tabular text-sm font-bold">Ø {hoursText(stats.avgMin)}</span>}
         >
           <div className="relative flex h-28 items-end gap-1">
             <div
-              className="pointer-events-none absolute inset-x-0 border-t border-dashed border-indigo-500/40"
+              className="pointer-events-none absolute inset-x-0 border-t border-dashed border-cocoa-muted/40"
               style={{ bottom: `${(NEED_MIN / 600) * 96 + 14}px` }}
             />
             {days.map((d) => {
@@ -262,10 +272,10 @@ export default function Sleep() {
                   aria-label={n ? `${d}: ${hoursText(n.asleep_min)}` : `${d}: keine Daten`}
                 >
                   <div
-                    className={`relative w-full overflow-hidden rounded-md ${d === selDate ? 'bg-indigo-500/70' : 'bg-indigo-500/35'}`}
+                    className={`relative w-full overflow-hidden rounded-md ${d === selDate ? 'bg-brand/60' : 'bg-brand/25'}`}
                     style={{ height: h }}
                   >
-                    {deep > 0 && <div className="absolute inset-x-0 bottom-0 bg-indigo-700" style={{ height: deep }} />}
+                    {deep > 0 && <div className="absolute inset-x-0 bottom-0 bg-brand" style={{ height: deep }} />}
                   </div>
                   <span className="text-[9px] text-cocoa-muted">{Number(d.slice(8))}</span>
                 </button>
@@ -290,8 +300,8 @@ export default function Sleep() {
 function FactorRow({ f }: { f: ReadinessFactor }) {
   const [open, setOpen] = useState(false)
   return (
-    <li className="rounded-xl bg-cream">
-      <button className="w-full space-y-0.5 px-3 py-2.5 text-left" onClick={() => setOpen((o) => !o)}>
+    <li>
+      <button className="w-full space-y-0.5 px-4 py-3 text-left active:bg-sand/60" onClick={() => setOpen((o) => !o)}>
         <span className="flex items-center gap-2">
           <span className="min-w-0 flex-1 truncate text-sm font-semibold">{f.label}</span>
           <StatusChip status={f.status} />
@@ -304,7 +314,7 @@ function FactorRow({ f }: { f: ReadinessFactor }) {
         <span className="block text-xs text-cocoa-light">{f.text}</span>
       </button>
       {open && (
-        <p className="flex gap-1.5 px-3 pb-3 text-xs leading-relaxed text-cocoa-light">
+        <p className="flex gap-1.5 px-4 pb-3 text-xs leading-relaxed text-cocoa-light">
           <Info size={13} className="mt-0.5 shrink-0" />
           {FACTOR_INFO[f.key]}
         </p>

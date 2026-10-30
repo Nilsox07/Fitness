@@ -11,7 +11,6 @@ import {
   Dumbbell,
   Flame,
   Footprints,
-  Gauge,
   HeartPulse,
   Plus,
   Users,
@@ -71,12 +70,14 @@ function Ring({
   size = 56,
   stroke = 6,
   color = 'rgb(var(--c-ruby))',
+  track = 'text-sand-dark/50',
   children,
 }: {
   value: number
   size?: number
   stroke?: number
   color?: string
+  track?: string
   children?: ReactNode
 }) {
   const r = (size - stroke) / 2
@@ -92,7 +93,7 @@ function Ring({
           fill="none"
           stroke="currentColor"
           strokeWidth={stroke}
-          className="text-sand-dark/50"
+          className={track}
         />
         <circle
           cx={size / 2}
@@ -132,30 +133,28 @@ function ConnectWatch() {
 function ReadinessWidget({ t }: { t: TodaySummary }) {
   const navigate = useNavigate()
   const r = t.readiness
-  const color = !r ? '#94a3b8' : r.level === 'hoch' ? '#22c55e' : r.level === 'mittel' ? '#f2b705' : '#ef4444'
+  const color = 'rgb(var(--c-ruby))'
   return (
     <button
       onClick={() => navigate('/sleep')}
-      className="relative w-full overflow-hidden rounded-3xl bg-cocoa p-4 text-left text-bg shadow-lg shadow-black/10 transition active:scale-[0.99] dark:bg-sand-light dark:text-cocoa dark:shadow-none"
+      className="relative w-full overflow-hidden rounded-3xl bg-cocoa p-5 text-left text-bg shadow-lg shadow-black/10 transition active:scale-[0.99] dark:bg-sand-light dark:text-cocoa dark:shadow-none"
     >
-      <div
-        className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full blur-3xl"
-        style={{ background: color, opacity: 0.25 }}
-      />
+      <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
       <span className="relative flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-        <Gauge size={13} style={{ color }} /> Tagesform
+        Tagesform · heute
       </span>
       {r ? (
         <div className="relative mt-2 flex items-center gap-4">
-          <Ring value={r.score / 100} size={76} stroke={8} color={color}>
-            <span className="tabular text-2xl font-black">{r.score}</span>
+          <Ring value={r.score / 100} size={76} stroke={8} color={color} track="text-white/10 dark:text-sand-dark/50">
+            <span className="tabular text-2xl font-bold">{r.score}</span>
           </Ring>
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-semibold leading-snug">{r.advice}</p>
             <p className="mt-1 text-xs text-bg/60 dark:text-cocoa-light">
               {r.factors
                 .slice(0, 2)
-                .map((f) => `${f.label}: ${f.text}`)
+                .map((f) => `${f.label} ${f.value}`)
                 .join(' · ')}
             </p>
           </div>
@@ -178,13 +177,13 @@ function SleepWidget({ t }: { t: TodaySummary }) {
   return (
     <Tile
       icon={<BedDouble size={15} />}
-      tint="bg-indigo-500/15 text-indigo-500"
+      tint="bg-sand text-cocoa-light"
       title="Schlaf"
       onClick={() => navigate('/sleep')}
     >
       {s ? (
         <>
-          <span className="tabular text-2xl font-black leading-none">{hoursText(s.asleep_min)}</span>
+          <span className="tabular text-2xl font-bold leading-none">{hoursText(s.asleep_min)}</span>
           <span className="text-xs text-cocoa-light">
             {s.deep_min != null ? `Tief ${hoursText(s.deep_min)}` : 'letzte Nacht'}
             {s.rem_min != null && ` · REM ${hoursText(s.rem_min)}`}
@@ -200,12 +199,12 @@ function SleepWidget({ t }: { t: TodaySummary }) {
 function StepsWidget({ t }: { t: TodaySummary }) {
   const goal = 8000
   return (
-    <Tile icon={<Footprints size={15} />} tint="bg-emerald-500/15 text-emerald-600" title="Schritte">
+    <Tile icon={<Footprints size={15} />} tint="bg-sand text-cocoa-light" title="Schritte">
       {t.steps != null ? (
         <span className="flex items-center gap-3">
-          <Ring value={t.steps / goal} size={46} stroke={5} color="#10b981" />
+          <Ring value={t.steps / goal} size={46} stroke={5} color="rgb(var(--c-ruby))" />
           <span>
-            <span className="tabular block text-xl font-black leading-none">{fmt(t.steps)}</span>
+            <span className="tabular block text-xl font-bold leading-none">{fmt(t.steps)}</span>
             <span className="text-xs text-cocoa-light">von {fmt(goal)}</span>
           </span>
         </span>
@@ -221,7 +220,7 @@ function LastActivityWidget({ t }: { t: TodaySummary }) {
   const a = t.lastActivity
   if (!a)
     return (
-      <Tile icon={<Activity size={15} />} tint="bg-orange-500/15 text-orange-500" title="Letzte Aktivität">
+      <Tile icon={<Activity size={15} />} tint="bg-sand text-cocoa-light" title="Letzte Aktivität">
         <span className="text-sm text-cocoa-light">
           Läufe, Radtouren & Co. erscheinen hier automatisch von deiner Uhr.
         </span>
@@ -232,7 +231,7 @@ function LastActivityWidget({ t }: { t: TodaySummary }) {
   return (
     <Tile
       icon={<Activity size={15} />}
-      tint="bg-orange-500/15 text-orange-500"
+      tint="bg-sand text-cocoa-light"
       title={`${ACTIVITY_EMOJI[a.type]} ${a.title || ACTIVITY_LABEL[a.type]} · ${dayLabel(a.started_at.slice(0, 10))}`}
       onClick={() => navigate(`/cardio/${a.id}`)}
     >
@@ -244,7 +243,14 @@ function LastActivityWidget({ t }: { t: TodaySummary }) {
         </span>
         {d && (
           <svg width={88} height={64} className="shrink-0 rounded-xl bg-sand/60">
-            <path d={d} fill="none" stroke="#f97316" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+            <path
+              d={d}
+              fill="none"
+              style={{ stroke: 'rgb(var(--c-ruby))' }}
+              strokeWidth={2.5}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
           </svg>
         )}
       </span>
@@ -257,13 +263,13 @@ function HeartWidget({ t }: { t: TodaySummary }) {
   return (
     <Tile
       icon={<HeartPulse size={15} />}
-      tint="bg-red-500/15 text-red-500"
+      tint="bg-sand text-cocoa-light"
       title="Herz"
       onClick={() => navigate('/vitals')}
     >
       {t.restingHr != null || t.hrv != null ? (
         <>
-          <span className="tabular text-2xl font-black leading-none">
+          <span className="tabular text-2xl font-bold leading-none">
             {t.restingHr ?? '–'} <span className="text-sm font-semibold text-cocoa-light">bpm Ruhe</span>
           </span>
           <span className="text-xs text-cocoa-light">
@@ -283,11 +289,11 @@ function CardioWeekWidget({ t }: { t: TodaySummary }) {
   return (
     <Tile
       icon={<Activity size={15} />}
-      tint="bg-orange-500/15 text-orange-500"
+      tint="bg-sand text-cocoa-light"
       title="Ausdauer-Woche"
       onClick={() => navigate('/cardio')}
     >
-      <span className="tabular text-2xl font-black leading-none">{w ? kmText(w.distance_m) : '–'}</span>
+      <span className="tabular text-2xl font-bold leading-none">{w ? kmText(w.distance_m) : '–'}</span>
       <span className="text-xs text-cocoa-light">
         {w?.count ? `${w.count}× · ${durationText(w.duration_s)}` : 'diese Woche noch nichts'}
       </span>
@@ -344,17 +350,14 @@ function NextWorkoutWidget({ t }: { t: TodaySummary }) {
 
 function StreakWidget({ t }: { t: TodaySummary }) {
   return (
-    <Tile icon={<Flame size={15} />} tint="bg-orange-500/15 text-orange-500" title="Serie">
-      <span className="tabular text-2xl font-black leading-none">
+    <Tile icon={<Flame size={15} />} tint="bg-sand text-cocoa-light" title="Serie">
+      <span className="tabular text-2xl font-bold leading-none">
         {t.streakWeeks}{' '}
         <span className="text-sm font-semibold text-cocoa-light">{t.streakWeeks === 1 ? 'Woche' : 'Wochen'}</span>
       </span>
       <span className="flex gap-1" aria-label={`${t.weekDone} von ${t.weekGoal} Trainings diese Woche`}>
         {Array.from({ length: Math.max(t.weekGoal, t.weekDone) }, (_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 flex-1 rounded-full ${i < t.weekDone ? 'bg-orange-500' : 'bg-sand-dark/60'}`}
-          />
+          <span key={i} className={`h-1.5 flex-1 rounded-full ${i < t.weekDone ? 'bg-brand' : 'bg-sand-dark/60'}`} />
         ))}
       </span>
     </Tile>
@@ -368,13 +371,13 @@ function LastWorkoutWidget({ t }: { t: TodaySummary }) {
   return (
     <Tile
       icon={<Dumbbell size={15} />}
-      tint="bg-brand/10 text-brand"
+      tint="bg-sand text-cocoa-light"
       title="Letztes Training"
       onClick={() => navigate('/history')}
     >
       {last ? (
         <>
-          <span className="tabular text-xl font-black leading-none">{last.sets} Sätze</span>
+          <span className="tabular text-xl font-bold leading-none">{last.sets} Sätze</span>
           <span className="text-xs text-cocoa-light">
             {dayLabel(last.date)}
             {last.prs > 0 && ` · ${last.prs} PR`}
@@ -406,9 +409,9 @@ function KcalWidget({ t }: { t: TodaySummary }) {
       onClick={() => navigate('/nutrition')}
       className="card flex w-full items-center gap-4 text-left transition active:scale-[0.99]"
     >
-      <Ring value={pct} size={72} stroke={7} color={pct > 1.05 ? '#f2b705' : 'rgb(var(--c-ruby))'}>
+      <Ring value={pct} size={72} stroke={7} color={pct > 1.05 ? 'rgb(var(--c-gold))' : 'rgb(var(--c-ruby))'}>
         <span className="text-center leading-none">
-          <span className="tabular block text-lg font-black">{fmt(Math.abs(left))}</span>
+          <span className="tabular block text-lg font-bold">{fmt(Math.abs(left))}</span>
           <span className="text-[9px] font-semibold text-cocoa-muted">{left >= 0 ? 'übrig' : 'drüber'}</span>
         </span>
       </Ring>
@@ -427,7 +430,7 @@ function KcalWidget({ t }: { t: TodaySummary }) {
             </span>
           </span>
           <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-sand-dark/50">
-            <span className="block h-full rounded-full bg-sky-500" style={{ width: `${Math.min(100, pPct * 100)}%` }} />
+            <span className="block h-full rounded-full bg-brand" style={{ width: `${Math.min(100, pPct * 100)}%` }} />
           </span>
         </span>
       </span>
@@ -440,19 +443,19 @@ function WaterWidget({ t }: { t: TodaySummary }) {
   return (
     <Tile
       icon={<Droplet size={15} />}
-      tint="bg-sky-500/15 text-sky-500"
+      tint="bg-sand text-cocoa-light"
       title="Wasser"
       right={
         <button
           aria-label="250 ml trinken"
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-sky-500 text-white transition active:scale-90"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand text-white transition active:scale-90"
           onClick={() => setWater.mutate({ date: t.day, ml: t.waterMl + 250 })}
         >
           <Plus size={16} strokeWidth={3} />
         </button>
       }
     >
-      <span className="tabular text-2xl font-black leading-none">
+      <span className="tabular text-2xl font-bold leading-none">
         {(t.waterMl / 1000).toLocaleString('de-DE', { maximumFractionDigits: 2 })}
         <span className="text-sm font-semibold text-cocoa-light">
           {' '}
@@ -461,7 +464,7 @@ function WaterWidget({ t }: { t: TodaySummary }) {
       </span>
       <span className="block h-1.5 overflow-hidden rounded-full bg-sand-dark/50">
         <span
-          className="block h-full rounded-full bg-sky-500"
+          className="block h-full rounded-full bg-brand"
           style={{ width: `${Math.min(100, (t.waterMl / t.waterTarget) * 100)}%` }}
         />
       </span>
@@ -480,7 +483,7 @@ function FriendsWidget({ t }: { t: TodaySummary }) {
   return (
     <Tile
       icon={<Users size={15} />}
-      tint="bg-violet-500/15 text-violet-500"
+      tint="bg-sand text-cocoa-light"
       title="Freunde"
       onClick={() => navigate('/social')}
     >

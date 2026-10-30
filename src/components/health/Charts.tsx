@@ -1,5 +1,5 @@
-// Leichte SVG-Diagramme für die Uhr-Auswertungen (keine Chart-Bibliothek nötig,
-// funktionieren hell und dunkel über currentColor bzw. feste Zonenfarben).
+// Leichte SVG-Diagramme für die Uhr-Auswertungen – im Stil der App: Rubin als
+// Linienfarbe (in Abstufungen statt bunt), gedämpfte Achsen, hell und dunkel.
 
 import { useId, type ReactNode } from 'react'
 import { STAGE, ZONES, type FactorStatus, type Normal } from '../../lib/health'
@@ -10,13 +10,14 @@ const W = 340
 export function SeriesChart({
   data,
   height = 120,
-  color = '#ef4444',
+  color = 'rgb(var(--c-ruby))',
   colorFor,
   xLabel = (x) => String(x),
   yLabel = (y) => String(Math.round(y)),
   invert = false,
   band,
   fill = true,
+  dark = false,
 }: {
   data: readonly [number, number][]
   height?: number
@@ -30,6 +31,8 @@ export function SeriesChart({
   /** hinterlegter Normalbereich */
   band?: { lo: number; hi: number } | null
   fill?: boolean
+  /** in der dunklen Hero-Karte */
+  dark?: boolean
 }) {
   const id = useId().replace(/:/g, '')
   if (data.length < 2) return null
@@ -52,12 +55,13 @@ export function SeriesChart({
   const pts = data.map(([x, y]) => `${px(x).toFixed(1)},${py(y).toFixed(1)}`)
   const yTop = invert ? lo + pad : hi - pad
   const yBot = invert ? hi - pad : lo + pad
+  const axis = dark ? 'fill-white/45 dark:fill-cocoa-muted' : 'fill-cocoa-muted'
   return (
     <svg viewBox={`0 0 ${W} ${height}`} className="w-full" role="img">
       <defs>
         <linearGradient id={`g${id}`} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor={color} stopOpacity="0.28" />
-          <stop offset="1" stopColor={color} stopOpacity="0" />
+          <stop offset="0" style={{ stopColor: color, stopOpacity: 0.3 }} />
+          <stop offset="1" style={{ stopColor: color, stopOpacity: 0 }} />
         </linearGradient>
       </defs>
       {band && (
@@ -66,13 +70,20 @@ export function SeriesChart({
           width={W - L - 4}
           y={Math.min(py(band.lo), py(band.hi))}
           height={Math.abs(py(band.lo) - py(band.hi))}
-          className="fill-success/10"
+          className={dark ? 'fill-white/10' : 'fill-sand-dark/40'}
         />
       )}
       {[yTop, yBot].map((v, i) => (
         <g key={i}>
-          <line x1={L} x2={W - 4} y1={py(v)} y2={py(v)} className="stroke-sand-dark/60" strokeDasharray="3 4" />
-          <text x={L - 4} y={py(v) + 3} textAnchor="end" className="fill-cocoa-muted text-[9px]">
+          <line
+            x1={L}
+            x2={W - 4}
+            y1={py(v)}
+            y2={py(v)}
+            className={dark ? 'stroke-white/15' : 'stroke-sand-dark/60'}
+            strokeDasharray="3 4"
+          />
+          <text x={L - 4} y={py(v) + 3} textAnchor="end" className={`${axis} text-[9px]`}>
             {yLabel(v)}
           </text>
         </g>
@@ -90,18 +101,24 @@ export function SeriesChart({
               y1={py(data[i][1])}
               x2={px(x)}
               y2={py(y)}
-              stroke={colorFor((y + data[i][1]) / 2)}
-              strokeWidth={2.2}
+              style={{ stroke: colorFor((y + data[i][1]) / 2) }}
+              strokeWidth={2.4}
               strokeLinecap="round"
             />
           ))
       ) : (
-        <polyline points={pts.join(' ')} fill="none" stroke={color} strokeWidth={2.2} strokeLinejoin="round" />
+        <polyline
+          points={pts.join(' ')}
+          fill="none"
+          style={{ stroke: color }}
+          strokeWidth={2.4}
+          strokeLinejoin="round"
+        />
       )}
-      <text x={L} y={height - 4} className="fill-cocoa-muted text-[9px]">
+      <text x={L} y={height - 4} className={`${axis} text-[9px]`}>
         {xLabel(x0)}
       </text>
-      <text x={W - 4} y={height - 4} textAnchor="end" className="fill-cocoa-muted text-[9px]">
+      <text x={W - 4} y={height - 4} textAnchor="end" className={`${axis} text-[9px]`}>
         {xLabel(x1)}
       </text>
     </svg>
@@ -167,7 +184,7 @@ export function Hypnogram({ stages, start }: { stages: readonly [number, number,
             y={r * rowH + 2}
             height={rowH - 4}
             rx={3}
-            fill={STAGE[c as keyof typeof STAGE]?.color ?? '#818cf8'}
+            style={{ fill: STAGE[c as keyof typeof STAGE]?.color ?? 'rgb(var(--c-ruby) / 0.45)' }}
           />
         )
       })}
@@ -183,7 +200,7 @@ export function Hypnogram({ stages, start }: { stages: readonly [number, number,
 const STATUS_CLS: Record<FactorStatus, string> = {
   gut: 'bg-success/15 text-success',
   normal: 'bg-sand text-cocoa-light',
-  schwach: 'bg-red-500/10 text-red-500',
+  schwach: 'bg-gold/20 text-cocoa',
 }
 const STATUS_TEXT: Record<FactorStatus, string> = { gut: 'Gut', normal: 'Normal', schwach: 'Achtung' }
 
@@ -195,9 +212,11 @@ export function StatusChip({ status }: { status: FactorStatus }) {
   )
 }
 
-/** Karte mit Titel, großem Wert und Inhalt. */
+/**
+ * Abschnitt wie im Rest der App: Überschrift in Versalien über der Karte,
+ * darin optional ein großer Wert und der Inhalt. (Das Symbol entfällt bewusst – ruhiger.)
+ */
 export function MetricCard({
-  icon,
   title,
   value,
   sub,
@@ -212,19 +231,20 @@ export function MetricCard({
   right?: ReactNode
 }) {
   return (
-    <section className="card space-y-2">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h2 className="min-w-0 flex-1 truncate text-sm font-semibold text-cocoa-light">{title}</h2>
+    <section>
+      <div className="mb-2 flex items-baseline justify-between gap-2 px-1">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-cocoa-muted">{title}</h2>
         {right}
       </div>
-      {value != null && (
-        <div className="flex items-baseline gap-2">
-          <span className="tabular text-2xl font-black">{value}</span>
-          {sub && <span className="text-sm text-cocoa-light">{sub}</span>}
-        </div>
-      )}
-      {children}
+      <div className="card space-y-3">
+        {value != null && (
+          <div className="flex items-baseline gap-2">
+            <span className="tabular text-2xl font-bold">{value}</span>
+            {sub && <span className="text-sm text-cocoa-light">{sub}</span>}
+          </div>
+        )}
+        {children}
+      </div>
     </section>
   )
 }
@@ -233,13 +253,13 @@ export function MetricCard({
 export function TrendChart({
   points,
   normal,
-  color,
+  color = 'rgb(var(--c-ruby))',
   unit,
   decimals = 0,
 }: {
   points: readonly [string, number][]
   normal?: Normal | null
-  color: string
+  color?: string
   unit: string
   decimals?: number
 }) {
@@ -262,7 +282,7 @@ export function TrendChart({
       />
       {normal && (
         <p className="text-[11px] text-cocoa-muted">
-          Grün hinterlegt: dein Normalbereich ({normal.lo.toFixed(decimals)}–{normal.hi.toFixed(decimals)} {unit})
+          Hinterlegt: dein Normalbereich ({normal.lo.toFixed(decimals)}–{normal.hi.toFixed(decimals)} {unit})
         </p>
       )}
     </>

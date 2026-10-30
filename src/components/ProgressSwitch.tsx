@@ -35,14 +35,14 @@ export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
   const showSleep = !caps?.known || caps.has.sleep || caps.has.hrv
 
   const items: Item[] = [
-    { id: 'strength', label: 'Kraft', Icon: Dumbbell, to: '/analytics', world: 'fitness', tint: 'text-brand' },
+    { id: 'strength', label: 'Kraft', Icon: Dumbbell, to: '/analytics', world: 'fitness', tint: 'text-cocoa-muted' },
     ...(hasWatch
       ? [
-          { id: 'cardio', label: 'Ausdauer', Icon: Activity, to: '/cardio', tint: 'text-orange-500' },
+          { id: 'cardio', label: 'Ausdauer', Icon: Activity, to: '/cardio', tint: 'text-cocoa-muted' },
           ...(showSleep
-            ? [{ id: 'sleep', label: 'Schlaf', Icon: BedDouble, to: '/sleep', tint: 'text-indigo-500' }]
+            ? [{ id: 'sleep', label: 'Schlaf', Icon: BedDouble, to: '/sleep', tint: 'text-cocoa-muted' }]
             : []),
-          { id: 'vitals', label: 'Herz & Körper', Icon: HeartPulse, to: '/vitals', tint: 'text-red-500' },
+          { id: 'vitals', label: 'Herz & Körper', Icon: HeartPulse, to: '/vitals', tint: 'text-cocoa-muted' },
         ]
       : []),
     ...(showNutrition
@@ -53,11 +53,11 @@ export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
             Icon: Apple,
             to: '/analytics',
             world: 'food' as const,
-            tint: 'text-success',
+            tint: 'text-cocoa-muted',
           },
         ]
       : []),
-    { id: 'badges', label: 'Erfolge', Icon: Trophy, to: '/badges', tint: 'text-gold' },
+    { id: 'badges', label: 'Erfolge', Icon: Trophy, to: '/badges', tint: 'text-cocoa-muted' },
   ]
   const activeId =
     pathname === '/analytics'
