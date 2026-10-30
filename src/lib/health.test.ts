@@ -89,8 +89,8 @@ describe('Tagesform', () => {
       proteinRatioYesterday: 0.5,
     })!
     expect(r.level).toBe('niedrig')
-    expect(r.factors.map((f) => f.label)).toContain('Energie')
-    expect(r.factors.map((f) => f.label)).toContain('Eiweiß')
+    expect(r.factors.map((f) => f.key)).toContain('energy')
+    expect(r.factors.map((f) => f.key)).toContain('protein')
   })
 
   it('Basis aus den Vortagen', () => {

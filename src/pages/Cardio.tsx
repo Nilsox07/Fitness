@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Activity, Heart, Mountain, Timer, Trophy, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Activity, Heart, Trophy } from 'lucide-react'
+import { ProgressHeader } from '../components/progress/ProgressHeader'
 import { enter } from '../components/home/motion'
 import { useHealthActivities } from '../hooks/useHealth'
 import { localDate, shiftDate, dayLabel } from '../lib/day'
@@ -18,13 +20,12 @@ import {
 import type { ActivityType, HealthActivity } from '../types'
 
 const ZONE_COLOR = ['', '#94a3b8', '#22c55e', '#f2b705', '#f97316', '#ef4444']
-const ZONE_LABEL = ['', 'Locker', 'Grundlage', 'Tempo', 'Schwelle', 'Maximum']
 
 /** Fortschritt → Ausdauer: Läufe, Radtouren & Co. von der Uhr. */
 export default function Cardio() {
   const { data: list = [], isLoading } = useHealthActivities(365)
   const [type, setType] = useState<ActivityType | 'all'>('all')
-  const [open, setOpen] = useState<HealthActivity | null>(null)
+  const navigate = useNavigate()
   const today = localDate()
   const week = weekDates(today)
   const types = useMemo(() => [...new Set(list.map((a) => a.type))], [list])
@@ -44,9 +45,7 @@ export default function Cardio() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-[28px] font-bold leading-tight" style={enter(0)}>
-        Ausdauer
-      </h1>
+      <ProgressHeader title="Fortschritt" subtitle="Ausdauer · von deiner Uhr" />
       {types.length > 1 && (
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" style={enter(0)}>
           {(['all', ...types] as const).map((t) => (
@@ -129,11 +128,9 @@ export default function Cardio() {
             hier auf.
           </div>
         ) : (
-          shown.slice(0, 60).map((a) => <ActivityRow key={a.id} a={a} onOpen={() => setOpen(a)} />)
+          shown.slice(0, 60).map((a) => <ActivityRow key={a.id} a={a} onOpen={() => navigate(`/cardio/${a.id}`)} />)
         )}
       </section>
-
-      {open && <ActivityDetail a={open} onClose={() => setOpen(null)} />}
     </div>
   )
 }
@@ -171,71 +168,5 @@ function ActivityRow({ a, onOpen }: { a: HealthActivity; onOpen: () => void }) {
         </span>
       )}
     </button>
-  )
-}
-
-function ActivityDetail({ a, onClose }: { a: HealthActivity; onClose: () => void }) {
-  const d = routePath(a.route, 340, 200)
-  const zone = hrZone(a.avg_hr)
-  const stats: [string, string, typeof Timer][] = [
-    ['Distanz', kmText(a.distance_m), Activity],
-    ['Dauer', durationText(a.duration_s), Timer],
-    ['Tempo', paceText(a) ?? '–', Activity],
-    ['Ø Puls', a.avg_hr ? `${a.avg_hr} bpm` : '–', Heart],
-    ['Max. Puls', a.max_hr ? `${a.max_hr} bpm` : '–', Heart],
-    ['Höhenmeter', a.elevation_m ? `${Math.round(a.elevation_m)} m` : '–', Mountain],
-  ]
-  return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
-      <div
-        className="anim-sheet mx-auto max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-t-3xl bg-bg p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold">
-              {ACTIVITY_EMOJI[a.type]} {a.title || ACTIVITY_LABEL[a.type]}
-            </h2>
-            <p className="text-sm text-cocoa-light">
-              {new Date(a.started_at).toLocaleString('de-DE', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-              {a.source && ` · ${a.source}`}
-            </p>
-          </div>
-          <button
-            aria-label="Schließen"
-            className="grid h-9 w-9 place-items-center rounded-full bg-sand"
-            onClick={onClose}
-          >
-            <X size={18} />
-          </button>
-        </div>
-        {d && (
-          <svg viewBox="0 0 340 200" className="w-full rounded-2xl bg-sand/60">
-            <path d={d} fill="none" stroke="#f97316" strokeWidth={3.5} strokeLinejoin="round" strokeLinecap="round" />
-          </svg>
-        )}
-        <div className="grid grid-cols-3 gap-2">
-          {stats.map(([label, value]) => (
-            <div key={label} className="rounded-2xl bg-cream p-3">
-              <div className="tabular text-base font-bold">{value}</div>
-              <div className="text-[11px] text-cocoa-muted">{label}</div>
-            </div>
-          ))}
-        </div>
-        {zone && (
-          <div className="flex items-center gap-2 rounded-2xl bg-cream p-3 text-sm">
-            <span className="h-3 w-3 rounded-full" style={{ background: ZONE_COLOR[zone] }} />
-            Überwiegend Zone {zone} – {ZONE_LABEL[zone]}
-          </div>
-        )}
-        {a.kcal != null && <p className="text-sm text-cocoa-light">ca. {Math.round(a.kcal)} kcal verbrannt</p>}
-      </div>
-    </div>
   )
 }

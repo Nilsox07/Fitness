@@ -31,6 +31,8 @@ import Body from './pages/Body'
 import Today from './pages/Today'
 import Cardio from './pages/Cardio'
 import Sleep from './pages/Sleep'
+import Vitals from './pages/Vitals'
+import ActivityDetail from './pages/ActivityDetail'
 import { NativeNav, NativeSync } from './components/NativeSync'
 import { Splash } from './components/Splash'
 import { useChallengeSync } from './hooks/useChallenges'
@@ -109,12 +111,14 @@ export default function App() {
       {isNew && showSocial && <ChallengeSync />}
       {isNew && <NativeSync />}
       <NativeNav />
-      <main ref={mainRef} className="flex-1 overflow-y-auto px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
+      <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />
           <Route path="/today" element={isNew ? <Today /> : <Navigate to="/" replace />} />
           <Route path="/cardio" element={hasWatch ? <Cardio /> : <Navigate to="/analytics" replace />} />
+          <Route path="/cardio/:id" element={hasWatch ? <ActivityDetail /> : <Navigate to="/analytics" replace />} />
           <Route path="/sleep" element={hasWatch ? <Sleep /> : <Navigate to="/analytics" replace />} />
+          <Route path="/vitals" element={hasWatch ? <Vitals /> : <Navigate to="/analytics" replace />} />
           <Route path="/nutrition" element={showNutrition ? <Nutrition /> : <Navigate to="/" replace />} />
           <Route path="/exercises" element={<Exercises />} />
           <Route path="/exercises/:id" element={<ExerciseDetail />} />

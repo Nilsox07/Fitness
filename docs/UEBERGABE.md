@@ -24,8 +24,8 @@ Die festen Regeln stehen in [`CLAUDE.md`](../CLAUDE.md).
 
 ### Migrationen
 
-`0001`–`0035` sind ausgeführt. **`0036_ai_calls.sql` (KI-Limits) und `0037_health.sql` (Uhr-Daten) müssen
-noch im Supabase-SQL-Editor laufen.** Bis dahin zählt der Server keine KI-Aufrufe und die Uhr-Seiten bleiben
+`0001`–`0035` sind ausgeführt. **`0036_ai_calls.sql` (KI-Limits), `0037_health.sql` (Uhr-Daten) und
+`0038_health_details.sql` (Verläufe, Schlafphasen, Vitalwerte) müssen noch im Supabase-SQL-Editor laufen.** Bis dahin zählt der Server keine KI-Aufrufe und die Uhr-Seiten bleiben
 leer – Fehler gibt es keine.
 
 ### Umgebungsvariablen (Vercel, nie ins Git)
@@ -57,6 +57,13 @@ einer App, aber nur das sichtbar, was man nutzt.
   `src/components/today/Widgets.tsx`, Daten aus `src/hooks/useToday.ts`. Reihenfolge in `profiles.prefs.dashboard`.
 - **Module** (Profil → Bereiche, `ModuleSettings.tsx`): Ernährung, Community, Smartwatch. Aus = Tab, Widgets
   und Seiten verschwinden. Flags in `src/lib/prefs.tsx` (`showNutrition`, `showSocial`, `hasWatch`).
+- **Fortschritt-Tab** mit einer Leiste: Kraft · Ausdauer · Schlaf · Herz & Körper · Ernährung · Erfolge
+  (Uhr-Bereiche nur mit `hasWatch`).
+- **Tiefe Auswertung** (alles, was Health Connect liefert, `HealthBridgePlugin.kt`): Aktivität im Detail
+  `/cardio/:id` (Puls-Verlauf mit Zonen, Zeit in Zonen, Pace, Höhenprofil, Kilometer-Zeiten, Belastung/TRIMP,
+  Erholungszeit), jede Nacht mit Schlafphasen-Verlauf, Score und Körperwerten (Puls, HRV, SpO₂, Atmung,
+  Hauttemperatur), `/vitals` mit Puls heute, Ruhepuls/HRV mit persönlichem Normalbereich, VO₂max, Aktivität,
+  Gewicht/Körperfett/Blutdruck/Blutzucker. Tagesform-Faktoren in Klartext (Wert, Vergleich, Gut/Normal/Achtung).
 - **Smartwatch** (nur mit `hasWatch` sichtbar): Ausdauer-Seite `/cardio`, Schlaf & Erholung `/sleep`,
   Tagesform aus Schlaf, HRV, Ruhepuls, Belastung **und Ernährung** (`src/lib/health.ts`, getestet).
   Daten in `health_activities`, `health_sleep`, `health_daily` (Migration 0037), befüllt von der Android-App.

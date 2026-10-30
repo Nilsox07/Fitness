@@ -59,7 +59,7 @@ export interface NativeDaily {
 interface HealthBridgePlugin {
   availability(): Promise<{ status: 'available' | 'not_installed' | 'update_required' | 'unsupported' }>
   connect(): Promise<{ granted: boolean }>
-  hasPermissions(): Promise<{ granted: boolean }>
+  hasPermissions(): Promise<{ granted: boolean; history?: boolean; missing?: string[] }>
   read(opts: { since: string }): Promise<{ activities: NativeActivity[]; sleep: NativeSleep[]; daily: NativeDaily[] }>
   openSettings(): Promise<void>
 }
@@ -78,6 +78,16 @@ export async function healthAvailability(): Promise<'available' | 'not_installed
 export async function healthConnect(): Promise<boolean> {
   if (!isNative()) return false
   return (await HealthBridge.connect()).granted
+}
+
+/** Welche Datentypen fehlen noch (z. B. nach einem App-Update mit neuen Werten)? */
+export async function healthMissing(): Promise<string[]> {
+  if (!isNative()) return []
+  try {
+    return (await HealthBridge.hasPermissions()).missing ?? []
+  } catch {
+    return []
+  }
 }
 
 export async function healthHasPermissions(): Promise<boolean> {

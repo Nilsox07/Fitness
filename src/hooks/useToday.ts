@@ -37,6 +37,8 @@ export interface TodaySummary {
   readiness: Readiness | null
   sleep: HealthSleep | null
   steps: number | null
+  restingHr: number | null
+  hrv: number | null
   lastActivity: HealthActivity | null
   cardioWeek: ReturnType<typeof cardioSummary> | null
   loading: boolean
@@ -112,6 +114,8 @@ export function useToday(): TodaySummary {
       readiness: ready,
       sleep,
       steps: today?.steps ?? null,
+      restingHr: today?.resting_hr ?? null,
+      hrv: today?.hrv_ms ?? null,
       lastActivity: hasWatch ? ((activities ?? [])[0] ?? null) : null,
       cardioWeek: hasWatch ? cardioSummary(activities ?? [], week[0], week[6]) : null,
       loading: allSets === undefined,

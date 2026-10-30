@@ -10,7 +10,8 @@ import { healthHasPermissions, healthRead, isNative } from '../lib/native'
 import { localDate, shiftDate } from '../lib/day'
 import type { HealthActivity, HealthDaily, HealthSleep } from '../types'
 
-const SYNC_KEY = 'health_synced_at'
+// Version im Schlüssel: wenn die App neue Datenfelder liest, wird einmal komplett neu abgeglichen
+const SYNC_KEY = 'health_synced_at_v2'
 
 /** Tabelle fehlt noch (Migration nicht ausgeführt) → leer statt Fehler. */
 function missingTable(e: { code?: string } | null) {
@@ -83,7 +84,8 @@ export function useHealthSync() {
     if (!(await healthHasPermissions())) return
     busy.current = true
     try {
-      const fallback = new Date(Date.now() - 30 * 86400_000).toISOString()
+      // Erster Abgleich: 90 Tage (Health Connect liefert älteres nur mit der Verlaufs-Freigabe)
+      const fallback = new Date(Date.now() - 90 * 86400_000).toISOString()
       let since = fallback
       try {
         since = localStorage.getItem(SYNC_KEY) || fallback

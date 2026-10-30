@@ -1,7 +1,7 @@
 // Auswertungen der Smartwatch-Daten (Health Connect): Tagesform, Ausdauer, Schlaf.
 // Reine Logik, ohne DB – getestet in health.test.ts.
 
-import type { ActivityType, HealthActivity, HealthDaily, HealthSleep } from '../types'
+import type { ActivityType, HealthActivity, HealthDaily, HealthSleep, RoutePoint } from '../types'
 
 // ---------- Aktivitäten ----------
 
@@ -166,10 +166,20 @@ export interface ReadinessInput {
   proteinRatioYesterday?: number | null
 }
 
+export type FactorStatus = 'gut' | 'normal' | 'schwach'
+
 export interface ReadinessFactor {
+  key: 'sleep' | 'hrv' | 'rhr' | 'load' | 'energy' | 'protein'
   label: string
-  effect: number
+  /** gemessener Wert, z. B. „6:40 h“ oder „58 ms“ */
+  value: string
+  /** Vergleich, z. B. „dein Schnitt 62 ms“ */
+  normal: string | null
+  status: FactorStatus
+  /** ein Satz in Alltagssprache, was das bedeutet */
   text: string
+  /** Beitrag zur Tagesform (intern, wird nicht angezeigt) */
+  effect: number
 }
 
 export interface Readiness {
@@ -180,6 +190,18 @@ export interface Readiness {
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
+const statusOf = (effect: number, goodFrom = 2, badBelow = -3): FactorStatus =>
+  effect >= goodFrom ? 'gut' : effect <= badBelow ? 'schwach' : 'normal'
+
+/** Erklärungen zum Antippen – was misst die Uhr da eigentlich? */
+export const FACTOR_INFO: Record<ReadinessFactor['key'], string> = {
+  sleep: 'Wie lange du letzte Nacht wirklich geschlafen hast (ohne Wachphasen). 7–9 Stunden sind ideal.',
+  hrv: 'Herzratenvariabilität: wie stark der Abstand zwischen zwei Herzschlägen schwankt. Liegt sie über deinem eigenen Schnitt, ist dein Körper erholt. Deutlich darunter heißt Stress, Krankheit, Alkohol oder zu wenig Erholung.',
+  rhr: 'Dein Puls in völliger Ruhe (meist nachts gemessen). Liegt er mehrere Schläge über deinem Normalwert, arbeitet der Körper noch – z. B. an Erholung oder einem Infekt.',
+  load: 'Wie anstrengend dein Training gestern war (Dauer × Intensität, Kraft und Ausdauer zusammen).',
+  energy: 'Ein großes Kaloriendefizit gestern bremst die Erholung von Muskeln und Nervensystem.',
+  protein: 'Eiweiß repariert die Muskeln nach dem Training – genug davon beschleunigt die Erholung.',
+}
 
 /**
  * Tagesform 0–100 aus Schlaf, HRV, Ruhepuls, Belastung – und (das kann sonst
@@ -192,43 +214,96 @@ export function readiness(i: ReadinessInput): Readiness | null {
 
   if (i.sleepMin != null) {
     const need = i.sleepNeedMin ?? 480
-    const ratio = i.sleepMin / need
-    const e = Math.round(clamp((ratio - 0.9) * 80, -25, 10))
+    const e = Math.round(clamp((i.sleepMin / need - 0.9) * 80, -25, 10))
+    const st = statusOf(e, 0, -5)
     f.push({
+      key: 'sleep',
       label: 'Schlaf',
+      value: hoursText(i.sleepMin),
+      normal: `Ziel ${hoursText(need)}`,
+      status: st,
+      text:
+        st === 'gut'
+          ? 'Ausgeschlafen'
+          : st === 'normal'
+            ? 'Etwas kurz, aber okay'
+            : 'Zu wenig Schlaf – Körper ist noch müde',
       effect: e,
-      text: e >= 0 ? `${hoursText(i.sleepMin)} – gut erholt` : `nur ${hoursText(i.sleepMin)}`,
     })
   }
   if (i.hrv != null && i.hrvBaseline) {
     const delta = (i.hrv - i.hrvBaseline) / i.hrvBaseline
     const e = Math.round(clamp(delta * 60, -15, 10))
+    const st: FactorStatus = delta >= 0.03 ? 'gut' : delta <= -0.1 ? 'schwach' : 'normal'
     f.push({
-      label: 'HRV',
+      key: 'hrv',
+      label: 'Erholung (HRV)',
+      value: `${Math.round(i.hrv)} ms`,
+      normal: `dein Schnitt ${Math.round(i.hrvBaseline)} ms`,
+      status: st,
+      text:
+        st === 'gut'
+          ? 'Über deinem Schnitt – dein Körper ist gut erholt'
+          : st === 'normal'
+            ? 'Im normalen Bereich'
+            : 'Deutlich unter deinem Schnitt – Körper ist im Stress',
       effect: e,
-      text: e >= 0 ? 'Nervensystem entspannt' : 'unter deinem Schnitt – Körper ist gestresst',
     })
   }
   if (i.restingHr != null && i.restingHrBaseline) {
     const diff = i.restingHr - i.restingHrBaseline
     const e = Math.round(clamp(-diff * 2, -12, 5))
+    const st: FactorStatus = diff <= -1 ? 'gut' : diff >= 3 ? 'schwach' : 'normal'
     f.push({
+      key: 'rhr',
       label: 'Ruhepuls',
+      value: `${Math.round(i.restingHr)} bpm`,
+      normal: `normal ${Math.round(i.restingHrBaseline)} bpm`,
+      status: st,
+      text:
+        st === 'schwach'
+          ? `${Math.round(diff)} Schläge über normal – noch nicht ganz erholt`
+          : st === 'gut'
+            ? 'Niedriger als sonst – sehr gut'
+            : 'Im normalen Bereich',
       effect: e,
-      text: diff > 2 ? `${Math.round(diff)} Schläge über normal` : 'im normalen Bereich',
     })
   }
-  if (i.loadYesterday != null && i.loadYesterday > 60) {
+  if (i.loadYesterday != null && i.loadYesterday > 0) {
     const e = -Math.round(clamp((i.loadYesterday - 60) / 12, 0, 10))
-    if (e < 0) f.push({ label: 'Belastung', effect: e, text: 'gestern hart trainiert' })
+    f.push({
+      key: 'load',
+      label: 'Belastung gestern',
+      value: loadLabel(i.loadYesterday),
+      normal: null,
+      status: e <= -4 ? 'schwach' : 'normal',
+      text: e <= -4 ? 'Hartes Training – Muskeln brauchen noch Zeit' : 'Gut verkraftbar',
+      effect: e,
+    })
   }
   if (i.kcalBalanceYesterday != null && i.kcalBalanceYesterday < -700) {
-    f.push({ label: 'Energie', effect: -6, text: `gestern ${Math.round(-i.kcalBalanceYesterday)} kcal im Defizit` })
+    f.push({
+      key: 'energy',
+      label: 'Energie gestern',
+      value: `−${Math.round(-i.kcalBalanceYesterday)} kcal`,
+      normal: 'unter deinem Ziel',
+      status: 'schwach',
+      text: 'Großes Defizit – bremst die Erholung',
+      effect: -6,
+    })
   }
   if (i.proteinRatioYesterday != null) {
-    if (i.proteinRatioYesterday < 0.7) f.push({ label: 'Eiweiß', effect: -4, text: 'gestern zu wenig Eiweiß' })
-    else if (i.proteinRatioYesterday >= 0.95)
-      f.push({ label: 'Eiweiß', effect: 3, text: 'Eiweißziel gestern erreicht' })
+    const pct = Math.round(i.proteinRatioYesterday * 100)
+    const e = i.proteinRatioYesterday < 0.7 ? -4 : i.proteinRatioYesterday >= 0.95 ? 3 : 0
+    f.push({
+      key: 'protein',
+      label: 'Eiweiß gestern',
+      value: `${pct} %`,
+      normal: 'vom Ziel',
+      status: statusOf(e),
+      text: e > 0 ? 'Ziel erreicht – gut für die Muskeln' : e < 0 ? 'Zu wenig für gute Erholung' : 'Fast geschafft',
+      effect: e,
+    })
   }
 
   const score = Math.round(clamp(72 + f.reduce((s, x) => s + x.effect, 0), 5, 99))
@@ -260,12 +335,7 @@ export function baseline(
 // ---------- Strecke ----------
 
 /** Strecke als SVG-Pfad (ohne Karte) – projiziert auf eine Box w × h mit Rand. */
-export function routePath(
-  route: readonly [number, number][] | null | undefined,
-  w: number,
-  h: number,
-  pad = 6,
-): string {
+export function routePath(route: readonly RoutePoint[] | null | undefined, w: number, h: number, pad = 6): string {
   if (!route || route.length < 2) return ''
   const lats = route.map((p) => p[0])
   const lngs = route.map((p) => p[1])
@@ -281,10 +351,291 @@ export function routePath(
   const ox = (w - spanX * s) / 2
   const oy = (h - spanY * s) / 2
   return route
-    .map(([lat, lng], i) => {
+    .map((p, i) => {
+      const [lat, lng] = p
       const x = ox + (lng - minLng) * k * s
       const y = oy + (maxLat - lat) * s
       return `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`
     })
     .join(' ')
+}
+
+// ---------- Belastung & Pulszonen ----------
+
+/** Belastung in Worten (Skala wie TRIMP: ~50 locker, ~100 mittel, ~200 hart). */
+export function loadLabel(load: number): string {
+  if (load < 40) return 'leicht'
+  if (load < 90) return 'mittel'
+  if (load < 160) return 'hoch'
+  return 'sehr hoch'
+}
+
+/** Maximalpuls: höchster gemessener Wert oder Faustformel 208 − 0,7 × Alter. */
+export function estimateMaxHr(age: number | null | undefined, list: readonly { max_hr: number | null }[] = []): number {
+  const formula = age ? Math.round(208 - 0.7 * age) : 190
+  const seen = Math.max(0, ...list.map((a) => a.max_hr ?? 0))
+  return Math.max(formula, seen)
+}
+
+export const ZONES = [
+  { zone: 1, label: 'Locker', from: 0.5, color: '#94a3b8', info: 'Aufwärmen, Regeneration' },
+  { zone: 2, label: 'Grundlage', from: 0.6, color: '#22c55e', info: 'Fettstoffwechsel, Ausdauerbasis' },
+  { zone: 3, label: 'Tempo', from: 0.7, color: '#f2b705', info: 'Aerobe Fitness' },
+  { zone: 4, label: 'Schwelle', from: 0.8, color: '#f97316', info: 'Tempohärte, Laktatschwelle' },
+  { zone: 5, label: 'Maximum', from: 0.9, color: '#ef4444', info: 'Sprints, maximale Leistung' },
+] as const
+
+/** Sekunden je Pulszone (1–5) aus einer Puls-Zeitreihe [[sekunde, bpm]]. */
+export function zoneTimes(series: readonly [number, number][] | null | undefined, maxHr: number): number[] {
+  const out = [0, 0, 0, 0, 0]
+  if (!series || series.length < 2) return out
+  for (let i = 0; i < series.length; i++) {
+    const dt = i + 1 < series.length ? series[i + 1][0] - series[i][0] : series[i][0] - series[i - 1][0]
+    const z = hrZone(series[i][1], maxHr)
+    if (z && dt > 0 && dt < 600) out[z - 1] += dt
+  }
+  return out
+}
+
+/**
+ * Trainingsbelastung nach Banister (TRIMP): Minuten × Intensität, exponentiell gewichtet.
+ * Ohne Puls-Verlauf aus dem Durchschnittspuls geschätzt.
+ */
+export function trimp(
+  a: Pick<HealthActivity, 'duration_s' | 'avg_hr'> & { hr_series?: [number, number][] | null },
+  maxHr: number,
+  restHr = 60,
+): number {
+  const w = (hr: number) => {
+    const r = clamp((hr - restHr) / Math.max(1, maxHr - restHr), 0, 1)
+    return r * 0.64 * Math.exp(1.92 * r)
+  }
+  const s = a.hr_series
+  if (s && s.length >= 2) {
+    let sum = 0
+    for (let i = 1; i < s.length; i++) {
+      const dt = (s[i][0] - s[i - 1][0]) / 60
+      if (dt > 0 && dt < 10) sum += dt * w((s[i][1] + s[i - 1][1]) / 2)
+    }
+    return Math.round(sum)
+  }
+  return a.avg_hr ? Math.round((a.duration_s / 60) * w(a.avg_hr)) : Math.round((a.duration_s / 60) * 0.5)
+}
+
+/** Empfohlene Erholung in Stunden nach einer Einheit. */
+export function recoveryHours(load: number): number {
+  return Math.round(clamp(6 + load * 0.25, 6, 72) / 6) * 6
+}
+
+// ---------- Strecke: Kilometer-Zeiten & Höhenprofil ----------
+
+function haversine(a: RoutePoint, b: RoutePoint): number {
+  const R = 6371000
+  const toRad = (d: number) => (d * Math.PI) / 180
+  const dLat = toRad(b[0] - a[0])
+  const dLng = toRad(b[1] - a[1])
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLng / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(h))
+}
+
+export interface Split {
+  km: number
+  /** Sekunden für diesen Abschnitt */
+  seconds: number
+  /** Länge (letzter Abschnitt oft < 1 km) */
+  meters: number
+  hr: number | null
+  elevation: number | null
+}
+
+/** Kilometer-Abschnitte aus Strecke (mit Zeitstempeln) und Puls-Verlauf. */
+export function kmSplits(
+  route: readonly RoutePoint[] | null | undefined,
+  hr: readonly [number, number][] | null | undefined,
+  unit = 1000,
+): Split[] {
+  if (!route || route.length < 2 || route[0].length < 4) return []
+  const pts = route as [number, number, number | null, number][]
+  const splits: Split[] = []
+  let dist = 0
+  let startT = pts[0][3]
+  let startAlt = pts[0][2]
+  let segStart = 0
+  const hrAvg = (from: number, to: number) => {
+    const v = (hr ?? []).filter(([t]) => t >= from && t <= to).map(([, b]) => b)
+    return v.length ? Math.round(v.reduce((x, y) => x + y, 0) / v.length) : null
+  }
+  for (let i = 1; i < pts.length; i++) {
+    const d = haversine(pts[i - 1], pts[i])
+    if (dist + d >= unit) {
+      // Punkt genau bei der Kilometergrenze interpolieren
+      const f = (unit - dist) / d
+      const t = pts[i - 1][3] + f * (pts[i][3] - pts[i - 1][3])
+      const alt = pts[i][2] != null && pts[i - 1][2] != null ? pts[i - 1][2]! + f * (pts[i][2]! - pts[i - 1][2]!) : null
+      splits.push({
+        km: splits.length + 1,
+        seconds: Math.round(t - startT),
+        meters: unit,
+        hr: hrAvg(startT, t),
+        elevation: alt != null && startAlt != null ? Math.round(alt - startAlt) : null,
+      })
+      startT = t
+      startAlt = alt
+      dist = d - (unit - dist)
+      segStart = i
+    } else dist += d
+  }
+  const last = pts[pts.length - 1]
+  if (dist > 100 && segStart >= 0) {
+    splits.push({
+      km: splits.length + 1,
+      seconds: Math.round(last[3] - startT),
+      meters: Math.round(dist),
+      hr: hrAvg(startT, last[3]),
+      elevation: last[2] != null && startAlt != null ? Math.round(last[2] - startAlt) : null,
+    })
+  }
+  return splits
+}
+
+/** Höhenprofil: [[km, höhe], …] – leer, wenn die Uhr keine Höhe liefert. */
+export function elevationProfile(route: readonly RoutePoint[] | null | undefined): [number, number][] {
+  if (!route || route.length < 2) return []
+  const out: [number, number][] = []
+  let dist = 0
+  for (let i = 0; i < route.length; i++) {
+    if (i) dist += haversine(route[i - 1], route[i])
+    const alt = route[i][2]
+    if (alt != null) out.push([Math.round(dist) / 1000, alt])
+  }
+  return out.length >= 2 ? out : []
+}
+
+// ---------- Schlaf im Detail ----------
+
+export const STAGE = {
+  1: { label: 'Wach', color: '#f97316', normal: [0, 10] },
+  2: { label: 'Leicht', color: '#93c5fd', normal: [45, 60] },
+  3: { label: 'Tief', color: '#4f46e5', normal: [13, 23] },
+  4: { label: 'REM', color: '#a855f7', normal: [20, 25] },
+  5: { label: 'Schlaf', color: '#818cf8', normal: [0, 100] },
+} as const
+
+export interface SleepScore {
+  score: number
+  label: string
+  /** Anteile an der Schlafzeit in % */
+  pct: { light: number | null; deep: number | null; rem: number | null }
+  efficiency: number | null
+  parts: { label: string; value: string; status: FactorStatus; hint: string }[]
+}
+
+/** Schlaf-Score 0–100: Dauer, Tief- & REM-Anteil, Effizienz, Unterbrechungen. */
+export function sleepScore(n: HealthSleep, needMin = 480): SleepScore {
+  const asleep = n.asleep_min
+  const pct = (m: number | null | undefined) => (m != null && asleep > 0 ? Math.round((m / asleep) * 100) : null)
+  const p = { light: pct(n.light_min), deep: pct(n.deep_min), rem: pct(n.rem_min) }
+  const inBed = n.in_bed_min ?? Math.round((new Date(n.end_at).getTime() - new Date(n.start_at).getTime()) / 60000)
+  const efficiency = inBed > 0 ? Math.round((asleep / inBed) * 100) : null
+
+  let score = 0
+  const parts: SleepScore['parts'] = []
+  const dur = clamp(asleep / needMin, 0, 1.1)
+  score += Math.min(50, dur * 50)
+  parts.push({
+    label: 'Dauer',
+    value: hoursText(asleep),
+    status: asleep >= needMin * 0.9 ? 'gut' : asleep >= needMin * 0.75 ? 'normal' : 'schwach',
+    hint: '7–9 h sind ideal',
+  })
+  if (p.deep != null) {
+    score += clamp(p.deep / 18, 0, 1) * 15
+    parts.push({
+      label: 'Tiefschlaf',
+      value: `${p.deep} %`,
+      status: p.deep >= 13 ? 'gut' : p.deep >= 9 ? 'normal' : 'schwach',
+      hint: 'körperliche Erholung · normal 13–23 %',
+    })
+  } else score += 10
+  if (p.rem != null) {
+    score += clamp(p.rem / 21, 0, 1) * 15
+    parts.push({
+      label: 'REM',
+      value: `${p.rem} %`,
+      status: p.rem >= 18 ? 'gut' : p.rem >= 13 ? 'normal' : 'schwach',
+      hint: 'Kopf & Gedächtnis · normal 20–25 %',
+    })
+  } else score += 10
+  if (efficiency != null) {
+    score += clamp((efficiency - 70) / 25, 0, 1) * 10
+    parts.push({
+      label: 'Effizienz',
+      value: `${efficiency} %`,
+      status: efficiency >= 88 ? 'gut' : efficiency >= 80 ? 'normal' : 'schwach',
+      hint: 'Anteil der Bettzeit im Schlaf',
+    })
+  }
+  const aw = n.awakenings ?? null
+  score += aw == null ? 7 : clamp(1 - aw / 8, 0, 1) * 10
+  if (aw != null)
+    parts.push({
+      label: 'Aufgewacht',
+      value: `${aw}×`,
+      status: aw <= 2 ? 'gut' : aw <= 5 ? 'normal' : 'schwach',
+      hint: 'kurzes Aufwachen ist normal',
+    })
+  if (n.latency_min != null)
+    parts.push({
+      label: 'Eingeschlafen nach',
+      value: `${n.latency_min} min`,
+      status: n.latency_min <= 20 ? 'gut' : n.latency_min <= 40 ? 'normal' : 'schwach',
+      hint: 'unter 20 min ist gut',
+    })
+
+  const s = Math.round(clamp(score, 0, 100))
+  return {
+    score: s,
+    label: s >= 85 ? 'Ausgezeichnet' : s >= 70 ? 'Gut' : s >= 55 ? 'Okay' : 'Schlecht',
+    pct: p,
+    efficiency,
+    parts,
+  }
+}
+
+// ---------- Vitalwerte ----------
+
+export interface Normal {
+  mean: number
+  lo: number
+  hi: number
+}
+
+/** Persönlicher Normalbereich (Mittel ± 1 Standardabweichung) aus mind. 5 Werten. */
+export function personalNormal(values: readonly (number | null | undefined)[]): Normal | null {
+  const v = values.filter((x): x is number => x != null && Number.isFinite(x))
+  if (v.length < 5) return null
+  const mean = v.reduce((a, b) => a + b, 0) / v.length
+  const sd = Math.sqrt(v.reduce((a, b) => a + (b - mean) ** 2, 0) / v.length)
+  return { mean, lo: mean - sd, hi: mean + sd }
+}
+
+/** VO₂max-Einordnung nach Alter und Geschlecht (vereinfachte Cooper-Tabellen). */
+export function vo2Category(vo2: number, age: number | null | undefined, sex: string | null | undefined): string {
+  const a = age ?? 35
+  const base = sex === 'f' || sex === 'female' ? 35 : 42
+  const ref = base - Math.max(0, a - 30) * 0.3
+  const d = vo2 - ref
+  if (d >= 10) return 'Ausgezeichnet'
+  if (d >= 5) return 'Sehr gut'
+  if (d >= 0) return 'Gut'
+  if (d >= -5) return 'Durchschnitt'
+  return 'Ausbaufähig'
+}
+
+/** Blutdruck-Einordnung (ESC/ESH). */
+export function bpCategory(sys: number, dia: number): { label: string; status: FactorStatus } {
+  if (sys >= 140 || dia >= 90) return { label: 'Erhöht – ärztlich abklären', status: 'schwach' }
+  if (sys >= 130 || dia >= 85) return { label: 'Hoch-normal', status: 'normal' }
+  if (sys < 90 || dia < 60) return { label: 'Niedrig', status: 'normal' }
+  return { label: 'Optimal', status: 'gut' }
 }

@@ -15,6 +15,7 @@ export type WidgetId =
   | 'steps'
   | 'lastActivity'
   | 'cardioWeek'
+  | 'heart'
   | 'supplements'
   | 'weight'
   | 'friends'

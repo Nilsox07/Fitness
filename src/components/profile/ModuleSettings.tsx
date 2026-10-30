@@ -9,6 +9,7 @@ import {
   healthAvailability,
   healthConnect,
   healthHasPermissions,
+  healthMissing,
   healthOpenSettings,
   isNative,
   liveFastingEnabled,
@@ -78,6 +79,7 @@ export function ModuleSettings() {
   const native = isNative()
   const [hc, setHc] = useState<'available' | 'not_installed' | 'update_required' | 'unsupported' | null>(null)
   const [granted, setGranted] = useState(false)
+  const [missing, setMissing] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [liveFasting, setLiveFasting] = useState(liveFastingEnabled)
@@ -85,6 +87,7 @@ export function ModuleSettings() {
   useEffect(() => {
     void healthAvailability().then(setHc)
     void healthHasPermissions().then(setGranted)
+    void healthMissing().then(setMissing)
   }, [])
 
   function enableWatch() {
@@ -98,6 +101,7 @@ export function ModuleSettings() {
     try {
       const ok = await healthConnect()
       setGranted(ok)
+      void healthMissing().then(setMissing)
       if (ok) {
         enableWatch()
         setMsg('Verbunden – deine Daten werden jetzt abgeglichen.')
@@ -175,6 +179,17 @@ export function ModuleSettings() {
           ) : granted ? (
             <>
               <p className="text-sm text-success">✓ Mit Health Connect verbunden</p>
+              {missing.length > 0 && (
+                <div className="space-y-2 rounded-xl bg-gold/15 p-3">
+                  <p className="text-xs">
+                    {missing.length} Datentypen sind noch nicht freigegeben (z. B. Sauerstoff, Atmung, Blutdruck, ältere
+                    Daten). Mit Freigabe bekommst du die komplette Auswertung.
+                  </p>
+                  <button className="btn-primary w-full rounded-xl py-2.5" onClick={connect} disabled={busy}>
+                    Alle Daten freigeben
+                  </button>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <button className="btn-ghost rounded-2xl py-2.5" onClick={() => void sync()}>
                   Jetzt abgleichen

@@ -262,9 +262,26 @@ export interface HealthActivity {
   avg_hr: number | null
   max_hr: number | null
   elevation_m: number | null
-  /** vereinfachte Strecke [[lat, lng], …] */
-  route: [number, number][] | null
+  /** vereinfachte Strecke [[lat, lng, höhe?, sekunde?], …] */
+  route: RoutePoint[] | null
+  active_kcal?: number | null
+  min_hr?: number | null
+  steps?: number | null
+  avg_power?: number | null
+  max_power?: number | null
+  /** m/s */
+  max_speed?: number | null
+  avg_cadence?: number | null
+  /** [[sekunde, bpm], …] */
+  hr_series?: [number, number][] | null
+  /** [[sekunde, m/s], …] */
+  speed_series?: [number, number][] | null
+  power_series?: [number, number][] | null
+  laps?: { start_s: number; end_s: number; length_m: number | null }[] | null
 }
+
+/** Streckenpunkt: Breite, Länge, optional Höhe (m) und Sekunde seit Start. */
+export type RoutePoint = [number, number] | [number, number, number | null, number]
 
 /** Eine Nacht Schlaf (date = Aufwach-Tag). */
 export interface HealthSleep {
@@ -278,6 +295,20 @@ export interface HealthSleep {
   light_min: number | null
   awake_min: number | null
   source: string | null
+  in_bed_min?: number | null
+  latency_min?: number | null
+  awakenings?: number | null
+  /** [[startMinute, dauer, phase]] – 1 wach, 2 leicht, 3 tief, 4 REM, 5 Schlaf */
+  stages?: [number, number, number][] | null
+  hr_avg?: number | null
+  hr_min?: number | null
+  /** [[minute, bpm], …] */
+  hr_series?: [number, number][] | null
+  hrv_avg?: number | null
+  spo2_avg?: number | null
+  spo2_min?: number | null
+  resp_rate?: number | null
+  skin_temp_delta?: number | null
 }
 
 /** Tageswerte von der Uhr. */
@@ -289,4 +320,20 @@ export interface HealthDaily {
   resting_hr: number | null
   hrv_ms: number | null
   vo2max: number | null
+  distance_m?: number | null
+  floors?: number | null
+  total_kcal?: number | null
+  hr_min?: number | null
+  hr_max?: number | null
+  hr_avg?: number | null
+  /** 24 Werte: Ø-Puls je Stunde */
+  hr_hourly?: (number | null)[] | null
+  spo2?: number | null
+  resp_rate?: number | null
+  weight_kg?: number | null
+  body_fat_pct?: number | null
+  bp_sys?: number | null
+  bp_dia?: number | null
+  glucose_mmol?: number | null
+  body_temp_c?: number | null
 }

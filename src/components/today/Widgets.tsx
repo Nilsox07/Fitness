@@ -12,6 +12,7 @@ import {
   Flame,
   Footprints,
   Gauge,
+  HeartPulse,
   Plus,
   Users,
   Watch,
@@ -233,7 +234,7 @@ function LastActivityWidget({ t }: { t: TodaySummary }) {
       icon={<Activity size={15} />}
       tint="bg-orange-500/15 text-orange-500"
       title={`${ACTIVITY_EMOJI[a.type]} ${a.title || ACTIVITY_LABEL[a.type]} · ${dayLabel(a.started_at.slice(0, 10))}`}
-      onClick={() => navigate('/cardio')}
+      onClick={() => navigate(`/cardio/${a.id}`)}
     >
       <span className="flex w-full items-center gap-3">
         <span className="grid min-w-0 flex-1 grid-cols-3 gap-2">
@@ -247,6 +248,31 @@ function LastActivityWidget({ t }: { t: TodaySummary }) {
           </svg>
         )}
       </span>
+    </Tile>
+  )
+}
+
+function HeartWidget({ t }: { t: TodaySummary }) {
+  const navigate = useNavigate()
+  return (
+    <Tile
+      icon={<HeartPulse size={15} />}
+      tint="bg-red-500/15 text-red-500"
+      title="Herz"
+      onClick={() => navigate('/vitals')}
+    >
+      {t.restingHr != null || t.hrv != null ? (
+        <>
+          <span className="tabular text-2xl font-black leading-none">
+            {t.restingHr ?? '–'} <span className="text-sm font-semibold text-cocoa-light">bpm Ruhe</span>
+          </span>
+          <span className="text-xs text-cocoa-light">
+            {t.hrv != null ? `Erholung (HRV) ${Math.round(t.hrv)} ms` : 'HRV noch nicht gemessen'}
+          </span>
+        </>
+      ) : (
+        <span className="text-sm text-cocoa-light">Noch keine Daten</span>
+      )}
     </Tile>
   )
 }
@@ -505,6 +531,8 @@ export function renderWidget(id: WidgetId, t: TodaySummary): ReactNode {
       return <StepsWidget t={t} />
     case 'lastActivity':
       return <LastActivityWidget t={t} />
+    case 'heart':
+      return <HeartWidget t={t} />
     case 'cardioWeek':
       return <CardioWeekWidget t={t} />
     case 'supplements':
