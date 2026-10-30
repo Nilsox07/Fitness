@@ -35,3 +35,35 @@ describe('Dashboard', () => {
     expect(withWatchWidgets(null)).toBeNull()
   })
 })
+
+describe('Dashboard und Uhr-Fähigkeiten', () => {
+  it('jede Widget-ID hat eine Definition', async () => {
+    const { WIDGETS, DEFAULT_LAYOUT } = await import('./dashboard')
+    const ids = new Set(WIDGETS.map((w) => w.id))
+    for (const id of [...DEFAULT_LAYOUT, 'heart', 'cardioWeek', 'lastWorkout']) expect(ids.has(id as never)).toBe(true)
+  })
+
+  it('blendet Widgets aus, die die Uhr nicht liefert – erst wenn Daten da sind', async () => {
+    const { visibleLayout, addableWidgets } = await import('./dashboard')
+    const none = {
+      sleep: false,
+      stages: false,
+      hrv: false,
+      restingHr: false,
+      steps: false,
+      spo2: false,
+      activities: false,
+      hrSeries: false,
+    }
+    const ALLM = { training: true, nutrition: true, social: true, watch: true }
+    // noch nichts synchronisiert → alles zeigen
+    expect(visibleLayout(null, ALLM, { known: false, has: none })).toContain('sleep')
+    // Uhr ohne Schlaf, aber mit Schritten
+    const caps = { known: true, has: { ...none, steps: true, restingHr: true } }
+    const v = visibleLayout(null, ALLM, caps)
+    expect(v).not.toContain('sleep')
+    expect(v).toContain('steps')
+    expect(v).toContain('readiness') // Ruhepuls reicht für die Tagesform
+    expect(addableWidgets(null, ALLM, caps).map((w) => w.id)).toContain('heart')
+  })
+})

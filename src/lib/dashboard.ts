@@ -2,6 +2,8 @@
 // Reihenfolge. Die Reihenfolge liegt in profiles.prefs.dashboard (geräteübergreifend).
 // Widgets gehören zu einem Modul – ist das Modul aus (z. B. keine Uhr), verschwinden sie.
 
+import type { Capabilities, Capability } from './health'
+
 export type Module = 'training' | 'nutrition' | 'social' | 'watch'
 
 export type WidgetId =
@@ -28,6 +30,8 @@ export interface WidgetDef {
   module: Module
   /** 'half' = halbe Breite (zwei nebeneinander) */
   size: 'full' | 'half'
+  /** Uhr muss mindestens einen dieser Werte liefern (sonst wird das Widget ausgeblendet) */
+  needs?: Capability[]
 }
 
 export const WIDGETS: WidgetDef[] = [
@@ -37,6 +41,7 @@ export const WIDGETS: WidgetDef[] = [
     hint: 'Schlaf, Erholung & Essen in einer Zahl',
     module: 'watch',
     size: 'full',
+    needs: ['sleep', 'hrv', 'restingHr'],
   },
   {
     id: 'nextWorkout',
@@ -48,8 +53,23 @@ export const WIDGETS: WidgetDef[] = [
   { id: 'kcal', label: 'Kalorien & Eiweiß', hint: 'Was heute noch offen ist', module: 'nutrition', size: 'full' },
   { id: 'water', label: 'Wasser', hint: 'Mit +250 ml direkt eintragen', module: 'nutrition', size: 'half' },
   { id: 'streak', label: 'Serie', hint: 'Wochen in Folge & Ziel dieser Woche', module: 'training', size: 'half' },
-  { id: 'sleep', label: 'Schlaf', hint: 'Letzte Nacht von deiner Uhr', module: 'watch', size: 'half' },
-  { id: 'steps', label: 'Schritte', hint: 'Heute von deiner Uhr', module: 'watch', size: 'half' },
+  {
+    id: 'sleep',
+    label: 'Schlaf',
+    hint: 'Letzte Nacht von deiner Uhr',
+    module: 'watch',
+    size: 'half',
+    needs: ['sleep'],
+  },
+  { id: 'steps', label: 'Schritte', hint: 'Heute von deiner Uhr', module: 'watch', size: 'half', needs: ['steps'] },
+  {
+    id: 'heart',
+    label: 'Herz',
+    hint: 'Ruhepuls & Erholung (HRV) heute',
+    module: 'watch',
+    size: 'half',
+    needs: ['restingHr', 'hrv'],
+  },
   {
     id: 'lastActivity',
     label: 'Letzte Aktivität',
@@ -94,23 +114,37 @@ export type Modules = Record<Module, boolean>
 
 const isOn = (id: WidgetId, mods: Modules) => mods[widgetDef(id).module]
 
+/** Liefert die Uhr die nötigen Werte? Solange noch nichts synchronisiert ist: ja (abwarten). */
+export function supported(w: WidgetDef, caps?: Capabilities | null): boolean {
+  if (!w.needs || !caps?.known) return true
+  return w.needs.some((n) => caps.has[n])
+}
+
 /** Gespeicherte Reihenfolge → gültige, sichtbare Widgets (Unbekanntes und Doppeltes fliegt raus). */
-export function visibleLayout(saved: readonly string[] | null | undefined, mods: Modules): WidgetId[] {
+export function visibleLayout(
+  saved: readonly string[] | null | undefined,
+  mods: Modules,
+  caps?: Capabilities | null,
+): WidgetId[] {
   const src = saved ?? DEFAULT_LAYOUT
   const seen = new Set<string>()
   const out: WidgetId[] = []
   for (const id of src) {
     if (seen.has(id) || !BY_ID.has(id as WidgetId)) continue
     seen.add(id)
-    if (isOn(id as WidgetId, mods)) out.push(id as WidgetId)
+    if (isOn(id as WidgetId, mods) && supported(widgetDef(id as WidgetId), caps)) out.push(id as WidgetId)
   }
   return out
 }
 
 /** Widgets, die man noch hinzufügen kann (Modul an, aber nicht auf „Heute“). */
-export function addableWidgets(saved: readonly string[] | null | undefined, mods: Modules): WidgetDef[] {
-  const shown = new Set(visibleLayout(saved, mods))
-  return WIDGETS.filter((w) => mods[w.module] && !shown.has(w.id))
+export function addableWidgets(
+  saved: readonly string[] | null | undefined,
+  mods: Modules,
+  caps?: Capabilities | null,
+): WidgetDef[] {
+  const shown = new Set(visibleLayout(saved, mods, caps))
+  return WIDGETS.filter((w) => mods[w.module] && supported(w, caps) && !shown.has(w.id))
 }
 
 /**
@@ -121,10 +155,14 @@ export function mergeLayout(
   saved: readonly string[] | null | undefined,
   visible: readonly WidgetId[],
   mods: Modules,
+  caps?: Capabilities | null,
 ): WidgetId[] {
+  // Behalten: was nur ausgeblendet ist (Modul aus oder Uhr liefert den Wert nicht) – nicht, was entfernt wurde
   const hidden = (saved ?? DEFAULT_LAYOUT).filter(
     (id): id is WidgetId =>
-      BY_ID.has(id as WidgetId) && !isOn(id as WidgetId, mods) && !visible.includes(id as WidgetId),
+      BY_ID.has(id as WidgetId) &&
+      !visible.includes(id as WidgetId) &&
+      (!isOn(id as WidgetId, mods) || !supported(widgetDef(id as WidgetId), caps)),
   )
   return [...visible, ...hidden]
 }

@@ -3,6 +3,7 @@ package de.fitnessbuddy.app
 import android.content.Intent
 import androidx.activity.result.ActivityResult
 import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.permission.HealthPermission
@@ -113,6 +114,10 @@ class HealthBridgePlugin : Plugin() {
 
     private fun client() = HealthConnectClient.getOrCreate(context)
 
+    private fun featureAvailable(feature: Int): Boolean = runCatching {
+        client().features.getFeatureStatus(feature) == HealthConnectFeatures.FEATURE_STATUS_AVAILABLE
+    }.getOrDefault(false)
+
     @PluginMethod
     fun availability(call: PluginCall) {
         val status = when (HealthConnectClient.getSdkStatus(context)) {
@@ -145,8 +150,19 @@ class HealthBridgePlugin : Plugin() {
         if (HealthConnectClient.getSdkStatus(context) != HealthConnectClient.SDK_AVAILABLE) {
             return call.reject("Health Connect ist nicht installiert")
         }
-        val intent = PermissionController.createRequestPermissionResultContract().createIntent(context, permissions)
-        startActivityForResult(call, intent, "onPermissionResult")
+        scope.launch {
+            // Nur anfragen, was dieses Gerät überhaupt kann (ältere Health-Connect-Versionen kennen nicht alles)
+            val wanted = permissions.filter { p ->
+                when (p) {
+                    READ_HISTORY -> featureAvailable(HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_HISTORY)
+                    HealthPermission.getReadPermission(SkinTemperatureRecord::class) ->
+                        featureAvailable(HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE)
+                    else -> true
+                }
+            }.toSet()
+            val intent = PermissionController.createRequestPermissionResultContract().createIntent(context, wanted)
+            activity.runOnUiThread { startActivityForResult(call, intent, "onPermissionResult") }
+        }
     }
 
     @ActivityCallback
@@ -481,8 +497,10 @@ class HealthBridgePlugin : Plugin() {
                 token = res.pageToken
             } while (token != null && out.size < 20000)
         } catch (_: SecurityException) {
+            // nicht freigegeben
             return emptyList()
-        } catch (_: IllegalStateException) {
+        } catch (_: Exception) {
+            // Datentyp auf diesem Gerät nicht unterstützt (z. B. Hauttemperatur) – einfach weglassen
             return out
         }
         return out

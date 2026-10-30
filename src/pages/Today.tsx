@@ -6,6 +6,7 @@ import { PremiumSheet } from '../components/ui/PremiumSheet'
 import { renderWidget } from '../components/today/Widgets'
 import { enter } from '../components/home/motion'
 import { useToday } from '../hooks/useToday'
+import type { Capabilities } from '../lib/health'
 import { useUserPrefs } from '../hooks/usePrefsSync'
 import { usePrefs } from '../lib/prefs'
 import {
@@ -29,7 +30,7 @@ export default function Today() {
   const mods = useModules()
   const { prefs } = useUserPrefs()
   const [editing, setEditing] = useState(false)
-  const layout = visibleLayout(prefs.dashboard, mods)
+  const layout = visibleLayout(prefs.dashboard, mods, t.caps)
 
   const dateLabel = new Date(t.day + 'T00:00:00').toLocaleDateString('de-DE', {
     weekday: 'long',
@@ -57,22 +58,22 @@ export default function Today() {
         <LayoutGrid size={15} />
         Heute anpassen
       </button>
-      {editing && <EditSheet onClose={() => setEditing(false)} />}
+      {editing && <EditSheet caps={t.caps} onClose={() => setEditing(false)} />}
     </div>
   )
 }
 
 /** Bearbeiten wie bei Banking-Apps: Reihenfolge ziehen, entfernen, hinzufügen. */
-function EditSheet({ onClose }: { onClose: () => void }) {
+function EditSheet({ onClose, caps }: { onClose: () => void; caps: Capabilities | null }) {
   const mods = useModules()
   const navigate = useNavigate()
   const { prefs, save } = useUserPrefs()
-  const [items, setItems] = useState<WidgetId[]>(() => visibleLayout(prefs.dashboard, mods))
-  const addable = addableWidgets(items, mods)
+  const [items, setItems] = useState<WidgetId[]>(() => visibleLayout(prefs.dashboard, mods, caps))
+  const addable = addableWidgets(items, mods, caps)
 
   function commit(next: WidgetId[]) {
     setItems(next)
-    void save({ dashboard: mergeLayout(prefs.dashboard, next, mods) })
+    void save({ dashboard: mergeLayout(prefs.dashboard, next, mods, caps) })
   }
 
   // Ziehen am Griff: beim Überschreiten der halben Zeilenhöhe rückt das Element weiter
@@ -113,7 +114,7 @@ function EditSheet({ onClose }: { onClose: () => void }) {
     setDragging(null)
     setOffset(0)
     setItems((l) => {
-      void save({ dashboard: mergeLayout(prefs.dashboard, l, mods) })
+      void save({ dashboard: mergeLayout(prefs.dashboard, l, mods, caps) })
       return l
     })
   }

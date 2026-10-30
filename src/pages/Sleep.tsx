@@ -6,7 +6,15 @@ import { ProgressHeader } from '../components/progress/ProgressHeader'
 import { Hypnogram, MetricCard, SeriesChart, StatusChip } from '../components/health/Charts'
 import { useHealthDaily, useHealthSleep } from '../hooks/useHealth'
 import { useToday } from '../hooks/useToday'
-import { FACTOR_INFO, STAGE, hoursText, sleepScore, sleepStats, type ReadinessFactor } from '../lib/health'
+import {
+  FACTOR_INFO,
+  STAGE,
+  hoursText,
+  missingReadinessInputs,
+  sleepScore,
+  sleepStats,
+  type ReadinessFactor,
+} from '../lib/health'
 import { localDate, shiftDate } from '../lib/day'
 
 const NEED_MIN = 480
@@ -26,6 +34,7 @@ export default function Sleep() {
   const stats = sleepStats(nights.filter((n) => n.date > shiftDate(today, -14)))
   const dayOf = daily.find((d) => d.date === selDate)
   const r = t.readiness
+  const missingIn = t.caps ? missingReadinessInputs(t.caps) : []
   const color = !r ? '#94a3b8' : r.level === 'hoch' ? '#22c55e' : r.level === 'mittel' ? '#f2b705' : '#ef4444'
 
   const days = Array.from({ length: 14 }, (_, i) => shiftDate(today, i - 13))
@@ -53,10 +62,17 @@ export default function Sleep() {
                 <FactorRow key={f.key} f={f} />
               ))}
             </ul>
+            {missingIn.length > 0 && (
+              <p className="text-[11px] text-cocoa-muted">
+                Nicht von deiner Uhr gemessen: {missingIn.join(', ')} – die Tagesform nutzt die übrigen Werte.
+              </p>
+            )}
           </>
         ) : (
           <p className="text-sm text-cocoa-light">
-            Sobald deine Uhr eine Nacht aufgezeichnet hat, siehst du hier, wie erholt du bist.
+            {t.caps?.known && !t.caps.has.sleep && !t.caps.has.hrv && !t.caps.has.restingHr
+              ? 'Deine Uhr liefert weder Schlaf noch Ruhepuls oder HRV – dafür lässt sich keine Tagesform berechnen.'
+              : 'Sobald deine Uhr eine Nacht aufgezeichnet hat, siehst du hier, wie erholt du bist.'}
           </p>
         )}
       </section>
@@ -86,7 +102,11 @@ export default function Sleep() {
       {isLoading ? (
         <div className="h-64 animate-pulse rounded-3xl bg-sand" />
       ) : !night || !score ? (
-        <p className="card text-sm text-cocoa-light">Für diese Nacht gibt es keine Schlafdaten.</p>
+        <p className="card text-sm text-cocoa-light">
+          {t.caps?.known && !t.caps.has.sleep
+            ? 'Deine Uhr gibt keinen Schlaf an Health Connect weiter. Manche Uhren können das nur mit ihrer eigenen App – dort ggf. „Mit Health Connect teilen“ für Schlaf einschalten.'
+            : 'Für diese Nacht gibt es keine Schlafdaten.'}
+        </p>
       ) : (
         <>
           <section className="card space-y-3" style={enter(3)}>
@@ -110,11 +130,18 @@ export default function Sleep() {
                   geschlafen{night.in_bed_min ? ` · ${hoursText(night.in_bed_min)} im Bett` : ''}
                 </div>
               </div>
-              <div className="ml-auto text-right">
-                <div className="tabular text-3xl font-black text-indigo-500">{score.score}</div>
-                <div className="text-xs font-semibold text-cocoa-light">{score.label}</div>
-              </div>
+              {score.detailed && (
+                <div className="ml-auto text-right">
+                  <div className="tabular text-3xl font-black text-indigo-500">{score.score}</div>
+                  <div className="text-xs font-semibold text-cocoa-light">{score.label}</div>
+                </div>
+              )}
             </div>
+            {!score.detailed && (
+              <p className="rounded-xl bg-cream px-3 py-2 text-xs text-cocoa-light">
+                Deine Uhr liefert keine Schlafphasen (Tief, REM, Leicht) – deshalb siehst du nur Dauer und Zeiten.
+              </p>
+            )}
             {night.stages && night.stages.length > 0 && <Hypnogram stages={night.stages} start={night.start_at} />}
             {score.pct.deep != null && (
               <div className="grid grid-cols-4 gap-2">
@@ -212,47 +239,49 @@ export default function Sleep() {
       )}
 
       {/* 14 Nächte */}
-      <MetricCard
-        icon={<BedDouble size={16} className="text-indigo-500" />}
-        title="Letzte 14 Nächte"
-        right={stats && <span className="tabular text-sm font-bold">Ø {hoursText(stats.avgMin)}</span>}
-      >
-        <div className="relative flex h-28 items-end gap-1">
-          <div
-            className="pointer-events-none absolute inset-x-0 border-t border-dashed border-indigo-500/40"
-            style={{ bottom: `${(NEED_MIN / 600) * 96 + 14}px` }}
-          />
-          {days.map((d) => {
-            const n = byDate.get(d)
-            const h = n ? Math.min(96, (n.asleep_min / 600) * 96) : 3
-            const deep = n?.deep_min ? Math.min(h, (n.deep_min / 600) * 96) : 0
-            return (
-              <button
-                key={d}
-                onClick={() => n && setParams({ d }, { replace: true })}
-                className="flex flex-1 flex-col items-center gap-1"
-                aria-label={n ? `${d}: ${hoursText(n.asleep_min)}` : `${d}: keine Daten`}
-              >
-                <div
-                  className={`relative w-full overflow-hidden rounded-md ${d === selDate ? 'bg-indigo-500/70' : 'bg-indigo-500/35'}`}
-                  style={{ height: h }}
+      {nights.length > 0 && (
+        <MetricCard
+          icon={<BedDouble size={16} className="text-indigo-500" />}
+          title="Letzte 14 Nächte"
+          right={stats && <span className="tabular text-sm font-bold">Ø {hoursText(stats.avgMin)}</span>}
+        >
+          <div className="relative flex h-28 items-end gap-1">
+            <div
+              className="pointer-events-none absolute inset-x-0 border-t border-dashed border-indigo-500/40"
+              style={{ bottom: `${(NEED_MIN / 600) * 96 + 14}px` }}
+            />
+            {days.map((d) => {
+              const n = byDate.get(d)
+              const h = n ? Math.min(96, (n.asleep_min / 600) * 96) : 3
+              const deep = n?.deep_min ? Math.min(h, (n.deep_min / 600) * 96) : 0
+              return (
+                <button
+                  key={d}
+                  onClick={() => n && setParams({ d }, { replace: true })}
+                  className="flex flex-1 flex-col items-center gap-1"
+                  aria-label={n ? `${d}: ${hoursText(n.asleep_min)}` : `${d}: keine Daten`}
                 >
-                  {deep > 0 && <div className="absolute inset-x-0 bottom-0 bg-indigo-700" style={{ height: deep }} />}
-                </div>
-                <span className="text-[9px] text-cocoa-muted">{Number(d.slice(8))}</span>
-              </button>
-            )
-          })}
-        </div>
-        {stats && (
-          <p className="text-xs text-cocoa-light">
-            Gestrichelt: 8 h Ziel · dunkel: Tiefschlaf ·{' '}
-            {stats.bedtimeSpreadMin <= 30
-              ? 'Du gehst sehr regelmäßig ins Bett 👍'
-              : `Deine Einschlafzeit schwankt um ±${stats.bedtimeSpreadMin} min – regelmäßiger schlafen hilft der Erholung.`}
-          </p>
-        )}
-      </MetricCard>
+                  <div
+                    className={`relative w-full overflow-hidden rounded-md ${d === selDate ? 'bg-indigo-500/70' : 'bg-indigo-500/35'}`}
+                    style={{ height: h }}
+                  >
+                    {deep > 0 && <div className="absolute inset-x-0 bottom-0 bg-indigo-700" style={{ height: deep }} />}
+                  </div>
+                  <span className="text-[9px] text-cocoa-muted">{Number(d.slice(8))}</span>
+                </button>
+              )
+            })}
+          </div>
+          {stats && (
+            <p className="text-xs text-cocoa-light">
+              Gestrichelt: 8 h Ziel · dunkel: Tiefschlaf ·{' '}
+              {stats.bedtimeSpreadMin <= 30
+                ? 'Du gehst sehr regelmäßig ins Bett 👍'
+                : `Deine Einschlafzeit schwankt um ±${stats.bedtimeSpreadMin} min – regelmäßiger schlafen hilft der Erholung.`}
+            </p>
+          )}
+        </MetricCard>
+      )}
     </div>
   )
 }

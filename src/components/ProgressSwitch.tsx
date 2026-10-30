@@ -12,6 +12,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { usePrefs, type World } from '../lib/prefs'
+import { useHealthActivities, useHealthDaily, useHealthSleep } from '../hooks/useHealth'
+import { capabilities } from '../lib/health'
 
 type Item = { id: string; label: string; Icon: LucideIcon; to: string; world?: World; tint: string }
 
@@ -25,13 +27,21 @@ export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const row = useRef<HTMLDivElement>(null)
+  // Nicht jede Uhr zeichnet Schlaf auf – dann den Reiter gar nicht erst anbieten
+  const { data: sleep } = useHealthSleep(30)
+  const { data: daily } = useHealthDaily(30)
+  const { data: acts } = useHealthActivities(30)
+  const caps = hasWatch ? capabilities(daily ?? [], sleep ?? [], acts ?? []) : null
+  const showSleep = !caps?.known || caps.has.sleep || caps.has.hrv
 
   const items: Item[] = [
     { id: 'strength', label: 'Kraft', Icon: Dumbbell, to: '/analytics', world: 'fitness', tint: 'text-brand' },
     ...(hasWatch
       ? [
           { id: 'cardio', label: 'Ausdauer', Icon: Activity, to: '/cardio', tint: 'text-orange-500' },
-          { id: 'sleep', label: 'Schlaf', Icon: BedDouble, to: '/sleep', tint: 'text-indigo-500' },
+          ...(showSleep
+            ? [{ id: 'sleep', label: 'Schlaf', Icon: BedDouble, to: '/sleep', tint: 'text-indigo-500' }]
+            : []),
           { id: 'vitals', label: 'Herz & Körper', Icon: HeartPulse, to: '/vitals', tint: 'text-red-500' },
         ]
       : []),

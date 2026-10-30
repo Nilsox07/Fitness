@@ -9,7 +9,15 @@ import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
 import { sessionDates } from '../lib/analytics'
 import { weekStreakWithFreezes } from '../lib/streaks'
 import { weekDates } from '../lib/home'
-import { activityLoad, baseline, cardioSummary, readiness, type Readiness } from '../lib/health'
+import {
+  activityLoad,
+  baseline,
+  capabilities,
+  cardioSummary,
+  readiness,
+  type Capabilities,
+  type Readiness,
+} from '../lib/health'
 import { useFoodEntries, useNutritionSettings } from './useNutrition'
 import { useWater } from './useWater'
 import { useAllSets } from './useWorkouts'
@@ -35,6 +43,8 @@ export interface TodaySummary {
   weekDone: number
   weekGoal: number
   readiness: Readiness | null
+  /** Was die Uhr überhaupt liefert (null ohne Uhr-Modul) */
+  caps: Capabilities | null
   sleep: HealthSleep | null
   steps: number | null
   restingHr: number | null
@@ -112,6 +122,7 @@ export function useToday(): TodaySummary {
       weekDone: dates.filter((d) => week.includes(d)).length,
       weekGoal: rhythm.goal,
       readiness: ready,
+      caps: hasWatch ? capabilities(daily ?? [], sleepList ?? [], activities ?? []) : null,
       sleep,
       steps: today?.steps ?? null,
       restingHr: today?.resting_hr ?? null,

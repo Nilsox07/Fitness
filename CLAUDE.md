@@ -37,6 +37,9 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
 - Neue App: Tabs Heute `/today` (anpassbare Widgets), Training `/`, Ernährung, Fortschritt (+ `/cardio`, `/sleep`
   nur mit Uhr), Community. Module (Ernährung/Community/Smartwatch) blenden alles Zugehörige aus – neue Features
   immer einem Modul zuordnen; Uhr-Funktionen nie ohne `hasWatch` zeigen.
+- **Nicht jede Uhr liefert alle Werte** (HRV, Schlafphasen, SpO₂, Leistung …): jeden Wert optional behandeln,
+  Fehlendes ausblenden statt „keine Daten“ zu zeigen. `capabilities()` in `src/lib/health.ts` sagt, was die Uhr
+  liefert; Widgets deklarieren `needs`. Im Kotlin-Plugin darf ein fehlender Datentyp nie den ganzen Abgleich abbrechen.
 - Android-App in `android/` (Capacitor): eigene Kotlin-Plugins `HealthBridge`, `AppWidgets`, `LiveActivity`;
   JS-Brücke `src/lib/native.ts` (im Browser No-ops). Build: `npm run build:android`, APK per GitHub Action.
 - Serverfunktionen (noch Vercel) in `api/`: `ai.js` (KI-Vermittler mit Schutz aus `_aiguard.js`),

@@ -527,6 +527,8 @@ export interface SleepScore {
   /** Anteile an der Schlafzeit in % */
   pct: { light: number | null; deep: number | null; rem: number | null }
   efficiency: number | null
+  /** false: Uhr liefert keine Schlafphasen → kein aussagekräftiger Score, nur die Dauer */
+  detailed: boolean
   parts: { label: string; value: string; status: FactorStatus; hint: string }[]
 }
 
@@ -536,7 +538,9 @@ export function sleepScore(n: HealthSleep, needMin = 480): SleepScore {
   const pct = (m: number | null | undefined) => (m != null && asleep > 0 ? Math.round((m / asleep) * 100) : null)
   const p = { light: pct(n.light_min), deep: pct(n.deep_min), rem: pct(n.rem_min) }
   const inBed = n.in_bed_min ?? Math.round((new Date(n.end_at).getTime() - new Date(n.start_at).getTime()) / 60000)
-  const efficiency = inBed > 0 ? Math.round((asleep / inBed) * 100) : null
+  // Ohne Phasen weiß die Uhr nicht, wann du wach lagst → keine Effizienz (wäre immer 100 %)
+  const detailed = n.deep_min != null || n.rem_min != null || (n.stages?.length ?? 0) > 0
+  const efficiency = detailed && inBed > 0 ? Math.round((asleep / inBed) * 100) : null
 
   let score = 0
   const parts: SleepScore['parts'] = []
@@ -598,6 +602,7 @@ export function sleepScore(n: HealthSleep, needMin = 480): SleepScore {
     label: s >= 85 ? 'Ausgezeichnet' : s >= 70 ? 'Gut' : s >= 55 ? 'Okay' : 'Schlecht',
     pct: p,
     efficiency,
+    detailed,
     parts,
   }
 }
@@ -638,4 +643,50 @@ export function bpCategory(sys: number, dia: number): { label: string; status: F
   if (sys >= 130 || dia >= 85) return { label: 'Hoch-normal', status: 'normal' }
   if (sys < 90 || dia < 60) return { label: 'Niedrig', status: 'normal' }
   return { label: 'Optimal', status: 'gut' }
+}
+
+// ---------- Was liefert die Uhr überhaupt? ----------
+
+export type Capability = 'sleep' | 'stages' | 'hrv' | 'restingHr' | 'steps' | 'spo2' | 'activities' | 'hrSeries'
+
+export interface Capabilities {
+  /** Gibt es überhaupt schon Daten? Vorher ist „nicht unterstützt“ nicht entscheidbar. */
+  known: boolean
+  has: Record<Capability, boolean>
+}
+
+/**
+ * Welche Werte die verbundene Uhr tatsächlich liefert (aus den letzten Wochen).
+ * Nicht jede Uhr misst HRV, Schlafphasen oder Sauerstoff – was fehlt, blenden wir aus,
+ * statt dauerhaft „keine Daten“ zu zeigen.
+ */
+export function capabilities(
+  daily: readonly HealthDaily[] = [],
+  sleep: readonly HealthSleep[] = [],
+  activities: readonly HealthActivity[] = [],
+): Capabilities {
+  const anyDaily = (k: keyof HealthDaily) => daily.some((d) => d[k] != null)
+  return {
+    known: daily.length + sleep.length + activities.length > 0,
+    has: {
+      sleep: sleep.length > 0,
+      stages: sleep.some((n) => n.deep_min != null || (n.stages?.length ?? 0) > 0),
+      hrv: anyDaily('hrv_ms') || sleep.some((n) => n.hrv_avg != null),
+      restingHr: anyDaily('resting_hr'),
+      steps: anyDaily('steps'),
+      spo2: anyDaily('spo2') || sleep.some((n) => n.spo2_avg != null),
+      activities: activities.length > 0,
+      hrSeries: activities.some((a) => (a.hr_series?.length ?? 0) > 1),
+    },
+  }
+}
+
+/** Welche Tagesform-Eingänge fehlen, weil die Uhr sie nicht misst? (für einen kurzen Hinweis) */
+export function missingReadinessInputs(c: Capabilities): string[] {
+  if (!c.known) return []
+  const out: string[] = []
+  if (!c.has.sleep) out.push('Schlaf')
+  if (!c.has.hrv) out.push('HRV')
+  if (!c.has.restingHr) out.push('Ruhepuls')
+  return out
 }
