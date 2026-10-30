@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useHealthSync } from '../hooks/useHealth'
 import { useToday } from '../hooks/useToday'
@@ -101,5 +102,39 @@ function NativeSyncInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  return null
+}
+
+/**
+ * Android: Deep Links aus Widgets/Benachrichtigungen (fitnessbuddy://open/<pfad>)
+ * und die Zurück-Taste (erst innerhalb der App zurück, dann App schließen).
+ */
+export function NativeNav() {
+  if (!isNative()) return null
+  return <NativeNavInner />
+}
+
+function NativeNavInner() {
+  const navigate = useNavigate()
+  useEffect(() => {
+    let off: (() => void)[] = []
+    let alive = true
+    void import('@capacitor/app').then(({ App }) => {
+      if (!alive) return
+      void App.addListener('appUrlOpen', ({ url }) => {
+        const m = /^fitnessbuddy:\/\/open(\/[^#]*)?/.exec(url)
+        if (m) navigate(m[1] || '/today')
+      }).then((h) => off.push(() => void h.remove()))
+      void App.addListener('backButton', ({ canGoBack }) => {
+        if (canGoBack) window.history.back()
+        else void App.exitApp()
+      }).then((h) => off.push(() => void h.remove()))
+    })
+    return () => {
+      alive = false
+      off.forEach((f) => f())
+      off = []
+    }
+  }, [navigate])
   return null
 }

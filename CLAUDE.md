@@ -31,9 +31,14 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
 
 ## Architektur in Kürze
 
-- Tabs: Ernährung `/nutrition`, Training `/`, Fortschritt `/analytics` `/history` `/badges` `/body`, Community `/social`.
+- Tabs (klassisch/alt): Ernährung `/nutrition`, Training `/`, Fortschritt `/analytics` `/history` `/badges` `/body`, Community `/social`.
 - Nutzer-Einstellungen geräteübergreifend in `profiles.prefs` (jsonb) über `useUserPrefs`;
   immer über `normalizePrefs` lesen (alte Caches ohne neue Felder haben schon mal die App abstürzen lassen).
+- Neue App: Tabs Heute `/today` (anpassbare Widgets), Training `/`, Ernährung, Fortschritt (+ `/cardio`, `/sleep`
+  nur mit Uhr), Community. Module (Ernährung/Community/Smartwatch) blenden alles Zugehörige aus – neue Features
+  immer einem Modul zuordnen; Uhr-Funktionen nie ohne `hasWatch` zeigen.
+- Android-App in `android/` (Capacitor): eigene Kotlin-Plugins `HealthBridge`, `AppWidgets`, `LiveActivity`;
+  JS-Brücke `src/lib/native.ts` (im Browser No-ops). Build: `npm run build:android`, APK per GitHub Action.
 - Serverfunktionen (noch Vercel) in `api/`: `ai.js` (KI-Vermittler mit Schutz aus `_aiguard.js`),
   `season.js`, `recipe-import.js`, `cron/reminders.js`, `push/*`, `fitbit/*`.
 - KI-Prompts liegen clientseitig in `src/lib/ai.ts`; der Server hängt die Themen-Grenze an und begrenzt Nutzung.

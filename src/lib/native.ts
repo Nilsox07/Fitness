@@ -58,7 +58,7 @@ export interface NativeDaily {
 
 interface HealthBridgePlugin {
   availability(): Promise<{ status: 'available' | 'not_installed' | 'update_required' | 'unsupported' }>
-  requestPermissions(): Promise<{ granted: boolean }>
+  connect(): Promise<{ granted: boolean }>
   hasPermissions(): Promise<{ granted: boolean }>
   read(opts: { since: string }): Promise<{ activities: NativeActivity[]; sleep: NativeSleep[]; daily: NativeDaily[] }>
   openSettings(): Promise<void>
@@ -77,7 +77,7 @@ export async function healthAvailability(): Promise<'available' | 'not_installed
 
 export async function healthConnect(): Promise<boolean> {
   if (!isNative()) return false
-  return (await HealthBridge.requestPermissions()).granted
+  return (await HealthBridge.connect()).granted
 }
 
 export async function healthHasPermissions(): Promise<boolean> {
@@ -175,8 +175,24 @@ interface LiveActivityPlugin {
 
 const LiveActivity = registerPlugin<LiveActivityPlugin>('LiveActivity')
 
+let notifyAsked = false
+
+/** Android 13+: Benachrichtigungen einmalig erlauben lassen (beim ersten Countdown). */
+async function ensureNotifyPermission() {
+  if (notifyAsked) return
+  notifyAsked = true
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    const p = await LocalNotifications.checkPermissions()
+    if (p.display !== 'granted') await LocalNotifications.requestPermissions()
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function liveStart(o: LiveOptions) {
   if (!isNative()) return
+  await ensureNotifyPermission()
   try {
     await LiveActivity.start(o)
   } catch {

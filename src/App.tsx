@@ -31,7 +31,7 @@ import Body from './pages/Body'
 import Today from './pages/Today'
 import Cardio from './pages/Cardio'
 import Sleep from './pages/Sleep'
-import { NativeSync } from './components/NativeSync'
+import { NativeNav, NativeSync } from './components/NativeSync'
 import { Splash } from './components/Splash'
 import { useChallengeSync } from './hooks/useChallenges'
 
@@ -108,6 +108,7 @@ export default function App() {
       {isNew && <TopBar />}
       {isNew && showSocial && <ChallengeSync />}
       {isNew && <NativeSync />}
+      <NativeNav />
       <main ref={mainRef} className="flex-1 overflow-y-auto px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Routes>
           <Route path="/" element={<Workout />} />

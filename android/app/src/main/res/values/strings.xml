@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Fitness</string>
+    <string name="title_activity_main">Fitness</string>
+    <string name="package_name">de.fitnessbuddy.app</string>
+    <string name="custom_url_scheme">de.fitnessbuddy.app</string>
+    <string name="widget_today_desc">Kalorien, Eiweiß &amp; Wasser – mit +250 ml</string>
+    <string name="widget_training_desc">Nächstes Training &amp; Serie</string>
+    <string name="widget_readiness_desc">Tagesform, Schlaf &amp; Schritte von der Uhr</string>
+</resources>

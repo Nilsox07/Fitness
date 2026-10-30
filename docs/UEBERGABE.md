@@ -24,8 +24,9 @@ Die festen Regeln stehen in [`CLAUDE.md`](../CLAUDE.md).
 
 ### Migrationen
 
-`0001`–`0035` sind ausgeführt. **`0036_ai_calls.sql` muss noch im Supabase-SQL-Editor laufen.** Bis dahin
-zählt der Server nichts und blockiert nicht, er loggt nur einen Fehler.
+`0001`–`0035` sind ausgeführt. **`0036_ai_calls.sql` (KI-Limits) und `0037_health.sql` (Uhr-Daten) müssen
+noch im Supabase-SQL-Editor laufen.** Bis dahin zählt der Server keine KI-Aufrufe und die Uhr-Seiten bleiben
+leer – Fehler gibt es keine.
 
 ### Umgebungsvariablen (Vercel, nie ins Git)
 
@@ -39,6 +40,51 @@ zählt der Server nichts und blockiert nicht, er loggt nur einen Fehler.
 | `CRON_SECRET` | schützt `/api/cron/reminders`; pg_cron schickt `Authorization: Bearer …` |
 | `AI_UNLIMITED_EMAILS` | **neu, noch eintragen:** eure beiden E-Mails, kommagetrennt |
 | `FITBIT_CLIENT_ID`, `FITBIT_CLIENT_SECRET` | Fitbit (optional) |
+
+### Backup
+
+Der Stand vor dem Umbau zur All-in-One-App liegt im Branch **`backup/vor-umbau-2026-10-30`** (Commit `be0d2f8`).
+
+---
+
+## 1b. Umbau zur All-in-One-App (Oktober 2026)
+
+Positionierung: **All-in-One für den Fitness-/Gym-Hype** – Kraft, Ausdauer, Ernährung, Schlaf und Freunde in
+einer App, aber nur das sichtbar, was man nutzt.
+
+- **Tab „Heute“** (Startseite, `src/pages/Today.tsx`): Widgets frei hinzufügen, entfernen und per Ziehen
+  sortieren („Heute anpassen“). Katalog und Logik in `src/lib/dashboard.ts`, Inhalte in
+  `src/components/today/Widgets.tsx`, Daten aus `src/hooks/useToday.ts`. Reihenfolge in `profiles.prefs.dashboard`.
+- **Module** (Profil → Bereiche, `ModuleSettings.tsx`): Ernährung, Community, Smartwatch. Aus = Tab, Widgets
+  und Seiten verschwinden. Flags in `src/lib/prefs.tsx` (`showNutrition`, `showSocial`, `hasWatch`).
+- **Smartwatch** (nur mit `hasWatch` sichtbar): Ausdauer-Seite `/cardio`, Schlaf & Erholung `/sleep`,
+  Tagesform aus Schlaf, HRV, Ruhepuls, Belastung **und Ernährung** (`src/lib/health.ts`, getestet).
+  Daten in `health_activities`, `health_sleep`, `health_daily` (Migration 0037), befüllt von der Android-App.
+- **Android-App** (`android/`, Capacitor 8, Paket `de.fitnessbuddy.app`):
+  - `HealthBridgePlugin.kt` – Health Connect lesen (Aktivitäten mit Strecke, Schlafphasen, Schritte,
+    Ruhepuls, HRV, VO2max); Abgleich beim Start und bei Rückkehr in die App (`useHealthSync`)
+  - Homescreen-Widgets (`widgets/`): „Ernährung heute“ mit +250-ml-Knopf (bucht ohne App-Öffnen, wird beim
+    nächsten Start übernommen), „Training“ (nächstes Training, Serie), „Tagesform“ (Uhr)
+  - `LiveActivityPlugin.kt` – laufende Benachrichtigung mit Countdown auf dem Sperrbildschirm
+    (Satzpause automatisch, Fasten optional unter Bereiche); Android 16 hebt sie als Live-Update hervor
+  - „Pause vorbei“-Benachrichtigung, Deep Links `fitnessbuddy://open/<pfad>`, Zurück-Taste
+  - Kein Service Worker in der App (`BUILD_TARGET=android`), API-Aufrufe absolut an Vercel (`src/lib/native.ts`,
+    CORS in `api/_cors.js`)
+- **Build:** GitHub Action `.github/workflows/android.yml` baut bei jedem Push eine Debug-APK
+  (Actions → Lauf → Artifacts). Mit den Secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+  `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` zusätzlich ein signiertes AAB für den Play Store.
+  Lokal: `npm run build:android`, dann `cd android && ./gradlew assembleDebug` (oder in Android Studio öffnen).
+
+**Noch offen für die App:**
+- Sperrbildschirm-*Widgets* gibt es auf normalen Android-Handys nicht mehr (nur Tablets/einzelne Hersteller) –
+  auf dem Sperrbildschirm arbeiten wir mit Live-Benachrichtigungen. Widgets sind trotzdem als `keyguard` markiert.
+- Push-Erinnerungen in der App brauchen **Firebase (FCM)**: `google-services.json` in `android/app/` legen
+  (nicht geheim, aber projektbezogen) und den Cron auf FCM umstellen (Phase 3). Bis dahin kommen in der App nur
+  lokale Benachrichtigungen (Pause, Countdown).
+- Datenschutzseite `/datenschutz` anlegen – Health Connect verlinkt darauf (`PrivacyActivity.kt`).
+- Teilen-Menü (Rezept-Links) in der App: braucht ein Plugin für eingehende `SEND`-Intents.
+- Paketname `de.fitnessbuddy.app` vor dem ersten Play-Upload final festlegen (danach unveränderbar).
+- Eigenes GPS-Tracking (Lauf/Rad ohne Uhr) und Wear-OS-Kachel: später.
 
 ---
 

@@ -3,10 +3,14 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Android-App (Capacitor): ohne Service Worker – die Dateien liegen ohnehin in der App.
+const ANDROID = process.env.BUILD_TARGET === 'android'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    !ANDROID &&
     VitePWA({
       registerType: 'autoUpdate',
       strategies: 'injectManifest',
