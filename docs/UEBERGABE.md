@@ -88,6 +88,11 @@ einer App, aber nur das sichtbar, was man nutzt.
   (`useMounted`), Lade-Schimmer, Drück-Feedback auf Karten, Haptik in der App (`haptic()` in `native.ts`).
 - **Nährwerte:** Ballaststoffe gleichrangig mit den Makros (Ziel 14 g/1000 kcal), Zucker/Salz/ges. Fett unter „Mehr“,
   Zucker/Salz in den Einstellungen anpinnbar. KI-Analyse liefert Nährstoff-Highlights (z. B. „Viel Vitamin C“).
+- **Zyklus** (Bereich, Standard aus, nur angeboten wenn nicht „Mann“; Einwilligung beim Einschalten): `/cycle`,
+  Logik `src/lib/cycle.ts` (Ø Zyklus/Periode, Phase, nächste Periode, Trainings-Hinweis, Tagesform-Effekt,
+  Wassereinlagerung), Daten `cycle_periods`/`cycle_logs` (Migration 0039, RLS nur eigene Zeilen), Health Connect
+  `READ_MENSTRUATION` (Perioden + Blutungstage → `mergePeriods`). Widget „Zyklus“, Kachel im Fortschritt,
+  Faktor in der Tagesform, Hinweis beim Gewicht. Keine Fruchtbarkeits-/Verhütungsaussagen; nie in der Community.
 - **Navigation wie bei iOS:** globale Suche (Lupe oben in jedem Tab, `components/search/SearchSheet.tsx`,
   Einträge + Stichwörter in `src/lib/searchIndex.ts`, Module beachten). Profil gruppiert: Ich ·
   Personalisieren · Buddy · Mitteilungen & Geräte · Konto & Daten. Deep Links für die Suche:

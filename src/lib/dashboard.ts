@@ -4,12 +4,13 @@
 
 import type { Capabilities, Capability } from './health'
 
-export type Module = 'training' | 'nutrition' | 'social' | 'watch'
+export type Module = 'training' | 'nutrition' | 'social' | 'watch' | 'cycle'
 
 export type WidgetId =
   | 'readiness'
   | 'nextWorkout'
   | 'cardioPlan'
+  | 'cycle'
   | 'streak'
   | 'kcal'
   | 'water'
@@ -51,6 +52,7 @@ export const WIDGETS: WidgetDef[] = [
     module: 'training',
     size: 'full',
   },
+  { id: 'cycle', label: 'Zyklus', hint: 'Phase, Tag & was das fürs Training heißt', module: 'cycle', size: 'full' },
   { id: 'cardioPlan', label: 'Ausdauer-Plan', hint: 'Heutige Einheit abhaken', module: 'training', size: 'full' },
   { id: 'kcal', label: 'Kalorien & Eiweiß', hint: 'Was heute noch offen ist', module: 'nutrition', size: 'full' },
   { id: 'water', label: 'Wasser', hint: 'Mit +250 ml direkt eintragen', module: 'nutrition', size: 'half' },
@@ -102,6 +104,7 @@ export function widgetDef(id: WidgetId): WidgetDef {
 export const DEFAULT_LAYOUT: WidgetId[] = [
   'readiness',
   'nextWorkout',
+  'cycle',
   'cardioPlan',
   'kcal',
   'water',
@@ -113,9 +116,9 @@ export const DEFAULT_LAYOUT: WidgetId[] = [
   'friends',
 ]
 
-export type Modules = Record<Module, boolean>
+export type Modules = Record<Exclude<Module, 'cycle'>, boolean> & { cycle?: boolean }
 
-const isOn = (id: WidgetId, mods: Modules) => mods[widgetDef(id).module]
+const isOn = (id: WidgetId, mods: Modules) => !!mods[widgetDef(id).module]
 
 /** Liefert die Uhr die nötigen Werte? Solange noch nichts synchronisiert ist: ja (abwarten). */
 export function supported(w: WidgetDef, caps?: Capabilities | null): boolean {

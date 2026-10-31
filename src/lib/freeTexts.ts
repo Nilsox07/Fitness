@@ -84,6 +84,8 @@ export function factorPhrase(f: { key: ReadinessFactor['key']; value: string; st
       return good ? 'genug Eiweiß gestern' : 'wenig Eiweiß gestern'
     case 'water':
       return good ? 'gut getrunken gestern' : 'wenig getrunken gestern'
+    case 'cycle':
+      return good ? `gute Zyklusphase (${f.value})` : `dein Zyklus (${f.value})`
   }
 }
 

@@ -27,21 +27,33 @@ function markDeviceSynced() {
  * Auf einem neuen Gerät werden die gespeicherten Module übernommen.
  */
 export function useModulesSync(): void {
-  const { showNutrition, showSocial, hasWatch, setShowNutrition, setShowSocial, setHasWatch } = usePrefs()
+  const { showNutrition, showSocial, hasWatch, hasCycle, setShowNutrition, setShowSocial, setHasWatch, setHasCycle } =
+    usePrefs()
   const { prefs, save, source } = useUserPrefs()
   const remote = prefs.modules
   useEffect(() => {
     if (source === null) return // erst den echten Stand aus dem Konto abwarten
-    const local = { nutrition: showNutrition, social: showSocial, watch: hasWatch }
+    const local = { nutrition: showNutrition, social: showSocial, watch: hasWatch, cycle: hasCycle }
     const action = modulesSyncAction(local, remote, deviceSynced())
     if (action === 'adopt' && remote) {
       if (remote.nutrition !== showNutrition) setShowNutrition(remote.nutrition)
       if (remote.social !== showSocial) setShowSocial(remote.social)
       if (remote.watch !== hasWatch) setHasWatch(remote.watch)
+      if (!!remote.cycle !== hasCycle) setHasCycle(!!remote.cycle)
     } else if (action === 'push') {
       void save({ modules: local })
     }
     markDeviceSynced()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [source, showNutrition, showSocial, hasWatch, remote?.nutrition, remote?.social, remote?.watch])
+  }, [
+    source,
+    showNutrition,
+    showSocial,
+    hasWatch,
+    hasCycle,
+    remote?.nutrition,
+    remote?.social,
+    remote?.watch,
+    remote?.cycle,
+  ])
 }

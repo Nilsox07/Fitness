@@ -168,6 +168,8 @@ export interface ReadinessInput {
   deepMin?: number | null
   /** getrunken / Ziel gestern (0–1+) */
   waterRatioYesterday?: number | null
+  /** Zyklus (nur mit Zyklus-Bereich): Phase als Text + Einfluss */
+  cycle?: { label: string; effect: number; text: string } | null
   /** gegessen − Ziel gestern (kcal), negativ = Defizit */
   kcalBalanceYesterday?: number | null
   /** gegessenes / Ziel-Eiweiß gestern (0–1+) */
@@ -177,7 +179,7 @@ export interface ReadinessInput {
 export type FactorStatus = 'gut' | 'normal' | 'schwach'
 
 export interface ReadinessFactor {
-  key: 'sleep' | 'deep' | 'hrv' | 'rhr' | 'load' | 'strength' | 'energy' | 'protein' | 'water'
+  key: 'sleep' | 'deep' | 'hrv' | 'rhr' | 'load' | 'strength' | 'energy' | 'protein' | 'water' | 'cycle'
   label: string
   /** gemessener Wert, z. B. „6:40 h“ oder „58 ms“ */
   value: string
@@ -209,6 +211,8 @@ export const FACTOR_INFO: Record<ReadinessFactor['key'], string> = {
   load: 'Wie anstrengend deine Ausdauer-Einheiten gestern und vorgestern waren (Dauer × Puls).',
   strength: 'Wie viele harte Sätze du gestern und vorgestern gemacht hast. Muskeln brauchen 48–72 h Erholung.',
   deep: 'Im Tiefschlaf erholt sich der Körper am stärksten. 1–2 Stunden pro Nacht sind typisch.',
+  cycle:
+    'Dein Zyklus beeinflusst Kraft, Erholung und Puls. Rund um die Periode und kurz davor ist man oft weniger belastbar, danach meist stärker.',
   water: 'Schon leichter Flüssigkeitsmangel senkt Leistung und Konzentration spürbar.',
   energy: 'Ein großes Kaloriendefizit gestern bremst die Erholung von Muskeln und Nervensystem.',
   protein: 'Eiweiß repariert die Muskeln nach dem Training – genug davon beschleunigt die Erholung.',
@@ -318,6 +322,17 @@ export function readiness(i: ReadinessInput): Readiness | null {
       text:
         e <= -5 ? 'Viele harte Sätze – Muskeln erholen sich noch' : e < 0 ? 'Spürbar, aber okay' : 'Gut verkraftbar',
       effect: e,
+    })
+  }
+  if (i.cycle) {
+    f.push({
+      key: 'cycle',
+      label: 'Zyklus',
+      value: i.cycle.label,
+      normal: null,
+      status: statusOf(i.cycle.effect),
+      text: i.cycle.text,
+      effect: i.cycle.effect,
     })
   }
   if (i.waterRatioYesterday != null && i.waterRatioYesterday < 0.6) {

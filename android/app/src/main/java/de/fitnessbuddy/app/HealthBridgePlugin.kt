@@ -20,6 +20,8 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.FloorsClimbedRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
+import androidx.health.connect.client.records.MenstruationFlowRecord
+import androidx.health.connect.client.records.MenstruationPeriodRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.PowerRecord
 import androidx.health.connect.client.records.Record
@@ -63,6 +65,7 @@ import kotlin.reflect.KClass
  *  - Schlaf: Phasen-Verlauf, Puls/HRV/Sauerstoff/Atmung in der Nacht, Hauttemperatur
  *  - Tageswerte: Schritte, Strecke, Etagen, Kalorien, Puls (min/max/Ø, stündlich), Ruhepuls, HRV, SpO₂,
  *    Atemfrequenz, VO₂max, Gewicht, Körperfett, Blutdruck, Blutzucker, Körpertemperatur
+ *  - Zyklus: Perioden (Start/Ende) und einzelne Blutungstage
  * Jeder Datentyp ist optional: fehlt eine Berechtigung, bleibt das Feld einfach leer.
  */
 @CapacitorPlugin(name = "HealthBridge")
@@ -73,6 +76,8 @@ class HealthBridgePlugin : Plugin() {
         const val READ_HISTORY = "android.permission.health.READ_HEALTH_DATA_HISTORY"
         const val SERIES_POINTS = 240
         const val ROUTE_POINTS = 400
+        /** Zyklus: mindestens so weit zurück lesen, damit Durchschnittswerte stimmen */
+        const val CYCLE_DAYS = 400L
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -105,12 +110,21 @@ class HealthBridgePlugin : Plugin() {
         BloodPressureRecord::class,
         BloodGlucoseRecord::class,
         BodyTemperatureRecord::class,
+        MenstruationPeriodRecord::class,
+        MenstruationFlowRecord::class,
     )
     private val corePermissions = coreTypes.map { HealthPermission.getReadPermission(it) }.toSet()
     private val permissions: Set<String> =
         corePermissions + extraTypes.map { HealthPermission.getReadPermission(it) } + READ_ROUTES + READ_HISTORY
 
-    private val optional = setOf(READ_ROUTES, READ_HISTORY, HealthPermission.getReadPermission(SkinTemperatureRecord::class))
+    /** Zyklus ist ein freiwilliger Bereich – eine fehlende Freigabe ist keine „Lücke“. */
+    private val cyclePermissions = setOf(
+        HealthPermission.getReadPermission(MenstruationPeriodRecord::class),
+        HealthPermission.getReadPermission(MenstruationFlowRecord::class),
+    )
+
+    private val optional =
+        setOf(READ_ROUTES, READ_HISTORY, HealthPermission.getReadPermission(SkinTemperatureRecord::class)) + cyclePermissions
 
     private fun client() = HealthConnectClient.getOrCreate(context)
 
@@ -188,6 +202,14 @@ class HealthBridgePlugin : Plugin() {
                 out.put("activities", readActivities(since, now))
                 out.put("sleep", readSleep(since, now))
                 out.put("daily", readDaily(since, now))
+                // Zyklus ist optional: ein Fehler hier darf den restlichen Abgleich nie verhindern
+                val cycle = try {
+                    readCycle(since, now)
+                } catch (_: Exception) {
+                    null
+                }
+                out.put("periods", cycle?.first ?: JSArray())
+                out.put("flowDays", cycle?.second ?: JSArray())
                 call.resolve(out)
             } catch (e: Exception) {
                 call.reject("Health Connect lesen fehlgeschlagen: ${e.message}")
@@ -480,6 +502,32 @@ class HealthBridgePlugin : Plugin() {
             list.put(d)
         }
         return list
+    }
+
+    // ---------- Zyklus ----------
+
+    /** Perioden [{start, end}] und Blutungstage ['YYYY-MM-DD'] als lokale Daten (Zeitzone des Geräts). */
+    private suspend fun readCycle(since: Instant, now: Instant): Pair<JSArray, JSArray> {
+        val zone = ZoneId.systemDefault()
+        val minFrom = now.minus(Duration.ofDays(CYCLE_DAYS))
+        val from = if (since.isBefore(minFrom)) since else minFrom
+
+        val periods = JSArray()
+        readAll(MenstruationPeriodRecord::class, from, now).sortedBy { it.startTime }.forEach { r ->
+            val start = r.startTime.atZone(zone).toLocalDate()
+            // Ende ist exklusiv gespeichert → letzter Tag = Ende minus 1 ms; liegt es in der Zukunft, läuft sie noch
+            val end = if (r.endTime.isAfter(now)) null else r.endTime.minusMillis(1).atZone(zone).toLocalDate().let {
+                if (it.isBefore(start)) start else it
+            }
+            periods.put(JSObject().put("start", start.toString()).put("end", end?.toString() ?: JSObject.NULL))
+        }
+
+        val flowDays = JSArray()
+        readAll(MenstruationFlowRecord::class, from, now)
+            .map { it.time.atZone(zone).toLocalDate() }
+            .toSortedSet()
+            .forEach { flowDays.put(it.toString()) }
+        return periods to flowDays
     }
 
     // ---------- Hilfen ----------

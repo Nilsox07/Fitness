@@ -20,6 +20,8 @@ import {
 } from '../lib/health'
 import { useFoodEntries, useNutritionSettings } from './useNutrition'
 import { useWater } from './useWater'
+import { useCycleState } from './useCycle'
+import { PHASE_LABEL, readinessEffect, trainingHint } from '../lib/cycle'
 import { useAllSets } from './useWorkouts'
 import { usePlans } from './usePlans'
 import { useStreakState } from './useStreak'
@@ -70,6 +72,7 @@ export function useToday(): TodaySummary {
   const { data: entriesY } = useFoodEntries(yesterday)
   const { data: water } = useWater(day)
   const { data: waterY } = useWater(yesterday)
+  const cycle = useCycleState(day)
   const { data: activities } = useHealthActivities(30)
   const { data: sleepList } = useHealthSleep(30)
   const { data: daily } = useHealthDaily(30)
@@ -107,6 +110,13 @@ export function useToday(): TodaySummary {
         cardioLoad: loadOn(yesterday) + loadOn(before) / 2,
         strengthSets: setsOn(yesterday) + setsOn(before) / 2,
         deepMin: sleep?.deep_min ?? null,
+        cycle: cycle
+          ? {
+              label: `${PHASE_LABEL[cycle.phase]} · Tag ${cycle.day}`,
+              effect: readinessEffect(cycle),
+              text: trainingHint(cycle),
+            }
+          : null,
         waterRatioYesterday:
           showNutrition && waterY && settings?.water_target_ml ? waterY.ml / settings.water_target_ml : null,
         kcalBalanceYesterday: nutritionKnown && targetY ? totY.kcal - targetY : null,
@@ -152,6 +162,7 @@ export function useToday(): TodaySummary {
     entriesY,
     water,
     waterY,
+    cycle,
     activities,
     sleepList,
     daily,

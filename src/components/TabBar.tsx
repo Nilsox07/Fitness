@@ -79,7 +79,7 @@ const PROGRESS_TAB: Tab = {
   to: '/progress',
   label: 'Fortschritt',
   Icon: IconChart,
-  also: ['/analytics', '/history', '/badges', '/body', '/cardio', '/sleep', '/vitals'],
+  also: ['/analytics', '/history', '/badges', '/body', '/cardio', '/sleep', '/vitals', '/cycle'],
 }
 const SOCIAL_TAB: Tab = { to: '/social', label: 'Community', Icon: IconPeople, also: ['/feed'] }
 

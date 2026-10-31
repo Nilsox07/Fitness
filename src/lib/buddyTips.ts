@@ -4,7 +4,16 @@
 
 import type { BuddyMood } from './buddyMood'
 
-export type TipPage = 'today' | 'training' | 'nutrition' | 'progress' | 'cardio' | 'sleep' | 'vitals' | 'social'
+export type TipPage =
+  | 'today'
+  | 'training'
+  | 'nutrition'
+  | 'progress'
+  | 'cardio'
+  | 'sleep'
+  | 'vitals'
+  | 'social'
+  | 'cycle'
 
 export interface TipContext {
   hour: number
@@ -208,6 +217,13 @@ export function pageTip(page: TipPage, c: TipContext): Tip | null {
         key: 'vitals-tip',
         mood: 'happy',
         text: 'Vergleich dich mit dir, nicht mit anderen.',
+      }
+    case 'cycle':
+      return {
+        key: 'cycle-tip',
+        mood: 'happy',
+        text: 'Trag den ersten Tag deiner Periode ein – der Rest rechnet sich von selbst.',
+        ask: 'Wie passe ich mein Training an meinen Zyklus an?',
       }
     case 'social':
       if (c.friends === 0)

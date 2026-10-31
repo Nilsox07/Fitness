@@ -33,6 +33,8 @@ import { SupplementCard } from '../nutrition-home/SupplementCard'
 import { BodyWeightCard } from '../BodyWeightCard'
 import type { WidgetId } from '../../lib/dashboard'
 import { CardioPlanCard } from './CardioPlanCard'
+import { useCycleState } from '../../hooks/useCycle'
+import { PHASE_LABEL, trainingHint } from '../../lib/cycle'
 import { useBriefing } from '../buddy/useBriefing'
 import { PlusBadge } from '../premium/PlusBadge'
 
@@ -345,6 +347,33 @@ function Stat({ value, label }: { value: string; label: string }) {
   )
 }
 
+// ---------- Zyklus ----------
+
+function CycleWidget() {
+  const navigate = useNavigate()
+  const c = useCycleState()
+  return (
+    <Tile
+      icon={<Droplet size={15} />}
+      tint="bg-sand text-cocoa-light"
+      title="Zyklus"
+      onClick={() => navigate('/cycle')}
+    >
+      {c ? (
+        <>
+          <span className="flex items-baseline gap-2">
+            <span className="tabular text-2xl font-bold leading-none">Tag {c.day}</span>
+            <span className="text-sm font-semibold text-cocoa-light">{PHASE_LABEL[c.phase]}</span>
+          </span>
+          <span className="text-xs text-cocoa-light">{trainingHint(c)}</span>
+        </>
+      ) : (
+        <span className="text-sm font-semibold text-brand">Letzte Periode eintragen</span>
+      )}
+    </Tile>
+  )
+}
+
 // ---------- Training ----------
 
 function NextWorkoutWidget({ t }: { t: TodaySummary }) {
@@ -555,6 +584,8 @@ export function renderWidget(id: WidgetId, t: TodaySummary): ReactNode {
   switch (id) {
     case 'readiness':
       return <ReadinessWidget t={t} />
+    case 'cycle':
+      return <CycleWidget />
     case 'cardioPlan':
       return <CardioPlanCard />
     case 'nextWorkout':

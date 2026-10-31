@@ -4,6 +4,7 @@ const KEY = 'pref_show_nutrition'
 const WORLD_KEY = 'pref_world'
 const SOCIAL_KEY = 'pref_show_social'
 const WATCH_KEY = 'pref_has_watch'
+const CYCLE_KEY = 'pref_has_cycle'
 
 /** Aktive Welt (Fitness oder Ernährung). */
 export type World = 'fitness' | 'food'
@@ -19,6 +20,9 @@ interface Prefs {
   /** Modul Smartwatch: Ausdauer, Schlaf, Tagesform, Schritte – nur für Leute mit Uhr sichtbar */
   hasWatch: boolean
   setHasWatch: (v: boolean) => void
+  /** Modul Zyklus: Periode, Phase, Einfluss auf Tagesform & Gewicht – nur auf Wunsch */
+  hasCycle: boolean
+  setHasCycle: (v: boolean) => void
 }
 
 const PrefsContext = createContext<Prefs>({
@@ -30,6 +34,8 @@ const PrefsContext = createContext<Prefs>({
   setShowSocial: () => {},
   hasWatch: false,
   setHasWatch: () => {},
+  hasCycle: false,
+  setHasCycle: () => {},
 })
 
 function readFlag(key: string, fallback: boolean): boolean {
@@ -62,6 +68,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
   const [world, setWorldState] = useState<World>(readWorld)
   const [showSocial, setSocial] = useState(() => readFlag(SOCIAL_KEY, true))
   const [hasWatch, setWatch] = useState(() => readFlag(WATCH_KEY, false))
+  const [hasCycle, setCycle] = useState(() => readFlag(CYCLE_KEY, false))
 
   function setShowNutrition(v: boolean) {
     localStorage.setItem(KEY, v ? 'true' : 'false')
@@ -94,6 +101,11 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         setHasWatch: (v: boolean) => {
           writeFlag(WATCH_KEY, v)
           setWatch(v)
+        },
+        hasCycle,
+        setHasCycle: (v: boolean) => {
+          writeFlag(CYCLE_KEY, v)
+          setCycle(v)
         },
       }}
     >

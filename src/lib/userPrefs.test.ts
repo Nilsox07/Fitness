@@ -12,7 +12,11 @@ describe('Cheat-Teilen, Module, gesehene Version', () => {
       nutrition: false,
       social: true,
       watch: false,
+      cycle: false,
     })
+    expect(
+      normalizePrefs({ modules: { nutrition: true, social: true, watch: true, cycle: true } }).modules?.cycle,
+    ).toBe(true)
     expect(normalizePrefs({ modules: { nutrition: false } }).modules).toBeNull()
     expect(normalizePrefs({ seenVersion: '2.0' }).seenVersion).toBe('2.0')
     expect(normalizePrefs({ seenVersion: 2 }).seenVersion).toBeNull()

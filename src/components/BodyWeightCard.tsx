@@ -4,12 +4,11 @@ import { accentColor } from '../lib/cosmetics'
 import { Line, LineChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts'
 import { useBodyWeights, useUpsertBodyWeight } from '../hooks/useBodyWeight'
 import { useTheme } from '../lib/theme'
+import { CycleWaterNote } from './CycleWaterNote'
 
 function todayLocal(): string {
   const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 export function BodyWeightCard() {
@@ -26,10 +25,7 @@ export function BodyWeightCard() {
     [weights],
   )
 
-  const trend =
-    chartData.length >= 2
-      ? Math.round((chartData[chartData.length - 1].kg - chartData[0].kg) * 10) / 10
-      : 0
+  const trend = chartData.length >= 2 ? Math.round((chartData[chartData.length - 1].kg - chartData[0].kg) * 10) / 10 : 0
 
   function save() {
     const kg = parseFloat(value.replace(',', '.'))
@@ -44,6 +40,7 @@ export function BodyWeightCard() {
 
   return (
     <section className="card space-y-3">
+      <CycleWaterNote />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
@@ -109,7 +106,11 @@ export function BodyWeightCard() {
             kg
           </span>
         </div>
-        <button className="btn-primary shrink-0 rounded-2xl" onClick={save} disabled={upsert.isPending || !value.trim()}>
+        <button
+          className="btn-primary shrink-0 rounded-2xl"
+          onClick={save}
+          disabled={upsert.isPending || !value.trim()}
+        >
           {loggedToday ? 'Aktualisieren' : 'Eintragen'}
         </button>
       </div>

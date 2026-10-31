@@ -10,6 +10,7 @@ import { trendChange, weightTrend } from '../../lib/weightTrend'
 import { nf, signed, useChartTheme } from '../stats/shared'
 import { SectionTitle } from './ui'
 import { InfoTip } from '../ui/InfoTip'
+import { CycleWaterNote } from '../CycleWaterNote'
 
 const ddmm = (date: string) => `${date.slice(8, 10)}.${date.slice(5, 7)}`
 
@@ -121,6 +122,7 @@ export function WeightTrendCard({ style }: { style?: CSSProperties }) {
             </ComposedChart>
           </ResponsiveContainer>
         )}
+        <CycleWaterNote />
         <InfoTip
           className="text-[11px] text-cocoa-muted"
           info="Punkte = gewogene Werte, Linie = geglätteter Trend. Gewicht trägst du unter Fortschritt → Gewicht & Körperfett ein."

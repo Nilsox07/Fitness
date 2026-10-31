@@ -27,6 +27,7 @@ import Feed from './pages/Feed'
 import History from './pages/History'
 import Analytics from './pages/Analytics'
 import Progress from './pages/Progress'
+import Cycle from './pages/Cycle'
 import Nutrition from './pages/Nutrition'
 import Profile from './pages/Profile'
 import QuickWorkout from './pages/QuickWorkout'
@@ -62,7 +63,7 @@ const FITNESS_ROUTES = ['/', '/plans', '/exercises']
 
 export default function App() {
   const { session, loading, recovery } = useAuth()
-  const { world, setWorld, showNutrition, showSocial, hasWatch } = usePrefs()
+  const { world, setWorld, showNutrition, showSocial, hasWatch, hasCycle } = usePrefs()
   const { pathname, search } = useLocation()
   const mainRef = useRef<HTMLElement>(null)
 
@@ -155,6 +156,7 @@ export default function App() {
             <Route path="/feed" element={<Feed />} />
             <Route path="/history" element={<History />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/cycle" element={hasCycle ? <Cycle /> : <Navigate to="/progress" replace />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/body" element={<Body />} />
             <Route path="/profile" element={<Profile />} />

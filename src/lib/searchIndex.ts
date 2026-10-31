@@ -12,10 +12,20 @@ export interface SearchEntry {
   to: string
   keywords: string
   /** nur sichtbar, wenn das Modul an ist bzw. KI/Push verfügbar sind */
-  needs?: 'nutrition' | 'social' | 'watch' | 'ai' | 'push'
+  needs?: 'nutrition' | 'social' | 'watch' | 'ai' | 'push' | 'cycle'
 }
 
 export const SEARCH_ENTRIES: SearchEntry[] = [
+  // Zyklus (eigener Bereich)
+  {
+    id: 'cycle',
+    label: 'Zyklus',
+    sub: 'Periode eintragen, Phase & Tagesform',
+    section: 'Fortschritt',
+    to: '/cycle',
+    keywords: 'periode menstruation zyklus regel tage pms eisprung',
+    needs: 'cycle',
+  },
   // Heute
   {
     id: 'today',
@@ -447,6 +457,8 @@ export interface Modules {
   ai?: boolean
   /** Benachrichtigungen möglich: Web-Push oder App (unbekannt = sichtbar) */
   push?: boolean
+  /** Zyklus-Bereich an (unbekannt = sichtbar) */
+  cycle?: boolean
 }
 
 /** Darf der Eintrag bei diesen Modulen/Fähigkeiten gezeigt werden? */

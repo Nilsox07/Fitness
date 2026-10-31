@@ -36,7 +36,7 @@ const ORDER: SearchSection[] = ['Heute', 'Training', 'Ernährung', 'Fortschritt'
 /** Vollbild-Suche wie bei iOS: tippen → passende Funktion antippen → du bist da. */
 function SearchSheet({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
-  const { showNutrition, showSocial, hasWatch } = usePrefs()
+  const { showNutrition, showSocial, hasWatch, hasCycle } = usePrefs()
   const { data: ai } = useAiStatus()
   const gate = useAiGate()
   const [q, setQ] = useState('')
@@ -48,10 +48,11 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
     watch: hasWatch,
     ai: aiOn,
     push: pushSupported || isNative(),
+    cycle: hasCycle,
   }
   const results = useMemo(
     () => (q.trim() ? searchEntries(q, mods) : []),
-    [q, showNutrition, showSocial, hasWatch, aiOn],
+    [q, showNutrition, showSocial, hasWatch, aiOn, hasCycle],
   ) // eslint-disable-line react-hooks/exhaustive-deps
   useBackClose(onClose)
   const sugg = suggestions(mods)

@@ -21,8 +21,8 @@ import {
 import { BuddyTip } from '../components/buddy/BuddyTip'
 
 export function useModules(): Modules {
-  const { showNutrition, showSocial, hasWatch } = usePrefs()
-  return { training: true, nutrition: showNutrition, social: showSocial, watch: hasWatch }
+  const { showNutrition, showSocial, hasWatch, hasCycle } = usePrefs()
+  return { training: true, nutrition: showNutrition, social: showSocial, watch: hasWatch, cycle: hasCycle }
 }
 
 /** „Heute“: frei anpassbares Dashboard (Widgets hinzufügen, entfernen, verschieben). */

@@ -6,6 +6,7 @@ import {
   Apple,
   BedDouble,
   CalendarDays,
+  Droplet,
   ChevronRight,
   Dumbbell,
   HeartPulse,
@@ -20,6 +21,7 @@ import { BuddyFace } from '../components/buddy/BuddyFace'
 import { useBuddy, useBuddyLevel } from '../components/buddy/useBuddy'
 import { enter } from '../components/home/motion'
 import { useToday } from '../hooks/useToday'
+import { useCycleState } from '../hooks/useCycle'
 import { useBodyWeights } from '../hooks/useBodyWeight'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useHealthActivities, useHealthDaily, useHealthSleep } from '../hooks/useHealth'
@@ -39,7 +41,8 @@ const tons = (kg: number) =>
  */
 export default function Progress() {
   const navigate = useNavigate()
-  const { showNutrition, hasWatch } = usePrefs()
+  const { showNutrition, hasWatch, hasCycle } = usePrefs()
+  const cycle = useCycleState()
   const t = useToday()
   const buddy = useBuddy()
   const level = useBuddyLevel()
@@ -200,6 +203,24 @@ export default function Progress() {
             sub={t.kcalTarget ? `Ziel ${fmt(t.kcalTarget)}` : 'heute'}
           >
             <Bars values={kcalSeries.map((v) => v ?? 0)} small target={t.kcalTarget || undefined} />
+          </Tile>
+        )}
+        {hasCycle && (
+          <Tile
+            icon={Droplet}
+            label="Zyklus"
+            onClick={() => navigate('/cycle')}
+            index={i++}
+            value={cycle ? `Tag ${cycle.day}` : 'Eintragen'}
+            sub={
+              cycle
+                ? cycle.onPeriod
+                  ? 'Periode'
+                  : `Periode in ${Math.max(0, cycle.daysUntilNext)} T.`
+                : 'Periode & Phase'
+            }
+          >
+            {cycle && <CycleBar day={cycle.day} length={cycle.length} period={cycle.periodLength} />}
           </Tile>
         )}
         <Tile
@@ -368,6 +389,21 @@ function Ring({ pct, size, children }: { pct: number; size: number; children: Re
         />
       </svg>
       <span className="relative flex flex-col items-center">{children}</span>
+    </span>
+  )
+}
+
+/** Zyklus als Leiste: Periode (kräftig), Rest blass, Markierung = heute. */
+function CycleBar({ day, length, period }: { day: number; length: number; period: number }) {
+  return (
+    <span className="relative flex h-[34px] w-full items-center">
+      <span className="flex h-2.5 w-full overflow-hidden rounded-full bg-brand/15">
+        <span className="h-full bg-brand" style={{ width: `${(period / length) * 100}%` }} />
+      </span>
+      <span
+        className="absolute h-5 w-1.5 -translate-x-1/2 rounded-full bg-cocoa ring-2 ring-cream"
+        style={{ left: `${Math.min(100, (day / length) * 100)}%` }}
+      />
     </span>
   )
 }

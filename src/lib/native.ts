@@ -56,11 +56,24 @@ export interface NativeDaily {
   vo2max: number | null
 }
 
+/** Periode aus Health Connect (lokale Daten; end null = läuft noch) */
+export interface NativePeriod {
+  start: string
+  end: string | null
+}
+
 interface HealthBridgePlugin {
   availability(): Promise<{ status: 'available' | 'not_installed' | 'update_required' | 'unsupported' }>
   connect(): Promise<{ granted: boolean }>
   hasPermissions(): Promise<{ granted: boolean; history?: boolean; missing?: string[] }>
-  read(opts: { since: string }): Promise<{ activities: NativeActivity[]; sleep: NativeSleep[]; daily: NativeDaily[] }>
+  read(opts: { since: string }): Promise<{
+    activities: NativeActivity[]
+    sleep: NativeSleep[]
+    daily: NativeDaily[]
+    /** Zyklus (optional – ältere App-Versionen bzw. ohne Freigabe fehlt es) */
+    periods?: NativePeriod[]
+    flowDays?: string[]
+  }>
   openSettings(): Promise<void>
 }
 

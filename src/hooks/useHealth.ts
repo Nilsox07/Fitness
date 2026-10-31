@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth'
 import { usePrefs } from '../lib/prefs'
 import { healthHasPermissions, healthRead, isNative } from '../lib/native'
 import { localDate, shiftDate } from '../lib/day'
+import { mergePeriods } from '../lib/cyclePeriods'
 import type { HealthActivity, HealthDaily, HealthSleep } from '../types'
 
 // Version im Schlüssel: wenn die App neue Datenfelder liest, wird einmal komplett neu abgeglichen
@@ -84,7 +85,7 @@ export function lastHealthSync(): string | null {
 /** Health Connect lesen und in Supabase schreiben (seit dem letzten Abgleich, max. 30 Tage). */
 export function useHealthSync() {
   const { user } = useAuth()
-  const { hasWatch } = usePrefs()
+  const { hasWatch, hasCycle } = usePrefs()
   const qc = useQueryClient()
   const busy = useRef(false)
 
@@ -124,6 +125,22 @@ export function useHealthSync() {
           { onConflict: 'user_id,date' },
         )
       }
+      // Zyklus (nur wenn der Bereich an ist): Perioden + Blutungstage → cycle_periods.
+      // Fehler (z. B. Migration 0039 noch nicht ausgeführt) still ignorieren.
+      if (hasCycle) {
+        try {
+          const periods = mergePeriods(r.periods, r.flowDays)
+          if (periods.length) {
+            const { error } = await supabase.from('cycle_periods').upsert(
+              periods.map((p) => ({ ...p, user_id: uid, source: 'health' })),
+              { onConflict: 'user_id,start_date', ignoreDuplicates: false },
+            )
+            if (!error) await qc.invalidateQueries({ queryKey: ['cycle_periods'] })
+          }
+        } catch {
+          /* ignore */
+        }
+      }
       try {
         localStorage.setItem(SYNC_KEY, startedAt)
       } catch {
@@ -135,7 +152,7 @@ export function useHealthSync() {
     } finally {
       busy.current = false
     }
-  }, [user, hasWatch, qc])
+  }, [user, hasWatch, hasCycle, qc])
 
   // Beim Start und bei jeder Rückkehr in die App abgleichen
   useEffect(() => {

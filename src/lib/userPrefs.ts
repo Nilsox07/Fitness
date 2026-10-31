@@ -53,6 +53,8 @@ export interface Modules {
   nutrition: boolean
   social: boolean
   watch: boolean
+  /** Zyklus-Bereich (optional, nur Frauen angeboten) */
+  cycle?: boolean
 }
 
 export const DEFAULT_KCAL_BONUS = 250
@@ -133,11 +135,11 @@ function normalizeModules(v: unknown): Modules | null {
   if (!v || typeof v !== 'object') return null
   const m = v as Record<string, unknown>
   if (typeof m.nutrition !== 'boolean' || typeof m.social !== 'boolean' || typeof m.watch !== 'boolean') return null
-  return { nutrition: m.nutrition, social: m.social, watch: m.watch }
+  return { nutrition: m.nutrition, social: m.social, watch: m.watch, cycle: m.cycle === true }
 }
 
 export const sameModules = (a: Modules | null, b: Modules | null): boolean =>
-  !!a && !!b && a.nutrition === b.nutrition && a.social === b.social && a.watch === b.watch
+  !!a && !!b && a.nutrition === b.nutrition && a.social === b.social && a.watch === b.watch && !!a.cycle === !!b.cycle
 
 /**
  * Module mit dem Konto abgleichen: Auf einem neuen Gerät die gespeicherten übernehmen

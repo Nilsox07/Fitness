@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, ChevronLeft, Dumbbell, HeartPulse, Info, Users, Utensils, Watch } from 'lucide-react'
+import { Check, ChevronLeft, Droplet, Dumbbell, HeartPulse, Info, Users, Utensils, Watch } from 'lucide-react'
 import { MyBuddy } from '../buddy/MyBuddy'
 import { Hero } from '../health/ui'
 import type { BuddyMood } from '../../lib/buddyMood'
@@ -106,6 +106,7 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
   const [useNutrition, setUseNutrition] = useState(mods.showNutrition)
   const [useWatch, setUseWatch] = useState(mods.hasWatch)
   const [useSocial, setUseSocial] = useState(mods.showSocial)
+  const [useCycle, setUseCycle] = useState(mods.hasCycle)
   const [body, setBody] = useState({
     sex: (settings?.sex === 'f' ? 'f' : 'm') as Sex,
     age: settings?.age ?? 30,
@@ -224,12 +225,17 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
         mods.setShowNutrition(useNutrition)
         mods.setHasWatch(useWatch)
         mods.setShowSocial(useSocial)
+        mods.setHasCycle(useCycle)
       }
       await save({
         onboarded: true,
         fitGoal: a.goal,
         cardioPlan: cardio,
-        dashboard: cardio ? withWidget(prefs.dashboard, 'cardioPlan', 'nextWorkout') : prefs.dashboard,
+        dashboard: (() => {
+          let d = cardio ? withWidget(prefs.dashboard, 'cardioPlan', 'nextWorkout') : prefs.dashboard
+          if (!planOnly && useCycle) d = withWidget(d, 'cycle', 'nextWorkout')
+          return d
+        })(),
         schedule: buildSchedule(
           planIds,
           template.plans.map((p) => p.name),
@@ -445,6 +451,13 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
                 sub="Duelle & Bestenliste"
                 on={useSocial}
                 onChange={setUseSocial}
+              />
+              <ToggleCard
+                icon={<Droplet size={20} />}
+                label="Zyklus"
+                sub="Für Frauen – Periode & Phase, privat"
+                on={useCycle}
+                onChange={setUseCycle}
               />
             </div>
             <p className="text-center text-sm text-cocoa-light">Kannst du jederzeit im Profil ändern.</p>

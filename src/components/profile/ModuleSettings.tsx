@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Dumbbell, Lock, Users, Utensils, Watch } from 'lucide-react'
+import { Droplet, Dumbbell, Lock, Users, Utensils, Watch } from 'lucide-react'
 import { usePrefs } from '../../lib/prefs'
+import { useNutritionSettings } from '../../hooks/useNutrition'
 import { useUserPrefs } from '../../hooks/usePrefsSync'
 import { lastHealthSync, useHealthSync } from '../../hooks/useHealth'
 import { agoText } from '../../lib/health'
-import { withWatchWidgets } from '../../lib/dashboard'
+import { withWatchWidgets, withWidget } from '../../lib/dashboard'
 import {
   LIVE_FASTING_KEY,
   healthAvailability,
@@ -74,7 +75,10 @@ function ModuleRow({
  * Erinnerungen). Die Smartwatch-Funktionen sind ohne Uhr gar nicht sichtbar.
  */
 export function ModuleSettings() {
-  const { showNutrition, setShowNutrition, showSocial, setShowSocial, hasWatch, setHasWatch } = usePrefs()
+  const { showNutrition, setShowNutrition, showSocial, setShowSocial, hasWatch, setHasWatch, hasCycle, setHasCycle } =
+    usePrefs()
+  const { data: settings } = useNutritionSettings()
+  const [cycleConsent, setCycleConsent] = useState(false)
   const { prefs, save } = useUserPrefs()
   const sync = useHealthSync()
   const native = isNative()
@@ -156,7 +160,42 @@ export function ModuleSettings() {
         >
           <Switch on={hasWatch} label="Smartwatch" onChange={(v) => (v ? enableWatch() : setHasWatch(false))} />
         </ModuleRow>
+        {(settings?.sex !== 'm' || hasCycle) && (
+          <ModuleRow
+            icon={<Droplet size={19} />}
+            tint="bg-sand text-cocoa-light"
+            title="Zyklus"
+            hint="Periode & Phase – fließt in Tagesform und Gewicht ein"
+          >
+            <Switch on={hasCycle} label="Zyklus" onChange={(v) => (v ? setCycleConsent(true) : setHasCycle(false))} />
+          </ModuleRow>
+        )}
       </section>
+
+      {cycleConsent && !hasCycle && (
+        <section className="space-y-3 rounded-2xl bg-cream p-4">
+          <h3 className="font-semibold">Zyklus einschalten</h3>
+          <p className="text-sm text-cocoa-light">
+            Zyklusdaten sind Gesundheitsdaten. Sie sind nur für dich sichtbar, erscheinen nie in der Community und
+            lassen sich jederzeit komplett löschen. Die Schätzung ist nicht zur Verhütung geeignet.
+          </p>
+          <div className="flex gap-2">
+            <button className="btn-ghost flex-1" onClick={() => setCycleConsent(false)}>
+              Abbrechen
+            </button>
+            <button
+              className="btn-primary flex-1"
+              onClick={() => {
+                setHasCycle(true)
+                setCycleConsent(false)
+                void save({ dashboard: withWidget(prefs.dashboard, 'cycle', 'nextWorkout') })
+              }}
+            >
+              Einverstanden
+            </button>
+          </div>
+        </section>
+      )}
 
       {hasWatch && (
         <section className="space-y-2.5 rounded-2xl bg-cream p-4">
