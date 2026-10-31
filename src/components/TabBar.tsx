@@ -28,25 +28,10 @@ function IconFood({ className = S }: IconProps) {
     </svg>
   )
 }
-function IconHistory({ className = S }: IconProps) {
-  return (
-    <svg className={className} {...common}>
-      <rect x="3.5" y="4.5" width="17" height="16" rx="2" />
-      <path d="M3.5 9h17M8 3v3M16 3v3M8 13h4" />
-    </svg>
-  )
-}
 function IconChart({ className = S }: IconProps) {
   return (
     <svg className={className} {...common}>
       <path d="M4 20V4M4 20h16M8 16v-3M12 16V9M16 16v-6" />
-    </svg>
-  )
-}
-function IconList({ className = S }: IconProps) {
-  return (
-    <svg className={className} {...common}>
-      <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
     </svg>
   )
 }
@@ -72,11 +57,23 @@ function IconToday({ className = S }: IconProps) {
 
 type Tab = { to: string; label: string; Icon: (p: IconProps) => ReactElement; end?: boolean; also?: string[] }
 
-// Neue App: Heute + Bereiche je nach Modulen. Unterseiten zählen zu ihrem Bereich (also),
+// Heute + Bereiche je nach Modulen. Unterseiten zählen zu ihrem Bereich (also),
 // Zurück geht über die obere Leiste – höchstens zwei Ebenen.
-const NUTRITION_TAB: Tab = { to: '/nutrition', label: 'Ernährung', Icon: IconFood, end: true, also: ['/recipes', '/shopping'] }
+const NUTRITION_TAB: Tab = {
+  to: '/nutrition',
+  label: 'Ernährung',
+  Icon: IconFood,
+  end: true,
+  also: ['/recipes', '/shopping'],
+}
 const TODAY_TAB: Tab = { to: '/today', label: 'Heute', Icon: IconToday, end: true }
-const TRAINING_TAB: Tab = { to: '/', label: 'Training', Icon: IconTrain, end: true, also: ['/plans', '/exercises', '/quick'] }
+const TRAINING_TAB: Tab = {
+  to: '/',
+  label: 'Training',
+  Icon: IconTrain,
+  end: true,
+  also: ['/plans', '/exercises', '/quick'],
+}
 const PROGRESS_TAB: Tab = {
   to: '/analytics',
   label: 'Fortschritt',
@@ -86,54 +83,19 @@ const PROGRESS_TAB: Tab = {
 const SOCIAL_TAB: Tab = { to: '/social', label: 'Community', Icon: IconPeople, also: ['/feed'] }
 
 export function TabBar() {
-  const { showNutrition, showSocial, isNew } = usePrefs()
+  const { showNutrition, showSocial } = usePrefs()
   const { pathname } = useLocation()
 
-  // Klassisch = alte, schlanke App
-  const classicTabs: Tab[] = [
-    { to: '/', label: 'Training', Icon: IconTrain, end: true },
-    ...(showNutrition ? [{ to: '/nutrition', label: 'Essen', Icon: IconFood }] : []),
-    { to: '/history', label: 'Verlauf', Icon: IconHistory },
-    { to: '/analytics', label: 'Auswertung', Icon: IconChart },
-    { to: '/exercises', label: 'Übungen', Icon: IconList },
-  ]
-
-  // Neue App: höchstens fünf Bereiche – ausgeblendete Module verschwinden
-  const newTabs: Tab[] = [
+  // Höchstens fünf Bereiche – ausgeblendete Module verschwinden
+  const tabs: Tab[] = [
     TODAY_TAB,
     TRAINING_TAB,
     ...(showNutrition ? [NUTRITION_TAB] : []),
     PROGRESS_TAB,
     ...(showSocial ? [SOCIAL_TAB] : []),
   ]
-  const tabs = !isNew ? classicTabs : newTabs
 
-  if (isNew) return <FloatingTabBar tabs={tabs} pathname={pathname} />
-
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-md border-t border-sand-dark bg-cream/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <div
-        className="grid"
-        style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
-      >
-        {tabs.map((t) => (
-          <NavLink
-            key={t.to + t.label}
-            to={t.to}
-            end={t.end}
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 py-2.5 text-[11px] ${
-                isActive || t.also?.includes(pathname) ? 'text-brand' : 'text-cocoa-muted'
-              }`
-            }
-          >
-            <t.Icon />
-            {t.label}
-          </NavLink>
-        ))}
-      </div>
-    </nav>
-  )
+  return <FloatingTabBar tabs={tabs} pathname={pathname} />
 }
 
 function isTabActive(t: Tab, pathname: string): boolean {
@@ -142,7 +104,7 @@ function isTabActive(t: Tab, pathname: string): boolean {
   return pathname === t.to || pathname.startsWith(t.to + '/')
 }
 
-/** Neue App: schwebende Pillen-Leiste mit gleitendem Aktiv-Indikator. */
+/** Schwebende Pillen-Leiste mit gleitendem Aktiv-Indikator. */
 function FloatingTabBar({ tabs, pathname }: { tabs: Tab[]; pathname: string }) {
   const active = tabs.findIndex((t) => isTabActive(t, pathname))
   const n = tabs.length

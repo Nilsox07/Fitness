@@ -1,27 +1,6 @@
 import { useMemo } from 'react'
 import { Minus, Plus } from 'lucide-react'
-import { CHAIN_BADGE, type Chain, type MenuItem } from '../../lib/fastfood'
-
-/** Rundes Kürzel einer Kette (eigene Gestaltung statt Original-Logo). */
-export function ChainBadge({ id, size = 20 }: { id: string; size?: number }) {
-  const b = CHAIN_BADGE[id]
-  if (!b) return null
-  return (
-    <span
-      className="grid shrink-0 place-items-center rounded-full font-black leading-none tracking-tight"
-      style={{
-        width: size,
-        height: size,
-        background: b.bg,
-        color: b.fg,
-        fontSize: size * (b.short.length > 2 ? 0.32 : 0.42),
-      }}
-      aria-hidden
-    >
-      {b.short}
-    </span>
-  )
-}
+import { type Chain, type MenuItem } from '../../lib/fastfood'
 
 /** Speisekarte einer Kette: suchen, antippen, Menge ändern. */
 export function ChainMenu({
@@ -38,7 +17,8 @@ export function ChainMenu({
   const q = query.trim().toLowerCase()
   const groups = useMemo(() => {
     const words = q.split(/\s+/).filter(Boolean)
-    const hit = (i: MenuItem) => words.every((w) => i.name.toLowerCase().includes(w) || i.category.toLowerCase().includes(w))
+    const hit = (i: MenuItem) =>
+      words.every((w) => i.name.toLowerCase().includes(w) || i.category.toLowerCase().includes(w))
     const m = new Map<string, MenuItem[]>()
     for (const i of chain.items) {
       if (words.length && !hit(i)) continue

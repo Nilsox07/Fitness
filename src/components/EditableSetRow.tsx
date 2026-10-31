@@ -1,151 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Flame, Minus, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
-import { Stepper } from './Stepper'
+import { Minus, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import { useDeleteSet, useUpdateSet } from '../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../lib/weights'
-import { usePrefs } from '../lib/prefs'
-import { SET_TYPES, SET_TYPE_LABEL, SET_TYPE_SHORT, type Exercise, type WorkoutSet } from '../types'
+import { SET_TYPES, SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../types'
 
 /** Editierbare Satz-Zeile (Typ, Versagen, Wdh/Gewicht, ggf. links/rechts). */
 export function EditableSetRow({ set, exercise }: { set: WorkoutSet; exercise: Exercise }) {
-  const { isNew } = usePrefs()
-  return isNew ? <CompactEditRow set={set} exercise={exercise} /> : <ClassicEditRow set={set} exercise={exercise} />
-}
-
-function ClassicEditRow({ set: s, exercise }: { set: WorkoutSet; exercise: Exercise }) {
-  const updateSet = useUpdateSet()
-  const deleteSet = useDeleteSet()
-  const ladder = parseLadder(exercise.weight_steps)
-  const weightSteps = ladder.length ? ladder : undefined
-
-  return (
-    <div className="rounded-xl bg-sand-light p-2.5">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex gap-1">
-          {SET_TYPES.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => updateSet.mutate({ id: s.id, set_type: t })}
-              className={`rounded-full px-2 py-0.5 text-xs font-semibold transition-colors duration-200 ${
-                s.set_type === t ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-              }`}
-            >
-              {SET_TYPE_SHORT[t]}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => updateSet.mutate({ id: s.id, to_failure: !s.to_failure })}
-            aria-label="Bis zum Versagen umschalten"
-            title="Antippen, wenn du diesen Satz NICHT bis zum Versagen gemacht hast"
-            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors duration-200 ${
-              s.to_failure ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-            }`}
-          >
-            {s.to_failure ? (
-              <>
-                <Flame size={12} /> Versagen
-              </>
-            ) : (
-              'nicht ans Limit'
-            )}
-          </button>
-          <button
-            className="grid h-7 w-7 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
-            aria-label="Satz löschen"
-            onClick={() => deleteSet.mutate(s)}
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
-      </div>
-
-      {exercise.unilateral ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <span className="w-12 shrink-0 text-xs font-semibold text-cocoa-light">Links</span>
-            <div className="grid flex-1 grid-cols-2 gap-2">
-              <Stepper
-                label="Wdh links"
-                hideLabel
-                compact
-                value={s.reps}
-                step={1}
-                min={0}
-                onChange={(reps) => updateSet.mutate({ id: s.id, reps })}
-              />
-              <Stepper
-                label="Gewicht links"
-                hideLabel
-                compact
-                suffix="kg"
-                value={s.weight}
-                step={exercise.increment}
-                steps={weightSteps}
-                min={0}
-                onChange={(weight) => updateSet.mutate({ id: s.id, weight })}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-12 shrink-0 text-xs font-semibold text-cocoa-light">Rechts</span>
-            <div className="grid flex-1 grid-cols-2 gap-2">
-              <Stepper
-                label="Wdh rechts"
-                hideLabel
-                compact
-                value={s.reps_right ?? 0}
-                step={1}
-                min={0}
-                onChange={(reps_right) => updateSet.mutate({ id: s.id, reps_right })}
-              />
-              <Stepper
-                label="Gewicht rechts"
-                hideLabel
-                compact
-                suffix="kg"
-                value={s.weight_right ?? 0}
-                step={exercise.increment}
-                steps={weightSteps}
-                min={0}
-                onChange={(weight_right) => updateSet.mutate({ id: s.id, weight_right })}
-              />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-2">
-          <Stepper
-            label="Wdh"
-            hideLabel
-            compact
-            value={s.reps}
-            step={1}
-            min={0}
-            onChange={(reps) => updateSet.mutate({ id: s.id, reps })}
-          />
-          <Stepper
-            label="Gewicht"
-            hideLabel
-            compact
-            suffix="kg"
-            value={s.weight}
-            step={exercise.increment}
-            steps={weightSteps}
-            min={0}
-            onChange={(weight) => updateSet.mutate({ id: s.id, weight })}
-          />
-        </div>
-      )}
-    </div>
-  )
+  return <CompactEditRow set={set} exercise={exercise} />
 }
 
 // ---------------------------------------------------------------------------
-// Neue App: schlanke Zeile wie im Training (CompactSetRow), ohne Abhaken
+// Schlanke Zeile wie im Training (CompactSetRow), ohne Abhaken
 // ---------------------------------------------------------------------------
 
 const fmtInput = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 2, useGrouping: false })

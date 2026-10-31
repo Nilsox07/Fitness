@@ -9,6 +9,7 @@ import { weightChangeFitsGoal } from '../../lib/foodProgress'
 import { trendChange, weightTrend } from '../../lib/weightTrend'
 import { nf, signed, useChartTheme } from '../stats/shared'
 import { SectionTitle } from './ui'
+import { InfoTip } from '../ui/InfoTip'
 
 const ddmm = (date: string) => `${date.slice(8, 10)}.${date.slice(5, 7)}`
 
@@ -120,9 +121,12 @@ export function WeightTrendCard({ style }: { style?: CSSProperties }) {
             </ComposedChart>
           </ResponsiveContainer>
         )}
-        <p className="text-[11px] text-cocoa-muted">
-          Punkte = gewogene Werte, Linie = geglätteter Trend. Gewicht trägst du im Ernährungs-Tag „Heute“ ein.
-        </p>
+        <InfoTip
+          className="text-[11px] text-cocoa-muted"
+          info="Punkte = gewogene Werte, Linie = geglätteter Trend. Gewicht trägst du unter Ernährung ein."
+        >
+          Wie lese ich das?
+        </InfoTip>
       </div>
     </section>
   )

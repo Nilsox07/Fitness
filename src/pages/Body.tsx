@@ -8,6 +8,7 @@ import { CompareSlider } from '../components/body/CompareSlider'
 import { SectionTitle } from '../components/food-progress/ui'
 import { localDate } from '../lib/day'
 import { daysBetween } from '../components/social/format'
+import { InfoTip } from '../components/ui/InfoTip'
 import {
   PHOTO_INTERVAL_DAYS,
   bfCategory,
@@ -88,8 +89,7 @@ export default function Body() {
             </span>
             <h2 className="text-xl font-bold leading-tight">Dein Startfoto</h2>
             <p className="text-sm leading-snug text-bg/75 dark:text-cocoa-light">
-              Ein Foto zum Start – die KI schätzt daraus deinen Körperfettanteil. In ein paar Monaten legst du das
-              nächste daneben und siehst schwarz auf weiß, was sich getan hat.
+              Die KI schätzt deinen Körperfettanteil – später vergleichst du.
             </p>
             <button className="btn-primary w-full gap-2" onClick={() => setFlow(true)}>
               <Camera size={18} /> Startfoto aufnehmen
@@ -290,11 +290,14 @@ export default function Body() {
         </section>
       )}
 
-      <p className="flex items-start gap-2 px-1 text-xs leading-snug text-cocoa-muted">
-        <Lock size={13} className="mt-0.5 shrink-0" />
-        Deine Fotos sind privat und nur für dich sichtbar – auch nicht für Freunde in der Community. Beim Löschen einer
-        Messung wird das Foto endgültig entfernt. Die Schätzung ist ein Richtwert, keine medizinische Messung.
-      </p>
+      <InfoTip
+        className="px-1 text-xs text-cocoa-muted"
+        info="Nur du siehst deine Fotos – auch Freunde nicht. Beim Löschen einer Messung ist das Foto endgültig weg. Die Schätzung ist ein Richtwert, keine medizinische Messung."
+      >
+        <span className="flex items-center gap-1.5">
+          <Lock size={13} className="shrink-0" /> Deine Fotos sind privat
+        </span>
+      </InfoTip>
 
       {flow && <BodyScanFlow settings={settings} weightKg={latestWeight} onClose={() => setFlow(false)} />}
     </div>

@@ -44,9 +44,7 @@ export function HeroCard({
             Leg dein Ziel fest — dann siehst du hier, wie viel heute noch übrig ist.
           </p>
         </div>
-        {totals.kcal > 0 && (
-          <p className="tabular text-xs text-cocoa-muted">Gegessen: {fmtInt(totals.kcal)} kcal</p>
-        )}
+        {totals.kcal > 0 && <p className="tabular text-xs text-cocoa-muted">Gegessen: {fmtInt(totals.kcal)} kcal</p>}
         <button className="btn-primary gap-1.5" onClick={onSetup}>
           <Target size={16} />
           Ziel festlegen
@@ -90,7 +88,7 @@ export function HeroCard({
 
       <div className="relative grid grid-cols-3 gap-3">
         <Macro label="Eiweiß" value={totals.protein} target={targets.protein} bar="bg-brand" successWhenDone />
-        <Macro label="Kohlenhydrate" value={totals.carbs} target={targets.carbs} bar="bg-gold" />
+        <Macro label="Kohlenhydrate" value={totals.carbs} target={targets.carbs} bar="bg-brand/60" />
         <Macro label="Fett" value={totals.fat} target={targets.fat} bar="bg-bg/70 dark:bg-cocoa-light" />
       </div>
 
@@ -101,10 +99,7 @@ export function HeroCard({
           aria-expanded={moreOpen}
         >
           Mehr Nährwerte
-          <ChevronDown
-            size={16}
-            className={`transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`}
-          />
+          <ChevronDown size={16} className={`transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`} />
         </button>
         {moreOpen && (
           <div className="anim-fade tabular mt-2 grid grid-cols-4 gap-2 rounded-xl bg-bg/10 p-2 text-center text-[11px] text-bg/60 dark:bg-white/5 dark:text-cocoa-light">

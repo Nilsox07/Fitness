@@ -35,7 +35,7 @@ export function itemKeys(items: string[]): string[] {
   })
 }
 
-/** Abhak-Schlüssel aller Artikel einer Kategorie (Format wie in der klassischen Ansicht). */
+/** Abhak-Schlüssel aller Artikel einer Kategorie. */
 export function checkKeys(c: ShoppingCat): string[] {
   return itemKeys(c.items).map((k) => `${c.category}|${k}`)
 }

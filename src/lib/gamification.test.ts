@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { achievements, mascotStage, rankForSessions } from './gamification'
+import { achievements, rankForSessions } from './gamification'
 
 describe('rankForSessions', () => {
   it('startet als Frischling und steigt auf', () => {
@@ -10,14 +10,6 @@ describe('rankForSessions', () => {
   it('zeigt Trainings bis zum nächsten Rang', () => {
     expect(rankForSessions(12).toNext).toBe(3) // bis 15
     expect(rankForSessions(600).toNext).toBeNull()
-  })
-})
-
-describe('mascotStage', () => {
-  it('wächst mit der Anzahl Trainings', () => {
-    expect(mascotStage(0).emoji).toBe('🥚')
-    expect(mascotStage(10).emoji).toBe('🐣')
-    expect(mascotStage(250).emoji).toBe('🦾')
   })
 })
 

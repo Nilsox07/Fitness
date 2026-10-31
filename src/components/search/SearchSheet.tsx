@@ -5,6 +5,7 @@ import { usePrefs } from '../../lib/prefs'
 import { useAiStatus } from '../../hooks/useAi'
 import { searchEntries, suggestions, type SearchEntry, type SearchSection } from '../../lib/searchIndex'
 import { openBuddySheet } from '../buddy/BuddySheet'
+import { openOnboarding } from '../onboarding/Onboarding'
 
 export const OPEN_SEARCH_EVENT = 'open-search'
 
@@ -47,6 +48,7 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
   function go(e: SearchEntry) {
     onClose()
     if (e.to === 'buddy') openBuddySheet()
+    else if (e.to === 'intro') openOnboarding()
     else navigate(e.to)
   }
 

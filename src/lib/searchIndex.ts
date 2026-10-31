@@ -8,7 +8,7 @@ export interface SearchEntry {
   label: string
   sub: string
   section: SearchSection
-  /** Ziel-Route; 'buddy' öffnet den Buddy */
+  /** Ziel-Route; 'buddy' öffnet den Buddy, 'intro' das Intro */
   to: string
   keywords: string
   /** nur sichtbar, wenn das Modul an ist */
@@ -50,6 +50,14 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     section: 'Training',
     to: '/plans',
     keywords: 'plan split push pull beine ganzkörper ki plan',
+  },
+  {
+    id: 'intro',
+    label: 'Plan neu erstellen',
+    sub: 'Ziel, Tage & Ausdauer – Buddy fragt kurz nach',
+    section: 'Training',
+    to: 'intro',
+    keywords: 'einrichtung intro neu anfangen ziel trainingsplan cardio ausdauer plan erstellen',
   },
   {
     id: 'rhythm',
@@ -355,14 +363,6 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     section: 'Einstellungen',
     to: '/profile?s=export',
     keywords: 'export csv backup daten herunterladen',
-  },
-  {
-    id: 'version',
-    label: 'App-Version',
-    sub: 'Klassisch oder Neu',
-    section: 'Einstellungen',
-    to: '/profile?s=version',
-    keywords: 'klassisch alte version modus',
   },
 
   // Buddy

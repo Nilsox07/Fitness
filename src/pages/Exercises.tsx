@@ -11,31 +11,17 @@ import {
   PenLine,
   Plus,
   Search,
-  Settings2,
   Sparkles,
-  Trash2,
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react'
-import {
-  useCreateExercise,
-  useDeleteExercise,
-  useExercises,
-  useUpdateExercise,
-  type ExerciseInput,
-} from '../hooks/useExercises'
+import { useCreateExercise, useExercises, useUpdateExercise, type ExerciseInput } from '../hooks/useExercises'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useAiStatus } from '../hooks/useAi'
-import { usePrefs } from '../lib/prefs'
 import { parseEquipmentList, parseNewExercise, type ExerciseDraft } from '../lib/ai'
 import { MicButton } from '../components/MicButton'
 import { Sheet } from '../components/workout/Sheet'
-import {
-  EMPTY_EXERCISE,
-  ExerciseForm,
-  cleanExerciseInput,
-  exerciseToInput,
-} from '../components/ExerciseForm'
+import { EMPTY_EXERCISE, ExerciseForm, cleanExerciseInput } from '../components/ExerciseForm'
 import { ExerciseEmpty, ExerciseListNew } from '../components/exercises/ExerciseListNew'
 import { LibrarySheet } from '../components/library/LibrarySheet'
 import { LibraryBrowser } from '../components/library/LibraryBrowser'
@@ -125,11 +111,9 @@ export default function Exercises() {
   const { data: allSets } = useAllSets()
   const createEx = useCreateExercise()
   const updateEx = useUpdateExercise()
-  const deleteEx = useDeleteExercise()
 
   const { data: ai } = useAiStatus()
-  const { isNew } = usePrefs()
-  const aiOn = Boolean(isNew && ai?.enabled)
+  const aiOn = Boolean(ai?.enabled)
   const [editing, setEditing] = useState<Exercise | null>(null)
   const [form, setForm] = useState<ExerciseInput>(EMPTY_EXERCISE)
   const [open, setOpen] = useState(false)
@@ -145,7 +129,6 @@ export default function Exercises() {
   const [equipDrafts, setEquipDrafts] = useState<ExerciseDraft[] | null>(null)
   const [equipSel, setEquipSel] = useState<Set<number>>(new Set())
 
-  // Neue Liste (nur neue App)
   const [addOpen, setAddOpen] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -154,7 +137,7 @@ export default function Exercises() {
   const [params, setParams] = useSearchParams()
   const tab: 'mine' | 'library' = params.get('view') === 'library' ? 'library' : 'mine'
   const setTab = (t: 'mine' | 'library') => setParams(t === 'library' ? { view: 'library' } : {}, { replace: true })
-  const { list: library } = useLibrary(isNew)
+  const { list: library } = useLibrary()
   const { byExercise: thumbs } = useLibraryLinks(exercises, library)
   const unlinked = useMemo(
     () => (library && exercises ? exercises.filter((e) => !thumbs.has(e.id)) : []),
@@ -269,13 +252,6 @@ export default function Exercises() {
     setOpen(true)
   }
 
-  function startEdit(ex: Exercise) {
-    setEditing(ex)
-    setForm(exerciseToInput(ex))
-    setSaveErr(null)
-    setOpen(true)
-  }
-
   const saving = createEx.isPending || updateEx.isPending
 
   async function save() {
@@ -305,59 +281,34 @@ export default function Exercises() {
 
   return (
     <div className="space-y-4">
-      {isNew ? (
-        <header className="flex items-start justify-between gap-3" style={enter(0)}>
-          <div className="min-w-0">
-            <h1 className="text-3xl font-bold tracking-tight">Übungen</h1>
-            <p className="tabular mt-0.5 truncate text-sm text-cocoa-light">
-              {exercises
-                ? `${exercises.length} ${exercises.length === 1 ? 'Übung' : 'Übungen'} · ${usedGroups.length} ${
-                    usedGroups.length === 1 ? 'Muskelgruppe' : 'Muskelgruppen'
-                  }`
-                : 'Lädt…'}
-            </p>
-          </div>
-          <div className="mt-1 flex shrink-0 gap-2">
-            <button
-              className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-95"
-              onClick={() => navigate('/plans')}
-              aria-label="Trainingspläne"
-            >
-              <ClipboardList size={18} />
-            </button>
-            <button
-              className="grid h-10 w-10 place-items-center rounded-full bg-brand text-on-brand shadow-md shadow-brand/25 transition active:scale-95"
-              onClick={() => setAddOpen(true)}
-              aria-label="Übung hinzufügen"
-            >
-              <Plus size={20} strokeWidth={2.5} />
-            </button>
-          </div>
-        </header>
-      ) : (
-        <header className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Übungen</h1>
-          <div className="flex gap-2">
-            <button
-              className="btn-ghost flex items-center gap-1.5 text-sm"
-              onClick={() => navigate('/plans')}
-              aria-label="Trainingspläne"
-            >
-              <ClipboardList size={16} className="text-cocoa-light" /> Pläne
-            </button>
-            <button
-              className="btn-ghost flex items-center text-base"
-              onClick={() => navigate('/profile')}
-              aria-label="Profil & Einstellungen"
-            >
-              <Settings2 size={18} className="text-cocoa-light" />
-            </button>
-            <button className="btn-primary flex items-center gap-1.5 text-sm" onClick={startNew}>
-              <Plus size={16} /> Neu
-            </button>
-          </div>
-        </header>
-      )}
+      <header className="flex items-start justify-between gap-3" style={enter(0)}>
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold tracking-tight">Übungen</h1>
+          <p className="tabular mt-0.5 truncate text-sm text-cocoa-light">
+            {exercises
+              ? `${exercises.length} ${exercises.length === 1 ? 'Übung' : 'Übungen'} · ${usedGroups.length} ${
+                  usedGroups.length === 1 ? 'Muskelgruppe' : 'Muskelgruppen'
+                }`
+              : 'Lädt…'}
+          </p>
+        </div>
+        <div className="mt-1 flex shrink-0 gap-2">
+          <button
+            className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-95"
+            onClick={() => navigate('/plans')}
+            aria-label="Trainingspläne"
+          >
+            <ClipboardList size={18} />
+          </button>
+          <button
+            className="grid h-10 w-10 place-items-center rounded-full bg-brand text-on-brand shadow-md shadow-brand/25 transition active:scale-95"
+            onClick={() => setAddOpen(true)}
+            aria-label="Übung hinzufügen"
+          >
+            <Plus size={20} strokeWidth={2.5} />
+          </button>
+        </div>
+      </header>
 
       {addOpen && (
         <Sheet title="Übung hinzufügen" onClose={() => setAddOpen(false)}>
@@ -431,9 +382,8 @@ export default function Exercises() {
               <Dumbbell size={18} className="shrink-0 text-cocoa-light" /> Geräte deines Studios importieren
             </h2>
             <p className="text-xs text-cocoa-light">
-              Zähl deine Geräte/Maschinen auf (Text/Sprache) oder fotografiere die Geräteschilder —
-              die KI legt daraus Übungen mit Muskeln an. Für Kabelzug, Multipresse &amp; Co. gibt es
-              mehrere Vorschläge zur Auswahl.
+              Zähl deine Geräte/Maschinen auf (Text/Sprache) oder fotografiere die Geräteschilder — die KI legt daraus
+              Übungen mit Muskeln an. Für Kabelzug, Multipresse &amp; Co. gibt es mehrere Vorschläge zur Auswahl.
             </p>
             <div className="flex gap-2">
               <input
@@ -517,9 +467,7 @@ export default function Exercises() {
                               <span className="block font-medium">{d.name}</span>
                               <span className="block text-xs text-cocoa-light">
                                 {d.muscle_group}
-                                {d.secondary_muscles.length
-                                  ? ` · +${d.secondary_muscles.join(', ')}`
-                                  : ''}
+                                {d.secondary_muscles.length ? ` · +${d.secondary_muscles.join(', ')}` : ''}
                                 {d.unilateral ? ' · einseitig' : ''}
                               </span>
                             </span>
@@ -554,8 +502,8 @@ export default function Exercises() {
               <Mic size={18} className="shrink-0 text-cocoa-light" /> Übung per Sprache anlegen
             </h2>
             <p className="text-xs text-cocoa-light">
-              Beschreib die Übung — Name und, wenn du magst, die Gewichtsstufen der Maschine. Die KI
-              erkennt Muskeln & Leiter automatisch.
+              Beschreib die Übung — Name und, wenn du magst, die Gewichtsstufen der Maschine. Die KI erkennt Muskeln &
+              Leiter automatisch.
             </p>
             <div className="flex gap-2">
               <input
@@ -585,32 +533,28 @@ export default function Exercises() {
         </div>
       )}
 
-      {isLoading && !isNew && <p className="text-cocoa-light">Lädt…</p>}
+      <div className={`${SEG_TRACK} grid-cols-2`} style={enter(1)} role="tablist" aria-label="Ansicht">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'mine'}
+          onClick={() => setTab('mine')}
+          className={segBtn(tab === 'mine')}
+        >
+          Meine Übungen
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'library'}
+          onClick={() => setTab('library')}
+          className={segBtn(tab === 'library')}
+        >
+          Alle Übungen{library ? <span className="tabular font-medium opacity-70"> ({library.length})</span> : null}
+        </button>
+      </div>
 
-      {isNew && (
-        <div className={`${SEG_TRACK} grid-cols-2`} style={enter(1)} role="tablist" aria-label="Ansicht">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'mine'}
-            onClick={() => setTab('mine')}
-            className={segBtn(tab === 'mine')}
-          >
-            Meine Übungen
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'library'}
-            onClick={() => setTab('library')}
-            className={segBtn(tab === 'library')}
-          >
-            Alle Übungen{library ? <span className="tabular font-medium opacity-70"> ({library.length})</span> : null}
-          </button>
-        </div>
-      )}
-
-      {isNew && tab === 'library' ? (
+      {tab === 'library' ? (
         <div style={enter(2)}>
           <LibraryBrowser
             inline
@@ -618,7 +562,7 @@ export default function Exercises() {
             existingAction={{ label: 'Übung öffnen', run: (ex) => navigate(`/exercises/${ex.id}`) }}
           />
         </div>
-      ) : isNew ? (
+      ) : (
         <>
           {exercises && exercises.length < 5 && <StarterSetCard style={enter(1)} tone="brand" />}
           {library && unlinked.length > 0 && (
@@ -686,40 +630,9 @@ export default function Exercises() {
           )}
 
           {autoLinkOpen && library && (
-            <AutoLinkSheet
-              exercises={unlinked}
-              list={library}
-              aiOn={aiOn}
-              onClose={() => setAutoLinkOpen(false)}
-            />
+            <AutoLinkSheet exercises={unlinked} list={library} aiOn={aiOn} onClose={() => setAutoLinkOpen(false)} />
           )}
         </>
-      ) : (
-        <ul className="space-y-2">
-          {exercises?.map((ex) => (
-            <li key={ex.id} className="card flex items-center justify-between">
-              <button className="flex-1 text-left" onClick={() => startEdit(ex)}>
-                <div className="font-semibold">{ex.name}</div>
-                <div className="tabular text-sm text-cocoa-light">
-                  {ex.muscle_group} · Ziel {ex.target_rep_min}–{ex.target_rep_max} Wdh ·
-                  +{ex.increment} kg
-                </div>
-              </button>
-              <button
-                className="ml-2 grid h-8 w-8 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
-                aria-label="Übung löschen"
-                onClick={() => {
-                  if (confirm(`„${ex.name}" inkl. aller Sätze löschen?`)) deleteEx.mutate(ex.id)
-                }}
-              >
-                <Trash2 size={16} />
-              </button>
-            </li>
-          ))}
-          {exercises?.length === 0 && (
-            <li className="text-cocoa-light">Noch keine Übungen. Lege deine erste an.</li>
-          )}
-        </ul>
       )}
 
       {open && (
@@ -736,11 +649,7 @@ export default function Exercises() {
               <button className="btn-ghost flex-1" onClick={closeForm}>
                 Abbrechen
               </button>
-              <button
-                className="btn-primary flex-1"
-                onClick={save}
-                disabled={saving || !form.name.trim()}
-              >
+              <button className="btn-primary flex-1" onClick={save} disabled={saving || !form.name.trim()}>
                 {saving ? 'Speichere…' : 'Speichern'}
               </button>
             </div>

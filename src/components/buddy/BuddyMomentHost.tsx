@@ -18,14 +18,13 @@ import {
 import { BuddyLevelUp } from './BuddyLevelUp'
 import { BUDDY_STAGE_LABELS } from './Buddy'
 
-
 let seq = 0
 
 /** localStorage: zuletzt gefeierte Wachstumsstufe. */
 const SEEN_STAGE_KEY = 'seen_buddy_stage'
 
 /**
- * Einmal in `App.tsx` (neuer Modus) mounten: zeigt Buddy-Momente nacheinander an
+ * Einmal in `App.tsx` mounten: zeigt Buddy-Momente nacheinander an
  * und beobachtet die automatischen Meilensteine (Wochenziel, Entwicklung, Level-up).
  */
 export function BuddyMomentHost() {

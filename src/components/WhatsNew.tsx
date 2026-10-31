@@ -3,13 +3,14 @@ import { Check } from 'lucide-react'
 import { MyBuddy } from './buddy/MyBuddy'
 import { PremiumSheet, SheetHero } from './ui/PremiumSheet'
 import { APP_VERSION, RELEASES, lastSeenVersion, markSeen } from '../lib/whatsnew'
+import { useUserPrefs } from '../hooks/usePrefsSync'
 
 /** Zeigt beim ersten Öffnen nach einem Update die neuen Features. */
 export function WhatsNew() {
-  const [open, setOpen] = useState(() => {
-    const seen = lastSeenVersion()
-    return seen !== APP_VERSION
-  })
+  const { prefs, ready } = useUserPrefs()
+  const [closed, setClosed] = useState(false)
+  // Neue Nutzer sehen erst das Intro (das markiert die Version als gesehen)
+  const open = ready && prefs.onboarded && !closed && lastSeenVersion() !== APP_VERSION
 
   if (!open) return null
   const release = RELEASES.find((r) => r.version === APP_VERSION) ?? RELEASES[0]
@@ -17,7 +18,7 @@ export function WhatsNew() {
 
   function close() {
     markSeen()
-    setOpen(false)
+    setClosed(true)
   }
 
   return (

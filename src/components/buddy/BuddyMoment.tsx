@@ -26,11 +26,11 @@ import { useBuddyLook } from './useBuddy'
  * ```
  *
  * - Ausgelöst wird per `window`-CustomEvent `buddy-moment` (`BUDDY_MOMENT_EVENT`);
- *   angezeigt vom `BuddyMomentHost`, der in `App.tsx` (neuer Modus) einmal gemountet ist.
+ *   angezeigt vom `BuddyMomentHost`, der in `App.tsx` einmal gemountet ist.
  * - Mehrere Momente kurz hintereinander werden nacheinander gezeigt (Warteschlange).
  * - Mit `key` erscheint ein Moment höchstens einmal (gemerkt unter `buddy_moments_seen`).
  * - Rückgabe: `true`, wenn der Moment angenommen wurde; `false`, wenn der Schlüssel schon
- *   gezeigt wurde oder kein Host gemountet ist (z. B. klassischer Modus).
+ *   gezeigt wurde oder kein Host gemountet ist.
  * - Schließen per Tipp, „Weiter", Escape oder automatisch nach `autoDismissMs` (Standard 6 s).
  * - Konfetti (abschaltbar per `confetti: false`) entfällt bei „Bewegung reduzieren".
  */
@@ -213,7 +213,10 @@ export function BuddyMoment({ moment, onClose }: { moment: BuddyMomentOptions; o
           <div className="relative mt-5 flex flex-wrap justify-center gap-2">
             {moment.chips.map((c, i) =>
               typeof c === 'string' ? (
-                <span key={i} className="rounded-full bg-white/10 px-3.5 py-1.5 text-sm font-semibold ring-1 ring-white/15">
+                <span
+                  key={i}
+                  className="rounded-full bg-white/10 px-3.5 py-1.5 text-sm font-semibold ring-1 ring-white/15"
+                >
                   {c}
                 </span>
               ) : (

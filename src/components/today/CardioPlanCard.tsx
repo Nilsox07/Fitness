@@ -42,9 +42,9 @@ export function CardioPlanCard() {
           <span className="block text-[11px] font-semibold uppercase tracking-wider text-cocoa-muted">
             {todays ? 'Ausdauer heute' : `Ausdauer · ${WEEKDAYS[shown.day]}`}
           </span>
-          <span className="flex items-center gap-1.5 text-[17px] font-bold">
-            <span className="truncate">{cardioTitle(shown)}</span>
-            <Info size={14} className="shrink-0 text-cocoa-muted" />
+          <span className="block text-[17px] font-bold leading-tight">{cardioTitle(shown).split(' · ')[0]}</span>
+          <span className="flex items-center gap-1 text-xs text-cocoa-light">
+            {shown.minutes} min <Info size={12} className="shrink-0 text-cocoa-muted" />
           </span>
         </button>
         {todays && (

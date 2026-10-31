@@ -78,11 +78,7 @@ export default function Vitals() {
   return (
     <div className="space-y-5">
       <ProgressHeader title="Fortschritt" subtitle="Herz & Körper · von deiner Uhr" />
-      {daily.length === 0 && (
-        <p className="card text-sm text-cocoa-light">
-          Noch keine Werte. Sobald deine Uhr Daten an Health Connect gibt, erscheinen sie hier.
-        </p>
-      )}
+      {daily.length === 0 && <p className="card text-sm text-cocoa-light">Noch keine Werte von deiner Uhr.</p>}
 
       {(hourly.length > 1 || rhrNow != null) && (
         <Hero overline="Puls · heute" value={td?.hr_avg ?? rhrNow ?? '–'} unit={td?.hr_avg ? 'bpm Ø' : 'bpm Ruhe'}>
@@ -192,9 +188,7 @@ export default function Vitals() {
         </section>
       )}
 
-      <p className="px-1 text-[11px] text-cocoa-muted">
-        Keine medizinische Diagnose. Bei auffälligen Werten oder Beschwerden bitte ärztlich abklären.
-      </p>
+      <p className="px-1 text-[11px] text-cocoa-muted">Keine medizinische Diagnose.</p>
     </div>
   )
 }

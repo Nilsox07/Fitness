@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useMutationState, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CloudOff, Loader2 } from 'lucide-react'
 import { MK } from '../lib/mutationDefaults'
-import { usePrefs } from '../lib/prefs'
 
 /** Nur die Trainings-Schreibvorgänge (Workout/Sätze) zählen — andere Mutationen
  *  (Likes, KI, Kudos …) sollen hier weder Fehler anzeigen noch erneut laufen. */
@@ -25,7 +24,6 @@ const COLLAPSE_MS = 6000
  */
 export function SaveStatus() {
   const qc = useQueryClient()
-  const { isNew } = usePrefs()
   const states = useMutationState({
     filters: { predicate: isTracked },
     select: (m) => ({ status: m.state.status, isPaused: m.state.isPaused }),
@@ -65,84 +63,11 @@ export function SaveStatus() {
     )
   }
 
-  if (isNew) {
-    return <SaveStatusPill failed={failed} paused={paused} expanded={expanded} setExpanded={setExpanded} retry={retry} />
-  }
-
-  const base =
-    'fixed inset-x-0 top-0 z-30 mx-auto flex max-w-md items-center justify-between gap-2 px-4 pb-1.5 pt-[calc(env(safe-area-inset-top)+0.375rem)] text-xs font-medium'
-  // Eingeklappt: kleine Pille UNTER der oberen Leiste (rechts), verdeckt nichts.
-  const pill =
-    'fixed right-4 top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-lg'
-
-  if (failed) {
-    if (!expanded) {
-      return (
-        <button
-          type="button"
-          className={`${pill} bg-red-600 text-white`}
-          onClick={() => setExpanded(true)}
-          role="alert"
-          aria-label="Nicht gespeichert – Details"
-        >
-          <AlertTriangle size={13} className="shrink-0" />
-          Nicht gespeichert
-        </button>
-      )
-    }
-    return (
-      <div className={`${base} bg-red-600 text-white`} role="alert">
-        <span className="flex items-center gap-1.5">
-          <AlertTriangle size={14} className="shrink-0" />
-          Nicht gespeichert – Verbindung prüfen
-        </span>
-        <button
-          type="button"
-          onClick={retry}
-          className="rounded-full bg-white/20 px-2 py-0.5 font-semibold"
-        >
-          Erneut versuchen
-        </button>
-      </div>
-    )
-  }
-
-  if (paused) {
-    if (!expanded) {
-      return (
-        <button
-          type="button"
-          className={`${pill} bg-cocoa text-cream`}
-          onClick={() => setExpanded(true)}
-          aria-label="Offline – Details"
-        >
-          <CloudOff size={13} className="shrink-0" />
-          Offline
-        </button>
-      )
-    }
-    return (
-      <div className={`${base} bg-cocoa text-cream`}>
-        <span className="flex items-center gap-1.5">
-          <CloudOff size={14} className="shrink-0" />
-          Offline – Sätze werden gesendet, sobald wieder Verbindung besteht
-        </span>
-      </div>
-    )
-  }
-
-  return (
-    <div className={`${base} bg-sand text-cocoa-light`}>
-      <span className="flex items-center gap-1.5">
-        <Loader2 size={14} className="shrink-0 animate-spin" />
-        Speichert…
-      </span>
-    </div>
-  )
+  return <SaveStatusPill failed={failed} paused={paused} expanded={expanded} setExpanded={setExpanded} retry={retry} />
 }
 
 /**
- * Neue App: schwebende Pille oben in der Mitte (wie die KI-Anzeige). Fehler/Offline
+ * Schwebende Pille oben in der Mitte (wie die KI-Anzeige). Fehler/Offline
  * zeigen zuerst einen erklärenden Text und klappen dann zur kurzen Pille zusammen.
  */
 function SaveStatusPill({

@@ -15,18 +15,11 @@ import {
 } from 'lucide-react'
 import { usePrefs } from '../lib/prefs'
 import { useExercises } from '../hooks/useExercises'
-import {
-  newId,
-  useAddSet,
-  useAllSets,
-  useCreateWorkout,
-  useDeleteWorkout,
-  useWorkouts,
-} from '../hooks/useWorkouts'
+import { newId, useAddSet, useAllSets, useCreateWorkout, useDeleteWorkout, useWorkouts } from '../hooks/useWorkouts'
 import { FoodDays } from '../components/FoodDays'
 import { dayLabel, trainingDay } from '../lib/day'
 import { EditableSetRow } from '../components/EditableSetRow'
-import { frequencyStats, isPerformed, sessionDates, setVolume, totalVolume } from '../lib/analytics'
+import { frequencyStats, isPerformed, sessionDates, setVolume } from '../lib/analytics'
 import { ProgressHeader, SectionLabel } from '../components/progress/ProgressHeader'
 import { MonthHeatmap } from '../components/progress/MonthHeatmap'
 import {
@@ -40,7 +33,7 @@ import { enter } from '../components/home/motion'
 import type { Exercise, SetWithDate, Workout } from '../types'
 
 export default function History() {
-  const { isNew, world } = usePrefs()
+  const { world } = usePrefs()
   const { data: workouts, isLoading } = useWorkouts()
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
@@ -135,12 +128,7 @@ export default function History() {
               ) : (
                 <div className="tabular text-sm text-cocoa-light">
                   {sorted.map((s, i) => {
-                    const prefix =
-                      s.set_type === 'warmup'
-                        ? 'Aufw. '
-                        : s.set_type === 'drop'
-                          ? 'Drop '
-                          : ''
+                    const prefix = s.set_type === 'warmup' ? 'Aufw. ' : s.set_type === 'drop' ? 'Drop ' : ''
                     const text =
                       s.reps_right != null
                         ? `${prefix}L ${s.reps}×${s.weight} / R ${s.reps_right}×${s.weight_right}kg`
@@ -190,7 +178,7 @@ export default function History() {
     )
   }
 
-  if (isNew && world === 'food') {
+  if (world === 'food') {
     return (
       <div className="space-y-4">
         <FoodDays />
@@ -198,103 +186,29 @@ export default function History() {
     )
   }
 
-  if (isNew) {
-    return (
-      <NewHistory
-        workouts={workouts}
-        allSets={allSets ?? []}
-        exName={exName}
-        isLoading={isLoading}
-        openId={openId}
-        editId={editId}
-        setOpenId={setOpenId}
-        setEditId={setEditId}
-        onDelete={(id) => deleteWorkout.mutate(id)}
-        renderSets={renderSets}
-        backfill={backfill}
-        setBackfill={setBackfill}
-        backfillDate={backfillDate}
-        setBackfillDate={setBackfillDate}
-        startBackfill={startBackfill}
-      />
-    )
-  }
-
-  // Klassischer Modus — unverändert
   return (
-    <div className="space-y-4">
-      <header className="flex items-center gap-2">
-        <h1 className="text-xl font-bold">Verlauf</h1>
-      </header>
-      {isLoading && <p className="text-cocoa-light">Lädt…</p>}
-
-      <ul className="space-y-2">
-        {workouts?.map((w) => {
-          const sets = (allSets ?? []).filter((s) => s.workout_id === w.id)
-          // Für Zähler/Volumen nur ausgeführte Sätze (leere Vorlagen-Sätze mit 0 Wdh nicht)
-          const doneSets = sets.filter(isPerformed)
-          const isOpen = openId === w.id
-          const editing = editId === w.id
-          return (
-            <li key={w.id} className="card">
-              <div className="flex items-center justify-between">
-                <button
-                  className="flex-1 text-left"
-                  onClick={() => {
-                    setOpenId(isOpen ? null : w.id)
-                    if (isOpen) setEditId(null)
-                  }}
-                >
-                  <div className="font-semibold">
-                    {new Date(w.date + 'T00:00:00').toLocaleDateString('de-DE', {
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </div>
-                  <div className="tabular text-sm text-cocoa-light">
-                    {doneSets.length} Sätze · Volumen {Math.round(totalVolume(doneSets))} kg
-                  </div>
-                </button>
-                <button
-                  className="ml-2 grid h-8 w-8 place-items-center rounded-full text-cocoa-muted hover:text-red-500 dark:hover:text-red-400"
-                  aria-label="Training löschen"
-                  onClick={() => {
-                    if (confirm('Dieses Training löschen?')) deleteWorkout.mutate(w.id)
-                  }}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-
-              {isOpen && (
-                <div className="mt-3 space-y-3 border-t border-sand-dark pt-3">
-                  <div className="flex justify-end">
-                    <button
-                      className="btn-ghost flex items-center gap-1.5 text-sm"
-                      onClick={() => setEditId(editing ? null : w.id)}
-                    >
-                      {editing ? <Check size={16} /> : <Pencil size={16} />}
-                      {editing ? 'Fertig' : 'Bearbeiten'}
-                    </button>
-                  </div>
-                  {renderSets(w, sets, editing)}
-                </div>
-              )}
-            </li>
-          )
-        })}
-        {workouts?.length === 0 && (
-          <li className="text-cocoa-light">Noch keine Trainings erfasst.</li>
-        )}
-      </ul>
-    </div>
+    <NewHistory
+      workouts={workouts}
+      allSets={allSets ?? []}
+      exName={exName}
+      isLoading={isLoading}
+      openId={openId}
+      editId={editId}
+      setOpenId={setOpenId}
+      setEditId={setEditId}
+      onDelete={(id) => deleteWorkout.mutate(id)}
+      renderSets={renderSets}
+      backfill={backfill}
+      setBackfill={setBackfill}
+      backfillDate={backfillDate}
+      setBackfillDate={setBackfillDate}
+      startBackfill={startBackfill}
+    />
   )
 }
 
 // ---------------------------------------------------------------------------
-// Neuer Modus: Kalender-Heatmap + Trainings nach Wochen gruppiert
+// Kalender-Heatmap + Trainings nach Wochen gruppiert
 // ---------------------------------------------------------------------------
 
 function NewHistory({
@@ -419,9 +333,7 @@ function NewHistory({
         </div>
       )}
 
-      {volumeByDate.size > 0 && (
-        <MonthHeatmap today={today} volumeByDate={volumeByDate} onPick={pickDay} index={1} />
-      )}
+      {volumeByDate.size > 0 && <MonthHeatmap today={today} volumeByDate={volumeByDate} onPick={pickDay} index={1} />}
 
       {isLoading && <p className="text-cocoa-light">Lädt…</p>}
 
@@ -558,7 +470,10 @@ function WorkoutCard({
       {names.length > 0 && !open && (
         <button className="mt-2.5 flex w-full flex-wrap gap-1.5 text-left" onClick={onToggle} tabIndex={-1}>
           {names.slice(0, 3).map((n, i) => (
-            <span key={i} className="max-w-[60%] truncate rounded-full bg-sand px-2.5 py-0.5 text-[11px] font-medium text-cocoa">
+            <span
+              key={i}
+              className="max-w-[60%] truncate rounded-full bg-sand px-2.5 py-0.5 text-[11px] font-medium text-cocoa"
+            >
               {n}
             </span>
           ))}

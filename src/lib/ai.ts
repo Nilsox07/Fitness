@@ -546,15 +546,6 @@ export async function recipeFromScreenshot(image: string): Promise<ImportedRecip
   return toImported(text, 'Screenshot', null, image)
 }
 
-/** Coach-Chat: beantwortet die letzte Nutzerfrage mit Datenkontext. */
-export async function coachChat(history: ChatMsg[], context: unknown): Promise<string> {
-  const convo = history.map((m) => `${m.role === 'user' ? 'Nutzer' : 'Coach'}: ${m.content}`).join('\n')
-  const prompt =
-    `Trainingsdaten (JSON):\n${JSON.stringify(context)}\n\n` +
-    `Gespräch bisher:\n${convo}\n\nAntworte als Coach auf die letzte Nutzer-Nachricht.`
-  return complete({ system: coachSystem(), prompt, temperature: 0.6 })
-}
-
 // ---------------------------------------------------------------------------
 // Feature: Cheat-Meal-Erkennung (für den Freunde-Alarm)
 // ---------------------------------------------------------------------------
@@ -720,15 +711,6 @@ function toEstimateList(items: Partial<FoodEstimate>[] | undefined): FoodEstimat
   }))
 }
 
-/** Nährwerte aus einem Foto schätzen (image = Data-URL), optional mit Zusatzinfo. */
-export async function estimateFoodFromImage(image: string, hint?: string): Promise<FoodEstimate[]> {
-  const prompt =
-    'Erkenne das Essen auf dem Bild und schätze die Nährwerte der abgebildeten Portion. ' +
-    (hint ? `Zusatzinfo vom Nutzer (Zutaten/Mengen unbedingt berücksichtigen): "${hint}". ` : '') +
-    NUTRITION_FORMAT
-  return toEstimates(await complete({ system: NUTRITION_SYSTEM, prompt, image, json: true, temperature: 0.2 }))
-}
-
 /** Nährwerte aus freier Texteingabe schätzen, z. B. „2 Eier und 80 g Haferflocken". */
 export async function estimateFoodFromText(text: string): Promise<FoodEstimate[]> {
   const prompt = `Beschreibung: "${text}".\n${NUTRITION_FORMAT}`
@@ -775,7 +757,7 @@ export function toMealAnalysis(text: string): MealAnalysis {
 
 /**
  * Mahlzeit aus Foto (image = Data-URL, optional hint) ODER Text analysieren. Wie
- * estimateFoodFromImage/-Text, liefert zusätzlich einen Titel und eine kurze
+ * estimateFoodFromText, liefert zusätzlich einen Titel und eine kurze
  * Einschätzung. `goal` = Klartext-Ziel des Nutzers (z. B. „Abnehmen"), optional.
  */
 export async function analyzeMeal(input: {

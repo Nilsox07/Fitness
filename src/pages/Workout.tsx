@@ -3,7 +3,6 @@ import { endWorkout, touchWorkout } from '../lib/activeWorkout'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
 import { usePlans } from '../hooks/usePlans'
-import { usePrefs } from '../lib/prefs'
 import {
   useAddSet,
   useAddSets,
@@ -15,10 +14,9 @@ import {
   useWorkouts,
   newId,
 } from '../hooks/useWorkouts'
-import { EditableSetRow } from '../components/EditableSetRow'
 import { DailyOverview } from '../components/DailyOverview'
 import { Confetti } from '../components/Confetti'
-import { RestTimer, type RestTimerHandle } from '../components/RestTimer'
+import { type RestTimerHandle } from '../components/RestTimer'
 import { parseLadder, snapToLadder } from '../lib/weights'
 import {
   frequencyStats,
@@ -27,15 +25,13 @@ import {
   sessionDates,
   setBest1RM,
   progressionSuggestion,
-  summarizeSessions,
   totalVolume,
 } from '../lib/analytics'
 import { trainingDay } from '../lib/day'
-import { mascotStage, rankForSessions } from '../lib/gamification'
+import { rankForSessions } from '../lib/gamification'
 import { shareStatCard } from '../lib/statcard'
 import { alternativeExercise, hypeLine, warmupAdvice } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
-import { challengeOfDay, randomExcuse } from '../lib/challenges'
 import { usePostActivity } from '../hooks/useFeed'
 import { useMyProfile } from '../hooks/useSocial'
 import { type Exercise, type PlanWithExercises, type SetType, type SetWithDate, type WorkoutSet } from '../types'
@@ -272,15 +268,6 @@ export default function Workout() {
   const selectedExercise = exercises?.find((e) => e.id === exerciseId)
 
   // Aktiver Plan filtert die Übungsauswahl (kein langes Scrollen).
-  const [planId, setPlanId] = useState('')
-  const activePlan = plans?.find((p) => p.id === planId)
-  const visibleExercises = useMemo<Exercise[]>(() => {
-    if (!exercises) return []
-    if (!activePlan) return exercises
-    return activePlan.exercise_ids
-      .map((id) => exercises.find((e) => e.id === id))
-      .filter((e): e is Exercise => Boolean(e))
-  }, [exercises, activePlan])
 
   // Fehler aus den Schreibvorgängen sichtbar machen (statt still zu scheitern)
   const saveError = (addSet.error || addSets.error || createWorkout.error) as Error | null
@@ -296,18 +283,10 @@ export default function Workout() {
     return progressionSuggestion(selectedExercise, history)
   }, [selectedExercise, history])
 
-  const lastSession = useMemo(() => {
-    const sessions = summarizeSessions(history)
-    return sessions[sessions.length - 1] ?? null
-  }, [history])
-
   const setsForExercise = (workoutSets ?? [])
     .filter((s) => s.exercise_id === exerciseId)
     .sort((a, b) => a.set_number - b.set_number)
   const nextSetNumber = setsForExercise.reduce((max, s) => Math.max(max, s.set_number), 0) + 1
-
-  // Übungen, für die heute schon mind. ein Satz erfasst wurde → Haken in der Auswahl
-  const doneExerciseIds = new Set((workoutSets ?? []).map((s) => s.exercise_id))
 
   // Arbeitsgewicht als Basis für Vorschläge
   const workingBase = suggestion && suggestion.suggestedWeight > 0 ? suggestion.suggestedWeight : 20
@@ -340,14 +319,11 @@ export default function Workout() {
     if (restRef.current?.autoEnabled()) restRef.current.start()
   }
   const { data: ai } = useAiStatus()
-  const { isNew } = usePrefs()
   const postActivity = usePostActivity()
   const { data: myProfile } = useMyProfile()
   const authorName = myProfile?.display_name ?? undefined
   const [hype, setHype] = useState<string | null>(null)
   const [hypeBusy, setHypeBusy] = useState(false)
-  const [showAlts, setShowAlts] = useState(false)
-  const [excuse, setExcuse] = useState<string | null>(null)
   const [altAi, setAltAi] = useState<{ name: string | null; reason: string } | null>(null)
   const [altBusy, setAltBusy] = useState(false)
 
@@ -399,9 +375,8 @@ export default function Workout() {
       exercises: exCount,
       highlight: prName ? `Rekord: ${prName}` : undefined,
       rank: rankForSessions(sessions).title,
-      // Neue App: der Buddy ist ein SVG (im Canvas nicht darstellbar) → neutrales Emoji
-      // statt der alten Küken-/Ei-Stufen. Klassisch bleibt unverändert.
-      mascot: isNew ? (prName ? '🏆' : '💪') : mascotStage(sessions).emoji,
+      // Der Buddy ist ein SVG (im Canvas nicht darstellbar) → neutrales Emoji
+      mascot: prName ? '🏆' : '💪',
     })
   }
 
@@ -409,7 +384,7 @@ export default function Workout() {
     endWorkout()
     // Nur erledigte Sätze zählen; ohne einen einzigen erledigten Satz kein Feed-Post.
     const done = (workoutSets ?? []).filter(isPerformed)
-    if (isNew && done.length) {
+    if (done.length) {
       const key = `feed_workout_${today}`
       let posted = false
       try {
@@ -471,7 +446,6 @@ export default function Workout() {
     }
   }
   useEffect(() => {
-    if (!isNew) return // Rekord-Konfetti & Feed-Post nur im neuen Design
     if (!workoutSets || !allSets || !exercises) return
     const best1RM = setBest1RM
     const prior = new Map<string, number>()
@@ -498,11 +472,11 @@ export default function Workout() {
         })
       }
     }
-  }, [isNew, workoutSets, allSets, exercises, today])
+  }, [workoutSets, allSets, exercises, today])
 
   // Alle heutigen Rekorde (nur Anzeige in der Abschluss-Übersicht; gleiche Regel wie oben).
   const todayPrs = useMemo(() => {
-    if (!isNew || !workoutSets || !allSets || !exercises) return []
+    if (!workoutSets || !allSets || !exercises) return []
     const prior = new Map<string, number>()
     for (const s of onlyWorking(allSets)) {
       if (s.date === today) continue
@@ -525,7 +499,7 @@ export default function Workout() {
       }
     }
     return out
-  }, [isNew, workoutSets, allSets, exercises, today])
+  }, [workoutSets, allSets, exercises, today])
 
   // Bekommt die gewählte Übung einen Aufwärmsatz? (nur wenn ihre Muskelgruppe heute noch kalt ist)
   const willWarmup = selectedExercise
@@ -577,7 +551,7 @@ export default function Workout() {
     !setsForExercise.some((s) => isSetDone(s, selectedExercise.unilateral))
   useEffect(() => {
     const wid = todaysWorkout?.id
-    if (!isNew || !ai?.enabled || !selectedExercise || !wid || !exNotStarted) return
+    if (!ai?.enabled || !selectedExercise || !wid || !exNotStarted) return
     const checked = readWarmupChecked(wid)
     if (checked.has(selectedExercise.id)) return
     checked.add(selectedExercise.id)
@@ -611,7 +585,7 @@ export default function Workout() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNew, ai?.enabled, selectedExercise?.id, exNotStarted, todaysWorkout?.id])
+  }, [ai?.enabled, selectedExercise?.id, exNotStarted, todaysWorkout?.id])
 
   // Übung auswählen → bei leerem Stand automatisch die Standard-Sätze anlegen
   function selectExercise(id: string) {
@@ -624,25 +598,6 @@ export default function Workout() {
     const hist = (allSets ?? []).filter((s) => s.exercise_id === id && s.date !== today)
     const warmed = warmedMuscleGroups(workoutSets ?? [], exercises)
     addSets.mutate(templateInputs(todaysWorkout.id, ex, baseFor(ex, hist), 1, needsWarmup(ex, warmed)))
-  }
-
-  // Ganzen Plan laden: Standard-Sätze für alle noch nicht erfassten Übungen anlegen.
-  function loadPlan(plan: PlanWithExercises) {
-    if (!todaysWorkout || !exercises) return
-    // Bereits heute trainierte Muskelgruppen; wächst mit, während wir den Plan durchgehen,
-    // damit die zweite Übung derselben Gruppe keinen Aufwärmsatz mehr bekommt.
-    const warmed = warmedMuscleGroups(workoutSets ?? [], exercises)
-    const inputs = plan.exercise_ids.flatMap((exId) => {
-      const ex = exercises.find((e) => e.id === exId)
-      if (!ex) return []
-      const already = (workoutSets ?? []).some((s) => s.exercise_id === exId)
-      if (already) return []
-      const hist = (allSets ?? []).filter((s) => s.exercise_id === exId && s.date !== today)
-      const rows = templateInputs(todaysWorkout.id, ex, baseFor(ex, hist), 1, needsWarmup(ex, warmed))
-      warmed.add(ex.muscle_group)
-      return rows
-    })
-    if (inputs.length) addSets.mutate(inputs)
   }
 
   function addTemplate() {
@@ -704,9 +659,8 @@ export default function Workout() {
   }
 
   // ======================================================================
-  // Neues Trainings-Layout (nur Neu-Modus): Übungsleiste statt Dropdown,
-  // kompakte Satzzeilen mit „Vorher" + ✓, supersatz-tauglicher Pausentimer,
-  // feste Aktionsleiste. Der Klassisch-Modus unten bleibt unverändert.
+  // Trainings-Layout: Übungsleiste, kompakte Satzzeilen mit „Vorher" + ✓,
+  // supersatz-tauglicher Pausentimer, feste Aktionsleiste.
   // ======================================================================
   const rest = useRestTimer()
   const [sessionVer, setSessionVer] = useState(0)
@@ -722,7 +676,7 @@ export default function Workout() {
   const [libOpen, setLibOpen] = useState(false)
   const [howToOpen, setHowToOpen] = useState(false)
   const [libAddId, setLibAddId] = useState('')
-  const activeHowTo = useLibraryMatch(selectedExercise, isNew)
+  const activeHowTo = useLibraryMatch(selectedExercise)
   const woId = todaysWorkout?.id ?? ''
 
   const pairs = useMemo<Pair[]>(
@@ -899,7 +853,7 @@ export default function Workout() {
   const handledStartKey = useRef('')
   useEffect(() => {
     const startPlanId = (location.state as { startPlanId?: string } | null)?.startPlanId
-    if (!isNew || !startPlanId || handledStartKey.current === location.key) return
+    if (!startPlanId || handledStartKey.current === location.key) return
     if (!workouts || !plans || (todaysWorkout && !workoutSets)) return // Daten abwarten
     handledStartKey.current = location.key
     navigate('.', { replace: true, state: null })
@@ -912,17 +866,17 @@ export default function Workout() {
       startWorkout()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNew, location.key, location.state, workouts, plans, todaysWorkout, workoutSets])
+  }, [location.key, location.state, workouts, plans, todaysWorkout, workoutSets])
 
   // Beim Öffnen automatisch die erste noch offene Übung wählen.
   useEffect(() => {
-    if (!isNew || exerciseId) return
+    if (exerciseId) return
     const ids = todayExIds.filter((id) => !removingIds.current.has(id))
     if (ids.length === 0) return
     const firstOpen = ids.find((id) => setsOf(id).some((s) => !isSetDone(s, isUni(id))))
     setExerciseId(firstOpen ?? ids[0])
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNew, exerciseId, todayExIds])
+  }, [exerciseId, todayExIds])
 
   const openSets = (workoutSets ?? []).filter((s) => !isSetDone(s, isUni(s.exercise_id)))
   const doneCount = (workoutSets?.length ?? 0) - openSets.length
@@ -967,1129 +921,801 @@ export default function Workout() {
     setSheet(null)
   }
 
-  if (isNew) {
-    const dateLabel = new Date(today + 'T00:00:00').toLocaleDateString('de-DE', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    })
+  const dateLabel = new Date(today + 'T00:00:00').toLocaleDateString('de-DE', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
 
-    // ---- Heute noch kein Training (oder ein leeres, noch nicht begonnenes): Start-Screen ----
-    const emptyToday =
-      !!todaysWorkout &&
-      workoutSets !== undefined &&
-      workoutSets.length === 0 &&
-      !selectedExercise &&
-      !freeStarted &&
-      !pendingPlanId &&
-      sheet === null
-    if (!todaysWorkout || emptyToday) {
-      return (
-        <HomeStart
-          today={today}
-          busy={busy}
-          error={saveError}
-          onStartPlan={(p) =>
-            guarded(() => {
-              if (todaysWorkout) {
-                loadPlanOrdered(p)
-              } else {
-                setPendingPlanId(p.id)
-                startWorkout()
-              }
-            })
-          }
-          onStartFree={() =>
-            guarded(() => {
-              setFreeStarted(true)
-              if (todaysWorkout) setSheet('picker')
-              else startWorkout()
-            })
-          }
-        />
-      )
-    }
-
-    // ---- Laufendes Training ----
-    const hasSets = (workoutSets?.length ?? 0) > 0
-    const active = selectedExercise
-    const activeSets = active ? setsOf(active.id) : []
-    const pair = active ? pairOf(pairs, active.id) : null
-    const curIdx = todayExIds.indexOf(exerciseId)
-    const nextExId = curIdx >= 0 ? todayExIds[curIdx + 1] : undefined
-    const q = pickerQuery.trim().toLowerCase()
-    const pickerList = (exercises ?? [])
-      .filter((e) => (sheet === 'pair' ? e.id !== exerciseId && !pairOf(pairs, e.id) : true))
-      .filter((e) => !q || e.name.toLowerCase().includes(q) || e.muscle_group.toLowerCase().includes(q))
-      .sort((a, b) => a.name.localeCompare(b.name, 'de'))
-    const startMs = hasSets ? Math.min(...workoutSets!.map((s) => Date.parse(s.created_at))) : Date.now()
-    const minutes = Math.round((Date.now() - startMs) / 60000)
-
+  // ---- Heute noch kein Training (oder ein leeres, noch nicht begonnenes): Start-Screen ----
+  const emptyToday =
+    !!todaysWorkout &&
+    workoutSets !== undefined &&
+    workoutSets.length === 0 &&
+    !selectedExercise &&
+    !freeStarted &&
+    !pendingPlanId &&
+    sheet === null
+  if (!todaysWorkout || emptyToday) {
     return (
-      <div className="space-y-3 pb-20">
-        <Confetti show={confetti} onDone={() => setConfetti(false)} />
-        {/* Rekord als schwebender Hinweis oben — verschiebt den Inhalt nicht */}
-        {prName && confetti && (
-          <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+10px)] z-30 mx-auto max-w-md px-4">
-            <div className="flex animate-[pop_0.35s_ease-out] items-center justify-center gap-2 rounded-full bg-gold py-2 pl-2.5 pr-4 text-sm font-bold text-white shadow-lg dark:text-bg">
-              <MyBuddy size={26} mood="proud" animate={false} className="-my-1.5" />
-              Neuer Rekord: {prName}
-            </div>
-          </div>
-        )}
+      <HomeStart
+        today={today}
+        busy={busy}
+        error={saveError}
+        onStartPlan={(p) =>
+          guarded(() => {
+            if (todaysWorkout) {
+              loadPlanOrdered(p)
+            } else {
+              setPendingPlanId(p.id)
+              startWorkout()
+            }
+          })
+        }
+        onStartFree={() =>
+          guarded(() => {
+            setFreeStarted(true)
+            if (todaysWorkout) setSheet('picker')
+            else startWorkout()
+          })
+        }
+      />
+    )
+  }
 
-        <header
-          className="relative overflow-hidden rounded-3xl bg-cocoa p-4 text-cream shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none"
-          style={enter(0)}
-        >
-          {/* dezenter Brand-Schimmer */}
-          <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-brand/30 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-brand/10 blur-3xl" />
-          <div className="relative flex items-center gap-2.5">
-            <MyBuddy size={48} mood={prName && confetti ? 'cheer' : 'focus'} className="-my-1.5 -ml-1 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-2">
-                <h1 className="shrink-0 text-xl font-bold tracking-tight">Heute</h1>
-                {queuePlan && (
-                  <span className="truncate rounded-full bg-cream/10 px-2.5 py-0.5 text-[11px] font-semibold text-cream/85 dark:bg-white/5 dark:text-cocoa">
-                    {queuePlan.name}
-                  </span>
-                )}
-              </div>
-              <p className="truncate text-xs text-cream/60 dark:text-cocoa-light">{dateLabel}</p>
+  // ---- Laufendes Training ----
+  const hasSets = (workoutSets?.length ?? 0) > 0
+  const active = selectedExercise
+  const activeSets = active ? setsOf(active.id) : []
+  const pair = active ? pairOf(pairs, active.id) : null
+  const curIdx = todayExIds.indexOf(exerciseId)
+  const nextExId = curIdx >= 0 ? todayExIds[curIdx + 1] : undefined
+  const q = pickerQuery.trim().toLowerCase()
+  const pickerList = (exercises ?? [])
+    .filter((e) => (sheet === 'pair' ? e.id !== exerciseId && !pairOf(pairs, e.id) : true))
+    .filter((e) => !q || e.name.toLowerCase().includes(q) || e.muscle_group.toLowerCase().includes(q))
+    .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  const startMs = hasSets ? Math.min(...workoutSets!.map((s) => Date.parse(s.created_at))) : Date.now()
+  const minutes = Math.round((Date.now() - startMs) / 60000)
+
+  return (
+    <div className="space-y-3 pb-20">
+      <Confetti show={confetti} onDone={() => setConfetti(false)} />
+      {/* Rekord als schwebender Hinweis oben — verschiebt den Inhalt nicht */}
+      {prName && confetti && (
+        <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+10px)] z-30 mx-auto max-w-md px-4">
+          <div className="flex animate-[pop_0.35s_ease-out] items-center justify-center gap-2 rounded-full bg-gold py-2 pl-2.5 pr-4 text-sm font-bold text-white shadow-lg dark:text-bg">
+            <MyBuddy size={26} mood="proud" animate={false} className="-my-1.5" />
+            Neuer Rekord: {prName}
+          </div>
+        </div>
+      )}
+
+      <header
+        className="relative overflow-hidden rounded-3xl bg-cocoa p-4 text-cream shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none"
+        style={enter(0)}
+      >
+        {/* dezenter Brand-Schimmer */}
+        <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-brand/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-brand/10 blur-3xl" />
+        <div className="relative flex items-center gap-2.5">
+          <MyBuddy size={48} mood={prName && confetti ? 'cheer' : 'focus'} className="-my-1.5 -ml-1 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="shrink-0 text-xl font-bold tracking-tight">Heute</h1>
+              {queuePlan && (
+                <span className="truncate rounded-full bg-cream/10 px-2.5 py-0.5 text-[11px] font-semibold text-cream/85 dark:bg-white/5 dark:text-cocoa">
+                  {queuePlan.name}
+                </span>
+              )}
             </div>
-            {hasSets && (
-              <button
-                className="btn-primary shrink-0 px-4 py-2 text-sm shadow-lg shadow-brand/30"
-                onClick={() => setSheet('finish')}
-              >
-                Beenden
-              </button>
-            )}
+            <p className="truncate text-xs text-cream/60 dark:text-cocoa-light">{dateLabel}</p>
           </div>
           {hasSets && (
-            <>
-              <div className="relative mt-4 grid grid-cols-3 gap-2">
-                {(
-                  [
-                    [<SessionClock key="t" startMs={startMs} />, 'Dauer', Timer],
-                    [
-                      <span key="s" className="tabular">
-                        {doneCount}
-                        <span className="text-sm font-semibold opacity-50">/{workoutSets!.length}</span>
-                      </span>,
-                      'Sätze',
-                      Check,
-                    ],
-                    [
-                      <span key="v" className="tabular">
-                        {Math.round(totalVolume(workoutSets!)).toLocaleString('de-DE')}
-                      </span>,
-                      'kg Volumen',
-                      Dumbbell,
-                    ],
-                  ] as const
-                ).map(([value, label, Icon]) => (
-                  <div key={label} className="min-w-0 rounded-2xl bg-cream/10 px-2.5 py-2 dark:bg-white/5">
-                    <div className="truncate text-lg font-bold leading-tight">{value}</div>
-                    <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-cream/55 dark:text-cocoa-light">
-                      <Icon size={11} strokeWidth={2.5} className="shrink-0" />
-                      <span className="truncate">{label}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="relative mt-3 h-1.5 overflow-hidden rounded-full bg-cream/15 dark:bg-sand-dark/60">
-                <div
-                  className="h-full rounded-full bg-success transition-[width] duration-500 ease-out"
-                  style={{ width: `${Math.round((doneCount / workoutSets!.length) * 100)}%` }}
-                />
-              </div>
-            </>
-          )}
-        </header>
-
-        {saveError && (
-          <div className="flex items-start gap-2 rounded-2xl bg-red-500/10 px-3 py-2.5 text-xs text-red-600 dark:text-red-400">
-            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-            <span>{saveError.message} — wird automatisch erneut gesendet, sobald wieder Verbindung besteht.</span>
-          </div>
-        )}
-
-        {/* Übungsleiste */}
-        {hasSets && (
-          <div
-            className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            style={enter(1)}
-          >
             <button
-              onClick={() => setSheet('picker')}
-              className="flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl border border-dashed border-sand-dark px-3.5 text-cocoa-light transition active:scale-95"
-              aria-label="Übung hinzufügen"
+              className="btn-primary shrink-0 px-4 py-2 text-sm shadow-lg shadow-brand/30"
+              onClick={() => setSheet('finish')}
             >
-              <Plus size={16} strokeWidth={2.5} />
-              <span className="text-[10px] font-semibold">Übung</span>
+              Beenden
             </button>
-            {todayExIds.map((id) => {
-              const ex = exById.get(id)
-              const list = setsOf(id)
-              const d = list.filter((s) => isSetDone(s, isUni(id))).length
-              const complete = list.length > 0 && d === list.length
-              const isActive = id === exerciseId
-              const p = pairOf(pairs, id)
-              return (
-                <Fragment key={id}>
-                  {p && p[1] === id && (
-                    <Link2 size={14} className="-mx-1 shrink-0 self-center text-cocoa-muted" aria-label="Supersatz" />
-                  )}
-                  <button
-                    onClick={() => setExerciseId(id)}
-                    aria-current={isActive ? 'true' : undefined}
-                    className={`flex min-w-[6.5rem] shrink-0 flex-col items-start rounded-2xl px-3 py-2 text-left transition duration-200 active:scale-95 ${
-                      isActive
-                        ? 'bg-cocoa text-cream shadow-md shadow-black/10 dark:shadow-none'
-                        : complete
-                          ? 'bg-success/10 text-cocoa'
-                          : 'bg-cream text-cocoa'
-                    }`}
-                  >
-                    <span className="flex max-w-[9rem] items-center gap-1 truncate text-sm font-semibold">
-                      {complete && <Check size={13} strokeWidth={3} className={isActive ? '' : 'text-success'} />}
-                      <span className="truncate">{ex?.name ?? 'Übung'}</span>
-                    </span>
-                    <span className={`tabular text-[10px] ${isActive ? 'opacity-70' : 'text-cocoa-muted'}`}>
-                      {d}/{list.length} Sätze
-                    </span>
-                    <span
-                      className={`mt-1 h-0.5 w-full overflow-hidden rounded-full ${isActive ? 'bg-cream/20' : 'bg-sand-dark/50'}`}
-                      aria-hidden
-                    >
-                      <span
-                        className="block h-full rounded-full bg-success transition-[width] duration-500"
-                        style={{ width: `${list.length ? Math.round((d / list.length) * 100) : 0}%` }}
-                      />
-                    </span>
-                  </button>
-                </Fragment>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Plan als Vorlage: was noch kommt, ohne die Leiste zu füllen */}
-        {hasSets && queuePlan && remainingPlanIds.length > 0 && (
-          <button
-            onClick={() => setSheet('picker')}
-            className="flex w-full items-center gap-1.5 truncate rounded-full bg-sand/60 px-3 py-1.5 text-left text-xs text-cocoa-light"
-          >
-            <Play size={11} className="shrink-0 fill-brand text-brand" />
-            <span className="truncate">
-              <span className="font-semibold text-cocoa">{queuePlan.name}</span> · noch{' '}
-              {remainingPlanIds.map((id) => exById.get(id)?.name).join(', ')}
-            </span>
-          </button>
-        )}
-
-        {/* Leeres Training: Einstieg */}
-        {!hasSets && !active && (
+          )}
+        </div>
+        {hasSets && (
           <>
-            <DailyOverview />
-            <div className="card space-y-3" style={enter(1)}>
-              <h2 className="text-lg font-bold tracking-tight">Womit startest du?</h2>
-              {plans && plans.length > 0 && (
-                <div className="grid grid-cols-2 gap-2">
-                  {plans.map((p) => (
-                    <button
-                      key={p.id}
-                      className="btn justify-start gap-2 rounded-2xl bg-sand py-3 text-left text-cocoa"
-                      onClick={() => guarded(() => loadPlanOrdered(p))}
-                      disabled={busy}
-                    >
-                      <Play size={14} className="shrink-0 fill-brand text-brand" />
-                      <span className="truncate">{p.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              <button className="btn-primary w-full py-3" onClick={() => setSheet('picker')}>
-                Übung wählen
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Aktive Übung */}
-        {active && (
-          <div className="space-y-3 rounded-3xl bg-cream p-4" style={enter(2)}>
-            {pair && (
-              <div className="grid grid-cols-2 gap-1 rounded-full bg-sand p-1">
-                {pair.map((id, i) => (
-                  <button
-                    key={id}
-                    onClick={() => setExerciseId(id)}
-                    className={`truncate rounded-full px-2.5 py-1 text-xs font-semibold transition-colors duration-200 ${
-                      id === exerciseId ? 'bg-sand-light text-cocoa shadow-sm dark:bg-sand-dark' : 'text-cocoa-light'
-                    }`}
-                  >
-                    A{i + 1} · {exById.get(id)?.name}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                {curIdx >= 0 && todayExIds.length > 1 && (
-                  <p className="tabular text-[11px] font-semibold uppercase tracking-wider text-cocoa-muted">
-                    Übung {curIdx + 1} von {todayExIds.length}
-                  </p>
-                )}
-                <h2 className="truncate text-xl font-bold leading-tight tracking-tight">{active.name}</h2>
-                <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
-                  <MuscleChip muscle={active.muscle_group} size="xs" />
-                  {(active.secondary_muscles ?? []).slice(0, 2).map((m) => (
-                    <span key={m} className="rounded-full bg-sand px-2 py-0.5 text-[10px] font-medium text-cocoa-light">
-                      + {m}
-                    </span>
-                  ))}
-                  {pair && (
-                    <span className="flex items-center gap-1 rounded-full bg-sand px-2.5 py-0.5 text-[11px] font-medium text-cocoa-light">
-                      <Link2 size={11} /> Supersatz
-                    </span>
-                  )}
-                  {activeHowTo && (
-                    <button
-                      className="flex shrink-0 items-center gap-1 rounded-full bg-cocoa px-2.5 py-0.5 text-[11px] font-semibold text-cream active:scale-95"
-                      onClick={() => setHowToOpen(true)}
-                      aria-label="Ausführung anzeigen"
-                    >
-                      <PlayCircle size={12} /> Ausführung
-                    </button>
-                  )}
-                </div>
-              </div>
-              <button
-                className="-mr-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa-light transition active:scale-90"
-                onClick={() => setSheet('menu')}
-                aria-label="Übungs-Optionen"
-              >
-                <MoreHorizontal size={18} />
-              </button>
-            </div>
-            {suggestion && (
-              <button
-                type="button"
-                onClick={() => setTipOpen((o) => !o)}
-                className="flex w-full items-start gap-2 rounded-2xl bg-sand/70 px-3 py-2 text-left text-xs"
-              >
-                <Lightbulb size={14} className="mt-px shrink-0 text-gold" />
-                <span className={`${tipStyles[suggestion.action]} ${tipOpen ? 'block' : 'line-clamp-2'}`}>
-                  {suggestion.reason}
-                </span>
-              </button>
-            )}
-            {activeSets.length > 0 ? (
-              <div className="space-y-1">
-                <SetTableHeader />
-                {activeSets.map((s) => (
-                  <CompactSetRow
-                    key={s.id}
-                    set={s}
-                    exercise={active}
-                    badge={badgeFor(s, activeSets)}
-                    prev={prevFor(active.id, s, activeSets)}
-                    onDone={() => onSetDone(active.id, s)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <button className="btn-primary w-full" onClick={addTemplate} disabled={busy}>
-                Standard-Sätze anlegen
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Feste Aktionsleiste über der Tab-Leiste */}
-        {active && (
-          <div
-            className="fixed inset-x-0 z-10 mx-auto max-w-md px-3"
-            style={{
-              bottom: isNew ? 'calc(82px + env(safe-area-inset-bottom))' : 'calc(62px + env(safe-area-inset-bottom))',
-            }}
-          >
-            <div className="flex items-center gap-2 rounded-3xl bg-cream/95 p-2 shadow-[0_4px_24px_rgb(0_0_0/0.12)] ring-1 ring-sand-dark/40 backdrop-blur">
-              <RestControl timer={rest} exercise={active ? { id: active.id, name: active.name } : undefined} />
-              {rest.left == null && (
-                <>
-                  <button
-                    className="btn flex-1 gap-1 rounded-2xl bg-sand px-2 py-2 text-sm text-cocoa"
-                    onClick={addOne}
-                    disabled={busy}
-                  >
-                    <Plus size={16} /> Satz
-                  </button>
-                  {nextExId || remainingPlanIds[0] ? (
-                    <button
-                      className="btn-primary min-w-0 flex-1 gap-0.5 rounded-2xl px-2 py-2 text-sm"
-                      onClick={() => (nextExId ? setExerciseId(nextExId) : addExerciseToday(remainingPlanIds[0]))}
-                    >
-                      Nächste <ChevronRight size={16} />
-                    </button>
-                  ) : (
-                    <button
-                      className="btn-primary flex-1 gap-1 rounded-2xl px-2 py-2 text-sm"
-                      onClick={() => setSheet('finish')}
-                    >
-                      <Check size={16} strokeWidth={3} /> Fertig
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ---- Sheets ---- */}
-        {sheet === 'menu' && active && (
-          <PremiumSheet
-            title={active.name}
-            subtitle={[active.muscle_group, pair ? 'Supersatz' : null].filter(Boolean).join(' · ')}
-            onClose={() => setSheet(null)}
-            bodyClassName="space-y-3"
-          >
-            {active.notes && (
-              <p className="rounded-2xl bg-sand px-3.5 py-2.5 text-sm leading-snug text-cocoa">{active.notes}</p>
-            )}
-            <div className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream [&>button]:flex [&>button]:min-h-[3.25rem] [&>button]:w-full [&>button]:items-center [&>button]:gap-3 [&>button]:px-4 [&>button]:py-2.5 [&>button]:text-left [&>button]:text-[15px] [&>button]:font-semibold [&>button]:transition-colors [&>button:active]:bg-sand-light">
-              {pair ? (
-                <button
-                  onClick={() => {
-                    unpair(active.id)
-                    setSheet(null)
-                  }}
-                >
-                  <MenuIcon>
-                    <Unlink size={17} />
-                  </MenuIcon>
-                  Supersatz lösen
-                </button>
-              ) : (
-                <button onClick={() => setSheet('pair')}>
-                  <MenuIcon>
-                    <Link2 size={17} />
-                  </MenuIcon>
-                  <span className="flex-1">Als Supersatz kombinieren …</span>
-                  <ChevronRight size={16} className="text-cocoa-muted" />
-                </button>
-              )}
-              <button onClick={() => setSheet('alts')}>
-                <MenuIcon>
-                  <RefreshCw size={17} />
-                </MenuIcon>
-                <span className="flex-1">Gerät besetzt? Alternative</span>
-                <ChevronRight size={16} className="text-cocoa-muted" />
-              </button>
-              <button
-                onClick={() => {
-                  addOne()
-                  setSheet(null)
-                }}
-              >
-                <MenuIcon>
-                  <Plus size={17} />
-                </MenuIcon>
-                Satz hinzufügen
-              </button>
-              {activeSets.length > 0 && (
-                <button
-                  className="text-red-500 dark:text-red-400"
-                  onClick={() => {
-                    if (!confirm(`„${active.name}" aus dem heutigen Training entfernen?`)) return
-                    removeExerciseToday(active.id)
-                  }}
-                >
-                  <MenuIcon danger>
-                    <Trash2 size={17} />
-                  </MenuIcon>
-                  Aus heutigem Training entfernen
-                </button>
-              )}
-            </div>
-          </PremiumSheet>
-        )}
-
-        {(sheet === 'picker' || sheet === 'pair') && (
-          <PremiumSheet
-            title={sheet === 'pair' ? 'Supersatz-Partner wählen' : 'Übung hinzufügen'}
-            subtitle={sheet === 'pair' && active ? `Zusammen mit ${active.name}` : undefined}
-            onClose={() => {
-              setSheet(null)
-              setPickerQuery('')
-            }}
-            bodyClassName="space-y-4"
-          >
-            <div className="relative">
-              <Search
-                size={17}
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-cocoa-muted"
-              />
-              <input
-                className={`${BIG_INPUT} pl-10`}
-                placeholder="Suchen (Name oder Muskel) …"
-                value={pickerQuery}
-                onChange={(e) => setPickerQuery(e.target.value)}
-              />
-            </div>
-            {sheet === 'picker' && queuePlan && remainingPlanIds.length > 0 && !q && (
-              <div>
-                <SheetLabel>Als Nächstes aus „{queuePlan.name}"</SheetLabel>
-                <div className="flex flex-wrap gap-2">
-                  {remainingPlanIds.map((id) => (
-                    <button
-                      key={id}
-                      className="flex items-center gap-1.5 rounded-full bg-cocoa px-3 py-1.5 text-sm font-semibold text-cream transition active:scale-95"
-                      onClick={() => addExerciseToday(id)}
-                    >
-                      <Plus size={13} strokeWidth={2.5} /> {exById.get(id)?.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {sheet === 'picker' && plans && plans.length > 0 && !q && (
-              <div>
-                <SheetLabel>{queuePlan ? 'Anderen Plan als Vorlage' : 'Plan als Vorlage'}</SheetLabel>
-                <div className="flex flex-wrap gap-2">
-                  {plans
-                    .filter((p) => p.id !== queuePlan?.id)
-                    .map((p) => (
-                      <button
-                        key={p.id}
-                        className="flex items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
-                        onClick={() => loadPlanOrdered(p)}
-                      >
-                        <Play size={12} className="fill-brand text-brand" /> {p.name}
-                      </button>
-                    ))}
-                </div>
-              </div>
-            )}
-            {sheet === 'picker' && (
-              <button
-                className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left transition-colors active:bg-sand-light"
-                onClick={() => {
-                  setSheet(null)
-                  setPickerQuery('')
-                  setLibOpen(true)
-                }}
-              >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand text-on-brand">
-                  <BookOpen size={17} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold">Bibliothek</span>
-                  <span className="block truncate text-xs text-cocoa-light">Neue Übung mit Animation & Ausführung</span>
-                </span>
-                <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
-              </button>
-            )}
-            <div>
-              {!q && sheet === 'picker' && <SheetLabel>Alle Übungen</SheetLabel>}
-              <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
-                {pickerList.map((e) => {
-                  const inToday = todayExIds.includes(e.id)
-                  return (
-                    <li key={e.id}>
-                      <button
-                        className="flex min-h-[3.25rem] w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors active:bg-sand-light"
-                        onClick={() => {
-                          if (sheet === 'pair') pairWith(e.id)
-                          else if (inToday) {
-                            setExerciseId(e.id)
-                            setSheet(null)
-                            setPickerQuery('')
-                          } else addExerciseToday(e.id)
-                        }}
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate text-[15px] font-semibold">{e.name}</span>
-                          <span className="block text-xs text-cocoa-light">{e.muscle_group}</span>
-                        </span>
-                        {inToday ? (
-                          <span className="flex shrink-0 items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
-                            <Check size={12} strokeWidth={3} /> heute
-                          </span>
-                        ) : (
-                          <Plus size={16} className="shrink-0 text-cocoa-muted" />
-                        )}
-                      </button>
-                    </li>
-                  )
-                })}
-                {pickerList.length === 0 && (
-                  <li className="px-4 py-3 text-sm text-cocoa-light">
-                    {sheet === 'picker' && q
-                      ? 'Keine eigene Übung gefunden.'
-                      : 'Keine Übung gefunden. Neue Übungen legst du im Tab „Übungen" an.'}
-                  </li>
-                )}
-              </ul>
-            </div>
-            {sheet === 'picker' && q && (
-              <LibraryResults
-                query={pickerQuery}
-                onPicked={(ex) => {
-                  setSheet(null)
-                  setPickerQuery('')
-                  setLibAddId(ex.id)
-                }}
-              />
-            )}
-          </PremiumSheet>
-        )}
-
-        {libOpen && (
-          <LibrarySheet
-            onClose={() => setLibOpen(false)}
-            onAdded={(ex) => {
-              setLibOpen(false)
-              setLibAddId(ex.id)
-            }}
-            existingAction={{
-              label: 'Zum Training hinzufügen',
-              run: (ex) => {
-                setLibOpen(false)
-                if (todayExIds.includes(ex.id)) setExerciseId(ex.id)
-                else addExerciseToday(ex.id)
-              },
-            }}
-          />
-        )}
-
-        {howToOpen && active && activeHowTo && (
-          <PremiumSheet
-            title={active.name}
-            subtitle="Ausführung"
-            onClose={() => setHowToOpen(false)}
-            bodyClassName="space-y-3"
-          >
-            <ExerciseHowTo item={activeHowTo} />
-          </PremiumSheet>
-        )}
-
-        {sheet === 'alts' && active && (
-          <PremiumSheet
-            title="Alternative Übung"
-            subtitle={`Statt ${active.name} · ${active.muscle_group}`}
-            onClose={() => {
-              setSheet(null)
-              setAltAi(null)
-            }}
-            bodyClassName="space-y-3"
-          >
-            {alternatives.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {alternatives.map((a) => (
-                  <button
-                    key={a.id}
-                    className="rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
-                    onClick={() => addExerciseToday(a.id)}
-                  >
-                    {a.name}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-cocoa-light">Keine eigene Übung mit gleicher Muskelgruppe.</p>
-            )}
-            {ai?.enabled && (
-              <button
-                className="btn w-full gap-2 rounded-2xl bg-sand py-3 text-cocoa"
-                onClick={findAltAi}
-                disabled={altBusy}
-              >
-                <Sparkles size={16} className="text-brand" />
-                {altBusy ? 'Suche …' : 'Beste Alternative finden'}
-              </button>
-            )}
-            {altAi &&
-              (altAi.name ? (
-                <button
-                  className="anim-fade w-full rounded-2xl bg-brand/10 p-3.5 text-left text-sm"
-                  onClick={() => {
-                    const ex = exercises?.find((e) => e.name === altAi.name)
-                    if (ex) addExerciseToday(ex.id)
-                    setAltAi(null)
-                  }}
-                >
-                  <span className="flex items-center gap-1 font-semibold text-cocoa">
-                    <Sparkles size={14} className="text-brand" />
-                    {altAi.name} <ChevronRight size={15} className="ml-auto text-cocoa-muted" />
-                  </span>
-                  <span className="mt-0.5 block text-cocoa-light">{altAi.reason}</span>
-                </button>
-              ) : (
-                <p className="text-sm text-cocoa-light">{altAi.reason || 'Keine passende Alternative gefunden.'}</p>
-              ))}
-          </PremiumSheet>
-        )}
-
-        {sheet === 'finish' && (
-          <PremiumSheet
-            title="Training beenden"
-            onClose={() => setSheet(null)}
-            bodyClassName="space-y-4"
-            hero={
-              <SheetHero
-                art={<MyBuddy size={120} mood={prName ? 'proud' : doneCount > 0 ? 'cheer' : 'happy'} />}
-                title={doneCount > 0 ? 'Training geschafft!' : 'Training beenden?'}
-                subtitle={
-                  prName
-                    ? 'Neuer Rekord – ich bin so stolz auf dich!'
-                    : doneCount > 0
-                      ? 'Geschafft! Das war richtig stark.'
-                      : 'Noch kein Satz abgehakt – weiter geht’s?'
-                }
-              />
-            }
-            footer={
-              <>
-                <button
-                  className="btn-primary w-full gap-2 py-3.5 text-base shadow-lg shadow-brand/30"
-                  onClick={finishNew}
-                >
-                  <Check size={18} strokeWidth={3} />
-                  Speichern & zum Verlauf
-                </button>
-                <button
-                  className="w-full py-1.5 text-center text-sm font-semibold text-cocoa-light"
-                  onClick={() => setSheet(null)}
-                >
-                  Weiter trainieren
-                </button>
-              </>
-            }
-          >
-            <div className="grid grid-cols-2 gap-2">
+            <div className="relative mt-4 grid grid-cols-3 gap-2">
               {(
                 [
-                  [minutes > 0 && minutes < 300 ? String(minutes) : '–', 'Minuten', Timer],
-                  [String(doneCount), doneCount === 1 ? 'Satz' : 'Sätze', Check],
-                  [Math.round(totalVolume(workoutSets ?? [])).toLocaleString('de-DE'), 'kg Volumen', Dumbbell],
+                  [<SessionClock key="t" startMs={startMs} />, 'Dauer', Timer],
                   [
-                    String(
-                      new Set(
-                        (workoutSets ?? []).filter((s) => isSetDone(s, isUni(s.exercise_id))).map((s) => s.exercise_id),
-                      ).size,
-                    ),
-                    'Übungen',
-                    ListChecks,
+                    <span key="s" className="tabular">
+                      {doneCount}
+                      <span className="text-sm font-semibold opacity-50">/{workoutSets!.length}</span>
+                    </span>,
+                    'Sätze',
+                    Check,
+                  ],
+                  [
+                    <span key="v" className="tabular">
+                      {Math.round(totalVolume(workoutSets!)).toLocaleString('de-DE')}
+                    </span>,
+                    'kg Volumen',
+                    Dumbbell,
                   ],
                 ] as const
               ).map(([value, label, Icon]) => (
-                <div key={label} className="rounded-2xl bg-cream px-4 py-3">
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-cocoa-muted">
-                    <Icon size={13} strokeWidth={2.5} className="text-brand" />
-                    {label}
+                <div key={label} className="min-w-0 rounded-2xl bg-cream/10 px-2.5 py-2 dark:bg-white/5">
+                  <div className="truncate text-lg font-bold leading-tight">{value}</div>
+                  <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-cream/55 dark:text-cocoa-light">
+                    <Icon size={11} strokeWidth={2.5} className="shrink-0" />
+                    <span className="truncate">{label}</span>
                   </div>
-                  <div className="tabular mt-0.5 text-3xl font-bold tracking-tight text-cocoa">{value}</div>
                 </div>
               ))}
             </div>
-
-            {(todayPrs.length > 0 || prName) && (
-              <div className="overflow-hidden rounded-2xl bg-gold/10 ring-1 ring-gold/30">
-                <div className="flex items-center gap-2 px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-gold">
-                  <Trophy size={14} strokeWidth={2.5} />
-                  {todayPrs.length > 1 ? `${todayPrs.length} neue Rekorde` : 'Neuer Rekord'}
-                </div>
-                <ul className="divide-y divide-gold/15">
-                  {(todayPrs.length ? todayPrs : [{ id: 'pr', name: prName ?? '', e1: 0, gain: 0 }]).map((p) => (
-                    <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                      <span className="min-w-0 truncate font-semibold text-cocoa">{p.name}</span>
-                      {p.e1 > 0 && (
-                        <span className="tabular shrink-0 text-sm font-bold text-gold">
-                          ~{Math.round(p.e1)} kg
-                          <span className="ml-1 text-xs font-semibold opacity-70">
-                            +{Math.max(1, Math.round(p.gain))}
-                          </span>
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-                <p className="px-4 pb-3 text-[11px] text-cocoa-light">Geschätztes Maximum (1RM)</p>
-              </div>
-            )}
-
-            {openSets.length > 0 && (
-              <button
-                className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left text-sm font-medium"
-                onClick={() => setDropOpenSets((v) => !v)}
-                role="checkbox"
-                aria-checked={dropOpenSets}
-              >
-                <span
-                  className={`grid h-5 w-5 shrink-0 place-items-center rounded-md transition-colors ${
-                    dropOpenSets ? 'bg-cocoa text-cream' : 'bg-sand ring-1 ring-sand-dark'
-                  }`}
-                >
-                  {dropOpenSets && <Check size={13} strokeWidth={3} />}
-                </span>
-                <span className="tabular">{openSets.length} nicht abgehakte Sätze entfernen</span>
-              </button>
-            )}
-            {hype && (
-              <p className="anim-fade rounded-2xl bg-brand/10 px-4 py-3 text-center text-sm font-semibold text-cocoa">
-                {hype}
-              </p>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              {ai?.enabled && (
-                <button
-                  className="btn gap-1.5 rounded-2xl bg-sand py-3 text-sm text-cocoa"
-                  onClick={makeHype}
-                  disabled={hypeBusy}
-                >
-                  <Flame size={16} className="text-brand" /> {hypeBusy ? '…' : 'Spruch'}
-                </button>
-              )}
-              <button
-                className={`btn gap-1.5 rounded-2xl bg-sand py-3 text-sm text-cocoa ${ai?.enabled ? '' : 'col-span-2'}`}
-                onClick={shareToday}
-              >
-                <Share2 size={16} /> Teilen
-              </button>
+            <div className="relative mt-3 h-1.5 overflow-hidden rounded-full bg-cream/15 dark:bg-sand-dark/60">
+              <div
+                className="h-full rounded-full bg-success transition-[width] duration-500 ease-out"
+                style={{ width: `${Math.round((doneCount / workoutSets!.length) * 100)}%` }}
+              />
             </div>
-          </PremiumSheet>
-        )}
-      </div>
-    )
-  }
-
-  if (!todaysWorkout) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-xl font-bold">Training</h1>
-        {isNew && <DailyOverview />}
-        <div className="card space-y-3 text-center">
-          <p className="text-cocoa">Heute noch kein Training erfasst.</p>
-          <button className="btn-primary w-full" onClick={() => guarded(startWorkout)} disabled={busy}>
-            Training starten
-          </button>
-          {saveError && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {saveError.message}</p>}
-          {isNew && (
-            <button
-              className="w-full text-center text-xs text-cocoa-muted underline"
-              onClick={() => setExcuse(randomExcuse())}
-            >
-              Keine Lust? Ausrede generieren 😅
-            </button>
-          )}
-          {isNew && excuse && <p className="text-sm italic text-cocoa-light">„{excuse}"</p>}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      {isNew && <Confetti show={confetti} onDone={() => setConfetti(false)} />}
-      <RestTimer ref={restRef} />
-      {isNew && prName && confetti && (
-        <div className="rounded-xl bg-gradient-to-r from-gold to-brand p-3 text-center font-bold text-white shadow-lg">
-          🎉 Neuer Rekord bei {prName}!
-        </div>
-      )}
-      <header className="space-y-3">
-        <div>
-          <h1 className="text-xl font-bold">Heute</h1>
-          <p className="text-sm text-cocoa-light">
-            {new Date(today + 'T00:00:00').toLocaleDateString('de-DE', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-            })}
-          </p>
-        </div>
-        {workoutSets && workoutSets.length > 0 && (
-          <div className="grid grid-cols-3 gap-2">
-            <div className="card py-2 text-center">
-              <div className="text-lg font-bold text-cocoa">{workoutSets.length}</div>
-              <div className="text-[11px] text-cocoa-light">Sätze</div>
-            </div>
-            <div className="card py-2 text-center">
-              <div className="text-lg font-bold text-cocoa">{new Set(workoutSets.map((s) => s.exercise_id)).size}</div>
-              <div className="text-[11px] text-cocoa-light">Übungen</div>
-            </div>
-            <div className="card py-2 text-center">
-              <div className="text-lg font-bold text-cocoa">{Math.round(totalVolume(workoutSets))}</div>
-              <div className="text-[11px] text-cocoa-light">kg Volumen</div>
-            </div>
-          </div>
+          </>
         )}
       </header>
 
-      {isNew && <DailyOverview />}
-
-      {isNew && (
-        <div className="rounded-xl bg-brand/10 p-2.5 text-sm text-cocoa ring-1 ring-brand/25">
-          <span className="font-semibold">Challenge des Tages: </span>
-          {challengeOfDay()}
-        </div>
-      )}
-
       {saveError && (
-        <div className="card border border-red-400 text-sm text-red-500 dark:text-red-400">
-          ⚠️ Konnte nicht speichern: {saveError.message}
-          <div className="mt-1 text-xs text-cocoa-light">
-            Deine Eingaben sind zwischengespeichert und werden automatisch erneut gesendet, sobald wieder Verbindung
-            besteht.
-          </div>
+        <div className="flex items-start gap-2 rounded-2xl bg-red-500/10 px-3 py-2.5 text-xs text-red-600 dark:text-red-400">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+          <span>{saveError.message} — wird automatisch erneut gesendet, sobald wieder Verbindung besteht.</span>
         </div>
       )}
 
-      {plans && plans.length > 0 && (
-        <div className="card space-y-2">
-          <label className="label">Plan</label>
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            <button
-              className={`shrink-0 rounded-full px-3 py-1.5 text-sm ring-1 ${
-                planId === '' ? 'bg-ruby text-white ring-ruby' : 'bg-sand-light text-cocoa ring-sand-dark'
-              }`}
-              onClick={() => setPlanId('')}
-            >
-              Alle
-            </button>
-            {plans.map((p) => (
-              <button
-                key={p.id}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-sm ring-1 ${
-                  planId === p.id ? 'bg-ruby text-white ring-ruby' : 'bg-sand-light text-cocoa ring-sand-dark'
-                }`}
-                onClick={() => setPlanId(planId === p.id ? '' : p.id)}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-          {activePlan && activePlan.exercise_ids.length > 0 && (
-            <button
-              className="btn-ghost w-full text-sm"
-              onClick={() => guarded(() => loadPlan(activePlan))}
-              disabled={busy}
-            >
-              ⬇️ Ganzen Plan laden ({activePlan.exercise_ids.length} Übungen)
-            </button>
-          )}
+      {/* Übungsleiste */}
+      {hasSets && (
+        <div
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={enter(1)}
+        >
+          <button
+            onClick={() => setSheet('picker')}
+            className="flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl border border-dashed border-sand-dark px-3.5 text-cocoa-light transition active:scale-95"
+            aria-label="Übung hinzufügen"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            <span className="text-[10px] font-semibold">Übung</span>
+          </button>
+          {todayExIds.map((id) => {
+            const ex = exById.get(id)
+            const list = setsOf(id)
+            const d = list.filter((s) => isSetDone(s, isUni(id))).length
+            const complete = list.length > 0 && d === list.length
+            const isActive = id === exerciseId
+            const p = pairOf(pairs, id)
+            return (
+              <Fragment key={id}>
+                {p && p[1] === id && (
+                  <Link2 size={14} className="-mx-1 shrink-0 self-center text-cocoa-muted" aria-label="Supersatz" />
+                )}
+                <button
+                  onClick={() => setExerciseId(id)}
+                  aria-current={isActive ? 'true' : undefined}
+                  className={`flex min-w-[6.5rem] shrink-0 flex-col items-start rounded-2xl px-3 py-2 text-left transition duration-200 active:scale-95 ${
+                    isActive
+                      ? 'bg-cocoa text-cream shadow-md shadow-black/10 dark:shadow-none'
+                      : complete
+                        ? 'bg-success/10 text-cocoa'
+                        : 'bg-cream text-cocoa'
+                  }`}
+                >
+                  <span className="flex max-w-[9rem] items-center gap-1 truncate text-sm font-semibold">
+                    {complete && <Check size={13} strokeWidth={3} className={isActive ? '' : 'text-success'} />}
+                    <span className="truncate">{ex?.name ?? 'Übung'}</span>
+                  </span>
+                  <span className={`tabular text-[10px] ${isActive ? 'opacity-70' : 'text-cocoa-muted'}`}>
+                    {d}/{list.length} Sätze
+                  </span>
+                  <span
+                    className={`mt-1 h-0.5 w-full overflow-hidden rounded-full ${isActive ? 'bg-cream/20' : 'bg-sand-dark/50'}`}
+                    aria-hidden
+                  >
+                    <span
+                      className="block h-full rounded-full bg-success transition-[width] duration-500"
+                      style={{ width: `${list.length ? Math.round((d / list.length) * 100) : 0}%` }}
+                    />
+                  </span>
+                </button>
+              </Fragment>
+            )
+          })}
         </div>
       )}
 
-      <div className="card space-y-3">
-        <div>
-          <label className="label">Übung</label>
-          <select className="input" value={exerciseId} onChange={(e) => selectExercise(e.target.value)}>
-            <option value="">— wählen —</option>
-            {visibleExercises.map((ex) => (
-              <option key={ex.id} value={ex.id}>
-                {doneExerciseIds.has(ex.id) ? '✓ ' : ''}
-                {ex.name}
-              </option>
-            ))}
-          </select>
-          {exercises?.length === 0 && (
-            <p className="mt-1 text-sm text-gold">Lege zuerst unter „Übungen" eine Übung an.</p>
-          )}
-          {activePlan && visibleExercises.length === 0 && (
-            <p className="mt-1 text-sm text-cocoa-muted">
-              Dieser Plan hat noch keine Übungen. Füge sie im Tab „Pläne" hinzu.
-            </p>
-          )}
-        </div>
+      {/* Plan als Vorlage: was noch kommt, ohne die Leiste zu füllen */}
+      {hasSets && queuePlan && remainingPlanIds.length > 0 && (
+        <button
+          onClick={() => setSheet('picker')}
+          className="flex w-full items-center gap-1.5 truncate rounded-full bg-sand/60 px-3 py-1.5 text-left text-xs text-cocoa-light"
+        >
+          <Play size={11} className="shrink-0 fill-brand text-brand" />
+          <span className="truncate">
+            <span className="font-semibold text-cocoa">{queuePlan.name}</span> · noch{' '}
+            {remainingPlanIds.map((id) => exById.get(id)?.name).join(', ')}
+          </span>
+        </button>
+      )}
 
-        {selectedExercise && (
-          <>
-            {selectedExercise.notes && (
-              <div className="rounded-xl bg-sand p-2.5 text-sm text-cocoa ring-1 ring-sand-dark">
-                {selectedExercise.notes}
-              </div>
-            )}
-
-            {isNew && (alternatives.length > 0 || ai?.enabled) && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  {alternatives.length > 0 && (
-                    <button className="text-xs font-medium text-brand" onClick={() => setShowAlts((s) => !s)}>
-                      🔄 Gerät besetzt? Alternative ({alternatives.length})
-                    </button>
-                  )}
-                  {ai?.enabled && (
-                    <button
-                      className="text-xs font-medium text-brand disabled:opacity-40"
-                      onClick={findAltAi}
-                      disabled={altBusy}
-                    >
-                      {altBusy ? '… suche' : '🤖 Beste Alternative'}
-                    </button>
-                  )}
-                </div>
-                {showAlts && alternatives.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {alternatives.map((a) => (
-                      <button
-                        key={a.id}
-                        onClick={() => {
-                          selectExercise(a.id)
-                          setShowAlts(false)
-                        }}
-                        className="rounded-full bg-sand-light px-2.5 py-1 text-xs ring-1 ring-sand-dark"
-                      >
-                        {a.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {altAi && (
-                  <div className="rounded-lg bg-sand p-2 text-xs ring-1 ring-sand-dark">
-                    {altAi.name ? (
-                      <>
-                        <button
-                          className="font-semibold text-brand"
-                          onClick={() => {
-                            const ex = exercises?.find((e) => e.name === altAi.name)
-                            if (ex) selectExercise(ex.id)
-                            setAltAi(null)
-                          }}
-                        >
-                          → {altAi.name} wählen
-                        </button>
-                        <div className="mt-0.5 text-cocoa-light">{altAi.reason}</div>
-                      </>
-                    ) : (
-                      <span className="text-cocoa-light">{altAi.reason || 'Keine passende Alternative gefunden.'}</span>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-            {suggestion && (
-              <div className="rounded-xl bg-sand/50 p-3 text-sm ring-1 ring-sand-dark">
-                <span className="font-semibold">💡 Tipp: </span>
-                <span className={tipStyles[suggestion.action]}>{suggestion.reason}</span>
-                {lastSession && (
-                  <div className="mt-1 text-xs text-cocoa-muted">
-                    Letztes Training ({new Date(lastSession.date + 'T00:00:00').toLocaleDateString('de-DE')}):{' '}
-                    {lastSession.sets.map((s) => `${s.reps}×${s.weight}kg`).join(', ')}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Editierbare Satz-Zeilen */}
-            {setsForExercise.length > 0 && (
-              <div className="space-y-2">
-                {setsForExercise.map((s) => (
-                  <EditableSetRow key={s.id} set={s} exercise={selectedExercise} />
+      {/* Leeres Training: Einstieg */}
+      {!hasSets && !active && (
+        <>
+          <DailyOverview />
+          <div className="card space-y-3" style={enter(1)}>
+            <h2 className="text-lg font-bold tracking-tight">Womit startest du?</h2>
+            {plans && plans.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {plans.map((p) => (
+                  <button
+                    key={p.id}
+                    className="btn justify-start gap-2 rounded-2xl bg-sand py-3 text-left text-cocoa"
+                    onClick={() => guarded(() => loadPlanOrdered(p))}
+                    disabled={busy}
+                  >
+                    <Play size={14} className="shrink-0 fill-brand text-brand" />
+                    <span className="truncate">{p.name}</span>
+                  </button>
                 ))}
               </div>
             )}
+            <button className="btn-primary w-full py-3" onClick={() => setSheet('picker')}>
+              Übung wählen
+            </button>
+          </div>
+        </>
+      )}
 
-            {/* Aktionen */}
-            {setsForExercise.length === 0 ? (
-              <div className="space-y-2">
-                <button className="btn-primary w-full" onClick={addTemplate} disabled={busy}>
-                  Standard-Sätze anlegen
+      {/* Aktive Übung */}
+      {active && (
+        <div className="space-y-3 rounded-3xl bg-cream p-4" style={enter(2)}>
+          {pair && (
+            <div className="grid grid-cols-2 gap-1 rounded-full bg-sand p-1">
+              {pair.map((id, i) => (
+                <button
+                  key={id}
+                  onClick={() => setExerciseId(id)}
+                  className={`truncate rounded-full px-2.5 py-1 text-xs font-semibold transition-colors duration-200 ${
+                    id === exerciseId ? 'bg-sand-light text-cocoa shadow-sm dark:bg-sand-dark' : 'text-cocoa-light'
+                  }`}
+                >
+                  A{i + 1} · {exById.get(id)?.name}
                 </button>
-                <p className="text-center text-xs text-cocoa-muted">
-                  {willWarmup
-                    ? '1 Aufwärmen · 2 Arbeitssätze · 1 Dropsatz'
-                    : '2 Arbeitssätze · 1 Dropsatz (Muskel schon warm → kein Aufwärmsatz)'}{' '}
-                  — danach nur noch Gewicht/Wdh anpassen
+              ))}
+            </div>
+          )}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              {curIdx >= 0 && todayExIds.length > 1 && (
+                <p className="tabular text-[11px] font-semibold uppercase tracking-wider text-cocoa-muted">
+                  Übung {curIdx + 1} von {todayExIds.length}
                 </p>
-                <button className="btn-ghost w-full" onClick={addOne} disabled={busy}>
-                  + Einzelnen Satz
-                </button>
+              )}
+              <h2 className="truncate text-xl font-bold leading-tight tracking-tight">{active.name}</h2>
+              <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                <MuscleChip muscle={active.muscle_group} size="xs" />
+                {(active.secondary_muscles ?? []).slice(0, 2).map((m) => (
+                  <span key={m} className="rounded-full bg-sand px-2 py-0.5 text-[10px] font-medium text-cocoa-light">
+                    + {m}
+                  </span>
+                ))}
+                {pair && (
+                  <span className="flex items-center gap-1 rounded-full bg-sand px-2.5 py-0.5 text-[11px] font-medium text-cocoa-light">
+                    <Link2 size={11} /> Supersatz
+                  </span>
+                )}
+                {activeHowTo && (
+                  <button
+                    className="flex shrink-0 items-center gap-1 rounded-full bg-cocoa px-2.5 py-0.5 text-[11px] font-semibold text-cream active:scale-95"
+                    onClick={() => setHowToOpen(true)}
+                    aria-label="Ausführung anzeigen"
+                  >
+                    <PlayCircle size={12} /> Ausführung
+                  </button>
+                )}
               </div>
+            </div>
+            <button
+              className="-mr-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand text-cocoa-light transition active:scale-90"
+              onClick={() => setSheet('menu')}
+              aria-label="Übungs-Optionen"
+            >
+              <MoreHorizontal size={18} />
+            </button>
+          </div>
+          {suggestion && (
+            <button
+              type="button"
+              onClick={() => setTipOpen((o) => !o)}
+              className="flex w-full items-start gap-2 rounded-2xl bg-sand/70 px-3 py-2 text-left text-xs"
+            >
+              <Lightbulb size={14} className="mt-px shrink-0 text-gold" />
+              <span className={`${tipStyles[suggestion.action]} ${tipOpen ? 'block' : 'line-clamp-2'}`}>
+                {suggestion.reason}
+              </span>
+            </button>
+          )}
+          {activeSets.length > 0 ? (
+            <div className="space-y-1">
+              <SetTableHeader />
+              {activeSets.map((s) => (
+                <CompactSetRow
+                  key={s.id}
+                  set={s}
+                  exercise={active}
+                  badge={badgeFor(s, activeSets)}
+                  prev={prevFor(active.id, s, activeSets)}
+                  onDone={() => onSetDone(active.id, s)}
+                />
+              ))}
+            </div>
+          ) : (
+            <button className="btn-primary w-full" onClick={addTemplate} disabled={busy}>
+              Standard-Sätze anlegen
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Feste Aktionsleiste über der Tab-Leiste */}
+      {active && (
+        <div
+          className="fixed inset-x-0 z-10 mx-auto max-w-md px-3"
+          style={{
+            bottom: 'calc(82px + env(safe-area-inset-bottom))',
+          }}
+        >
+          <div className="flex items-center gap-2 rounded-3xl bg-cream/95 p-2 shadow-[0_4px_24px_rgb(0_0_0/0.12)] ring-1 ring-sand-dark/40 backdrop-blur">
+            <RestControl timer={rest} exercise={active ? { id: active.id, name: active.name } : undefined} />
+            {rest.left == null && (
+              <>
+                <button
+                  className="btn flex-1 gap-1 rounded-2xl bg-sand px-2 py-2 text-sm text-cocoa"
+                  onClick={addOne}
+                  disabled={busy}
+                >
+                  <Plus size={16} /> Satz
+                </button>
+                {nextExId || remainingPlanIds[0] ? (
+                  <button
+                    className="btn-primary min-w-0 flex-1 gap-0.5 rounded-2xl px-2 py-2 text-sm"
+                    onClick={() => (nextExId ? setExerciseId(nextExId) : addExerciseToday(remainingPlanIds[0]))}
+                  >
+                    Nächste <ChevronRight size={16} />
+                  </button>
+                ) : (
+                  <button
+                    className="btn-primary flex-1 gap-1 rounded-2xl px-2 py-2 text-sm"
+                    onClick={() => setSheet('finish')}
+                  >
+                    <Check size={16} strokeWidth={3} /> Fertig
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ---- Sheets ---- */}
+      {sheet === 'menu' && active && (
+        <PremiumSheet
+          title={active.name}
+          subtitle={[active.muscle_group, pair ? 'Supersatz' : null].filter(Boolean).join(' · ')}
+          onClose={() => setSheet(null)}
+          bodyClassName="space-y-3"
+        >
+          {active.notes && (
+            <p className="rounded-2xl bg-sand px-3.5 py-2.5 text-sm leading-snug text-cocoa">{active.notes}</p>
+          )}
+          <div className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream [&>button]:flex [&>button]:min-h-[3.25rem] [&>button]:w-full [&>button]:items-center [&>button]:gap-3 [&>button]:px-4 [&>button]:py-2.5 [&>button]:text-left [&>button]:text-[15px] [&>button]:font-semibold [&>button]:transition-colors [&>button:active]:bg-sand-light">
+            {pair ? (
+              <button
+                onClick={() => {
+                  unpair(active.id)
+                  setSheet(null)
+                }}
+              >
+                <MenuIcon>
+                  <Unlink size={17} />
+                </MenuIcon>
+                Supersatz lösen
+              </button>
             ) : (
-              <button className="btn-ghost w-full" onClick={addOne} disabled={busy}>
-                + Satz hinzufügen
+              <button onClick={() => setSheet('pair')}>
+                <MenuIcon>
+                  <Link2 size={17} />
+                </MenuIcon>
+                <span className="flex-1">Als Supersatz kombinieren …</span>
+                <ChevronRight size={16} className="text-cocoa-muted" />
               </button>
             )}
-          </>
-        )}
-      </div>
+            <button onClick={() => setSheet('alts')}>
+              <MenuIcon>
+                <RefreshCw size={17} />
+              </MenuIcon>
+              <span className="flex-1">Gerät besetzt? Alternative</span>
+              <ChevronRight size={16} className="text-cocoa-muted" />
+            </button>
+            <button
+              onClick={() => {
+                addOne()
+                setSheet(null)
+              }}
+            >
+              <MenuIcon>
+                <Plus size={17} />
+              </MenuIcon>
+              Satz hinzufügen
+            </button>
+            {activeSets.length > 0 && (
+              <button
+                className="text-red-500 dark:text-red-400"
+                onClick={() => {
+                  if (!confirm(`„${active.name}" aus dem heutigen Training entfernen?`)) return
+                  removeExerciseToday(active.id)
+                }}
+              >
+                <MenuIcon danger>
+                  <Trash2 size={17} />
+                </MenuIcon>
+                Aus heutigem Training entfernen
+              </button>
+            )}
+          </div>
+        </PremiumSheet>
+      )}
 
-      {/* Übersicht aller heute erfassten Sätze */}
-      {workoutSets && workoutSets.length > 0 && (
-        <div className="card">
-          <h2 className="mb-2 font-semibold">Heute erfasst</h2>
-          <ul className="space-y-1 text-sm text-cocoa">
-            {Object.entries(
-              workoutSets.reduce<Record<string, number>>((acc, s) => {
-                acc[s.exercise_id] = (acc[s.exercise_id] ?? 0) + 1
-                return acc
-              }, {}),
-            ).map(([exId, count]) => (
-              <li key={exId} className="flex justify-between">
-                <span>{exercises?.find((e) => e.id === exId)?.name ?? 'Übung'}</span>
-                <span className="text-cocoa-muted">{count} Sätze</span>
-              </li>
+      {(sheet === 'picker' || sheet === 'pair') && (
+        <PremiumSheet
+          title={sheet === 'pair' ? 'Supersatz-Partner wählen' : 'Übung hinzufügen'}
+          subtitle={sheet === 'pair' && active ? `Zusammen mit ${active.name}` : undefined}
+          onClose={() => {
+            setSheet(null)
+            setPickerQuery('')
+          }}
+          bodyClassName="space-y-4"
+        >
+          <div className="relative">
+            <Search
+              size={17}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-cocoa-muted"
+            />
+            <input
+              className={`${BIG_INPUT} pl-10`}
+              placeholder="Suchen (Name oder Muskel) …"
+              value={pickerQuery}
+              onChange={(e) => setPickerQuery(e.target.value)}
+            />
+          </div>
+          {sheet === 'picker' && queuePlan && remainingPlanIds.length > 0 && !q && (
+            <div>
+              <SheetLabel>Als Nächstes aus „{queuePlan.name}"</SheetLabel>
+              <div className="flex flex-wrap gap-2">
+                {remainingPlanIds.map((id) => (
+                  <button
+                    key={id}
+                    className="flex items-center gap-1.5 rounded-full bg-cocoa px-3 py-1.5 text-sm font-semibold text-cream transition active:scale-95"
+                    onClick={() => addExerciseToday(id)}
+                  >
+                    <Plus size={13} strokeWidth={2.5} /> {exById.get(id)?.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {sheet === 'picker' && plans && plans.length > 0 && !q && (
+            <div>
+              <SheetLabel>{queuePlan ? 'Anderen Plan als Vorlage' : 'Plan als Vorlage'}</SheetLabel>
+              <div className="flex flex-wrap gap-2">
+                {plans
+                  .filter((p) => p.id !== queuePlan?.id)
+                  .map((p) => (
+                    <button
+                      key={p.id}
+                      className="flex items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
+                      onClick={() => loadPlanOrdered(p)}
+                    >
+                      <Play size={12} className="fill-brand text-brand" /> {p.name}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
+          {sheet === 'picker' && (
+            <button
+              className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left transition-colors active:bg-sand-light"
+              onClick={() => {
+                setSheet(null)
+                setPickerQuery('')
+                setLibOpen(true)
+              }}
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand text-on-brand">
+                <BookOpen size={17} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-semibold">Bibliothek</span>
+                <span className="block truncate text-xs text-cocoa-light">Neue Übung mit Animation & Ausführung</span>
+              </span>
+              <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
+            </button>
+          )}
+          <div>
+            {!q && sheet === 'picker' && <SheetLabel>Alle Übungen</SheetLabel>}
+            <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
+              {pickerList.map((e) => {
+                const inToday = todayExIds.includes(e.id)
+                return (
+                  <li key={e.id}>
+                    <button
+                      className="flex min-h-[3.25rem] w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors active:bg-sand-light"
+                      onClick={() => {
+                        if (sheet === 'pair') pairWith(e.id)
+                        else if (inToday) {
+                          setExerciseId(e.id)
+                          setSheet(null)
+                          setPickerQuery('')
+                        } else addExerciseToday(e.id)
+                      }}
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-[15px] font-semibold">{e.name}</span>
+                        <span className="block text-xs text-cocoa-light">{e.muscle_group}</span>
+                      </span>
+                      {inToday ? (
+                        <span className="flex shrink-0 items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
+                          <Check size={12} strokeWidth={3} /> heute
+                        </span>
+                      ) : (
+                        <Plus size={16} className="shrink-0 text-cocoa-muted" />
+                      )}
+                    </button>
+                  </li>
+                )
+              })}
+              {pickerList.length === 0 && (
+                <li className="px-4 py-3 text-sm text-cocoa-light">
+                  {sheet === 'picker' && q
+                    ? 'Keine eigene Übung gefunden.'
+                    : 'Keine Übung gefunden. Neue Übungen legst du im Tab „Übungen" an.'}
+                </li>
+              )}
+            </ul>
+          </div>
+          {sheet === 'picker' && q && (
+            <LibraryResults
+              query={pickerQuery}
+              onPicked={(ex) => {
+                setSheet(null)
+                setPickerQuery('')
+                setLibAddId(ex.id)
+              }}
+            />
+          )}
+        </PremiumSheet>
+      )}
+
+      {libOpen && (
+        <LibrarySheet
+          onClose={() => setLibOpen(false)}
+          onAdded={(ex) => {
+            setLibOpen(false)
+            setLibAddId(ex.id)
+          }}
+          existingAction={{
+            label: 'Zum Training hinzufügen',
+            run: (ex) => {
+              setLibOpen(false)
+              if (todayExIds.includes(ex.id)) setExerciseId(ex.id)
+              else addExerciseToday(ex.id)
+            },
+          }}
+        />
+      )}
+
+      {howToOpen && active && activeHowTo && (
+        <PremiumSheet
+          title={active.name}
+          subtitle="Ausführung"
+          onClose={() => setHowToOpen(false)}
+          bodyClassName="space-y-3"
+        >
+          <ExerciseHowTo item={activeHowTo} />
+        </PremiumSheet>
+      )}
+
+      {sheet === 'alts' && active && (
+        <PremiumSheet
+          title="Alternative Übung"
+          subtitle={`Statt ${active.name} · ${active.muscle_group}`}
+          onClose={() => {
+            setSheet(null)
+            setAltAi(null)
+          }}
+          bodyClassName="space-y-3"
+        >
+          {alternatives.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {alternatives.map((a) => (
+                <button
+                  key={a.id}
+                  className="rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
+                  onClick={() => addExerciseToday(a.id)}
+                >
+                  {a.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-cocoa-light">Keine eigene Übung mit gleicher Muskelgruppe.</p>
+          )}
+          {ai?.enabled && (
+            <button
+              className="btn w-full gap-2 rounded-2xl bg-sand py-3 text-cocoa"
+              onClick={findAltAi}
+              disabled={altBusy}
+            >
+              <Sparkles size={16} className="text-brand" />
+              {altBusy ? 'Suche …' : 'Beste Alternative finden'}
+            </button>
+          )}
+          {altAi &&
+            (altAi.name ? (
+              <button
+                className="anim-fade w-full rounded-2xl bg-brand/10 p-3.5 text-left text-sm"
+                onClick={() => {
+                  const ex = exercises?.find((e) => e.name === altAi.name)
+                  if (ex) addExerciseToday(ex.id)
+                  setAltAi(null)
+                }}
+              >
+                <span className="flex items-center gap-1 font-semibold text-cocoa">
+                  <Sparkles size={14} className="text-brand" />
+                  {altAi.name} <ChevronRight size={15} className="ml-auto text-cocoa-muted" />
+                </span>
+                <span className="mt-0.5 block text-cocoa-light">{altAi.reason}</span>
+              </button>
+            ) : (
+              <p className="text-sm text-cocoa-light">{altAi.reason || 'Keine passende Alternative gefunden.'}</p>
             ))}
-          </ul>
+        </PremiumSheet>
+      )}
 
+      {sheet === 'finish' && (
+        <PremiumSheet
+          title="Training beenden"
+          onClose={() => setSheet(null)}
+          bodyClassName="space-y-4"
+          hero={
+            <SheetHero
+              art={<MyBuddy size={120} mood={prName ? 'proud' : doneCount > 0 ? 'cheer' : 'happy'} />}
+              title={doneCount > 0 ? 'Training geschafft!' : 'Training beenden?'}
+              subtitle={
+                prName
+                  ? 'Neuer Rekord – ich bin so stolz auf dich!'
+                  : doneCount > 0
+                    ? 'Geschafft! Das war richtig stark.'
+                    : 'Noch kein Satz abgehakt – weiter geht’s?'
+              }
+            />
+          }
+          footer={
+            <>
+              <button
+                className="btn-primary w-full gap-2 py-3.5 text-base shadow-lg shadow-brand/30"
+                onClick={finishNew}
+              >
+                <Check size={18} strokeWidth={3} />
+                Speichern & zum Verlauf
+              </button>
+              <button
+                className="w-full py-1.5 text-center text-sm font-semibold text-cocoa-light"
+                onClick={() => setSheet(null)}
+              >
+                Weiter trainieren
+              </button>
+            </>
+          }
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                [minutes > 0 && minutes < 300 ? String(minutes) : '–', 'Minuten', Timer],
+                [String(doneCount), doneCount === 1 ? 'Satz' : 'Sätze', Check],
+                [Math.round(totalVolume(workoutSets ?? [])).toLocaleString('de-DE'), 'kg Volumen', Dumbbell],
+                [
+                  String(
+                    new Set(
+                      (workoutSets ?? []).filter((s) => isSetDone(s, isUni(s.exercise_id))).map((s) => s.exercise_id),
+                    ).size,
+                  ),
+                  'Übungen',
+                  ListChecks,
+                ],
+              ] as const
+            ).map(([value, label, Icon]) => (
+              <div key={label} className="rounded-2xl bg-cream px-4 py-3">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-cocoa-muted">
+                  <Icon size={13} strokeWidth={2.5} className="text-brand" />
+                  {label}
+                </div>
+                <div className="tabular mt-0.5 text-3xl font-bold tracking-tight text-cocoa">{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {(todayPrs.length > 0 || prName) && (
+            <div className="overflow-hidden rounded-2xl bg-gold/10 ring-1 ring-gold/30">
+              <div className="flex items-center gap-2 px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-gold">
+                <Trophy size={14} strokeWidth={2.5} />
+                {todayPrs.length > 1 ? `${todayPrs.length} neue Rekorde` : 'Neuer Rekord'}
+              </div>
+              <ul className="divide-y divide-gold/15">
+                {(todayPrs.length ? todayPrs : [{ id: 'pr', name: prName ?? '', e1: 0, gain: 0 }]).map((p) => (
+                  <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                    <span className="min-w-0 truncate font-semibold text-cocoa">{p.name}</span>
+                    {p.e1 > 0 && (
+                      <span className="tabular shrink-0 text-sm font-bold text-gold">
+                        ~{Math.round(p.e1)} kg
+                        <span className="ml-1 text-xs font-semibold opacity-70">
+                          +{Math.max(1, Math.round(p.gain))}
+                        </span>
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <p className="px-4 pb-3 text-[11px] text-cocoa-light">Geschätztes Maximum (1RM)</p>
+            </div>
+          )}
+
+          {openSets.length > 0 && (
+            <button
+              className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left text-sm font-medium"
+              onClick={() => setDropOpenSets((v) => !v)}
+              role="checkbox"
+              aria-checked={dropOpenSets}
+            >
+              <span
+                className={`grid h-5 w-5 shrink-0 place-items-center rounded-md transition-colors ${
+                  dropOpenSets ? 'bg-cocoa text-cream' : 'bg-sand ring-1 ring-sand-dark'
+                }`}
+              >
+                {dropOpenSets && <Check size={13} strokeWidth={3} />}
+              </span>
+              <span className="tabular">{openSets.length} nicht abgehakte Sätze entfernen</span>
+            </button>
+          )}
           {hype && (
-            <p className="mt-3 rounded-lg bg-ruby/10 p-2 text-center text-sm font-semibold text-ruby dark:text-ruby-light">
+            <p className="anim-fade rounded-2xl bg-brand/10 px-4 py-3 text-center text-sm font-semibold text-cocoa">
               {hype}
             </p>
           )}
-          {isNew && ai?.enabled && (
-            <button className="btn-ghost mt-2 w-full text-sm" onClick={makeHype} disabled={hypeBusy}>
-              {hypeBusy ? '…' : '🔥 Motivations-Spruch'}
+          <div className="grid grid-cols-2 gap-2">
+            {ai?.enabled && (
+              <button
+                className="btn gap-1.5 rounded-2xl bg-sand py-3 text-sm text-cocoa"
+                onClick={makeHype}
+                disabled={hypeBusy}
+              >
+                <Flame size={16} className="text-brand" /> {hypeBusy ? '…' : 'Spruch'}
+              </button>
+            )}
+            <button
+              className={`btn gap-1.5 rounded-2xl bg-sand py-3 text-sm text-cocoa ${ai?.enabled ? '' : 'col-span-2'}`}
+              onClick={shareToday}
+            >
+              <Share2 size={16} /> Teilen
             </button>
-          )}
-        </div>
+          </div>
+        </PremiumSheet>
       )}
-
-      {/* Training abschließen */}
-      {workoutSets && workoutSets.length > 0 && (
-        <div className="space-y-2">
-          <button className="btn-primary w-full" onClick={finishWorkout}>
-            Training speichern
-          </button>
-          {isNew && (
-            <button className="btn-ghost w-full" onClick={shareToday}>
-              📤 Als Bild teilen
-            </button>
-          )}
-          <p className="text-center text-xs text-cocoa-muted">
-            Deine Sätze sind automatisch gesichert — hier kommst du zum Verlauf.
-          </p>
-        </div>
-      )}
-
-      {/* Kleine Erklärung (einklappbar) */}
-      <details className="rounded-xl bg-sand/40 p-3 text-xs leading-relaxed text-cocoa-muted">
-        <summary className="cursor-pointer font-semibold text-cocoa-light">So erfasst du am besten</summary>
-        <ul className="mt-2 list-disc space-y-1 pl-4">
-          <li>
-            Trag nur <span className="text-cocoa">saubere Wdh</span> ein (volle Bewegung, eigene Kraft) — die letzte
-            halbe/erzwungene Wdh lässt du weg.
-          </li>
-          <li>
-            <span className="text-gold">🔥 Versagen</span> ist Standard. Tipp es nur{' '}
-            <span className="text-cocoa">aus</span> („nicht ans Limit"), wenn du den Satz mal nicht bis zum Limit
-            gemacht hast.
-          </li>
-          <li>
-            Der Tipp oben sagt dir dann, ob du das Gewicht <span className="text-cocoa">halten, steigern</span> oder
-            reduzieren solltest.
-          </li>
-          <li>
-            Der <span className="text-cocoa">Aufwärmsatz</span> kommt nur bei der ersten Übung einer Muskelgruppe — ist
-            der Muskel schon warm, wird er weggelassen.
-          </li>
-        </ul>
-      </details>
     </div>
   )
 }

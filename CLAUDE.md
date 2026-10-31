@@ -11,7 +11,6 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
   Nie den Nutzer bitten, Secrets in den Chat zu kopieren.
 - Kein Modellname/Modell-ID in Commits, PRs oder Code-Kommentaren.
 - Keine PRs, außer ausdrücklich gewünscht. Deploy = Arbeitsbranch per Fast-Forward nach `main` mergen und pushen.
-- Der **klassische Modus** (`pref_app_mode = 'classic'`) bleibt erhalten – nichts davon löschen.
 - Bestehende Dateien nicht blind überschreiben (vorher lesen). Keine fremden Dateien umformatieren.
 - Sprache in der App: Deutsch, du-Form, kurz und freundlich.
 - **Design einheitlich:** Rubin (`brand`) ist die einzige Akzentfarbe, Abstufungen über Transparenz; `success` nur für
@@ -35,12 +34,12 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
 
 ## Architektur in Kürze
 
-- Tabs (klassisch/alt): Ernährung `/nutrition`, Training `/`, Fortschritt `/analytics` `/history` `/badges` `/body`, Community `/social`.
 - Nutzer-Einstellungen geräteübergreifend in `profiles.prefs` (jsonb) über `useUserPrefs`;
   immer über `normalizePrefs` lesen (alte Caches ohne neue Felder haben schon mal die App abstürzen lassen).
+- Übersichten: nur kurze Texte (eine Zeile); Erklärungen hinter `InfoTip` (erst beim Antippen).
 - Neue Funktion = auch einen Eintrag in `src/lib/searchIndex.ts` (globale Suche) anlegen; Buddy-Tipps je Seite in
   `src/lib/buddyTips.ts`.
-- Neue App: Tabs Heute `/today` (anpassbare Widgets), Training `/`, Ernährung, Fortschritt (+ `/cardio`, `/sleep`
+- Tabs: Heute `/today` (anpassbare Widgets), Training `/`, Ernährung `/nutrition`, Fortschritt `/analytics` (+ `/cardio`, `/sleep`
   nur mit Uhr), Community. Module (Ernährung/Community/Smartwatch) blenden alles Zugehörige aus – neue Features
   immer einem Modul zuordnen; Uhr-Funktionen nie ohne `hasWatch` zeigen.
 - **Nicht jede Uhr liefert alle Werte** (HRV, Schlafphasen, SpO₂, Leistung …): jeden Wert optional behandeln,

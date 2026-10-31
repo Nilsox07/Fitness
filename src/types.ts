@@ -25,13 +25,6 @@ export const SET_TYPE_LABEL: Record<SetType, string> = {
   drop: 'Dropsatz',
 }
 
-/** Kurzkennung für kompakte Anzeige (Verlauf, Badges). */
-export const SET_TYPE_SHORT: Record<SetType, string> = {
-  warmup: 'Aufw.',
-  working: 'Arbeit',
-  drop: 'Drop',
-}
-
 export interface Exercise {
   id: string
   user_id: string

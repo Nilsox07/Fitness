@@ -40,9 +40,7 @@ export function useApplyPlanSuggestions() {
       return true
     } catch (e) {
       setError(
-        `Pläne konnten nicht (vollständig) angelegt werden: ${
-          e instanceof Error ? e.message : 'Unbekannter Fehler'
-        }`,
+        `Pläne konnten nicht (vollständig) angelegt werden: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`,
       )
       return false
     } finally {
@@ -55,7 +53,6 @@ export function useApplyPlanSuggestions() {
 
 /**
  * Inhalt des KI-Plangenerators (Wunsch eingeben → Vorschlag → Übernehmen).
- * Wird im klassischen Modal und im neuen Bottom-Sheet gleichermaßen genutzt.
  */
 export function AiPlanGeneratorBody({ onClose }: { onClose: () => void }) {
   const { data: exercises } = useExercises()
@@ -142,11 +139,7 @@ export function AiPlanGeneratorBody({ onClose }: { onClose: () => void }) {
         <button className="btn-ghost flex-1" onClick={() => setSuggestions(null)} disabled={applier.busy}>
           Zurück
         </button>
-        <button
-          className="btn-primary flex-1"
-          onClick={() => applySuggestions(suggestions)}
-          disabled={applier.busy}
-        >
+        <button className="btn-primary flex-1" onClick={() => applySuggestions(suggestions)} disabled={applier.busy}>
           {applier.busy ? 'Lege an…' : 'Übernehmen'}
         </button>
       </div>

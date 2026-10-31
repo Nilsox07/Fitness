@@ -1,13 +1,12 @@
+import { openOnboarding } from '../components/onboarding/Onboarding'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
+  Wand2,
   Apple,
-  Award,
   Bell,
-  ChevronLeft,
   Download,
   Dumbbell,
-  Lock,
   LogOut,
   PenLine,
   MessageSquare,
@@ -15,10 +14,8 @@ import {
   Palette,
   Target,
   User,
-  Users,
   Volume2,
   Flame,
-  Layers,
   LayoutGrid,
   ClipboardList,
   SlidersHorizontal,
@@ -38,14 +35,9 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
-import { enablePush, pushSupported, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
-import { computeXp, levelInfo } from '../lib/xp'
-import { buddyLevelInfo } from '../lib/buddyLevel'
-import { localDate } from '../lib/day'
+import { pushSupported, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
 import { setSoundEnabled, soundEnabled } from '../lib/sound'
-import { useFitbitStatus, useFitbitSync } from '../hooks/useFitbit'
-import { connectFitbit, type FitbitSync } from '../lib/fitbit'
-import { ACCENTS, SKINS, applyAccent, getAccentId, getSkinId, setAccentId, setSkinId } from '../lib/cosmetics'
+import { ACCENTS, SKINS, getAccentId, getSkinId } from '../lib/cosmetics'
 import { GoalEditor } from '../components/GoalEditor'
 import { getStoredReview } from '../lib/weeklyReview'
 import { WeeklyReviewView } from '../components/review/WeeklyReviewView'
@@ -53,7 +45,6 @@ import { useNutritionSettings } from '../hooks/useNutrition'
 import { GOAL_LABEL } from '../lib/nutrition'
 import { Group, Row, SEG_TRACK, SubCard, SubHeader, TILE, Toggle, segBtn } from '../components/profile/ui'
 import { ProfileHeader } from '../components/profile/ProfileHeader'
-import { BUDDY_SKIN_EVENT } from '../components/buddy/useBuddy'
 import { NameSheet } from '../components/profile/NameSheet'
 import { useMyProfile } from '../hooks/useSocial'
 import { SettingsEditor } from '../components/profile/SettingsEditor'
@@ -63,17 +54,16 @@ import { openSearch } from '../components/search/SearchSheet'
 import { openBuddySheet } from '../components/buddy/BuddySheet'
 
 /**
- * Unterseiten des Profils (neue Version), per ?s=… in der URL → Zurück-Geste funktioniert.
+ * Unterseiten des Profils, per ?s=… in der URL → Zurück-Geste funktioniert.
  * Der Trainingsrhythmus liegt jetzt bei den Plänen (/plans?rhythm=1); alte Links
  * auf ?s=rhythm werden dorthin umgeleitet.
  */
-type Sub = 'settings' | 'goal' | 'review' | 'version' | 'coach' | 'push' | 'export' | 'modules' | 'appearance'
+type Sub = 'settings' | 'goal' | 'review' | 'coach' | 'push' | 'export' | 'modules' | 'appearance'
 
 const SUB_TITLE: Record<Sub, string> = {
   settings: 'Meine Einstellungen',
   goal: 'Ziel & Körperdaten',
   review: 'Wochenfazit',
-  version: 'App-Version',
   coach: 'Buddy-Ton',
   push: 'Benachrichtigungen',
   export: 'Daten exportieren',
@@ -85,7 +75,6 @@ const SUB_SUBTITLE: Record<Sub, string> = {
   settings: 'Training & Ernährung',
   goal: 'Nährwerte automatisch berechnet',
   review: 'Jeden Montag neu',
-  version: 'Klassisch oder Neu',
   coach: 'So spricht dein Buddy',
   push: 'Erinnerungen einzeln einstellen',
   export: 'CSV-Download',
@@ -105,114 +94,42 @@ export default function Profile() {
   const { data: myProfile } = useMyProfile()
   const [nameOpen, setNameOpen] = useState(false)
   const { mode, setMode } = useTheme()
-  const { showNutrition, setShowNutrition, appMode, setAppMode, isNew, showSocial, hasWatch } = usePrefs()
+  const { showNutrition, showSocial, hasWatch } = usePrefs()
   const { data: ai } = useAiStatus()
   const { data: allSets } = useAllSets()
   const { data: exercises } = useExercises()
   const { data: foodEntries } = useAllFoodEntries()
   const [tone, setTone] = useState<CoachTone>(getCoachTone())
-  const [pushMsg, setPushMsg] = useState<string | null>(null)
-  const [pushBusy, setPushBusy] = useState(false)
-  const [accent, setAccent] = useState(getAccentId())
-  const [skin, setSkin] = useState(getSkinId())
+  const accent = getAccentId()
+  const skin = getSkinId()
   const [sound, setSound] = useState(soundEnabled())
   const [cheat, setCheat] = useState(shareCheatEnabled())
-  const { data: fitbit } = useFitbitStatus()
-  const fitbitSync = useFitbitSync()
-  const [fitbitData, setFitbitData] = useState<FitbitSync | null>(null)
-  const [fitbitMsg, setFitbitMsg] = useState<string | null>(null)
-
-  async function syncFitbit() {
-    setFitbitMsg(null)
-    try {
-      setFitbitData(await fitbitSync.mutateAsync())
-    } catch (e) {
-      setFitbitMsg(e instanceof Error ? e.message : 'Fehler')
-    }
-  }
-
-  // Rückkehr vom Fitbit-OAuth: einmal synchronisieren
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get('fitbit')
-    // Neue Version: Fitbit ist dort ausgeblendet → nur die URL aufräumen.
-    const cleanUrl = () =>
-      isNew ? navigate('/profile', { replace: true }) : window.history.replaceState({}, '', '/profile')
-    if (p === 'connected') {
-      setFitbitMsg('Fitbit verbunden')
-      syncFitbit()
-      cleanUrl()
-    } else if (p === 'error') {
-      setFitbitMsg('Fitbit-Verbindung fehlgeschlagen.')
-      cleanUrl()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
   const { data: settings } = useNutritionSettings()
-  // Neue App: ein Level für alles (Buddy-Level: Training + Ernährung) — auch für
-  // die Freischaltungen. Klassisch: unverändert das Trainings-Level.
-  const level = isNew
-    ? buddyLevelInfo({
-        sets: allSets ?? [],
-        foodEntries: foodEntries ?? [],
-        proteinTarget: settings?.protein_target ?? 0,
-        showNutrition,
-        today: localDate(),
-      }).level
-    : levelInfo(computeXp(allSets ?? [])).level
-
-  function chooseAccent(id: string, min: number) {
-    if (level < min) return
-    setAccent(id)
-    setAccentId(id)
-    applyAccent(id)
-  }
-  function chooseSkin(id: string, min: number) {
-    if (level < min) return
-    setSkin(id)
-    setSkinId(id)
-    window.dispatchEvent(new Event(BUDDY_SKIN_EVENT))
-  }
 
   const tones: CoachTone[] = ['coach', 'sergeant', 'bro']
   const reviewHint = `Dein persönliches Wochenfazit (${
     showNutrition ? 'Training + Ernährung' : 'Training'
   }) erscheint hier automatisch — jeden Montag früh, sobald du die App öffnest.`
 
-  async function activatePush() {
-    if (!user) return
-    setPushBusy(true)
-    setPushMsg(null)
-    try {
-      await enablePush(user.id)
-      setPushMsg('Erinnerungen aktiviert')
-    } catch (e) {
-      setPushMsg(e instanceof Error ? e.message : 'Fehler')
-    } finally {
-      setPushBusy(false)
-    }
-  }
-
-  // ---------- Neue Version: Kopfkarte + gruppierte Listen + Unterseiten ----------
+  // ---------- Kopfkarte + gruppierte Listen + Unterseiten ----------
   const [params, setParams] = useSearchParams()
 
   const available: Record<Sub, boolean> = {
     settings: true,
     goal: showNutrition,
     review: true,
-    version: true,
     coach: Boolean(ai?.enabled),
     push: pushSupported,
     export: true,
     modules: true,
     appearance: true,
-    // Fitbit ist in der neuen App ausgeblendet (Code bleibt für die klassische Version).
   }
   const rawSub = params.get('s') as Sub | null
   const sub: Sub | null =
     rawSub && Object.prototype.hasOwnProperty.call(SUB_TITLE, rawSub) && available[rawSub] ? rawSub : null
 
   // Alte Links (/profile?s=rhythm) → Trainingsrhythmus bei den Plänen
-  const legacyRhythm = isNew && rawSub === ('rhythm' as string)
+  const legacyRhythm = rawSub === ('rhythm' as string)
   useEffect(() => {
     if (legacyRhythm) navigate('/plans?rhythm=1', { replace: true })
   }, [legacyRhythm, navigate])
@@ -224,617 +141,252 @@ export default function Profile() {
     if (idx > 0) navigate(-1)
     else setParams({}, { replace: true })
   }
-  /** Profil verlassen: zurück in der App, ohne Verlauf (Direktaufruf) zur Startseite. */
-  const goBack = () => {
-    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
-    if (idx > 0) navigate(-1)
-    else navigate('/')
-  }
 
   const currentAccent = ACCENTS.find((a) => a.id === accent)
   const currentSkin = SKINS.find((x) => x.id === skin)
 
-  if (isNew) {
-    if (legacyRhythm) return null
-    if (sub) {
-      return (
-        <div className="anim-fade space-y-4">
-          <SubHeader title={SUB_TITLE[sub]} subtitle={SUB_SUBTITLE[sub]} />
+  if (legacyRhythm) return null
+  if (sub) {
+    return (
+      <div className="anim-fade space-y-4">
+        <SubHeader title={SUB_TITLE[sub]} subtitle={SUB_SUBTITLE[sub]} />
 
-          {sub === 'settings' && (
-            <SettingsEditor
-              onOpenRhythm={() => navigate('/plans?rhythm=1')}
-              onOpenGoal={showNutrition ? () => openSub('goal') : undefined}
-            />
-          )}
+        {sub === 'settings' && (
+          <SettingsEditor
+            onOpenRhythm={() => navigate('/plans?rhythm=1')}
+            onOpenGoal={showNutrition ? () => openSub('goal') : undefined}
+          />
+        )}
 
-          {sub === 'goal' && <GoalEditor onSaved={closeSub} />}
+        {sub === 'goal' && <GoalEditor onSaved={closeSub} />}
 
-          {sub === 'modules' && <ModuleSettings />}
+        {sub === 'modules' && <ModuleSettings />}
 
-          {sub === 'appearance' && (
-            <>
-              <SubCard>
-                <p className="text-xs text-cocoa-light">Hell, dunkel oder wie dein Handy.</p>
-                <div className={`${SEG_TRACK} grid-cols-3`}>
-                  {MODES.map((m) => (
-                    <button
-                      key={m.v}
-                      type="button"
-                      onClick={() => setMode(m.v)}
-                      aria-pressed={mode === m.v}
-                      className={segBtn(mode === m.v)}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              </SubCard>
-              <Group>
-                <Row
-                  icon={Palette}
-                  label="App-Farbe & Buddy-Aussehen"
-                  value={[currentAccent?.label, currentSkin?.label].filter(Boolean).join(' · ')}
-                  onClick={() => navigate('/badges')}
-                />
-                <Row
-                  icon={Volume2}
-                  label="Sound-Effekte"
-                  hint="Töne bei Level-up und Quests"
-                  trailing={
-                    <Toggle
-                      label="Sound-Effekte"
-                      checked={sound}
-                      onChange={(v) => {
-                        setSound(v)
-                        setSoundEnabled(v)
-                      }}
-                    />
-                  }
-                />
-              </Group>
-            </>
-          )}
-
-          {sub === 'review' && (
+        {sub === 'appearance' && (
+          <>
             <SubCard>
-              {(() => {
-                const r = getStoredReview()
-                return r ? <WeeklyReviewView review={r} /> : <p className="text-xs text-cocoa-light">{reviewHint}</p>
-              })()}
-            </SubCard>
-          )}
-
-          {sub === 'version' && (
-            <SubCard>
-              <p className="text-xs text-cocoa-light">
-                Wechsle jederzeit zwischen der schlanken, gewohnten Basis und der neuen Version mit allen Features.
-                Deine Daten bleiben in beiden gleich.
-              </p>
-              <div className={`${SEG_TRACK} grid-cols-2`}>
-                <button
-                  type="button"
-                  onClick={() => setAppMode('classic')}
-                  aria-pressed={appMode === 'classic'}
-                  className={segBtn(appMode === 'classic')}
-                >
-                  Klassisch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAppMode('new')}
-                  aria-pressed={appMode === 'new'}
-                  className={segBtn(appMode === 'new')}
-                >
-                  Neu (alle Features)
-                </button>
-              </div>
-              <p className="text-xs text-cocoa-light">
-                Neu: KI-Assistent, Gamification, Social, KI-Ernährung, automatische Aufwärmsätze …
-              </p>
-            </SubCard>
-          )}
-
-          {sub === 'coach' && (
-            <SubCard>
-              <p className="text-xs text-cocoa-light">So spricht dein Buddy mit dir.</p>
+              <p className="text-xs text-cocoa-light">Hell, dunkel oder wie dein Handy.</p>
               <div className={`${SEG_TRACK} grid-cols-3`}>
-                {tones.map((t) => (
+                {MODES.map((m) => (
                   <button
-                    key={t}
+                    key={m.v}
                     type="button"
-                    onClick={() => {
-                      setTone(t)
-                      setCoachTone(t)
-                    }}
-                    aria-pressed={tone === t}
-                    className={segBtn(tone === t, 'text-xs')}
+                    onClick={() => setMode(m.v)}
+                    aria-pressed={mode === m.v}
+                    className={segBtn(mode === m.v)}
                   >
-                    {COACH_TONE_LABEL[t]}
+                    {m.label}
                   </button>
                 ))}
               </div>
             </SubCard>
-          )}
+            <Group>
+              <Row
+                icon={Palette}
+                label="App-Farbe & Buddy-Aussehen"
+                value={[currentAccent?.label, currentSkin?.label].filter(Boolean).join(' · ')}
+                onClick={() => navigate('/badges')}
+              />
+              <Row
+                icon={Volume2}
+                label="Sound-Effekte"
+                hint="Töne bei Level-up und Quests"
+                trailing={
+                  <Toggle
+                    label="Sound-Effekte"
+                    checked={sound}
+                    onChange={(v) => {
+                      setSound(v)
+                      setSoundEnabled(v)
+                    }}
+                  />
+                }
+              />
+            </Group>
+          </>
+        )}
 
-          {sub === 'push' && <NotificationSettings />}
+        {sub === 'review' && (
+          <SubCard>
+            {(() => {
+              const r = getStoredReview()
+              return r ? <WeeklyReviewView review={r} /> : <p className="text-xs text-cocoa-light">{reviewHint}</p>
+            })()}
+          </SubCard>
+        )}
 
-          {sub === 'export' && (
-            <SubCard>
-              <p className="text-xs text-cocoa-light">Alle Einträge als CSV-Datei herunterladen.</p>
-              <div className="grid grid-cols-2 gap-2">
+        {sub === 'coach' && (
+          <SubCard>
+            <p className="text-xs text-cocoa-light">So spricht dein Buddy mit dir.</p>
+            <div className={`${SEG_TRACK} grid-cols-3`}>
+              {tones.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    setTone(t)
+                    setCoachTone(t)
+                  }}
+                  aria-pressed={tone === t}
+                  className={segBtn(tone === t, 'text-xs')}
+                >
+                  {COACH_TONE_LABEL[t]}
+                </button>
+              ))}
+            </div>
+          </SubCard>
+        )}
+
+        {sub === 'push' && <NotificationSettings />}
+
+        {sub === 'export' && (
+          <SubCard>
+            <p className="text-xs text-cocoa-light">Alle Einträge als CSV-Datei herunterladen.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className={TILE}
+                onClick={() => exportSetsCsv(allSets ?? [], exercises ?? [])}
+                disabled={!allSets?.length}
+              >
+                <Dumbbell size={16} className="text-cocoa-light" />
+                Training
+              </button>
+              {showNutrition && (
                 <button
                   className={TILE}
-                  onClick={() => exportSetsCsv(allSets ?? [], exercises ?? [])}
-                  disabled={!allSets?.length}
+                  onClick={() => exportNutritionCsv(foodEntries ?? [])}
+                  disabled={!foodEntries?.length}
                 >
-                  <Dumbbell size={16} className="text-cocoa-light" />
-                  Training
+                  <Apple size={16} className="text-cocoa-light" />
+                  Ernährung
                 </button>
-                {showNutrition && (
-                  <button
-                    className={TILE}
-                    onClick={() => exportNutritionCsv(foodEntries ?? [])}
-                    disabled={!foodEntries?.length}
-                  >
-                    <Apple size={16} className="text-cocoa-light" />
-                    Ernährung
-                  </button>
-                )}
-              </div>
-            </SubCard>
-          )}
-        </div>
-      )
-    }
-
-    const review = getStoredReview()
-    const goalValue = settings
-      ? `${GOAL_LABEL[settings.goal] ?? ''}${
-          settings.kcal_target ? ` · ${settings.kcal_target.toLocaleString('de-DE')} kcal` : ''
-        }`
-      : undefined
-    return (
-      <div className="space-y-5">
-        <header>
-          <h1 className="text-2xl font-bold tracking-tight">Profil</h1>
-        </header>
-
-        <ProfileHeader
-          sets={allSets ?? []}
-          foodEntries={foodEntries ?? []}
-          skin={skin}
-          email={user?.email}
-          showNutrition={showNutrition}
-          onOpen={() => navigate('/badges')}
-        />
-
-        <button
-          onClick={openSearch}
-          className="flex w-full items-center gap-2 rounded-2xl bg-sand px-3.5 py-2.5 text-left text-[15px] text-cocoa-muted"
-        >
-          <Search size={18} /> Suchen
-        </button>
-
-        <Group title="Ich">
-          {showNutrition && (
-            <Row icon={Target} label="Ziel & Körperdaten" value={goalValue} onClick={() => openSub('goal')} />
-          )}
-          <Row icon={CalendarDays} label="Trainingsrhythmus" onClick={() => navigate('/plans?rhythm=1')} />
-          <Row
-            icon={SlidersHorizontal}
-            label="Meine Einstellungen"
-            hint="Kalorien-Bonus, Mahlzeiten, Tageswechsel"
-            onClick={() => openSub('settings')}
-          />
-        </Group>
-
-        <Group title="Personalisieren">
-          <Row
-            icon={LayoutGrid}
-            label="Bereiche"
-            hint="Ernährung, Community & Smartwatch"
-            onClick={() => openSub('modules')}
-          />
-          <Row
-            icon={LayoutDashboard}
-            label="Heute anpassen"
-            hint="Widgets auswählen & sortieren"
-            onClick={() => navigate('/today?edit=1')}
-          />
-          <Row
-            icon={Moon}
-            label="Darstellung"
-            value={MODES.find((m) => m.v === mode)?.label}
-            onClick={() => openSub('appearance')}
-          />
-          <Row
-            icon={Palette}
-            label="Farbe & Buddy"
-            value={[currentAccent?.label, currentSkin?.label].filter(Boolean).join(' · ')}
-            onClick={() => navigate('/badges')}
-          />
-        </Group>
-
-        <Group title="Buddy">
-          {ai?.enabled && (
-            <Row icon={MessageSquare} label="Buddy fragen" hint="Dein KI-Coach" onClick={() => openBuddySheet()} />
-          )}
-          {ai?.enabled && (
-            <Row icon={Smile} label="Buddy-Ton" value={COACH_TONE_LABEL[tone]} onClick={() => openSub('coach')} />
-          )}
-          <Row
-            icon={ClipboardList}
-            label="Wochenfazit"
-            value={review ? review.weekId.replace(/^\d{4}-W/, 'KW ') : undefined}
-            onClick={() => openSub('review')}
-          />
-        </Group>
-
-        <Group title="Mitteilungen & Geräte">
-          {pushSupported && <Row icon={Bell} label="Benachrichtigungen" onClick={() => openSub('push')} />}
-          <Row icon={Watch} label="Smartwatch" value={hasWatch ? 'An' : 'Aus'} onClick={() => openSub('modules')} />
-          {showNutrition && showSocial && (
-            <Row
-              icon={Flame}
-              label="Cheat-Meal-Alarm"
-              hint="Freunde sehen, wenn du dir was richtig Ungesundes gönnst"
-              trailing={
-                <Toggle
-                  label="Cheat-Meal-Alarm"
-                  checked={cheat}
-                  onChange={(v) => {
-                    setCheat(v)
-                    setShareCheatEnabled(v)
-                  }}
-                />
-              }
-            />
-          )}
-        </Group>
-
-        <Group title="Konto & Daten">
-          <Row
-            icon={PenLine}
-            tint="neutral"
-            label="Name"
-            value={myProfile?.display_name || '—'}
-            onClick={() => setNameOpen(true)}
-          />
-          <Row icon={User} tint="neutral" label="E-Mail" value={user?.email ?? '—'} />
-          <Row icon={Download} tint="neutral" label="Daten exportieren" value="CSV" onClick={() => openSub('export')} />
-          <Row
-            icon={Layers}
-            tint="neutral"
-            label="App-Version"
-            value={appMode === 'new' ? 'Neu' : 'Klassisch'}
-            onClick={() => openSub('version')}
-          />
-          <Row icon={LogOut} label="Abmelden" danger onClick={() => void signOut()} />
-        </Group>
-        {nameOpen && <NameSheet current={myProfile?.display_name ?? ''} onClose={() => setNameOpen(false)} />}
+              )}
+            </div>
+          </SubCard>
+        )}
       </div>
     )
   }
 
+  const review = getStoredReview()
+  const goalValue = settings
+    ? `${GOAL_LABEL[settings.goal] ?? ''}${
+        settings.kcal_target ? ` · ${settings.kcal_target.toLocaleString('de-DE')} kcal` : ''
+      }`
+    : undefined
   return (
-    <div className="space-y-4">
-      <header className="flex items-center gap-2">
-        <button
-          className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa"
-          onClick={goBack}
-          aria-label="Zurück"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <h1 className="text-xl font-bold">Profil</h1>
+    <div className="space-y-5">
+      <header>
+        <h1 className="text-2xl font-bold tracking-tight">Profil</h1>
       </header>
 
-      <div className="card">
-        <div className="label">Angemeldet als</div>
-        <div className="font-medium break-all">{user?.email ?? '—'}</div>
-      </div>
+      <ProfileHeader
+        sets={allSets ?? []}
+        foodEntries={foodEntries ?? []}
+        skin={skin}
+        email={user?.email}
+        showNutrition={showNutrition}
+        onOpen={() => navigate('/badges')}
+      />
 
-      <div className="card space-y-2">
-        <div className="label">App-Version</div>
-        <p className="text-xs text-cocoa-light">
-          Wechsle jederzeit zwischen der schlanken, gewohnten Basis und der neuen Version mit allen Features. Deine
-          Daten bleiben in beiden gleich.
-        </p>
-        <div className={`${SEG_TRACK} grid-cols-2`}>
-          <button
-            type="button"
-            onClick={() => setAppMode('classic')}
-            aria-pressed={appMode === 'classic'}
-            className={segBtn(appMode === 'classic')}
-          >
-            Klassisch
-          </button>
-          <button
-            type="button"
-            onClick={() => setAppMode('new')}
-            aria-pressed={appMode === 'new'}
-            className={segBtn(appMode === 'new')}
-          >
-            Neu (alle Features)
-          </button>
-        </div>
-        <p className="text-xs text-cocoa-light">
-          {isNew
-            ? 'Neu: KI-Assistent, Gamification, Social, KI-Ernährung, automatische Aufwärmsätze …'
-            : 'Klassisch: nur Training, Essen, Verlauf, Auswertung & Übungen – ohne Extras.'}
-        </p>
-      </div>
-
-      <div className="card space-y-2">
-        <div className="label">Schnellzugriff</div>
-        <div className="grid grid-cols-2 gap-2">
-          <button className={TILE} onClick={() => navigate('/exercises')}>
-            <Dumbbell size={16} className="text-cocoa-light" />
-            Übungen
-          </button>
-          {isNew && (
-            <button className={TILE} onClick={() => navigate('/badges')}>
-              <Award size={16} className="text-cocoa-light" />
-              <span className="whitespace-nowrap">
-                Abzeichen <span className="tabular text-sm font-medium text-cocoa-light">Lv {level}</span>
-              </span>
-            </button>
-          )}
-          {isNew && (
-            <button className={TILE} onClick={() => navigate('/social')}>
-              <Users size={16} className="text-cocoa-light" />
-              Community
-            </button>
-          )}
-        </div>
-      </div>
-
-      {isNew && (
-        <div className="card space-y-2">
-          <div className="label">Wochenfazit</div>
-          {(() => {
-            const r = getStoredReview()
-            return r ? <WeeklyReviewView review={r} /> : <p className="text-xs text-cocoa-light">{reviewHint}</p>
-          })()}
-        </div>
-      )}
-
-      {showNutrition && (
-        <div className="card space-y-3">
-          <div>
-            <div className="label">Ziel & Körperdaten</div>
-            <p className="text-xs text-cocoa-light">
-              Passe deine Angaben und dein Ziel an — die Nährwerte werden automatisch berechnet.
-            </p>
-          </div>
-          <GoalEditor />
-        </div>
-      )}
-
-      <div className="card space-y-2">
-        <div className="label">Darstellung</div>
-        <div className={`${SEG_TRACK} grid-cols-3`}>
-          {MODES.map((m) => (
-            <button
-              key={m.v}
-              type="button"
-              onClick={() => setMode(m.v)}
-              aria-pressed={mode === m.v}
-              className={segBtn(mode === m.v)}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="card flex items-center justify-between gap-3">
-        <div>
-          <div className="font-medium">Ernährungstracking</div>
-          <div className="text-xs text-cocoa-light">Zeigt den „Essen"-Tab und die Ernährungs-Auswertung.</div>
-        </div>
-        <Toggle checked={showNutrition} onChange={setShowNutrition} />
-      </div>
-
-      {isNew && (
-        <div className="card flex items-center justify-between gap-3">
-          <div>
-            <div className="font-medium">Sound-Effekte</div>
-            <div className="text-xs text-cocoa-light">Töne bei Level-up und Quests.</div>
-          </div>
-          <Toggle
-            checked={sound}
-            onChange={(v) => {
-              setSound(v)
-              setSoundEnabled(v)
-            }}
-          />
-        </div>
-      )}
-
-      {isNew && showNutrition && (
-        <div className="card flex items-center justify-between gap-3">
-          <div>
-            <div className="font-medium">Cheat-Meal-Alarm</div>
-            <div className="text-xs text-cocoa-light">
-              Freunde sehen, wenn du dir was richtig Ungesundes gönnst (die KI entscheidet).
-            </div>
-          </div>
-          <Toggle
-            checked={cheat}
-            onChange={(v) => {
-              setCheat(v)
-              setShareCheatEnabled(v)
-            }}
-          />
-        </div>
-      )}
-
-      {isNew && (
-        <div className="card space-y-3">
-          <div className="label">Freischaltbares (Level {level})</div>
-          <div>
-            <div className="mb-1 text-xs text-cocoa-light">Akzentfarbe</div>
-            <div className="flex flex-wrap gap-2">
-              {ACCENTS.map((a) => {
-                const locked = level < a.minLevel
-                return (
-                  <button
-                    key={a.id}
-                    onClick={() => chooseAccent(a.id, a.minLevel)}
-                    disabled={locked}
-                    title={locked ? `Ab Level ${a.minLevel}` : a.label}
-                    className={`relative h-9 w-9 rounded-full ring-2 ${
-                      accent === a.id ? 'ring-cocoa' : 'ring-transparent'
-                    } ${locked ? 'opacity-40' : ''}`}
-                    style={{ background: a.swatch }}
-                  >
-                    {locked && (
-                      <span className="absolute inset-0 grid place-items-center text-white">
-                        <Lock size={14} />
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <div>
-            <div className="mb-1 text-xs text-cocoa-light">Maskottchen-Skin</div>
-            <div className="flex flex-wrap gap-2">
-              {SKINS.map((s) => {
-                const locked = level < s.minLevel
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => chooseSkin(s.id, s.minLevel)}
-                    disabled={locked}
-                    title={locked ? `Ab Level ${s.minLevel}` : s.label}
-                    className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-lg transition-colors duration-200 ${
-                      skin === s.id ? 'bg-sand-light ring-2 ring-cocoa dark:bg-sand-dark' : 'bg-sand'
-                    } ${locked ? 'opacity-40' : ''}`}
-                  >
-                    {s.stages[3]} {locked && <Lock size={14} className="text-cocoa-light" />}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isNew && ai?.enabled && (
-        <div className="card space-y-2">
-          <div className="label">KI-Coach-Ton</div>
-          <div className={`${SEG_TRACK} grid-cols-3`}>
-            {tones.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => {
-                  setTone(t)
-                  setCoachTone(t)
-                }}
-                aria-pressed={tone === t}
-                className={segBtn(tone === t, 'text-xs')}
-              >
-                {COACH_TONE_LABEL[t]}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {pushSupported && (
-        <div className="card space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="font-medium">Trainings-Erinnerungen</div>
-              <div className="text-xs text-cocoa-light">Push, wenn du ein paar Tage nicht im Gym warst.</div>
-            </div>
-            <button className="btn-primary gap-1.5 text-sm" onClick={activatePush} disabled={pushBusy}>
-              {pushBusy ? (
-                '…'
-              ) : (
-                <>
-                  <Bell size={16} />
-                  Aktivieren
-                </>
-              )}
-            </button>
-          </div>
-          {pushMsg && <p className="text-sm text-cocoa-light">{pushMsg}</p>}
-        </div>
-      )}
-
-      <div className="card space-y-2">
-        <div className="label">Daten exportieren (CSV)</div>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            className={TILE}
-            onClick={() => exportSetsCsv(allSets ?? [], exercises ?? [])}
-            disabled={!allSets?.length}
-          >
-            <Dumbbell size={16} className="text-cocoa-light" />
-            Training
-          </button>
-          {showNutrition && (
-            <button
-              className={TILE}
-              onClick={() => exportNutritionCsv(foodEntries ?? [])}
-              disabled={!foodEntries?.length}
-            >
-              <Apple size={16} className="text-cocoa-light" />
-              Ernährung
-            </button>
-          )}
-        </div>
-      </div>
-
-      {isNew && fitbit?.configured && (
-        <div className="card space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="font-medium">Fitbit</div>
-              <div className="text-xs text-cocoa-light">Gewicht, Schritte & Ruhepuls importieren.</div>
-            </div>
-            {fitbit.connected ? (
-              <button className="btn-primary text-sm" onClick={syncFitbit} disabled={fitbitSync.isPending}>
-                {fitbitSync.isPending ? '…' : 'Sync'}
-              </button>
-            ) : (
-              <button className="btn-primary text-sm" onClick={() => connectFitbit()}>
-                Verbinden
-              </button>
-            )}
-          </div>
-          {fitbitData && (
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
-              <div>
-                <div className="tabular font-semibold text-cocoa">{fitbitData.steps ?? '–'}</div>
-                <div className="text-cocoa-light">Schritte</div>
-              </div>
-              <div>
-                <div className="tabular font-semibold text-cocoa">{fitbitData.restingHr ?? '–'}</div>
-                <div className="text-cocoa-light">Ruhepuls</div>
-              </div>
-              <div>
-                <div className="tabular font-semibold text-cocoa">
-                  {fitbitData.weight != null ? `${fitbitData.weight} kg` : '–'}
-                </div>
-                <div className="text-cocoa-light">Gewicht</div>
-              </div>
-            </div>
-          )}
-          {fitbitMsg && <p className="text-sm text-cocoa-light">{fitbitMsg}</p>}
-        </div>
-      )}
-
-      <button className="btn w-full gap-1.5 bg-sand text-cocoa" onClick={() => void signOut()}>
-        <LogOut size={16} className="text-cocoa-light" />
-        Abmelden
+      <button
+        onClick={openSearch}
+        className="flex w-full items-center gap-2 rounded-2xl bg-sand px-3.5 py-2.5 text-left text-[15px] text-cocoa-muted"
+      >
+        <Search size={18} /> Suchen
       </button>
+
+      <Group title="Ich">
+        {showNutrition && (
+          <Row icon={Target} label="Ziel & Körperdaten" value={goalValue} onClick={() => openSub('goal')} />
+        )}
+        <Row icon={CalendarDays} label="Trainingsrhythmus" onClick={() => navigate('/plans?rhythm=1')} />
+        <Row icon={Wand2} label="Plan neu erstellen" hint="Ziel, Tage, Ausdauer" onClick={openOnboarding} />
+        <Row
+          icon={SlidersHorizontal}
+          label="Meine Einstellungen"
+          hint="Kalorien-Bonus, Mahlzeiten, Tageswechsel"
+          onClick={() => openSub('settings')}
+        />
+      </Group>
+
+      <Group title="Personalisieren">
+        <Row
+          icon={LayoutGrid}
+          label="Bereiche"
+          hint="Ernährung, Community & Smartwatch"
+          onClick={() => openSub('modules')}
+        />
+        <Row
+          icon={LayoutDashboard}
+          label="Heute anpassen"
+          hint="Widgets auswählen & sortieren"
+          onClick={() => navigate('/today?edit=1')}
+        />
+        <Row
+          icon={Moon}
+          label="Darstellung"
+          value={MODES.find((m) => m.v === mode)?.label}
+          onClick={() => openSub('appearance')}
+        />
+        <Row
+          icon={Palette}
+          label="Farbe & Buddy"
+          value={[currentAccent?.label, currentSkin?.label].filter(Boolean).join(' · ')}
+          onClick={() => navigate('/badges')}
+        />
+      </Group>
+
+      <Group title="Buddy">
+        {ai?.enabled && (
+          <Row icon={MessageSquare} label="Buddy fragen" hint="Dein KI-Coach" onClick={() => openBuddySheet()} />
+        )}
+        {ai?.enabled && (
+          <Row icon={Smile} label="Buddy-Ton" value={COACH_TONE_LABEL[tone]} onClick={() => openSub('coach')} />
+        )}
+        <Row
+          icon={ClipboardList}
+          label="Wochenfazit"
+          value={review ? review.weekId.replace(/^\d{4}-W/, 'KW ') : undefined}
+          onClick={() => openSub('review')}
+        />
+      </Group>
+
+      <Group title="Mitteilungen & Geräte">
+        {pushSupported && <Row icon={Bell} label="Benachrichtigungen" onClick={() => openSub('push')} />}
+        <Row icon={Watch} label="Smartwatch" value={hasWatch ? 'An' : 'Aus'} onClick={() => openSub('modules')} />
+        {showNutrition && showSocial && (
+          <Row
+            icon={Flame}
+            label="Cheat-Meal-Alarm"
+            hint="Freunde sehen deine Cheat-Meals"
+            trailing={
+              <Toggle
+                label="Cheat-Meal-Alarm"
+                checked={cheat}
+                onChange={(v) => {
+                  setCheat(v)
+                  setShareCheatEnabled(v)
+                }}
+              />
+            }
+          />
+        )}
+      </Group>
+
+      <Group title="Konto & Daten">
+        <Row
+          icon={PenLine}
+          tint="neutral"
+          label="Name"
+          value={myProfile?.display_name || '—'}
+          onClick={() => setNameOpen(true)}
+        />
+        <Row icon={User} tint="neutral" label="E-Mail" value={user?.email ?? '—'} />
+        <Row icon={Download} tint="neutral" label="Daten exportieren" value="CSV" onClick={() => openSub('export')} />
+        <Row icon={LogOut} label="Abmelden" danger onClick={() => void signOut()} />
+      </Group>
+      {nameOpen && <NameSheet current={myProfile?.display_name ?? ''} onClose={() => setNameOpen(false)} />}
     </div>
   )
 }

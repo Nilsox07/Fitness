@@ -78,10 +78,7 @@ export function useLikes(activityIds: string[]) {
     queryKey: ['activity_likes', activityIds.join(',')],
     enabled: activityIds.length > 0,
     queryFn: async (): Promise<ActivityLike[]> => {
-      const { data, error } = await supabase
-        .from('activity_likes')
-        .select('*')
-        .in('activity_id', activityIds)
+      const { data, error } = await supabase.from('activity_likes').select('*').in('activity_id', activityIds)
       if (error) throw error
       return data as ActivityLike[]
     },
@@ -120,9 +117,7 @@ export function useAddComment() {
   const { user } = useAuth()
   return useMutation({
     mutationFn: async (input: { activity_id: string; text: string; author_name?: string }) => {
-      const { error } = await supabase
-        .from('activity_comments')
-        .insert({ user_id: user!.id, ...input })
+      const { error } = await supabase.from('activity_comments').insert({ user_id: user!.id, ...input })
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['activity_comments'] }),
@@ -181,7 +176,9 @@ export function useReact() {
         const filters = {
           queryKey: ['activity_likes'],
           predicate: (q: { queryKey: readonly unknown[] }) =>
-            String(q.queryKey[1] ?? '').split(',').includes(activity_id),
+            String(q.queryKey[1] ?? '')
+              .split(',')
+              .includes(activity_id),
         }
         qc.setQueriesData<ActivityLike[]>(filters, (old) => {
           if (!old) return old
@@ -196,14 +193,4 @@ export function useReact() {
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ['activity_likes'] }),
   })
-}
-
-/** Klassische App: einfacher Applaus an/aus (= 👏-Reaktion). */
-export function useToggleLike() {
-  const react = useReact()
-  return {
-    ...react,
-    mutate: ({ activity_id, liked }: { activity_id: string; liked: boolean }) =>
-      react.mutate({ activity_id, emoji: liked ? null : '👏' }),
-  }
 }

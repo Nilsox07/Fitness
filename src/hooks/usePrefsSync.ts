@@ -10,10 +10,17 @@ import { useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
-import { usePrefs } from '../lib/prefs'
 import { setDayCutoff } from '../lib/day'
-import { DEFAULT_KCAL_BONUS, DEFAULT_MEAL_SPLIT, DEFAULT_PREFS, normalizePrefs, type MealSplit, type UserPrefs } from '../lib/userPrefs'
-import { buildHistory, sanitizeSchedule, todayPlan, weeklyGoal, type HistoryEntry, type Schedule, type TodayPlan } from '../lib/schedule'
+import { DEFAULT_PREFS, normalizePrefs, type MealSplit, type UserPrefs } from '../lib/userPrefs'
+import {
+  buildHistory,
+  sanitizeSchedule,
+  todayPlan,
+  weeklyGoal,
+  type HistoryEntry,
+  type Schedule,
+  type TodayPlan,
+} from '../lib/schedule'
 import { getPlanQueue } from '../lib/workoutSession'
 import { usePlans } from './usePlans'
 import { useAllSets, useWorkouts } from './useWorkouts'
@@ -156,7 +163,10 @@ export function useUserPrefs(): {
   )
 
   // Zwischengespeicherte Daten älterer App-Versionen kennen neue Felder nicht → immer normalisieren
-  const prefs = useMemo(() => (query.data?.prefs ? normalizePrefs(query.data.prefs) : DEFAULT_PREFS), [query.data?.prefs])
+  const prefs = useMemo(
+    () => (query.data?.prefs ? normalizePrefs(query.data.prefs) : DEFAULT_PREFS),
+    [query.data?.prefs],
+  )
   return {
     prefs,
     save,
@@ -166,23 +176,16 @@ export function useUserPrefs(): {
   }
 }
 
-/**
- * Ernährungs-Werte aus den Einstellungen — nur im Neu-Modus, klassisch bleiben
- * die festen Standardwerte (250 kcal, 25/35/30/10).
- */
+/** Ernährungs-Werte aus den Einstellungen. */
 export function useNutritionPrefs(): { kcalBonus: number; mealSplit: MealSplit } {
-  const { isNew } = usePrefs()
   const { prefs } = useUserPrefs()
-  return isNew
-    ? { kcalBonus: prefs.kcalBonus, mealSplit: prefs.mealSplit }
-    : { kcalBonus: DEFAULT_KCAL_BONUS, mealSplit: DEFAULT_MEAL_SPLIT }
+  return { kcalBonus: prefs.kcalBonus, mealSplit: prefs.mealSplit }
 }
 
-/** Persönliches Wochenziel (aus dem Rhythmus; klassisch / ohne Rhythmus: 3). */
+/** Persönliches Wochenziel (aus dem Rhythmus; ohne Rhythmus: 3). */
 export function useWeeklyGoal(): number {
-  const { isNew } = usePrefs()
   const { prefs } = useUserPrefs()
-  return isNew ? weeklyGoal(prefs.schedule) : weeklyGoal(null)
+  return weeklyGoal(prefs.schedule)
 }
 
 /**

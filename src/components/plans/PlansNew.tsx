@@ -176,7 +176,6 @@ export default function PlansNew() {
 
       {!isLoading && hasPlans && <RhythmCard onOpen={openRhythm} style={enter(idx++)} />}
 
-
       {hasPlans && (
         <ul className="space-y-3">
           {plans!.map((plan) => (
@@ -331,7 +330,7 @@ function RhythmCard({ onOpen, style }: { onOpen: () => void; style?: CSSProperti
         <span className="min-w-0 flex-1">
           <span className="block text-[15px] font-semibold text-cocoa">Trainingsrhythmus</span>
           <span className="block truncate text-xs text-cocoa-light">
-            {configured ? describeSchedule(schedule) : 'Lege fest, wann du welchen Plan trainierst'}
+            {configured ? describeSchedule(schedule) : 'Wann trainierst du?'}
           </span>
         </span>
         <span className="shrink-0 text-xs font-semibold text-brand">{configured ? 'Ändern' : 'Festlegen'}</span>
@@ -344,17 +343,17 @@ function RhythmCard({ onOpen, style }: { onOpen: () => void; style?: CSSProperti
             const train = d.plan.kind === 'train' ? nameOf(d.plan.planId) : null
             const label = train ?? (d.plan.kind === 'rest' ? 'Ruhetag' : 'frei')
             return (
-              <span key={d.date} className="flex min-w-0 flex-col items-center gap-1" title={`${WEEKDAY_SHORT[d.weekday]}: ${label}`}>
+              <span
+                key={d.date}
+                className="flex min-w-0 flex-col items-center gap-1"
+                title={`${WEEKDAY_SHORT[d.weekday]}: ${label}`}
+              >
                 <span className={`text-[10px] font-semibold ${k === 0 ? 'text-brand' : 'text-cocoa-muted'}`}>
                   {k === 0 ? 'Heute' : WEEKDAY_SHORT[d.weekday]}
                 </span>
                 <span
                   className={`grid h-9 w-full place-items-center rounded-xl text-[11px] font-bold ${
-                    d.done
-                      ? 'bg-success text-white'
-                      : train
-                        ? 'bg-brand/15 text-brand'
-                        : 'bg-sand text-cocoa-muted'
+                    d.done ? 'bg-success text-white' : train ? 'bg-brand/15 text-brand' : 'bg-sand text-cocoa-muted'
                   }`}
                 >
                   {d.done ? (
@@ -367,7 +366,9 @@ function RhythmCard({ onOpen, style }: { onOpen: () => void; style?: CSSProperti
                     '·'
                   )}
                 </span>
-                <span className="w-full truncate text-center text-[10px] text-cocoa-light">{train ?? (d.plan.kind === 'rest' ? 'Ruhe' : '')}</span>
+                <span className="w-full truncate text-center text-[10px] text-cocoa-light">
+                  {train ?? (d.plan.kind === 'rest' ? 'Ruhe' : '')}
+                </span>
               </span>
             )
           })}

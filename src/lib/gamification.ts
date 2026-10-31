@@ -1,4 +1,4 @@
-// Spielerische Fortschritts-Elemente: Ränge, Maskottchen-Stufen, Achievements.
+// Spielerische Fortschritts-Elemente: Ränge, Achievements.
 // Reine Logik (ohne UI/DB), damit testbar.
 
 export interface Rank {
@@ -29,15 +29,6 @@ export function rankForSessions(sessions: number): Rank {
     title: RANKS[idx].title,
     toNext: next ? next.min - sessions : null,
   }
-}
-
-export function mascotStage(sessions: number): { emoji: string; label: string } {
-  if (sessions >= 250) return { emoji: '🦾', label: 'Maschine' }
-  if (sessions >= 120) return { emoji: '🏋️', label: 'Athlet' }
-  if (sessions >= 60) return { emoji: '💪', label: 'Kraftpaket' }
-  if (sessions >= 30) return { emoji: '🐤', label: 'im Aufbau' }
-  if (sessions >= 10) return { emoji: '🐣', label: 'Küken' }
-  return { emoji: '🥚', label: 'Frisch geschlüpft' }
 }
 
 export interface Achievement {

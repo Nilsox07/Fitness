@@ -13,6 +13,7 @@ import { useLibrary } from '../library/useLibrary'
 import { getLinks, normalize, setLinks } from '../../lib/exerciseLibrary'
 import { planStarter } from '../../lib/starterSets'
 import { withWidget } from '../../lib/dashboard'
+import { markSeen } from '../../lib/whatsnew'
 import { computeTargets, defaultWaterTarget } from '../../lib/nutrition'
 import {
   CARDIO_KINDS,
@@ -49,6 +50,11 @@ export function OnboardingHost() {
   const { prefs, ready } = useUserPrefs()
   const [manual, setManual] = useState(false)
   const [closed, setClosed] = useState(false)
+  // Einmal geöffnet, bleibt es offen bis zum Schließen (auch wenn „onboarded“ beim Speichern wechselt)
+  const [auto, setAuto] = useState(false)
+  useEffect(() => {
+    if (ready && !prefs.onboarded) setAuto(true)
+  }, [ready, prefs.onboarded])
   useEffect(() => {
     const on = () => {
       setClosed(false)
@@ -57,13 +63,14 @@ export function OnboardingHost() {
     window.addEventListener(OPEN_ONBOARDING_EVENT, on)
     return () => window.removeEventListener(OPEN_ONBOARDING_EVENT, on)
   }, [])
-  const open = !closed && (manual || (ready && !prefs.onboarded))
+  const open = !closed && (manual || auto)
   if (!open) return null
   return (
     <Onboarding
       onClose={() => {
         setClosed(true)
         setManual(false)
+        setAuto(false)
       }}
     />
   )
@@ -97,7 +104,7 @@ function Onboarding({ onClose }: { onClose: () => void }) {
   const [useWatch, setUseWatch] = useState(mods.hasWatch)
   const [useSocial, setUseSocial] = useState(mods.showSocial)
   const [body, setBody] = useState({
-    sex: (settings?.sex ?? 'm') as Sex,
+    sex: (settings?.sex === 'f' ? 'f' : 'm') as Sex,
     age: settings?.age ?? 30,
     height: settings?.height_cm ?? 175,
     weight: settings?.weight_kg ?? 75,
@@ -129,6 +136,7 @@ function Onboarding({ onClose }: { onClose: () => void }) {
   )
 
   async function skip() {
+    markSeen()
     await save({ onboarded: true })
     onClose()
   }
@@ -215,6 +223,7 @@ function Onboarding({ onClose }: { onClose: () => void }) {
           a.gymDays,
         ),
       })
+      markSeen()
       setBusy(null)
       setStep('done')
     } catch (e) {

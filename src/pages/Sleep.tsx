@@ -61,8 +61,8 @@ export default function Sleep() {
           {r
             ? r.advice
             : t.caps?.known && !t.caps.has.sleep && !t.caps.has.hrv && !t.caps.has.restingHr
-              ? 'Deine Uhr liefert weder Schlaf noch Ruhepuls oder HRV – dafür lässt sich keine Tagesform berechnen.'
-              : 'Sobald deine Uhr eine Nacht aufgezeichnet hat, siehst du hier, wie erholt du bist.'}
+              ? 'Deine Uhr liefert dafür keine Werte.'
+              : 'Noch keine Nacht aufgezeichnet.'}
         </p>
         {r && (
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-bg/10 dark:bg-white/10">
@@ -115,7 +115,7 @@ export default function Sleep() {
         <p className="card text-sm text-cocoa-light">
           {t.caps?.known && !t.caps.has.sleep
             ? 'Deine Uhr gibt keinen Schlaf an Health Connect weiter. Manche Uhren können das nur mit ihrer eigenen App – dort ggf. „Mit Health Connect teilen“ für Schlaf einschalten.'
-            : 'Für diese Nacht gibt es keine Schlafdaten.'}
+            : 'Keine Daten für diese Nacht.'}
         </p>
       ) : (
         <>

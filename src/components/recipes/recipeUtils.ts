@@ -30,16 +30,12 @@ export function hashString(s: string): number {
   return h >>> 0
 }
 
-/** Kuratierte Farbtöne (warm, kräuterig, beerig) — keine grellen Neonfarben. */
-const HUES = [12, 24, 36, 48, 88, 140, 165, 190, 215, 265, 300, 335]
-
-/** Weicher Diagonal-Verlauf als CSS-Hintergrund (funktioniert hell & dunkel, Icon weiß). */
+/** Weicher Verlauf in der App-Farbe (folgt dem gewählten Farbthema); Winkel und Tiefe je Rezept leicht anders. */
 export function coverGradient(title: string): string {
   const h = hashString(title.trim().toLowerCase())
-  const hue = HUES[h % HUES.length]
-  const shift = 18 + ((h >>> 8) % 22) // 18–39° Verschiebung für Tiefe
-  const hue2 = (hue + shift) % 360
-  return `linear-gradient(135deg, hsl(${hue} 62% 64%) 0%, hsl(${hue2} 55% 46%) 100%)`
+  const angle = 110 + (h % 7) * 10 // 110–170°
+  const mid = 40 + ((h >>> 8) % 25) // 40–64 %
+  return `linear-gradient(${angle}deg, rgb(var(--c-ruby-light)) 0%, rgb(var(--c-ruby)) ${mid}%, rgb(var(--c-ruby-dark)) 100%)`
 }
 
 const ICON_RULES: [RegExp, LucideIcon][] = [

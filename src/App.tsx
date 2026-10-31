@@ -36,6 +36,7 @@ import ActivityDetail from './pages/ActivityDetail'
 import { NativeNav, NativeSync } from './components/NativeSync'
 import { SearchHost } from './components/search/SearchSheet'
 import { Splash } from './components/Splash'
+import { OnboardingHost } from './components/onboarding/Onboarding'
 import { useChallengeSync } from './hooks/useChallenges'
 
 /** Eigenen Stand in laufenden Wetten im Hintergrund aktuell halten. */
@@ -50,7 +51,7 @@ const FITNESS_ROUTES = ['/', '/plans', '/exercises']
 
 export default function App() {
   const { session, loading, recovery } = useAuth()
-  const { isNew, world, setWorld, showNutrition, showSocial, hasWatch } = usePrefs()
+  const { world, setWorld, showNutrition, showSocial, hasWatch } = usePrefs()
   const { pathname, search } = useLocation()
   const mainRef = useRef<HTMLElement>(null)
 
@@ -68,7 +69,7 @@ export default function App() {
   const pathRef = useRef(pathname)
   pathRef.current = pathname
   useEffect(() => {
-    if (!session || !isNew) return
+    if (!session) return
     const goHome = () => {
       if (pathRef.current === '/' && !isWorkoutRunning()) navigate('/today', { replace: true })
     }
@@ -83,14 +84,13 @@ export default function App() {
     }
     document.addEventListener('visibilitychange', onVis)
     return () => document.removeEventListener('visibilitychange', onVis)
-  }, [session, isNew, navigate])
+  }, [session, navigate])
 
   // Top-Umschalter mit der aktuellen Seite synchron halten.
   useEffect(() => {
-    if (!isNew) return
     if (FOOD_ROUTES.includes(pathname) && world !== 'food') setWorld('food')
     else if (FITNESS_ROUTES.includes(pathname) && world !== 'fitness') setWorld('fitness')
-  }, [pathname, isNew, world, setWorld])
+  }, [pathname, world, setWorld])
 
   if (loading) {
     return <div className="flex h-full items-center justify-center text-cocoa-light">Lädt…</div>
@@ -108,9 +108,9 @@ export default function App() {
     <div className="mx-auto flex h-full max-w-md flex-col">
       <AiActivityBar />
       <SaveStatus />
-      {isNew && <TopBar />}
-      {isNew && showSocial && <ChallengeSync />}
-      {isNew && <NativeSync />}
+      <TopBar />
+      {showSocial && <ChallengeSync />}
+      <NativeSync />
       <NativeNav />
       <main
         ref={mainRef}
@@ -118,7 +118,7 @@ export default function App() {
       >
         <Routes>
           <Route path="/" element={<Workout />} />
-          <Route path="/today" element={isNew ? <Today /> : <Navigate to="/" replace />} />
+          <Route path="/today" element={<Today />} />
           <Route path="/cardio" element={hasWatch ? <Cardio /> : <Navigate to="/analytics" replace />} />
           <Route path="/cardio/:id" element={hasWatch ? <ActivityDetail /> : <Navigate to="/analytics" replace />} />
           <Route path="/sleep" element={hasWatch ? <Sleep /> : <Navigate to="/analytics" replace />} />
@@ -127,7 +127,7 @@ export default function App() {
           <Route path="/exercises" element={<Exercises />} />
           <Route path="/exercises/:id" element={<ExerciseDetail />} />
           <Route path="/plans" element={<Plans />} />
-          <Route path="/social" element={!isNew || showSocial ? <Social /> : <Navigate to="/today" replace />} />
+          <Route path="/social" element={showSocial ? <Social /> : <Navigate to="/today" replace />} />
           <Route path="/badges" element={<Badges />} />
           <Route path="/recipes" element={showNutrition ? <Recipes /> : <Navigate to="/" replace />} />
           <Route path="/shopping" element={showNutrition ? <Shopping /> : <Navigate to="/" replace />} />
@@ -136,17 +136,18 @@ export default function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/body" element={<Body />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/quick" element={isNew ? <QuickWorkout /> : <Navigate to="/" replace />} />
+          <Route path="/quick" element={<QuickWorkout />} />
           <Route path="/share" element={<ShareTarget />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      {isNew && <Assistant />}
-      {isNew && <SearchHost />}
-      {isNew && <BuddyMomentHost />}
-      {isNew && <WhatsNew />}
-      {isNew && <WeeklyReview />}
-      {isNew && <Splash />}
+      <Assistant />
+      <SearchHost />
+      <BuddyMomentHost />
+      <WhatsNew />
+      <WeeklyReview />
+      <Splash />
+      <OnboardingHost />
       <TabBar />
     </div>
   )

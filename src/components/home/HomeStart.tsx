@@ -35,6 +35,7 @@ import { CustomizeHome } from './CustomizeHome'
 import { useHomeCards } from '../../lib/homeCards'
 import { ClipboardList, Dumbbell, Timer } from 'lucide-react'
 import { BuddyTip } from '../buddy/BuddyTip'
+import { CardioPlanCard } from '../today/CardioPlanCard'
 
 const SKIP_MUSCLES = new Set<MuscleGroup>(['Sonstige', 'Ganzkörper'])
 
@@ -46,7 +47,7 @@ function whenLabel(offset: number, date: string): string {
 }
 
 /**
- * „Heute"-Start-Screen im Neu-Modus (noch kein Training heute):
+ * „Heute"-Start-Screen (noch kein Training heute):
  * Begrüßung, Wochenleiste, nächstes Training, Erholung, letztes Training.
  */
 export function HomeStart({
@@ -147,8 +148,6 @@ export function HomeStart({
     <div className="space-y-4">
       <HomeHeader name={profile?.display_name ?? null} dateLabel={dateLabel} streak={streak} />
       <WeekStrip today={today} trainedDates={trainedDates} goal={rhythm.goal} planned={planned} index={++i} />
-      <BuddyTip page="training" />
-      <QuestStrip area="training" style={enter(++i)} />
       {showPrompt && <RhythmPrompt index={++i} />}
       {plans === undefined ? (
         <div className="h-72 animate-pulse rounded-3xl bg-sand" aria-hidden />
@@ -184,6 +183,9 @@ export function HomeStart({
           buddy={buddy}
         />
       )}
+      <CardioPlanCard />
+      <BuddyTip page="training" />
+      <QuestStrip area="training" style={enter(++i)} />
       <ToolTiles
         style={enter(++i)}
         items={[

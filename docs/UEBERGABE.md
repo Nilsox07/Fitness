@@ -59,6 +59,11 @@ einer App, aber nur das sichtbar, was man nutzt.
   und Seiten verschwinden. Flags in `src/lib/prefs.tsx` (`showNutrition`, `showSocial`, `hasWatch`).
 - **Fortschritt-Tab** mit einer Leiste: Kraft · Ausdauer · Schlaf · Herz & Körper · Ernährung · Erfolge
   (Uhr-Bereiche nur mit `hasWatch`).
+- **Intro beim ersten Start** (`components/onboarding/Onboarding.tsx`, Logik in `src/lib/onboarding.ts`, getestet):
+  Ziel, Erfahrung, Gym/Zuhause, Trainingstage, Ausdauer (Art + Häufigkeit), Bereiche, Körperdaten → legt Übungen,
+  Pläne und den Wochen-Rhythmus an, berechnet das Kalorienziel und speichert einen Ausdauer-Plan
+  (`prefs.cardioPlan`, abhaken über `prefs.cardioDone`, mit Uhr automatisch). Erneut: Profil → „Plan neu erstellen“.
+- **Texte:** Übersichten zeigen nur kurze Zeilen; Erklärungen liegen hinter einem (i) (`components/ui/InfoTip.tsx`).
 - **Navigation wie bei iOS:** globale Suche (Lupe oben in jedem Tab, `components/search/SearchSheet.tsx`,
   Einträge + Stichwörter in `src/lib/searchIndex.ts`, Module beachten). Profil gruppiert: Ich ·
   Personalisieren · Buddy · Mitteilungen & Geräte · Konto & Daten. Deep Links für die Suche:
@@ -297,5 +302,5 @@ Kleinere offene Punkte:
 - `npx tsc -p tsconfig.app.json --noEmit`, `npx vitest run` (ca. 400 Tests), `npm run build`.
 - UI-Prüfung mit Playwright gegen `npx vite preview --port 4190`. Supabase und `/api/ai` werden im
   Skript gemockt (`page.route`), Login über einen Fake-Token in `localStorage`
-  (`sb-<projekt>-auth-token`), Modus über `pref_app_mode = 'new'`.
+  (`sb-<projekt>-auth-token`).
 - Android: `npx cap sync android`, `npx cap run android` (Gerät/Emulator), Logs mit `adb logcat`.

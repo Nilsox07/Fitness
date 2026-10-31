@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
-  Bot,
   Camera,
   ChefHat,
   ClipboardList,
@@ -71,7 +70,6 @@ import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
 import {
   analyzeMeal,
-  estimateFoodFromImage,
   estimateFoodFromText,
   mealPlanForDay,
   recipeFromFridge,
@@ -85,7 +83,6 @@ import {
   type Recipe,
 } from '../lib/ai'
 import { useAiStatus } from '../hooks/useAi'
-import { usePrefs } from '../lib/prefs'
 import { GoalEditor } from '../components/GoalEditor'
 import { WeekStrip } from '../components/nutrition-home/WeekStrip'
 import { HeroCard } from '../components/nutrition-home/HeroCard'
@@ -109,7 +106,7 @@ import { QuestStrip } from '../components/buddy/QuestStrip'
 import { CustomizeHome } from '../components/home/CustomizeHome'
 import { useHomeCards } from '../lib/homeCards'
 import { fluidOf } from '../lib/fluid'
-import { ChainBadge, ChainMenu } from '../components/food/ChainMenu'
+import { ChainMenu } from '../components/food/ChainMenu'
 import {
   CHAIN_BADGE,
   findChain,
@@ -164,18 +161,6 @@ function saveError(e: unknown, what = 'Speichern'): string {
   return `${what} fehlgeschlagen${detail}. Bitte nochmal versuchen.`
 }
 
-function Bar({ value, target }: { value: number; target: number }) {
-  const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0
-  return (
-    <div className="h-2 overflow-hidden rounded-full bg-sand-dark/50">
-      <div
-        className={`h-full rounded-full transition-[width] duration-300 ${pct >= 100 ? 'bg-success' : 'bg-brand'}`}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  )
-}
-
 /** „Anderes Restaurant“ (ohne Kette): Speisekarte fotografieren oder beschreiben. */
 const OTHER_PLACE = 'Restaurant'
 const RECENT_PLACES_KEY = 'recent_places'
@@ -195,27 +180,6 @@ function recentFirst(ids: string[]): string[] {
   })
 }
 
-/** Anbieter-Chips im Restaurant-Sheet. */
-const PLACES = [
-  'Döner',
-  'Italienisch',
-  'Indisch',
-  'Mexikanisch',
-  'Asiatisch',
-  'Chinesisch',
-  'Thai',
-  'Vietnamesisch',
-  'Sushi',
-  'Griechisch',
-  'Türkisch',
-  'Libanesisch',
-  'Burger',
-  'Pizza',
-  'Café',
-  'Bäckerei',
-  'Supermarkt',
-]
-
 /** Felder der manuellen Eingabe (die ersten fünf sind die Hauptwerte). */
 const MANUAL_FIELDS = [
   ['kcal', 'kcal'],
@@ -231,82 +195,39 @@ const MANUAL_FIELDS = [
 
 const fmtNum = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 1 })
 
-/**
- * Sheet der Hinzufügen-Abläufe: im neuen Modus als Premium-Sheet (Griff, Titel,
- * runder Schließen-Knopf, feste Primäraktion unten), im klassischen Modus
- * unverändert als Karte über dem abgedunkelten Hintergrund.
- */
+/** Sheet der Hinzufügen-Abläufe (Griff, Titel, runder Schließen-Knopf, feste Primäraktion unten). */
 function FlowSheet({
-  premium,
   title,
   subtitle,
   icon: Icon,
-  classicIcon = false,
   onClose,
   onBack,
   busy = false,
   footer,
-  classicBack,
-  z = 'z-20',
-  scroll = false,
-  dense = false,
   children,
 }: {
-  premium: boolean
   title: string
   subtitle?: string
   icon?: LucideIcon
-  /** Icon auch im klassischen Titel zeigen */
-  classicIcon?: boolean
   onClose: () => void
   onBack?: () => void
   busy?: boolean
   footer?: ReactNode
-  /** Nur klassisch: unterstrichener Zurück-/Abbrechen-Link am Ende */
-  classicBack?: ReactNode
-  z?: 'z-20' | 'z-30'
-  scroll?: boolean
-  dense?: boolean
   children: ReactNode
 }) {
-  if (premium) {
-    return (
-      <PremiumSheet
-        title={title}
-        subtitle={subtitle}
-        leading={Icon ? <IconTile icon={Icon} /> : undefined}
-        onClose={onClose}
-        onBack={onBack}
-        busy={busy}
-        footer={footer}
-        bodyClassName="space-y-4"
-      >
-        {children}
-      </PremiumSheet>
-    )
-  }
   return (
-    <div
-      className={`anim-fade fixed inset-0 ${z} flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]`}
+    <PremiumSheet
+      title={title}
+      subtitle={subtitle}
+      leading={Icon ? <IconTile icon={Icon} /> : undefined}
+      onClose={onClose}
+      onBack={onBack}
+      busy={busy}
+      footer={footer}
+      bodyClassName="space-y-4"
     >
-      <div
-        className={`anim-sheet card w-full max-w-md ${dense ? 'space-y-2' : 'space-y-3'} ${
-          scroll ? 'max-h-[90vh] overflow-y-auto' : ''
-        }`}
-      >
-        {Icon && classicIcon ? (
-          <h2 className="flex items-center gap-2 text-lg font-bold">
-            <Icon size={20} className="text-cocoa-light" />
-            {title}
-          </h2>
-        ) : (
-          <h2 className="text-lg font-bold">{title}</h2>
-        )}
-        {children}
-        {footer}
-        {classicBack}
-      </div>
-    </div>
+      {children}
+    </PremiumSheet>
   )
 }
 
@@ -388,7 +309,6 @@ export default function Nutrition() {
   const addRecipe = useAddRecipe()
   // Ausgewählter Tag (?date=YYYY-MM-DD) — so lassen sich vergangene Tage nachtragen/korrigieren.
   const [params, setParams] = useSearchParams()
-  const { isNew } = usePrefs()
   const realToday = todayLocal()
   const paramDate = params.get('date')
 
@@ -440,9 +360,8 @@ export default function Nutrition() {
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suppParam, slotParam])
-  // Vergangene Tage nur im neuen Modus (der klassische hat keine Tagesnavigation).
-  const today =
-    isNew && paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate < realToday ? paramDate : realToday
+  // Vergangene Tage per ?date=… (Tagesnavigation)
+  const today = paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate < realToday ? paramDate : realToday
   const isToday = today === realToday
   const setDay = (d: string) => setParams(d >= realToday ? {} : { date: d }, { replace: true })
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null)
@@ -601,13 +520,13 @@ export default function Nutrition() {
 
   // KI-Erfassung (Foto/Text)
   const { data: ai } = useAiStatus()
-  const aiOn = isNew && ai?.enabled
+  const aiOn = ai?.enabled
   const [aiResults, setAiResults] = useState<FoodEstimate[] | null>(null)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiText, setAiText] = useState('')
   const [photoHint, setPhotoHint] = useState('')
 
-  // Neuer Modus: „Mahlzeit-Analyse"-Sheet (öffnet sofort, lädt im Sheet)
+  // „Mahlzeit-Analyse"-Sheet (öffnet sofort, lädt im Sheet)
   type AnalysisSource = { image: string; hint?: string } | { text: string }
   const [analysis, setAnalysis] = useState<{
     id: number
@@ -659,61 +578,24 @@ export default function Nutrition() {
 
   async function handlePhoto(file: File | undefined) {
     if (!file) return
-    if (isNew) {
-      setError(null)
-      try {
-        const dataUrl = await fileToDataUrl(file)
-        const hint = photoHint.trim() || undefined
-        setAddMode(null)
-        setPhotoHint('')
-        void runAnalysis({ image: dataUrl, hint })
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Bild konnte nicht gelesen werden')
-      }
-      return
-    }
-    setAiBusy(true)
     setError(null)
     try {
       const dataUrl = await fileToDataUrl(file)
-      const items = await estimateFoodFromImage(dataUrl, photoHint.trim() || undefined)
-      if (items.length === 0) setError('Kein Essen erkannt. Versuch ein klareres Foto.')
-      else {
-        setAiResults(items)
-        setAddMode(null)
-        setPhotoHint('')
-      }
+      const hint = photoHint.trim() || undefined
+      setAddMode(null)
+      setPhotoHint('')
+      void runAnalysis({ image: dataUrl, hint })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'KI-Fehler beim Foto')
-    } finally {
-      setAiBusy(false)
+      setError(e instanceof Error ? e.message : 'Bild konnte nicht gelesen werden')
     }
   }
 
   async function handleAiText() {
     if (!aiText.trim()) return
-    if (isNew) {
-      setError(null)
-      setAddMode(null)
-      setAiText('')
-      void runAnalysis({ text: aiText.trim() })
-      return
-    }
-    setAiBusy(true)
     setError(null)
-    try {
-      const items = await estimateFoodFromText(aiText.trim())
-      if (items.length === 0) setError('Nichts erkannt. Formulier es anders.')
-      else {
-        setAiResults(items)
-        setAddMode(null)
-        setAiText('')
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'KI-Fehler')
-    } finally {
-      setAiBusy(false)
-    }
+    setAddMode(null)
+    setAiText('')
+    void runAnalysis({ text: aiText.trim() })
   }
 
   const [craving, setCraving] = useState('')
@@ -773,8 +655,7 @@ export default function Nutrition() {
         orderItems.length <= 2
           ? orderItems.map((i) => i.name).join(' + ')
           : `${activeChain.name} · ${orderItems.length} Artikel`
-      if (isNew) showAnalysis(orderItems, title)
-      else setAiResults(orderItems)
+      showAnalysis(orderItems, title)
       setOrderQty({})
       setAddMode(null)
       return
@@ -786,8 +667,7 @@ export default function Nutrition() {
       const items = await estimateFoodFromText(`${place ? place + ': ' : ''}${restItem.trim()}`)
       if (items.length === 0) setError('Nichts erkannt.')
       else {
-        if (isNew) showAnalysis(items, restItem.trim() || place || 'Bestellung')
-        else setAiResults(items)
+        showAnalysis(items, restItem.trim() || place || 'Bestellung')
         setAddMode(null)
       }
     } catch (e) {
@@ -896,8 +776,7 @@ export default function Nutrition() {
           ? 'Dein Budget ist fast aufgebraucht – das ist die kleinste sinnvolle Option.'
           : `Passt in deine restlichen ${remaining.kcal} kcal, mit möglichst viel Eiweiß.`
         : 'Viel Eiweiß für ca. 800 kcal.'
-      if (isNew) showAnalysis(items, `Vorschlag: ${activeChain.name}`, note)
-      else setAiResults(items)
+      showAnalysis(items, `Vorschlag: ${activeChain.name}`, note)
       setAddMode(null)
       return
     }
@@ -911,8 +790,7 @@ export default function Nutrition() {
       const res = await suggestOrder(place, remaining, restItem.trim())
       if (res.items.length === 0) setError('Kein Vorschlag möglich.')
       else {
-        if (isNew) showAnalysis(res.items, `Vorschlag: ${place}`, res.note)
-        else setAiResults(res.items)
+        showAnalysis(res.items, `Vorschlag: ${place}`, res.note)
         setAddMode(null)
       }
     } catch (e) {
@@ -1148,288 +1026,138 @@ export default function Nutrition() {
   const hasTarget = settings && settings.kcal_target > 0
   // Gleiches Tagesziel wie Tagesüberblick/Auswertung (Trainingstag + eigener Bonus, Standard 250).
   const kcalTarget = kcalTargetFor(settings, trainedToday, kcalBonus)
-  const kcalLeft = hasTarget ? kcalTarget - totals.kcal : 0
   const dayKcal = useMemo(() => kcalByDate(allEntries), [allEntries])
   const sheetOpen = addMode !== null || !!pending || !!aiResults || !!recipe || !!planItems || !!analysis
 
   return (
     <div className="space-y-4">
       {/* Fehler ohne offenes Sheet (sonst zeigt das Sheet ihn selbst) */}
-      {isNew && !sheetOpen && <ErrorLine error={error} />}
+      {!sheetOpen && <ErrorLine error={error} />}
 
-      {isNew ? (
-        <>
-          <TabHeader
-            style={stagger(0)}
-            overline={
-              isToday
-                ? new Date(`${today}T12:00:00`).toLocaleDateString('de-DE', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                  })
-                : dayLabel(today, realToday)
-            }
-            title="Ernährung"
-            action={
-              <button
-                className="flex max-w-[11rem] items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
-                onClick={openSetup}
-                aria-label={hasTarget ? 'Ziel & Ernährungsweise bearbeiten' : 'Ziel festlegen'}
-              >
-                <Target size={15} className="shrink-0 text-brand" />
-                <span className="truncate">{dietLabel || (hasTarget ? 'Ziel' : 'Ziel festlegen')}</span>
-              </button>
-            }
-          />
-          {isToday && <BuddyTip page="nutrition" />}
-
-          {waterNote && (
-            <div className="anim-fade rounded-full bg-brand/10 px-4 py-2 text-center text-sm font-semibold text-brand">
-              {waterNote}
-            </div>
-          )}
-
-          <WeekStrip
-            date={today}
-            today={realToday}
-            onChange={setDay}
-            kcalByDate={dayKcal}
-            targetFor={(d) => kcalTargetFor(settings, trainedOn(d, allSets), kcalBonus)}
-          />
-
-          {isToday && <QuestStrip area="food" />}
-
-          {!isToday && (
-            <div className="anim-fade flex items-center justify-between gap-2 rounded-full bg-sand px-3 py-1.5 text-xs text-cocoa-light">
-              <span className="truncate">Vergangener Tag — neue Einträge landen hier</span>
-              <button className="shrink-0 font-semibold text-brand" onClick={() => setDay(realToday)}>
-                Zu heute
-              </button>
-            </div>
-          )}
-
-          <HeroCard
-            totals={totals}
-            targets={{
-              kcal: hasTarget ? kcalTarget : 0,
-              protein: settings?.protein_target ?? 0,
-              carbs: settings?.carbs_target ?? 0,
-              fat: settings?.fat_target ?? 0,
-            }}
-            trained={trainedToday}
-            bonus={kcalBonus}
-            onSetup={openSetup}
-            style={stagger(1)}
-          />
-
-          {isToday && diet.fasting !== 'none' && <FastingCard entries={entries ?? []} style={stagger(2)} />}
-
-          <QuickAddBar
-            aiOn={!!aiOn}
-            onPhoto={(file) => {
-              setMealOverride(null)
-              void handlePhoto(file)
-            }}
-            onScan={() => {
-              setMealOverride(null)
-              setError(null)
-              setScanning(true)
-            }}
-            onSearch={() => {
-              setMealOverride(null)
-              go('search')
-            }}
-            onMore={() => {
-              setMealOverride(null)
-              go('menu')
-            }}
-            style={stagger(2)}
-          />
-
-          {isToday && (
-            <ToolTiles
-              style={stagger(3)}
-              items={[
-                { to: '/recipes', label: 'Rezepte', sub: 'Entdecken & eigene', Icon: BookOpen },
-                { to: '/shopping?view=plan', label: 'Wochenplan', sub: 'Essen planen', Icon: CalendarDays },
-                { to: '/shopping?view=shopping', label: 'Einkauf', sub: 'Einkaufsliste', Icon: ShoppingBasket },
-              ]}
-            />
-          )}
-
-          {homeCards.recent && <RecentChips items={recent} onAdd={quickAdd} style={stagger(3)} />}
-
-          <div className="space-y-3">
-            {MEALS.map((meal, i) => (
-              <MealCard
-                key={meal}
-                meal={meal}
-                entries={(entries ?? []).filter((e) => (e.meal ?? 'snack') === meal)}
-                recommended={hasTarget ? mealRecommendation(meal, kcalTarget, mealSplit) : 0}
-                onAdd={() => {
-                  setMealOverride(meal)
-                  go('menu')
-                }}
-                onEdit={setEditEntry}
-                style={stagger(4 + i)}
-              />
-            ))}
-          </div>
-
-          <WaterRow date={today} style={stagger(8)} />
-          {(homeCards.supplements || (supplements?.length ?? 0) > 0) && <SupplementCard date={today} />}
-          {isToday && (homeCards.weight || params.has('weigh')) && <BodyWeightCard />}
-          {isToday && <CustomizeHome area="food" />}
-        </>
-      ) : (
-        <>
-          <header className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold">Ernährung</h1>
-              <p className="text-sm text-cocoa-light">
-                {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </p>
-            </div>
-            <button className="btn-ghost text-sm" onClick={openSetup}>
-              {hasTarget ? 'Ziel' : 'Ziel einstellen'}
+      <>
+        <TabHeader
+          style={stagger(0)}
+          overline={
+            isToday
+              ? new Date(`${today}T12:00:00`).toLocaleDateString('de-DE', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })
+              : dayLabel(today, realToday)
+          }
+          title="Ernährung"
+          action={
+            <button
+              className="flex max-w-[11rem] items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
+              onClick={openSetup}
+              aria-label={hasTarget ? 'Ziel & Ernährungsweise bearbeiten' : 'Ziel festlegen'}
+            >
+              <Target size={15} className="shrink-0 text-brand" />
+              <span className="truncate">{dietLabel || (hasTarget ? 'Ziel' : 'Ziel festlegen')}</span>
             </button>
-          </header>
+          }
+        />
+        {isToday && <BuddyTip page="nutrition" />}
 
-          {/* Fehler ohne offenes Sheet (sonst zeigt das Sheet ihn selbst) */}
-          {!sheetOpen && <ErrorLine error={error} />}
-
-          {/* Tagesübersicht */}
-          <div className="card space-y-3">
-            {hasTarget ? (
-              <>
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="tabular text-2xl font-bold text-cocoa">{totals.kcal}</div>
-                    <div className="tabular text-xs text-cocoa-light">
-                      von {kcalTarget} kcal{trainedToday && ' · +Trainingstag'}
-                    </div>
-                  </div>
-                  <div className="tabular text-right text-sm text-cocoa-light">
-                    {kcalLeft >= 0 ? `${kcalLeft} kcal übrig` : `${-kcalLeft} kcal drüber`}
-                  </div>
-                </div>
-                <Bar value={totals.kcal} target={kcalTarget} />
-                <div className="tabular grid grid-cols-3 gap-2 text-center text-xs">
-                  <div>
-                    <div className="font-semibold text-cocoa">{totals.protein} g</div>
-                    <div className="text-cocoa-light">Eiweiß / {settings!.protein_target} g</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-cocoa">{totals.carbs} g</div>
-                    <div className="text-cocoa-light">Kohlh. / {settings!.carbs_target} g</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-cocoa">{totals.fat} g</div>
-                    <div className="text-cocoa-light">Fett / {settings!.fat_target} g</div>
-                  </div>
-                </div>
-                <div className="tabular grid grid-cols-4 gap-2 rounded-xl bg-sand-light p-2 text-center text-[11px] text-cocoa-light">
-                  <div>
-                    <div className="font-semibold text-cocoa">{totals.fiber} g</div>
-                    Ballaststoffe
-                  </div>
-                  <div>
-                    <div className="font-semibold text-cocoa">{totals.sugar} g</div>
-                    Zucker
-                  </div>
-                  <div>
-                    <div className="font-semibold text-cocoa">{totals.sat_fat} g</div>
-                    ges. Fett
-                  </div>
-                  <div>
-                    <div className="font-semibold text-cocoa">{totals.salt} g</div>
-                    Salz
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-center text-sm text-cocoa-light">
-                Stell zuerst dein Kalorienziel ein, um deinen Tagesfortschritt zu sehen.
-              </div>
-            )}
+        {waterNote && (
+          <div className="anim-fade rounded-full bg-brand/10 px-4 py-2 text-center text-sm font-semibold text-brand">
+            {waterNote}
           </div>
+        )}
 
-          {/* Erfassen */}
-          <button className="btn-primary w-full gap-1.5" onClick={() => go('menu')}>
-            <Plus size={18} strokeWidth={2.5} />
-            Lebensmittel hinzufügen
-          </button>
+        <WeekStrip
+          date={today}
+          today={realToday}
+          onChange={setDay}
+          kcalByDate={dayKcal}
+          targetFor={(d) => kcalTargetFor(settings, trainedOn(d, allSets), kcalBonus)}
+        />
 
-          {/* Zuletzt gegessen — 1-Tap-Wiederholung */}
-          {recent.length > 0 && (
-            <div>
-              <p className="mb-1 text-xs font-medium text-cocoa-light">Zuletzt gegessen</p>
-              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-                {recent.map((e) => (
-                  <button
-                    key={e.id}
-                    onClick={() => quickAdd(e)}
-                    className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-3 py-1.5 text-sm transition-colors duration-200 hover:bg-sand-dark/60"
-                  >
-                    <Plus size={14} className="text-cocoa-light" />
-                    {e.name}
-                    <span className="tabular text-cocoa-muted">{Math.round(e.kcal)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        {isToday && <QuestStrip area="food" />}
 
-          {/* Heutige Einträge, nach Mahlzeit gruppiert */}
-          <div className="space-y-3">
-            {MEALS.map((meal) => {
-              const group = (entries ?? []).filter((e) => (e.meal ?? 'snack') === meal)
-              if (group.length === 0) return null
-              const kcal = group.reduce((s, e) => s + e.kcal, 0)
-              return (
-                <div key={meal}>
-                  <div className="mb-1 flex items-center justify-between px-1">
-                    <span className="text-sm font-semibold">{MEAL_LABEL[meal as Meal]}</span>
-                    <span className="tabular text-xs text-cocoa-light">{Math.round(kcal)} kcal</span>
-                  </div>
-                  <div className="space-y-2">
-                    {group.map((e) => (
-                      <div key={e.id} className="card flex items-center justify-between">
-                        <button
-                          className="min-w-0 flex-1 text-left"
-                          onClick={() => isNew && setEditEntry(e)}
-                          disabled={!isNew}
-                        >
-                          <div className="font-medium">{e.name}</div>
-                          <div className="tabular text-xs text-cocoa-light">
-                            {e.amount_g ? `${e.amount_g} g · ` : ''}
-                            {Math.round(e.kcal)} kcal · E {e.protein} / K {e.carbs} / F {e.fat}
-                          </div>
-                        </button>
-                        <button
-                          className="ml-2 shrink-0 px-2 text-cocoa-muted transition-colors duration-200 hover:text-red-500 dark:hover:text-red-400"
-                          aria-label="Eintrag löschen"
-                          onClick={() =>
-                            deleteEntry.mutate(e, { onError: (err) => setError(saveError(err, 'Löschen')) })
-                          }
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-            {entries?.length === 0 && (
-              <p className="text-center text-sm text-cocoa-light">
-                {isToday ? 'Heute noch nichts erfasst.' : 'An diesem Tag nichts erfasst.'}
-              </p>
-            )}
+        {!isToday && (
+          <div className="anim-fade flex items-center justify-between gap-2 rounded-full bg-sand px-3 py-1.5 text-xs text-cocoa-light">
+            <span className="truncate">Vergangener Tag — neue Einträge landen hier</span>
+            <button className="shrink-0 font-semibold text-brand" onClick={() => setDay(realToday)}>
+              Zu heute
+            </button>
           </div>
-        </>
-      )}
+        )}
+
+        <HeroCard
+          totals={totals}
+          targets={{
+            kcal: hasTarget ? kcalTarget : 0,
+            protein: settings?.protein_target ?? 0,
+            carbs: settings?.carbs_target ?? 0,
+            fat: settings?.fat_target ?? 0,
+          }}
+          trained={trainedToday}
+          bonus={kcalBonus}
+          onSetup={openSetup}
+          style={stagger(1)}
+        />
+
+        {isToday && diet.fasting !== 'none' && <FastingCard entries={entries ?? []} style={stagger(2)} />}
+
+        <QuickAddBar
+          aiOn={!!aiOn}
+          onPhoto={(file) => {
+            setMealOverride(null)
+            void handlePhoto(file)
+          }}
+          onScan={() => {
+            setMealOverride(null)
+            setError(null)
+            setScanning(true)
+          }}
+          onSearch={() => {
+            setMealOverride(null)
+            go('search')
+          }}
+          onMore={() => {
+            setMealOverride(null)
+            go('menu')
+          }}
+          style={stagger(2)}
+        />
+
+        {isToday && (
+          <ToolTiles
+            style={stagger(3)}
+            items={[
+              { to: '/recipes', label: 'Rezepte', sub: 'Entdecken & eigene', Icon: BookOpen },
+              { to: '/shopping?view=plan', label: 'Wochenplan', sub: 'Essen planen', Icon: CalendarDays },
+              { to: '/shopping?view=shopping', label: 'Einkauf', sub: 'Einkaufsliste', Icon: ShoppingBasket },
+            ]}
+          />
+        )}
+
+        {homeCards.recent && <RecentChips items={recent} onAdd={quickAdd} style={stagger(3)} />}
+
+        <div className="space-y-3">
+          {MEALS.map((meal, i) => (
+            <MealCard
+              key={meal}
+              meal={meal}
+              entries={(entries ?? []).filter((e) => (e.meal ?? 'snack') === meal)}
+              recommended={hasTarget ? mealRecommendation(meal, kcalTarget, mealSplit) : 0}
+              onAdd={() => {
+                setMealOverride(meal)
+                go('menu')
+              }}
+              onEdit={setEditEntry}
+              style={stagger(4 + i)}
+            />
+          ))}
+        </div>
+
+        <WaterRow date={today} style={stagger(8)} />
+        {(homeCards.supplements || (supplements?.length ?? 0) > 0) && <SupplementCard date={today} />}
+        {isToday && (homeCards.weight || params.has('weigh')) && <BodyWeightCard />}
+        {isToday && <CustomizeHome area="food" />}
+      </>
 
       {editEntry && (
         <EditEntrySheet
@@ -1447,431 +1175,274 @@ export default function Nutrition() {
       )}
 
       {/* ----- Ziel-Setup ----- */}
-      {setupOpen &&
-        (isNew ? (
-          <PremiumSheet
-            title="Ziel & Körperdaten"
-            subtitle="Nährwerte werden automatisch berechnet"
-            leading={<IconTile icon={Target} />}
-            onClose={() => setSetupOpen(false)}
-          >
-            <GoalEditor onSaved={() => setSetupOpen(false)} onCancel={() => setSetupOpen(false)} />
-          </PremiumSheet>
-        ) : (
-          <div className="anim-fade fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-            <div className="anim-sheet card max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto">
-              <h2 className="text-lg font-bold">Ziel & Körperdaten</h2>
-              <GoalEditor onSaved={() => setSetupOpen(false)} onCancel={() => setSetupOpen(false)} />
-            </div>
-          </div>
-        ))}
+      {setupOpen && (
+        <PremiumSheet
+          title="Ziel & Körperdaten"
+          subtitle="Nährwerte werden automatisch berechnet"
+          leading={<IconTile icon={Target} />}
+          onClose={() => setSetupOpen(false)}
+        >
+          <GoalEditor onSaved={() => setSetupOpen(false)} onCancel={() => setSetupOpen(false)} />
+        </PremiumSheet>
+      )}
 
       {/* ----- Hinzufügen: Menü ----- */}
-      {addMode === 'menu' && !pending && !(isNew && scanning) && (
+      {addMode === 'menu' && !pending && !scanning && (
         <FlowSheet
-          premium={isNew}
           title="Hinzufügen"
           subtitle={mealOverride ? `zu ${MEAL_LABEL[mealOverride]}` : undefined}
           onClose={() => go(null)}
-          dense
-          classicBack={
-            <button className="w-full pt-1 text-center text-sm text-cocoa-light underline" onClick={() => go(null)}>
-              Abbrechen
-            </button>
-          }
         >
-          {isNew ? (
-            <>
-              <ErrorNote error={error} />
-              {aiOn && (
-                <div>
-                  <GroupLabel>Mit Buddy (KI)</GroupLabel>
-                  <GroupList>
-                    <GroupRow
-                      accent
-                      icon={<Camera size={18} />}
-                      title="Foto"
-                      subtitle="Essen fotografieren, Buddy schätzt"
-                      onClick={() => go('photo')}
-                    />
-                    <GroupRow
-                      icon={<MessageSquare size={18} />}
-                      title="Beschreiben"
-                      subtitle="z. B. „2 Eier und ein Brot"
-                      onClick={() => go('aitext')}
-                    />
-                    <GroupRow
-                      icon={<Store size={18} />}
-                      title="Restaurant / unterwegs"
-                      subtitle="Bestellung schätzen oder Vorschlag"
-                      onClick={() => go('restaurant')}
-                    />
-                    <GroupRow
-                      icon={<ChefHat size={18} />}
-                      title="Rezept"
-                      subtitle="Aus Kühlschrank-Foto oder Wunsch"
-                      onClick={() => go('recipe')}
-                    />
-                    <GroupRow
-                      icon={<ClipboardList size={18} />}
-                      title="Tagesplan für heute"
-                      subtitle="Passend zu deinem Ziel"
-                      onClick={() => go('plan')}
-                    />
-                  </GroupList>
-                </div>
-              )}
+          <>
+            <ErrorNote error={error} />
+            {aiOn && (
               <div>
-                <GroupLabel>Erfassen</GroupLabel>
+                <GroupLabel>Mit Buddy (KI)</GroupLabel>
                 <GroupList>
                   <GroupRow
-                    accent={!aiOn}
-                    icon={<ScanBarcode size={18} />}
-                    title="Barcode scannen"
-                    subtitle="Produkt per Kamera"
-                    onClick={() => {
-                      setError(null)
-                      setScanning(true)
-                    }}
+                    accent
+                    icon={<Camera size={18} />}
+                    title="Foto"
+                    subtitle="Essen fotografieren, Buddy schätzt"
+                    onClick={() => go('photo')}
                   />
                   <GroupRow
-                    icon={<Search size={18} />}
-                    title="Suchen"
-                    subtitle="In der Lebensmittel-Datenbank"
-                    onClick={() => go('search')}
+                    icon={<MessageSquare size={18} />}
+                    title="Beschreiben"
+                    subtitle="z. B. „2 Eier und ein Brot"
+                    onClick={() => go('aitext')}
                   />
                   <GroupRow
-                    icon={<PenLine size={18} />}
-                    title="Manuell eingeben"
-                    subtitle="Eigene Nährwerte"
-                    onClick={() => go('manual')}
+                    icon={<Store size={18} />}
+                    title="Restaurant / unterwegs"
+                    subtitle="Bestellung schätzen oder Vorschlag"
+                    onClick={() => go('restaurant')}
+                  />
+                  <GroupRow
+                    icon={<ChefHat size={18} />}
+                    title="Rezept"
+                    subtitle="Aus Kühlschrank-Foto oder Wunsch"
+                    onClick={() => go('recipe')}
+                  />
+                  <GroupRow
+                    icon={<ClipboardList size={18} />}
+                    title="Tagesplan für heute"
+                    subtitle="Passend zu deinem Ziel"
+                    onClick={() => go('plan')}
                   />
                 </GroupList>
               </div>
-            </>
-          ) : (
-            <>
-              <ErrorLine error={error} />
-              {aiOn && (
-                <>
-                  <button className="btn-primary w-full gap-2" onClick={() => go('photo')}>
-                    <Camera size={18} />
-                    Foto (KI)
-                  </button>
-                  <button className="btn-ghost w-full gap-2" onClick={() => go('aitext')}>
-                    <MessageSquare size={18} className="text-cocoa-light" />
-                    Text beschreiben (KI)
-                  </button>
-                  <button className="btn-ghost w-full gap-2" onClick={() => go('recipe')}>
-                    <ChefHat size={18} className="text-cocoa-light" />
-                    Rezept (Foto/Text, KI)
-                  </button>
-                  <button className="btn-ghost w-full gap-2" onClick={() => go('plan')}>
-                    <ClipboardList size={18} className="text-cocoa-light" />
-                    Tagesplan für heute (KI)
-                  </button>
-                  <button className="btn-ghost w-full gap-2" onClick={() => go('restaurant')}>
-                    <Store size={18} className="text-cocoa-light" />
-                    Restaurant / unterwegs (KI)
-                  </button>
-                </>
-              )}
-              <button
-                className={aiOn ? 'btn-ghost w-full gap-2' : 'btn-primary w-full gap-2'}
-                onClick={() => {
-                  setError(null)
-                  setScanning(true)
-                }}
-              >
-                <ScanBarcode size={18} className={aiOn ? 'text-cocoa-light' : undefined} />
-                Barcode scannen
-              </button>
-              <button className="btn-ghost w-full gap-2" onClick={() => go('search')}>
-                <Search size={18} className="text-cocoa-light" />
-                In Datenbank suchen
-              </button>
-              <button className="btn-ghost w-full gap-2" onClick={() => go('manual')}>
-                <PenLine size={18} className="text-cocoa-light" />
-                Manuell eingeben
-              </button>
-            </>
-          )}
+            )}
+            <div>
+              <GroupLabel>Erfassen</GroupLabel>
+              <GroupList>
+                <GroupRow
+                  accent={!aiOn}
+                  icon={<ScanBarcode size={18} />}
+                  title="Barcode scannen"
+                  subtitle="Produkt per Kamera"
+                  onClick={() => {
+                    setError(null)
+                    setScanning(true)
+                  }}
+                />
+                <GroupRow
+                  icon={<Search size={18} />}
+                  title="Suchen"
+                  subtitle="In der Lebensmittel-Datenbank"
+                  onClick={() => go('search')}
+                />
+                <GroupRow
+                  icon={<PenLine size={18} />}
+                  title="Manuell eingeben"
+                  subtitle="Eigene Nährwerte"
+                  onClick={() => go('manual')}
+                />
+              </GroupList>
+            </div>
+          </>
         </FlowSheet>
       )}
 
       {/* ----- Suche ----- */}
-      {addMode === 'search' && !pending && !(isNew && scanning) && (
-        <FlowSheet
-          premium={isNew}
-          title="Suchen"
-          icon={Search}
-          onClose={() => go(null)}
-          onBack={() => go('menu')}
-          scroll
-          classicBack={
-            <button className="w-full text-center text-sm text-cocoa-light underline" onClick={() => go('menu')}>
-              Zurück
-            </button>
-          }
-        >
-          {isNew ? (
-            <>
-              <form
-                className="flex gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  void runSearch()
-                }}
-              >
-                <div className="relative min-w-0 flex-1">
-                  <Search
-                    size={18}
-                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-cocoa-muted"
-                  />
-                  <input
-                    className={`${BIG_INPUT} pl-10`}
-                    type="search"
-                    enterKeyHint="search"
-                    autoFocus
-                    aria-label="Lebensmittel suchen"
-                    placeholder="z. B. Magerquark"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="btn-primary shrink-0 rounded-2xl px-5"
-                  disabled={searching || !query.trim()}
-                >
-                  {searching ? <Loader2 size={18} className="animate-spin" /> : 'Los'}
-                </button>
-              </form>
-              <ErrorNote error={error} />
-
-              {searching && results.length === 0 && (
-                <GroupList>
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="flex items-center gap-3 px-4 py-3.5">
-                      <div className="flex-1 space-y-2">
-                        <div className="h-3 w-2/3 animate-pulse rounded-full bg-sand" />
-                        <div className="h-2.5 w-1/3 animate-pulse rounded-full bg-sand" />
-                      </div>
-                      <div className="h-3 w-10 animate-pulse rounded-full bg-sand" />
-                    </div>
-                  ))}
-                </GroupList>
-              )}
-
-              {results.length > 0 && (
-                <div>
-                  <GroupLabel right="pro 100 g">Ergebnisse</GroupLabel>
-                  <GroupList>
-                    {results.map((p, i) => (
-                      <GroupRow
-                        key={i}
-                        title={p.name}
-                        subtitle={`${p.brand ? `${p.brand} · ` : ''}${fmtNum(p.per100.protein)} g Eiweiß`}
-                        right={<KcalBadge kcal={p.per100.kcal} />}
-                        onClick={() => {
-                          setPending(p)
-                          setAmount(100)
-                        }}
-                      />
-                    ))}
-                  </GroupList>
-                </div>
-              )}
-
-              {results.length === 0 && !searching && recent.length > 0 && (
-                <div>
-                  <GroupLabel>Zuletzt gegessen</GroupLabel>
-                  <GroupList>
-                    {recent.map((e) => (
-                      <GroupRow
-                        key={e.id}
-                        icon={<History size={16} />}
-                        title={e.name}
-                        subtitle={`${e.amount_g ? `${fmtNum(e.amount_g)} g · ` : ''}${fmtNum(e.protein)} g Eiweiß`}
-                        right={<KcalBadge kcal={e.kcal} />}
-                        disabled={saving}
-                        onClick={() => pickRecent(e)}
-                      />
-                    ))}
-                  </GroupList>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="flex gap-2">
+      {addMode === 'search' && !pending && !scanning && (
+        <FlowSheet title="Suchen" icon={Search} onClose={() => go(null)} onBack={() => go('menu')}>
+          <>
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                void runSearch()
+              }}
+            >
+              <div className="relative min-w-0 flex-1">
+                <Search
+                  size={18}
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-cocoa-muted"
+                />
                 <input
-                  className="input"
+                  className={`${BIG_INPUT} pl-10`}
+                  type="search"
+                  enterKeyHint="search"
+                  autoFocus
+                  aria-label="Lebensmittel suchen"
                   placeholder="z. B. Magerquark"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && runSearch()}
                 />
-                <button className="btn-primary" onClick={runSearch} disabled={searching}>
-                  {searching ? '…' : 'Los'}
-                </button>
               </div>
-              <ul className="space-y-1">
-                {results.map((p, i) => (
-                  <li key={i}>
-                    <button
-                      className="w-full rounded-lg bg-sand px-3 py-2 text-left transition-colors duration-200 hover:bg-sand-dark/60"
+              <button
+                type="submit"
+                className="btn-primary shrink-0 rounded-2xl px-5"
+                disabled={searching || !query.trim()}
+              >
+                {searching ? <Loader2 size={18} className="animate-spin" /> : 'Los'}
+              </button>
+            </form>
+            <ErrorNote error={error} />
+
+            {searching && results.length === 0 && (
+              <GroupList>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-2/3 animate-pulse rounded-full bg-sand" />
+                      <div className="h-2.5 w-1/3 animate-pulse rounded-full bg-sand" />
+                    </div>
+                    <div className="h-3 w-10 animate-pulse rounded-full bg-sand" />
+                  </div>
+                ))}
+              </GroupList>
+            )}
+
+            {results.length > 0 && (
+              <div>
+                <GroupLabel right="pro 100 g">Ergebnisse</GroupLabel>
+                <GroupList>
+                  {results.map((p, i) => (
+                    <GroupRow
+                      key={i}
+                      title={p.name}
+                      subtitle={`${p.brand ? `${p.brand} · ` : ''}${fmtNum(p.per100.protein)} g Eiweiß`}
+                      right={<KcalBadge kcal={p.per100.kcal} />}
                       onClick={() => {
                         setPending(p)
                         setAmount(100)
                       }}
-                    >
-                      <div className="text-sm font-medium">{p.name}</div>
-                      <div className="tabular text-xs text-cocoa-light">
-                        {p.brand ? `${p.brand} · ` : ''}
-                        {p.per100.kcal} kcal /100 g
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <ErrorLine error={error} />
-            </>
-          )}
+                    />
+                  ))}
+                </GroupList>
+              </div>
+            )}
+
+            {results.length === 0 && !searching && recent.length > 0 && (
+              <div>
+                <GroupLabel>Zuletzt gegessen</GroupLabel>
+                <GroupList>
+                  {recent.map((e) => (
+                    <GroupRow
+                      key={e.id}
+                      icon={<History size={16} />}
+                      title={e.name}
+                      subtitle={`${e.amount_g ? `${fmtNum(e.amount_g)} g · ` : ''}${fmtNum(e.protein)} g Eiweiß`}
+                      right={<KcalBadge kcal={e.kcal} />}
+                      disabled={saving}
+                      onClick={() => pickRecent(e)}
+                    />
+                  ))}
+                </GroupList>
+              </div>
+            )}
+          </>
         </FlowSheet>
       )}
 
       {/* ----- Mengen-Bestätigung (Barcode/Suche) ----- */}
-      {pending &&
-        (isNew ? (
-          <PremiumSheet
-            title={pending.name}
-            subtitle={pending.brand ?? 'pro 100 g'}
-            leading={<IconTile icon={UtensilsCrossed} />}
-            onBack={() => {
-              setError(null)
-              setPending(null)
-            }}
-            onClose={() => {
-              setPending(null)
-              go(null)
-            }}
-            busy={saving}
-            footer={
-              <PrimaryButton onClick={confirmPending} disabled={saving} busy={addEntry.isPending}>
-                {mealOverride ? `Zu ${MEAL_LABEL[mealOverride]} hinzufügen` : 'Hinzufügen'}
-              </PrimaryButton>
-            }
-          >
-            {(() => {
-              const m = scalePer100(pending.per100, amount)
-              return (
-                <>
-                  <div className="relative overflow-hidden rounded-3xl bg-cream p-4 text-center">
-                    <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand/15 blur-3xl" />
-                    <div className="relative">
-                      <div className="flex items-baseline justify-center gap-1.5">
-                        <span className="tabular text-4xl font-bold tracking-tight text-cocoa">{m.kcal}</span>
-                        <span className="text-sm text-cocoa-light">kcal</span>
-                      </div>
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        <MacroCell label="Eiweiß" value={m.protein} dot="bg-brand" />
-                        <MacroCell label="Kohlenh." value={m.carbs} dot="bg-gold" />
-                        <MacroCell label="Fett" value={m.fat} dot="bg-cocoa-light" />
-                      </div>
+      {pending && (
+        <PremiumSheet
+          title={pending.name}
+          subtitle={pending.brand ?? 'pro 100 g'}
+          leading={<IconTile icon={UtensilsCrossed} />}
+          onBack={() => {
+            setError(null)
+            setPending(null)
+          }}
+          onClose={() => {
+            setPending(null)
+            go(null)
+          }}
+          busy={saving}
+          footer={
+            <PrimaryButton onClick={confirmPending} disabled={saving} busy={addEntry.isPending}>
+              {mealOverride ? `Zu ${MEAL_LABEL[mealOverride]} hinzufügen` : 'Hinzufügen'}
+            </PrimaryButton>
+          }
+        >
+          {(() => {
+            const m = scalePer100(pending.per100, amount)
+            return (
+              <>
+                <div className="relative overflow-hidden rounded-3xl bg-cream p-4 text-center">
+                  <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand/15 blur-3xl" />
+                  <div className="relative">
+                    <div className="flex items-baseline justify-center gap-1.5">
+                      <span className="tabular text-4xl font-bold tracking-tight text-cocoa">{m.kcal}</span>
+                      <span className="text-sm text-cocoa-light">kcal</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      <MacroCell label="Eiweiß" value={m.protein} dot="bg-brand" />
+                      <MacroCell label="Kohlenh." value={m.carbs} dot="bg-gold" />
+                      <MacroCell label="Fett" value={m.fat} dot="bg-cocoa-light" />
                     </div>
                   </div>
-                  <div>
-                    <Stepper
-                      label={pending.isDrink ? 'Menge (ml)' : 'Menge (g)'}
-                      value={amount}
-                      onChange={setAmount}
-                      step={10}
-                      min={0}
-                      suffix={pending.isDrink ? 'ml' : 'g'}
-                    />
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {[50, 100, 150, 200, 250].map((g) => (
-                        <button
-                          key={g}
-                          type="button"
-                          onClick={() => setAmount(g)}
-                          className={`tabular rounded-full px-3 py-1.5 text-sm font-semibold transition active:scale-95 ${
-                            amount === g ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa-light'
-                          }`}
-                        >
-                          {g} g
-                        </button>
-                      ))}
-                    </div>
+                </div>
+                <div>
+                  <Stepper
+                    label={pending.isDrink ? 'Menge (ml)' : 'Menge (g)'}
+                    value={amount}
+                    onChange={setAmount}
+                    step={10}
+                    min={0}
+                    suffix={pending.isDrink ? 'ml' : 'g'}
+                  />
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {[50, 100, 150, 200, 250].map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setAmount(g)}
+                        className={`tabular rounded-full px-3 py-1.5 text-sm font-semibold transition active:scale-95 ${
+                          amount === g ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa-light'
+                        }`}
+                      >
+                        {g} g
+                      </button>
+                    ))}
                   </div>
-                  <p className="tabular px-1 text-xs text-cocoa-muted">
-                    pro 100 g: {pending.per100.kcal} kcal · E {pending.per100.protein} / K {pending.per100.carbs} / F{' '}
-                    {pending.per100.fat}
-                  </p>
-                  <ErrorNote error={error} />
-                </>
-              )
-            })()}
-          </PremiumSheet>
-        ) : (
-          <div className="anim-fade fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-            <div className="anim-sheet card w-full max-w-md space-y-3">
-              <h2 className="text-lg font-bold">{pending.name}</h2>
-              <p className="tabular text-xs text-cocoa-light">
-                {pending.brand ? `${pending.brand} · ` : ''}
-                pro 100 g: {pending.per100.kcal} kcal · E {pending.per100.protein} / K {pending.per100.carbs} / F{' '}
-                {pending.per100.fat}
-              </p>
-              <Stepper label="Menge (g)" value={amount} onChange={setAmount} step={10} min={0} suffix="g" />
-              <p className="tabular text-sm">
-                = <strong>{scalePer100(pending.per100, amount).kcal} kcal</strong>, Eiweiß{' '}
-                {scalePer100(pending.per100, amount).protein} g
-              </p>
-              <ErrorLine error={error} />
-              <div className="flex gap-2 pt-1">
-                <button
-                  className="btn-ghost flex-1"
-                  onClick={() => {
-                    setError(null)
-                    setPending(null)
-                  }}
-                >
-                  Abbrechen
-                </button>
-                <button className="btn-primary flex-1" onClick={confirmPending} disabled={saving}>
-                  {addEntry.isPending ? 'Speichert…' : 'Hinzufügen'}
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+                </div>
+                <p className="tabular px-1 text-xs text-cocoa-muted">
+                  pro 100 g: {pending.per100.kcal} kcal · E {pending.per100.protein} / K {pending.per100.carbs} / F{' '}
+                  {pending.per100.fat}
+                </p>
+                <ErrorNote error={error} />
+              </>
+            )
+          })()}
+        </PremiumSheet>
+      )}
 
       {/* ----- Manuelle Eingabe ----- */}
       {addMode === 'manual' && !pending && (
         <FlowSheet
-          premium={isNew}
           title="Manuell eingeben"
           icon={PenLine}
           onClose={() => go(null)}
           onBack={() => go('menu')}
           busy={saving}
-          scroll
           footer={
-            isNew ? (
-              <PrimaryButton onClick={addManual} disabled={saving} busy={addEntry.isPending}>
-                Hinzufügen
-              </PrimaryButton>
-            ) : (
-              <div className="flex gap-2 pt-1">
-                <button className="btn-ghost flex-1" onClick={() => go('menu')}>
-                  Zurück
-                </button>
-                <button className="btn-primary flex-1" onClick={addManual} disabled={saving}>
-                  {addEntry.isPending ? 'Speichert…' : 'Hinzufügen'}
-                </button>
-              </div>
-            )
+            <PrimaryButton onClick={addManual} disabled={saving} busy={addEntry.isPending}>
+              Hinzufügen
+            </PrimaryButton>
           }
         >
           <div>
@@ -1880,75 +1451,52 @@ export default function Nutrition() {
             </label>
             <input
               id="manual-name"
-              className={isNew ? BIG_INPUT : 'input'}
+              className={BIG_INPUT}
               autoFocus
-              placeholder={isNew ? 'z. B. Proteinriegel' : undefined}
+              placeholder="z. B. Proteinriegel"
               value={manual.name}
               onChange={(e) => setManual({ ...manual, name: e.target.value })}
             />
           </div>
-          {isNew ? (
-            <>
-              <div>
-                <GroupLabel>Hauptwerte</GroupLabel>
-                <div className="grid grid-cols-2 gap-2">
-                  {MANUAL_FIELDS.slice(0, 5).map(([key, lbl]) => (
-                    <ManualField
-                      key={key}
-                      label={lbl}
-                      value={manual[key]}
-                      onChange={(v) => setManual({ ...manual, [key]: v })}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <GroupLabel>Optional</GroupLabel>
-                <div className="grid grid-cols-2 gap-2">
-                  {MANUAL_FIELDS.slice(5).map(([key, lbl]) => (
-                    <ManualField
-                      key={key}
-                      label={lbl}
-                      value={manual[key]}
-                      onChange={(v) => setManual({ ...manual, [key]: v })}
-                    />
-                  ))}
-                </div>
-              </div>
-              <ErrorNote error={error} />
-            </>
-          ) : (
-            <>
+          <>
+            <div>
+              <GroupLabel>Hauptwerte</GroupLabel>
               <div className="grid grid-cols-2 gap-2">
-                {MANUAL_FIELDS.map(([key, lbl]) => (
-                  <div key={key}>
-                    <label className="label">{lbl}</label>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      className="input"
-                      value={manual[key]}
-                      onFocus={(e) => e.currentTarget.select()}
-                      onChange={(e) => setManual({ ...manual, [key]: Number(e.target.value) })}
-                    />
-                  </div>
+                {MANUAL_FIELDS.slice(0, 5).map(([key, lbl]) => (
+                  <ManualField
+                    key={key}
+                    label={lbl}
+                    value={manual[key]}
+                    onChange={(v) => setManual({ ...manual, [key]: v })}
+                  />
                 ))}
               </div>
-              <ErrorLine error={error} />
-            </>
-          )}
+            </div>
+            <div>
+              <GroupLabel>Optional</GroupLabel>
+              <div className="grid grid-cols-2 gap-2">
+                {MANUAL_FIELDS.slice(5).map(([key, lbl]) => (
+                  <ManualField
+                    key={key}
+                    label={lbl}
+                    value={manual[key]}
+                    onChange={(v) => setManual({ ...manual, [key]: v })}
+                  />
+                ))}
+              </div>
+            </div>
+            <ErrorNote error={error} />
+          </>
         </FlowSheet>
       )}
 
       {/* ----- KI: Restaurant / unterwegs ----- */}
       {addMode === 'restaurant' && (
         <FlowSheet
-          premium={isNew}
           title="Restaurant / unterwegs"
           icon={Store}
-          classicIcon
           subtitle={
-            isNew && hasTarget
+            hasTarget
               ? `Noch offen: ${Math.max(0, kcalTarget - totals.kcal)} kcal · ${Math.max(
                   0,
                   (settings?.protein_target ?? 0) - totals.protein,
@@ -1959,45 +1507,22 @@ export default function Nutrition() {
           onBack={() => go('menu')}
           busy={aiBusy}
           footer={
-            isNew ? (
-              !place ? undefined : orderItems.length > 0 || restItem.trim() ? (
-                <PrimaryButton onClick={estimateOrder} disabled={aiBusy} busy={aiBusy}>
-                  {orderItems.length > 0
-                    ? `${orderItems.length} Artikel eintragen · ${orderKcal} kcal`
-                    : activeChain
-                      ? 'Nicht dabei? Mit KI schätzen'
-                      : 'Eintragen (KI schätzt)'}
-                </PrimaryButton>
-              ) : !activeChain && menuPhotos.length === 0 ? (
-                <PrimaryButton onClick={suggestForBudget} disabled={aiBusy} busy={aiBusy}>
-                  Was soll ich hier nehmen?
-                </PrimaryButton>
-              ) : undefined
-            ) : (
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button className="btn-primary" onClick={estimateOrder} disabled={aiBusy}>
-                  {aiBusy ? '…' : orderItems.length > 0 ? `${orderItems.length} eintragen` : 'Bestellung schätzen'}
-                </button>
-                <button className="btn-ghost gap-1.5" onClick={suggestForBudget} disabled={aiBusy}>
-                  <Bot size={16} className="text-cocoa-light" />
-                  Passt zum Budget
-                </button>
-              </div>
-            )
-          }
-          classicBack={
-            <button className="w-full text-center text-sm text-cocoa-light underline" onClick={() => go('menu')}>
-              Zurück
-            </button>
+            !place ? undefined : orderItems.length > 0 || restItem.trim() ? (
+              <PrimaryButton onClick={estimateOrder} disabled={aiBusy} busy={aiBusy}>
+                {orderItems.length > 0
+                  ? `${orderItems.length} Artikel eintragen · ${orderKcal} kcal`
+                  : activeChain
+                    ? 'Nicht dabei? Mit KI schätzen'
+                    : 'Eintragen (KI schätzt)'}
+              </PrimaryButton>
+            ) : !activeChain && menuPhotos.length === 0 ? (
+              <PrimaryButton onClick={suggestForBudget} disabled={aiBusy} busy={aiBusy}>
+                Was soll ich hier nehmen?
+              </PrimaryButton>
+            ) : undefined
           }
         >
-          {!isNew && hasTarget && (
-            <p className="tabular text-xs text-cocoa-light">
-              Noch offen heute: {Math.max(0, kcalTarget - totals.kcal)} kcal ·{' '}
-              {Math.max(0, (settings?.protein_target ?? 0) - totals.protein)} g Eiweiß
-            </p>
-          )}
-          {isNew && !place && (
+          {!place && (
             <div className="space-y-3">
               <div className="flex gap-2">
                 <input
@@ -2076,7 +1601,7 @@ export default function Nutrition() {
               )}
             </div>
           )}
-          {isNew && place && (
+          {place && (
             <button
               className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left"
               onClick={() => pickPlace('')}
@@ -2093,38 +1618,7 @@ export default function Nutrition() {
               <span className="text-xs font-semibold text-brand">Ändern</span>
             </button>
           )}
-          {!isNew && (
-            <div>
-              <div
-                className={
-                  isNew ? '-mx-5 flex gap-2 overflow-x-auto px-5 pb-1' : '-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1'
-                }
-              >
-                {[
-                  ...Object.entries(CHAIN_BADGE).map(([id, b]) => ({ id, name: b.name })),
-                  ...PLACES.map((p) => ({ id: '', name: p })),
-                ].map(({ id, name: p }) => (
-                  <button
-                    key={p}
-                    onClick={() => {
-                      setPlace(place === p ? '' : p)
-                      setOrderQty({})
-                    }}
-                    aria-pressed={place === p}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-full py-1.5 text-sm transition-colors duration-200 ${
-                      id ? 'pl-1.5 pr-3' : 'px-3'
-                    } ${
-                      place === p ? 'bg-brand text-on-brand' : isNew ? 'bg-cream text-cocoa' : 'bg-sand text-cocoa'
-                    } ${isNew ? 'font-medium' : ''}`}
-                  >
-                    {id && <ChainBadge id={id} size={22} />}
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {isNew && ai?.enabled && place && !activeChain && (
+          {ai?.enabled && place && !activeChain && (
             <div className="space-y-2">
               <div className="space-y-2.5 rounded-2xl bg-cream p-3.5">
                 <div className="flex items-center gap-3">
@@ -2212,21 +1706,13 @@ export default function Nutrition() {
               )}
             </div>
           )}
-          {(!isNew || (place && (!activeChain || showChainMenu))) && (
+          {place && (!activeChain || showChainMenu) && (
             <div>
-              {isNew && (
-                <GroupLabel>{activeChain ? 'Auf der Karte suchen' : 'Oder beschreiben, was du bestellst'}</GroupLabel>
-              )}
+              <GroupLabel>{activeChain ? 'Auf der Karte suchen' : 'Oder beschreiben, was du bestellst'}</GroupLabel>
               <div className="flex gap-2">
                 <input
-                  className={isNew ? BIG_INPUT : 'input'}
-                  placeholder={
-                    activeChain
-                      ? 'Auf der Karte suchen, z. B. Big Mac'
-                      : isNew
-                        ? 'Gericht, z. B. Pasta Carbonara'
-                        : 'Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis'
-                  }
+                  className={BIG_INPUT}
+                  placeholder={activeChain ? 'Auf der Karte suchen, z. B. Big Mac' : 'Gericht, z. B. Pasta Carbonara'}
                   value={restItem}
                   onChange={(e) => setRestItem(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && estimateOrder()}
@@ -2235,8 +1721,7 @@ export default function Nutrition() {
               </div>
             </div>
           )}
-          {isNew &&
-            activeChain &&
+          {activeChain &&
             !restItem.trim() &&
             (() => {
               const remaining = hasTarget
@@ -2330,7 +1815,7 @@ export default function Nutrition() {
                 </div>
               )
             })()}
-          {activeChain && (!isNew || showChainMenu || !!restItem.trim()) && (
+          {activeChain && (showChainMenu || !!restItem.trim()) && (
             <ChainMenu
               chain={activeChain}
               query={restItem}
@@ -2338,67 +1823,26 @@ export default function Nutrition() {
               onQty={(name, n) => setOrderQty((q) => ({ ...q, [name]: Math.max(0, n) }))}
             />
           )}
-          {!isNew && place && chains && !activeChain && chains.length > 0 && (
-            <p className="text-xs text-cocoa-muted">Für „{place}" schätzt die KI die Nährwerte.</p>
-          )}
-          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+          <ErrorNote error={error} />
         </FlowSheet>
       )}
 
       {/* ----- KI: Foto + optionale Notiz ----- */}
       {addMode === 'photo' && (
         <FlowSheet
-          premium={isNew}
-          title={isNew ? 'Foto' : 'Essen fotografieren'}
+          title="Foto"
           icon={Camera}
-          classicIcon
           onClose={() => go(null)}
           onBack={() => go('menu')}
           busy={aiBusy}
           footer={
-            isNew ? (
-              <label
-                className={`btn-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl py-3.5 text-base shadow-lg shadow-brand/25 ${
-                  aiBusy ? 'pointer-events-none opacity-60' : ''
-                }`}
-              >
-                {aiBusy ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
-                {aiBusy ? 'Analysiere…' : 'Foto aufnehmen'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => {
-                    void handlePhoto(e.target.files?.[0])
-                    e.target.value = ''
-                  }}
-                />
-              </label>
-            ) : undefined
-          }
-          classicBack={
-            <button className="w-full text-center text-sm text-cocoa-light underline" onClick={() => go('menu')}>
-              Zurück
-            </button>
-          }
-        >
-          <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>
-            Optional dazu schreiben oder diktieren, was drin ist oder wie viel — macht die Schätzung genauer.
-          </p>
-          <div className="flex gap-2">
-            <input
-              className={isNew ? BIG_INPUT : 'input'}
-              placeholder="z. B. mit extra Käse, ca. 300 g, dazu Reis"
-              value={photoHint}
-              onChange={(e) => setPhotoHint(e.target.value)}
-            />
-            <MicButton onResult={(t) => setPhotoHint((v) => (v ? v + ' ' + t : t))} />
-          </div>
-          {!isNew && (
-            <label className="btn-primary flex w-full cursor-pointer items-center justify-center gap-2">
-              {!aiBusy && <Camera size={18} />}
-              {aiBusy ? '… analysiere' : 'Foto aufnehmen'}
+            <label
+              className={`btn-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl py-3.5 text-base shadow-lg shadow-brand/25 ${
+                aiBusy ? 'pointer-events-none opacity-60' : ''
+              }`}
+            >
+              {aiBusy ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+              {aiBusy ? 'Analysiere…' : 'Foto aufnehmen'}
               <input
                 type="file"
                 accept="image/*"
@@ -2410,44 +1854,44 @@ export default function Nutrition() {
                 }}
               />
             </label>
-          )}
-          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+          }
+        >
+          <p className="text-sm text-cocoa-light">
+            Optional dazu schreiben oder diktieren, was drin ist oder wie viel — macht die Schätzung genauer.
+          </p>
+          <div className="flex gap-2">
+            <input
+              className={BIG_INPUT}
+              placeholder="z. B. mit extra Käse, ca. 300 g, dazu Reis"
+              value={photoHint}
+              onChange={(e) => setPhotoHint(e.target.value)}
+            />
+            <MicButton onResult={(t) => setPhotoHint((v) => (v ? v + ' ' + t : t))} />
+          </div>
+          <ErrorNote error={error} />
         </FlowSheet>
       )}
 
       {/* ----- KI: Text beschreiben ----- */}
       {addMode === 'aitext' && (
         <FlowSheet
-          premium={isNew}
           title="Mahlzeit beschreiben"
           icon={MessageSquare}
-          classicIcon
           onClose={() => go(null)}
           onBack={() => go('menu')}
           busy={aiBusy}
           footer={
-            isNew ? (
-              <PrimaryButton onClick={handleAiText} disabled={aiBusy || !aiText.trim()} busy={aiBusy}>
-                Schätzen
-              </PrimaryButton>
-            ) : (
-              <div className="flex gap-2 pt-1">
-                <button className="btn-ghost flex-1" onClick={() => go('menu')}>
-                  Zurück
-                </button>
-                <button className="btn-primary flex-1" onClick={handleAiText} disabled={aiBusy}>
-                  {aiBusy ? '…' : 'Schätzen'}
-                </button>
-              </div>
-            )
+            <PrimaryButton onClick={handleAiText} disabled={aiBusy || !aiText.trim()} busy={aiBusy}>
+              Schätzen
+            </PrimaryButton>
           }
         >
-          <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>
+          <p className="text-sm text-cocoa-light">
             Schreib einfach, was du gegessen hast — die KI schätzt die Nährwerte.
           </p>
           <div className="flex gap-2">
             <input
-              className={isNew ? BIG_INPUT : 'input'}
+              className={BIG_INPUT}
               autoFocus
               placeholder="z. B. 2 Eier, 80 g Haferflocken, 1 Banane"
               value={aiText}
@@ -2456,96 +1900,51 @@ export default function Nutrition() {
             />
             <MicButton onResult={(t) => setAiText((v) => (v ? v + ' ' + t : t))} />
           </div>
-          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+          <ErrorNote error={error} />
         </FlowSheet>
       )}
 
       {/* ----- KI: Ergebnis prüfen & übernehmen ----- */}
       {aiResults && (
         <FlowSheet
-          premium={isNew}
           title="KI-Schätzung"
           icon={Sparkles}
-          z="z-30"
           onClose={() => {
             setError(null)
             setAiResults(null)
           }}
           busy={saving}
-          scroll
           footer={
-            isNew ? (
-              <PrimaryButton onClick={() => addEstimates(aiResults)} disabled={saving} busy={addEntries.isPending}>
-                Alle übernehmen
-              </PrimaryButton>
-            ) : (
-              <div className="flex gap-2 pt-1">
-                <button
-                  className="btn-ghost flex-1"
-                  onClick={() => {
-                    setError(null)
-                    setAiResults(null)
-                  }}
-                  disabled={saving}
-                >
-                  Verwerfen
-                </button>
-                <button className="btn-primary flex-1" onClick={() => addEstimates(aiResults)} disabled={saving}>
-                  {addEntries.isPending ? 'Speichert…' : 'Alle übernehmen'}
-                </button>
-              </div>
-            )
+            <PrimaryButton onClick={() => addEstimates(aiResults)} disabled={saving} busy={addEntries.isPending}>
+              Alle übernehmen
+            </PrimaryButton>
           }
         >
           <p className="text-xs text-cocoa-light">
             Schätzwerte — vor dem Übernehmen kurz prüfen. Zum Feinjustieren einzeln übernehmen und danach bearbeiten.
           </p>
-          {isNew ? (
-            <GroupList>
-              {aiResults.map((it, i) => (
-                <GroupRow
-                  key={i}
-                  title={it.name}
-                  subtitle={`${it.amount_g ? `${it.amount_g} g · ` : ''}${it.kcal} kcal · E ${it.protein} / K ${it.carbs} / F ${it.fat}`}
-                  right={
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-on-brand">
-                      <Plus size={16} strokeWidth={2.5} />
-                    </span>
-                  }
-                  disabled={saving}
-                  onClick={() => addEstimate(it)}
-                />
-              ))}
-            </GroupList>
-          ) : (
-            <ul className="space-y-2">
-              {aiResults.map((it, i) => (
-                <li key={i} className="flex items-center justify-between rounded-lg bg-sand px-3 py-2">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium">{it.name}</div>
-                    <div className="tabular text-xs text-cocoa-light">
-                      {it.amount_g ? `${it.amount_g} g · ` : ''}
-                      {it.kcal} kcal · E {it.protein} / K {it.carbs} / F {it.fat}
-                    </div>
-                  </div>
-                  <button
-                    className="ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-on-brand disabled:opacity-40"
-                    onClick={() => addEstimate(it)}
-                    disabled={saving}
-                    aria-label="Übernehmen"
-                  >
+          <GroupList>
+            {aiResults.map((it, i) => (
+              <GroupRow
+                key={i}
+                title={it.name}
+                subtitle={`${it.amount_g ? `${it.amount_g} g · ` : ''}${it.kcal} kcal · E ${it.protein} / K ${it.carbs} / F ${it.fat}`}
+                right={
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-on-brand">
                     <Plus size={16} strokeWidth={2.5} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+                  </span>
+                }
+                disabled={saving}
+                onClick={() => addEstimate(it)}
+              />
+            ))}
+          </GroupList>
+          <ErrorNote error={error} />
         </FlowSheet>
       )}
 
-      {/* ----- KI: Mahlzeit-Analyse (neuer Modus) ----- */}
-      {isNew && analysis && (
+      {/* ----- KI: Mahlzeit-Analyse ----- */}
+      {analysis && (
         <MealAnalysisSheet
           photo={analysis.photo}
           status={analysis.status}
@@ -2569,87 +1968,26 @@ export default function Nutrition() {
 
       {/* ----- KI: Kühlschrank-Rezept ----- */}
       {addMode === 'recipe' && (
-        <FlowSheet
-          premium={isNew}
-          title={isNew ? 'Rezept' : 'Rezept aus Kühlschrank'}
-          icon={ChefHat}
-          classicIcon
-          onClose={() => go(null)}
-          onBack={() => go('menu')}
-          busy={aiBusy}
-          classicBack={
-            <button className="w-full text-center text-sm text-cocoa-light underline" onClick={() => go('menu')}>
-              Zurück
-            </button>
-          }
-        >
-          <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>
+        <FlowSheet title="Rezept" icon={ChefHat} onClose={() => go(null)} onBack={() => go('menu')} busy={aiBusy}>
+          <p className="text-sm text-cocoa-light">
             Worauf hast du Lust? Dann den Kühlschrank/die Zutaten fotografieren — die KI macht dir ein passendes Rezept.
           </p>
-          {isNew ? (
-            <>
-              <div className="space-y-2">
-                <GroupLabel>Aus dem Kühlschrank</GroupLabel>
-                <input
-                  className={BIG_INPUT}
-                  placeholder="z. B. was Herzhaftes, proteinreich, schnell"
-                  value={craving}
-                  onChange={(e) => setCraving(e.target.value)}
-                />
-                <label
-                  className={`btn-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl py-3.5 text-base ${
-                    aiBusy ? 'pointer-events-none opacity-60' : ''
-                  }`}
-                >
-                  {aiBusy ? <Loader2 size={18} className="animate-spin" /> : <Refrigerator size={18} />}
-                  {aiBusy ? 'Buddy kocht…' : 'Kühlschrank fotografieren'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => handleFridge(e.target.files?.[0])}
-                  />
-                </label>
-              </div>
-              <ErrorNote error={error} />
-              <div className="flex items-center gap-3 text-xs font-medium text-cocoa-muted">
-                <span className="h-px flex-1 bg-sand-dark/60" /> oder ohne Foto
-                <span className="h-px flex-1 bg-sand-dark/60" />
-              </div>
-              <div className="space-y-2">
-                <GroupLabel>Nach Wunsch</GroupLabel>
-                <div className="flex gap-2">
-                  <input
-                    className={BIG_INPUT}
-                    placeholder="z. B. veganes Frühstück, 40 g Eiweiß"
-                    value={recipeText}
-                    onChange={(e) => setRecipeText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && genRecipeText()}
-                  />
-                  <MicButton onResult={(t) => setRecipeText((v) => (v ? v + ' ' + t : t))} />
-                </div>
-                <button
-                  className="btn-ghost w-full gap-1.5 rounded-2xl py-3"
-                  onClick={genRecipeText}
-                  disabled={aiBusy || !recipeText.trim()}
-                >
-                  <Sparkles size={16} className="text-brand" />
-                  Rezept erstellen
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
+          <>
+            <div className="space-y-2">
+              <GroupLabel>Aus dem Kühlschrank</GroupLabel>
               <input
-                className="input"
+                className={BIG_INPUT}
                 placeholder="z. B. was Herzhaftes, proteinreich, schnell"
                 value={craving}
                 onChange={(e) => setCraving(e.target.value)}
               />
-              <label className="btn-primary flex w-full cursor-pointer items-center justify-center gap-2">
-                {!aiBusy && <Refrigerator size={18} />}
-                {aiBusy ? '… koche' : 'Kühlschrank fotografieren'}
+              <label
+                className={`btn-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl py-3.5 text-base ${
+                  aiBusy ? 'pointer-events-none opacity-60' : ''
+                }`}
+              >
+                {aiBusy ? <Loader2 size={18} className="animate-spin" /> : <Refrigerator size={18} />}
+                {aiBusy ? 'Buddy kocht…' : 'Kühlschrank fotografieren'}
                 <input
                   type="file"
                   accept="image/*"
@@ -2658,76 +1996,60 @@ export default function Nutrition() {
                   onChange={(e) => handleFridge(e.target.files?.[0])}
                 />
               </label>
-              <ErrorLine error={error} />
-              <div className="flex items-center gap-2 text-xs text-cocoa-muted">
-                <span className="h-px flex-1 bg-sand-dark" /> oder ohne Foto{' '}
-                <span className="h-px flex-1 bg-sand-dark" />
-              </div>
+            </div>
+            <ErrorNote error={error} />
+            <div className="flex items-center gap-3 text-xs font-medium text-cocoa-muted">
+              <span className="h-px flex-1 bg-sand-dark/60" /> oder ohne Foto
+              <span className="h-px flex-1 bg-sand-dark/60" />
+            </div>
+            <div className="space-y-2">
+              <GroupLabel>Nach Wunsch</GroupLabel>
               <div className="flex gap-2">
                 <input
-                  className="input"
+                  className={BIG_INPUT}
                   placeholder="z. B. veganes Frühstück, 40 g Eiweiß"
                   value={recipeText}
                   onChange={(e) => setRecipeText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && genRecipeText()}
                 />
                 <MicButton onResult={(t) => setRecipeText((v) => (v ? v + ' ' + t : t))} />
-                <button className="btn-ghost shrink-0" onClick={genRecipeText} disabled={aiBusy}>
-                  Los
-                </button>
               </div>
-            </>
-          )}
+              <button
+                className="btn-ghost w-full gap-1.5 rounded-2xl py-3"
+                onClick={genRecipeText}
+                disabled={aiBusy || !recipeText.trim()}
+              >
+                <Sparkles size={16} className="text-brand" />
+                Rezept erstellen
+              </button>
+            </div>
+          </>
         </FlowSheet>
       )}
 
       {/* ----- Rezept-Ergebnis ----- */}
       {recipe && (
         <FlowSheet
-          premium={isNew}
           title={recipe.title}
           icon={ChefHat}
-          subtitle={isNew ? `${recipe.servings} Portion(en)` : undefined}
-          z="z-30"
+          subtitle={`${recipe.servings} Portion(en)`}
           onClose={() => {
             setError(null)
             setRecipe(null)
           }}
           busy={addRecipe.isPending || saving}
-          scroll
           footer={
-            isNew ? (
-              <>
-                <PrimaryButton
-                  onClick={() => logRecipe(recipe)}
-                  disabled={addRecipe.isPending || saving}
-                  busy={addEntry.isPending}
-                >
-                  {mealOverride ? `Zu ${MEAL_LABEL[mealOverride]} loggen` : 'Loggen'}
-                </PrimaryButton>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    className="btn-ghost gap-1.5 rounded-2xl"
-                    onClick={() => saveRecipe(recipe, false)}
-                    disabled={addRecipe.isPending || saving}
-                  >
-                    <Save size={16} className="text-cocoa-light" />
-                    Speichern
-                  </button>
-                  <button
-                    className="btn-ghost gap-1.5 rounded-2xl"
-                    onClick={() => saveRecipe(recipe, true)}
-                    disabled={addRecipe.isPending || saving}
-                  >
-                    <Share2 size={16} className="text-cocoa-light" />
-                    Teilen
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 pt-1">
+            <>
+              <PrimaryButton
+                onClick={() => logRecipe(recipe)}
+                disabled={addRecipe.isPending || saving}
+                busy={addEntry.isPending}
+              >
+                {mealOverride ? `Zu ${MEAL_LABEL[mealOverride]} loggen` : 'Loggen'}
+              </PrimaryButton>
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  className="btn-ghost gap-1.5"
+                  className="btn-ghost gap-1.5 rounded-2xl"
                   onClick={() => saveRecipe(recipe, false)}
                   disabled={addRecipe.isPending || saving}
                 >
@@ -2735,142 +2057,76 @@ export default function Nutrition() {
                   Speichern
                 </button>
                 <button
-                  className="btn-ghost gap-1.5"
+                  className="btn-ghost gap-1.5 rounded-2xl"
                   onClick={() => saveRecipe(recipe, true)}
                   disabled={addRecipe.isPending || saving}
                 >
                   <Share2 size={16} className="text-cocoa-light" />
-                  Speichern & teilen
-                </button>
-                <button
-                  className="btn-ghost"
-                  onClick={() => {
-                    setError(null)
-                    setRecipe(null)
-                  }}
-                  disabled={addRecipe.isPending || saving}
-                >
-                  Schließen
-                </button>
-                <button
-                  className="btn-primary"
-                  onClick={() => logRecipe(recipe)}
-                  disabled={addRecipe.isPending || saving}
-                >
-                  {addEntry.isPending ? 'Speichert…' : 'Loggen'}
+                  Teilen
                 </button>
               </div>
-            )
+            </>
           }
         >
-          {isNew ? (
-            <>
-              <div className="rounded-2xl bg-cream p-4">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="tabular text-3xl font-bold tracking-tight text-cocoa">{recipe.nutrition.kcal}</span>
-                  <span className="text-sm text-cocoa-light">kcal pro Portion</span>
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  <MacroCell label="Eiweiß" value={recipe.nutrition.protein} dot="bg-brand" />
-                  <MacroCell label="Kohlenh." value={recipe.nutrition.carbs} dot="bg-gold" />
-                  <MacroCell label="Fett" value={recipe.nutrition.fat} dot="bg-cocoa-light" />
-                </div>
+          <>
+            <div className="rounded-2xl bg-cream p-4">
+              <div className="flex items-baseline gap-1.5">
+                <span className="tabular text-3xl font-bold tracking-tight text-cocoa">{recipe.nutrition.kcal}</span>
+                <span className="text-sm text-cocoa-light">kcal pro Portion</span>
               </div>
-              <div>
-                <GroupLabel right={recipe.ingredients.length}>Zutaten</GroupLabel>
-                <GroupList>
-                  {recipe.ingredients.map((it, i) => (
-                    <div key={i} className="px-4 py-2.5 text-[15px] text-cocoa">
-                      {it}
-                    </div>
-                  ))}
-                </GroupList>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <MacroCell label="Eiweiß" value={recipe.nutrition.protein} dot="bg-brand" />
+                <MacroCell label="Kohlenh." value={recipe.nutrition.carbs} dot="bg-gold" />
+                <MacroCell label="Fett" value={recipe.nutrition.fat} dot="bg-cocoa-light" />
               </div>
-              <div>
-                <GroupLabel>Zubereitung</GroupLabel>
-                <ol className="space-y-3">
-                  {recipe.steps.map((st, i) => (
-                    <li key={i} className="flex gap-3 text-[15px] leading-relaxed text-cocoa">
-                      <span className="tabular mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand/10 text-xs font-bold text-brand">
-                        {i + 1}
-                      </span>
-                      <span className="min-w-0">{st}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-              <ErrorNote error={error} />
-            </>
-          ) : (
-            <>
-              <p className="tabular text-xs text-cocoa-light">
-                {recipe.servings} Portion(en) · pro Portion {recipe.nutrition.kcal} kcal · E {recipe.nutrition.protein}{' '}
-                / K {recipe.nutrition.carbs} / F {recipe.nutrition.fat}
-              </p>
-              <div>
-                <div className="mb-1 text-sm font-semibold">Zutaten</div>
-                <ul className="list-disc pl-5 text-sm text-cocoa">
-                  {recipe.ingredients.map((it, i) => (
-                    <li key={i}>{it}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <div className="mb-1 text-sm font-semibold">Zubereitung</div>
-                <ol className="list-decimal space-y-1 pl-5 text-sm text-cocoa">
-                  {recipe.steps.map((st, i) => (
-                    <li key={i}>{st}</li>
-                  ))}
-                </ol>
-              </div>
-              <ErrorLine error={error} />
-            </>
-          )}
+            </div>
+            <div>
+              <GroupLabel right={recipe.ingredients.length}>Zutaten</GroupLabel>
+              <GroupList>
+                {recipe.ingredients.map((it, i) => (
+                  <div key={i} className="px-4 py-2.5 text-[15px] text-cocoa">
+                    {it}
+                  </div>
+                ))}
+              </GroupList>
+            </div>
+            <div>
+              <GroupLabel>Zubereitung</GroupLabel>
+              <ol className="space-y-3">
+                {recipe.steps.map((st, i) => (
+                  <li key={i} className="flex gap-3 text-[15px] leading-relaxed text-cocoa">
+                    <span className="tabular mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand/10 text-xs font-bold text-brand">
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0">{st}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <ErrorNote error={error} />
+          </>
         </FlowSheet>
       )}
 
       {/* ----- KI: Essensplan Eingabe ----- */}
       {addMode === 'plan' && (
         <FlowSheet
-          premium={isNew}
           title="Tagesplan für heute"
           icon={ClipboardList}
-          classicIcon
-          subtitle={
-            isNew
-              ? `Ziel: ~${settings?.kcal_target || 2000} kcal · ${settings?.protein_target || 130} g Eiweiß`
-              : undefined
-          }
+          subtitle={`Ziel: ~${settings?.kcal_target || 2000} kcal · ${settings?.protein_target || 130} g Eiweiß`}
           onClose={() => go(null)}
           onBack={() => go('menu')}
           busy={aiBusy}
           footer={
-            isNew ? (
-              <PrimaryButton onClick={genPlan} disabled={aiBusy} busy={aiBusy}>
-                {aiBusy ? 'Erstelle…' : 'Plan erstellen'}
-              </PrimaryButton>
-            ) : (
-              <div className="flex gap-2 pt-1">
-                <button className="btn-ghost flex-1" onClick={() => go('menu')}>
-                  Zurück
-                </button>
-                <button className="btn-primary flex-1" onClick={genPlan} disabled={aiBusy}>
-                  {aiBusy ? 'Erstelle…' : 'Plan erstellen'}
-                </button>
-              </div>
-            )
+            <PrimaryButton onClick={genPlan} disabled={aiBusy} busy={aiBusy}>
+              {aiBusy ? 'Erstelle…' : 'Plan erstellen'}
+            </PrimaryButton>
           }
         >
-          {isNew ? (
-            <p className="text-sm text-cocoa-light">Wünsche? Buddy plant Frühstück bis Snack passend zu deinem Ziel.</p>
-          ) : (
-            <p className="tabular text-xs text-cocoa-light">
-              Ziel: ~{settings?.kcal_target || 2000} kcal · {settings?.protein_target || 130} g Eiweiß. Wünsche?
-            </p>
-          )}
+          <p className="text-sm text-cocoa-light">Wünsche? Buddy plant Frühstück bis Snack passend zu deinem Ziel.</p>
           <div className="flex gap-2">
             <input
-              className={isNew ? BIG_INPUT : 'input'}
+              className={BIG_INPUT}
               placeholder="z. B. high protein, kein Schwein, schnell"
               value={planWish}
               onChange={(e) => setPlanWish(e.target.value)}
@@ -2878,89 +2134,45 @@ export default function Nutrition() {
             />
             <MicButton onResult={(t) => setPlanWish((v) => (v ? v + ' ' + t : t))} />
           </div>
-          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+          <ErrorNote error={error} />
         </FlowSheet>
       )}
 
       {/* ----- Essensplan Ergebnis ----- */}
       {planItems && (
         <FlowSheet
-          premium={isNew}
           title="Essensplan"
           icon={ClipboardList}
-          subtitle={
-            isNew
-              ? `${planItems.reduce((s, i) => s + i.kcal, 0)} kcal · ${planItems.reduce((s, i) => s + i.protein, 0)} g Eiweiß`
-              : undefined
-          }
-          z="z-30"
+          subtitle={`${planItems.reduce((s, i) => s + i.kcal, 0)} kcal · ${planItems.reduce((s, i) => s + i.protein, 0)} g Eiweiß`}
           onClose={() => {
             setError(null)
             setPlanItems(null)
           }}
           busy={saving}
-          scroll
           footer={
-            isNew ? (
-              <PrimaryButton onClick={() => logPlan(planItems)} disabled={saving} busy={addEntries.isPending}>
-                Alle loggen
-              </PrimaryButton>
-            ) : (
-              <div className="flex gap-2 pt-1">
-                <button
-                  className="btn-ghost flex-1"
-                  onClick={() => {
-                    setError(null)
-                    setPlanItems(null)
-                  }}
-                  disabled={saving}
-                >
-                  Verwerfen
-                </button>
-                <button className="btn-primary flex-1" onClick={() => logPlan(planItems)} disabled={saving}>
-                  {addEntries.isPending ? 'Speichert…' : 'Alle loggen'}
-                </button>
-              </div>
-            )
+            <PrimaryButton onClick={() => logPlan(planItems)} disabled={saving} busy={addEntries.isPending}>
+              Alle loggen
+            </PrimaryButton>
           }
         >
-          {planNote && <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>{planNote}</p>}
-          {isNew ? (
-            <GroupList>
-              {planItems.map((it, i) => (
-                <div key={i} className="flex min-h-[3.5rem] items-center gap-3 px-4 py-2.5">
-                  <span className="w-[4.5rem] shrink-0 text-[11px] font-semibold uppercase tracking-wide text-cocoa-muted">
-                    {MEAL_LABEL[it.meal]}
+          {planNote && <p className="text-sm text-cocoa-light">{planNote}</p>}
+          <GroupList>
+            {planItems.map((it, i) => (
+              <div key={i} className="flex min-h-[3.5rem] items-center gap-3 px-4 py-2.5">
+                <span className="w-[4.5rem] shrink-0 text-[11px] font-semibold uppercase tracking-wide text-cocoa-muted">
+                  {MEAL_LABEL[it.meal]}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-semibold text-cocoa">{it.name}</span>
+                  <span className="tabular block truncate text-xs text-cocoa-light">
+                    E {it.protein} / K {it.carbs} / F {it.fat}
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[15px] font-semibold text-cocoa">{it.name}</span>
-                    <span className="tabular block truncate text-xs text-cocoa-light">
-                      E {it.protein} / K {it.carbs} / F {it.fat}
-                    </span>
-                  </span>
-                  <KcalBadge kcal={it.kcal} />
-                </div>
-              ))}
-            </GroupList>
-          ) : (
-            <>
-              <ul className="space-y-1.5">
-                {planItems.map((it, i) => (
-                  <li key={i} className="rounded-lg bg-sand px-3 py-2">
-                    <div className="text-sm font-medium">{it.name}</div>
-                    <div className="tabular text-xs text-cocoa-light">
-                      {MEAL_LABEL[it.meal]} · {it.kcal} kcal · E {it.protein} / K {it.carbs} / F {it.fat}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <div className="tabular text-xs text-cocoa-muted">
-                Summe: {planItems.reduce((s, i) => s + i.kcal, 0)} kcal · {planItems.reduce((s, i) => s + i.protein, 0)}{' '}
-                g Eiweiß
+                </span>
+                <KcalBadge kcal={it.kcal} />
               </div>
-            </>
-          )}
-          {isNew ? <ErrorNote error={error} /> : <ErrorLine error={error} />}
+            ))}
+          </GroupList>
+          <ErrorNote error={error} />
         </FlowSheet>
       )}
 

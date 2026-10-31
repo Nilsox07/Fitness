@@ -1,29 +1,16 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
-import { Capacitor } from '@capacitor/core'
 
 const KEY = 'pref_show_nutrition'
-const MODE_KEY = 'pref_app_mode'
 const WORLD_KEY = 'pref_world'
 const SOCIAL_KEY = 'pref_show_social'
 const WATCH_KEY = 'pref_has_watch'
 
-/**
- * App-Modus für die Übergangsphase:
- * - 'classic': die alte, schlanke App (reiner Gym-Tracker, keine KI/Gamification/Social)
- * - 'new':     das neue Zwei-Welten-Design mit allen Features
- */
-export type AppMode = 'classic' | 'new'
-
-/** Aktive Welt im neuen Design. */
+/** Aktive Welt (Fitness oder Ernährung). */
 export type World = 'fitness' | 'food'
 
 interface Prefs {
   showNutrition: boolean
   setShowNutrition: (v: boolean) => void
-  appMode: AppMode
-  setAppMode: (v: AppMode) => void
-  /** true, wenn das neue Design aktiv sein soll. */
-  isNew: boolean
   world: World
   setWorld: (v: World) => void
   /** Modul Community (Freunde, Bestenliste, Duelle) */
@@ -37,9 +24,6 @@ interface Prefs {
 const PrefsContext = createContext<Prefs>({
   showNutrition: true,
   setShowNutrition: () => {},
-  appMode: 'classic',
-  setAppMode: () => {},
-  isNew: false,
   world: 'fitness',
   setWorld: () => {},
   showSocial: true,
@@ -65,20 +49,6 @@ function writeFlag(key: string, v: boolean) {
   }
 }
 
-function readMode(): AppMode {
-  // Android-App: immer die neue Version, solange niemand bewusst „Klassisch“ gewählt hat
-  const fallback: AppMode = Capacitor.isNativePlatform() ? 'new' : 'classic'
-  try {
-    const v = localStorage.getItem(MODE_KEY)
-    if (v === 'new' || v === 'classic') return v
-    // Merken, damit auch Code außerhalb von React (z. B. Tageswechsel) denselben Modus sieht
-    if (fallback === 'new') localStorage.setItem(MODE_KEY, 'new')
-    return fallback
-  } catch {
-    return fallback
-  }
-}
-
 function readWorld(): World {
   try {
     return localStorage.getItem(WORLD_KEY) === 'food' ? 'food' : 'fitness'
@@ -89,7 +59,6 @@ function readWorld(): World {
 
 export function PrefsProvider({ children }: { children: ReactNode }) {
   const [showNutrition, setShow] = useState(() => localStorage.getItem(KEY) !== 'false')
-  const [appMode, setMode] = useState<AppMode>(readMode)
   const [world, setWorldState] = useState<World>(readWorld)
   const [showSocial, setSocial] = useState(() => readFlag(SOCIAL_KEY, true))
   const [hasWatch, setWatch] = useState(() => readFlag(WATCH_KEY, false))
@@ -97,15 +66,6 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
   function setShowNutrition(v: boolean) {
     localStorage.setItem(KEY, v ? 'true' : 'false')
     setShow(v)
-  }
-
-  function setAppMode(v: AppMode) {
-    try {
-      localStorage.setItem(MODE_KEY, v)
-    } catch {
-      /* ignore */
-    }
-    setMode(v)
   }
 
   function setWorld(v: World) {
@@ -122,9 +82,6 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
       value={{
         showNutrition,
         setShowNutrition,
-        appMode,
-        setAppMode,
-        isNew: appMode === 'new',
         // Ernährung ausgeblendet → es gibt nur die Fitness-Welt
         world: showNutrition ? world : 'fitness',
         setWorld,

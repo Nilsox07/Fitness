@@ -140,10 +140,7 @@ export default function Cardio() {
         {isLoading ? (
           <div className="h-40 animate-pulse rounded-2xl bg-sand" />
         ) : shown.length === 0 ? (
-          <p className="card text-sm text-cocoa-light">
-            Noch keine Aktivitäten. Sobald deine Uhr einen Lauf oder eine Radtour an Health Connect gibt, taucht sie
-            hier auf.
-          </p>
+          <p className="card text-sm text-cocoa-light">Noch keine Aktivitäten von deiner Uhr.</p>
         ) : (
           <Group>
             {shown.slice(0, 60).map((a) => (
