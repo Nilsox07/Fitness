@@ -7,6 +7,7 @@ import { DAY_CUTOFF_H } from './day'
 import type { Schedule } from './schedule'
 import { NOTIFY_DEFAULTS, normalizeNotify, type NotifyPrefs } from './notify'
 import { normalizePrestige, type PrestigeState } from './unlocks'
+import type { CardioKind, CardioPlan, CardioType, FitGoal } from './onboarding'
 
 /** Prozent je Mahlzeit (Summe = 100). */
 export type MealSplit = Record<Meal, number>
@@ -28,6 +29,14 @@ export interface UserPrefs {
   achievements: string[]
   /** Reihenfolge der Widgets auf „Heute“ (null = Standard je nach Modulen) */
   dashboard: string[] | null
+  /** Intro beim ersten Start durchlaufen (oder übersprungen) */
+  onboarded: boolean
+  /** Ziel aus dem Intro */
+  fitGoal: FitGoal | null
+  /** Ausdauer-Plan aus dem Intro (null = keiner) */
+  cardioPlan: CardioPlan | null
+  /** Tage (YYYY-MM-DD), an denen die Ausdauer-Einheit abgehakt wurde */
+  cardioDone: string[]
 }
 
 export const DEFAULT_KCAL_BONUS = 250
@@ -43,6 +52,10 @@ export const DEFAULT_PREFS: UserPrefs = {
   prestige: { count: 0, xpOffset: 0 },
   achievements: [],
   dashboard: null,
+  onboarded: false,
+  fitGoal: null,
+  cardioPlan: null,
+  cardioDone: [],
 }
 
 const num = (v: unknown, lo: number, hi: number, fallback: number): number => {
@@ -75,6 +88,26 @@ function normalizeSchedule(v: unknown): Schedule | null {
   return null
 }
 
+const FIT_GOALS: FitGoal[] = ['muscle', 'lose', 'fit', 'strength', 'endurance']
+const CARDIO_KINDS: CardioKind[] = ['run', 'bike', 'walk', 'any']
+const CARDIO_TYPES: CardioType[] = ['easy', 'interval', 'long']
+
+function normalizeCardioPlan(v: unknown): CardioPlan | null {
+  if (!v || typeof v !== 'object') return null
+  const p = v as Record<string, unknown>
+  if (!CARDIO_KINDS.includes(p.kind as CardioKind) || !Array.isArray(p.sessions)) return null
+  const sessions = (p.sessions as unknown[])
+    .filter((x): x is Record<string, unknown> => !!x && typeof x === 'object')
+    .map((x) => ({
+      day: num(x.day, 0, 6, 0),
+      kind: CARDIO_KINDS.includes(x.kind as CardioKind) ? (x.kind as CardioKind) : (p.kind as CardioKind),
+      type: CARDIO_TYPES.includes(x.type as CardioType) ? (x.type as CardioType) : 'easy',
+      minutes: num(x.minutes, 5, 240, 30),
+    }))
+    .slice(0, 7)
+  return sessions.length ? { kind: p.kind as CardioKind, sessions } : null
+}
+
 /** Beliebiges (DB-/localStorage-)Objekt → gültige Einstellungen mit Standardwerten. */
 export function normalizePrefs(raw: unknown): UserPrefs {
   const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
@@ -103,5 +136,13 @@ export function normalizePrefs(raw: unknown): UserPrefs {
     dashboard: Array.isArray(r.dashboard)
       ? [...new Set(r.dashboard.filter((a): a is string => typeof a === 'string' && a.length < 40))].slice(0, 40)
       : null,
+    onboarded: r.onboarded === true,
+    fitGoal: FIT_GOALS.includes(r.fitGoal as FitGoal) ? (r.fitGoal as FitGoal) : null,
+    cardioPlan: normalizeCardioPlan(r.cardioPlan),
+    cardioDone: Array.isArray(r.cardioDone)
+      ? [...new Set(r.cardioDone.filter((d): d is string => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)))]
+          .sort()
+          .slice(-60)
+      : [],
   }
 }

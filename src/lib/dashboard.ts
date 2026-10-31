@@ -9,6 +9,7 @@ export type Module = 'training' | 'nutrition' | 'social' | 'watch'
 export type WidgetId =
   | 'readiness'
   | 'nextWorkout'
+  | 'cardioPlan'
   | 'streak'
   | 'kcal'
   | 'water'
@@ -50,6 +51,7 @@ export const WIDGETS: WidgetDef[] = [
     module: 'training',
     size: 'full',
   },
+  { id: 'cardioPlan', label: 'Ausdauer-Plan', hint: 'Heutige Einheit abhaken', module: 'training', size: 'full' },
   { id: 'kcal', label: 'Kalorien & Eiweiß', hint: 'Was heute noch offen ist', module: 'nutrition', size: 'full' },
   { id: 'water', label: 'Wasser', hint: 'Mit +250 ml direkt eintragen', module: 'nutrition', size: 'half' },
   { id: 'streak', label: 'Serie', hint: 'Wochen in Folge & Ziel dieser Woche', module: 'training', size: 'half' },
@@ -100,6 +102,7 @@ export function widgetDef(id: WidgetId): WidgetDef {
 export const DEFAULT_LAYOUT: WidgetId[] = [
   'readiness',
   'nextWorkout',
+  'cardioPlan',
   'kcal',
   'water',
   'streak',
@@ -181,4 +184,11 @@ export function withWatchWidgets(saved: readonly string[] | null | undefined): s
   if (!saved) return null
   const add = (['readiness', 'sleep', 'steps', 'lastActivity'] as const).filter((id) => !saved.includes(id))
   return add.length ? [add[0], ...saved, ...add.slice(1)] : [...saved]
+}
+
+/** Widget nach einem anderen einfügen (nur bei eigener Reihenfolge; Standard enthält es schon). */
+export function withWidget(saved: string[] | null, id: WidgetId, after: WidgetId): string[] | null {
+  if (!saved || saved.includes(id)) return saved
+  const i = saved.indexOf(after)
+  return i < 0 ? [id, ...saved] : [...saved.slice(0, i + 1), id, ...saved.slice(i + 1)]
 }

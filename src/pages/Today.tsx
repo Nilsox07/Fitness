@@ -51,7 +51,11 @@ export default function Today() {
       <BuddyTip page="today" />
       <div className="grid grid-cols-2 gap-3">
         {layout.map((id, i) => (
-          <div key={id} className={widgetDef(id).size === 'full' ? 'col-span-2' : ''} style={enter(i + 1)}>
+          <div
+            key={id}
+            className={`empty:hidden ${widgetDef(id).size === 'full' ? 'col-span-2' : ''}`}
+            style={enter(i + 1)}
+          >
             {renderWidget(id, t)}
           </div>
         ))}

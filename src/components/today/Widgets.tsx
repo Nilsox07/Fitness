@@ -29,6 +29,7 @@ import { QuestStrip } from '../buddy/QuestStrip'
 import { SupplementCard } from '../nutrition-home/SupplementCard'
 import { BodyWeightCard } from '../BodyWeightCard'
 import type { WidgetId } from '../../lib/dashboard'
+import { CardioPlanCard } from './CardioPlanCard'
 
 const fmt = (n: number) => Math.round(n).toLocaleString('de-DE')
 
@@ -161,10 +162,8 @@ function ReadinessWidget({ t }: { t: TodaySummary }) {
         </div>
       ) : (
         <div className="relative mt-2">
-          <p className="text-[15px] font-semibold">Noch keine Daten von heute Nacht</p>
-          <p className="text-xs text-bg/60 dark:text-cocoa-light">
-            Trag deine Uhr beim Schlafen – dann sagt dir die Tagesform, wie hart du heute trainieren kannst.
-          </p>
+          <p className="text-[15px] font-semibold">Noch keine Daten</p>
+          <p className="text-xs text-bg/60 dark:text-cocoa-light">Uhr beim Schlafen tragen</p>
         </div>
       )}
     </button>
@@ -221,9 +220,7 @@ function LastActivityWidget({ t }: { t: TodaySummary }) {
   if (!a)
     return (
       <Tile icon={<Activity size={15} />} tint="bg-sand text-cocoa-light" title="Letzte Aktivität">
-        <span className="text-sm text-cocoa-light">
-          Läufe, Radtouren & Co. erscheinen hier automatisch von deiner Uhr.
-        </span>
+        <span className="text-sm text-cocoa-light">Noch keine Aktivität</span>
         <ConnectWatch />
       </Tile>
     )
@@ -320,12 +317,12 @@ function NextWorkoutWidget({ t }: { t: TodaySummary }) {
       ? 'Ruhetag'
       : (t.nextWorkout ?? 'Freies Training')
   const sub = t.trainedToday
-    ? 'Stark! Erholung zählt genauso.'
+    ? 'Stark!'
     : t.restDay
-      ? 'Erholung ist Teil vom Plan.'
+      ? 'Erholung gehört dazu'
       : t.nextWorkout
-        ? 'Steht laut deinem Rhythmus heute an'
-        : 'Plan wählen oder einfach loslegen'
+        ? 'Laut deinem Plan'
+        : 'Plan wählen oder loslegen'
   return (
     <button
       onClick={() => navigate('/')}
@@ -518,6 +515,8 @@ export function renderWidget(id: WidgetId, t: TodaySummary): ReactNode {
   switch (id) {
     case 'readiness':
       return <ReadinessWidget t={t} />
+    case 'cardioPlan':
+      return <CardioPlanCard />
     case 'nextWorkout':
       return <NextWorkoutWidget t={t} />
     case 'streak':
