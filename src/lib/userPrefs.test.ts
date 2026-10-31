@@ -62,3 +62,11 @@ describe('normalizePrefs', () => {
     expect(normalizePrefs({ schedule: { type: 'unbekannt' } }).schedule).toBeNull()
   })
 })
+
+describe('Zucker/Salz anheften', () => {
+  it('standardmäßig aus, nur echtes true schaltet ein', () => {
+    expect(normalizePrefs({})).toMatchObject({ showSugar: false, showSalt: false })
+    expect(normalizePrefs({ showSugar: 'ja', showSalt: 1 })).toMatchObject({ showSugar: false, showSalt: false })
+    expect(normalizePrefs({ showSugar: true, showSalt: true })).toMatchObject({ showSugar: true, showSalt: true })
+  })
+})

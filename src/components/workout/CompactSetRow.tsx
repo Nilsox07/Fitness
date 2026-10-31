@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { haptic } from '../../lib/native'
 import { Check, Minus, Plus, Trash2 } from 'lucide-react'
 import { useDeleteSet, useUpdateSet } from '../../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../../lib/weights'
@@ -142,6 +143,7 @@ export function CompactSetRow({
   function fireDone() {
     if (fired.current) return
     fired.current = true
+    void haptic('success')
     onDone()
   }
 

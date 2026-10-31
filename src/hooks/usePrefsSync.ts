@@ -182,6 +182,12 @@ export function useNutritionPrefs(): { kcalBonus: number; mealSplit: MealSplit }
   return { kcalBonus: prefs.kcalBonus, mealSplit: prefs.mealSplit }
 }
 
+/** Zucker/Salz dauerhaft sichtbar statt hinter „Mehr“ (Profil → Meine Einstellungen). */
+export function useNutrientPins(): { sugar: boolean; salt: boolean } {
+  const { prefs } = useUserPrefs()
+  return { sugar: prefs.showSugar, salt: prefs.showSalt }
+}
+
 /** Persönliches Wochenziel (aus dem Rhythmus; ohne Rhythmus: 3). */
 export function useWeeklyGoal(): number {
   const { prefs } = useUserPrefs()

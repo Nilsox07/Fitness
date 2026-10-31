@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
+import { haptic } from '../lib/native'
 import type { ReactElement } from 'react'
 import { usePrefs } from '../lib/prefs'
 
@@ -129,6 +130,7 @@ function FloatingTabBar({ tabs, pathname }: { tabs: Tab[]; pathname: string }) {
                 to={t.to}
                 end={t.end}
                 aria-current={on ? 'page' : undefined}
+                onClick={() => !on && void haptic()}
                 className={`flex h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10px] font-semibold transition-colors duration-200 active:scale-95 ${
                   on ? 'text-on-brand' : 'text-cocoa-muted hover:text-cocoa'
                 }`}

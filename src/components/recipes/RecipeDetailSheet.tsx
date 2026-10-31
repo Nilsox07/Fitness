@@ -4,7 +4,8 @@ import { Check, Ellipsis, Loader2, Minus, Plus, Share2, Trash2, TriangleAlert, X
 import { scoreMeal } from '../../lib/mealScore'
 import { MEALS, MEAL_LABEL, type Meal, type NutritionGoal, type SavedRecipe } from '../../types'
 import { ScoreRing, TONE_TEXT } from '../food/ScoreRing'
-import { MacroBar } from '../food/MacroBar'
+import { FiberBar, MacroBar } from '../food/MacroBar'
+import { DEFAULT_FIBER_TARGET } from '../../lib/nutrition'
 import { NutrientList } from '../food/NutrientList'
 import { useCountUp } from '../food/useCountUp'
 import { FriendChip, RecipeCover } from './RecipeCards'
@@ -290,6 +291,7 @@ export function RecipeDetailSheet({
                 <span className="text-sm text-cocoa-light">kcal</span>
               </div>
               <MacroBar protein={totals.protein} carbs={totals.carbs} fat={totals.fat} />
+              <FiberBar fiber={totals.fiber} target={DEFAULT_FIBER_TARGET} />
             </Section>
 
             <Section title="Nährwerte">

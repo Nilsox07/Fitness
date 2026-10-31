@@ -43,6 +43,10 @@ export interface UserPrefs {
   modules: Modules | null
   /** Zuletzt gesehene „Was ist neu?“-Version (geräteübergreifend) */
   seenVersion: string | null
+  /** Zucker immer sichtbar statt hinter „Mehr“ (z. B. bei Diabetes) */
+  showSugar: boolean
+  /** Salz immer sichtbar statt hinter „Mehr“ (z. B. bei Bluthochdruck) */
+  showSalt: boolean
 }
 
 export interface Modules {
@@ -71,6 +75,8 @@ export const DEFAULT_PREFS: UserPrefs = {
   shareCheat: false,
   modules: null,
   seenVersion: null,
+  showSugar: false,
+  showSalt: false,
 }
 
 const num = (v: unknown, lo: number, hi: number, fallback: number): number => {
@@ -186,5 +192,7 @@ export function normalizePrefs(raw: unknown): UserPrefs {
     shareCheat: r.shareCheat === true,
     modules: normalizeModules(r.modules),
     seenVersion: typeof r.seenVersion === 'string' && r.seenVersion.length < 20 ? r.seenVersion : null,
+    showSugar: r.showSugar === true,
+    showSalt: r.showSalt === true,
   }
 }

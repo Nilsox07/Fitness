@@ -80,6 +80,14 @@ einer App, aber nur das sichtbar, was man nutzt.
   (`consistentKcal`). Im Ergebnis die Rückfrage „Fett beim Kochen“ (Ohne/1 TL/1 EL/2 EL, `mealItems.ts`).
 - **Tagesform** (`readiness` in `health.ts`): Schlaf + Tiefschlaf, HRV, Ruhepuls, Kraft- und Ausdauer-Belastung der
   letzten 2 Tage, Ernährung, Eiweiß und Trinken von gestern. KI-Briefing direkt in der Tagesform-Karte (`useBriefing`).
+- **Buddy schwebt** unten rechts über der Menüleiste (`FloatingBuddy.tsx`): ganze Figur, verschiebbar (schnappt
+  an den Rand, Position in localStorage), blendet sich bei offenen Sheets (`useOverlayOpen` aus `backStack.ts`),
+  beim Scrollen und im laufenden Training aus. Seiten melden ihren Tipp per `<BuddyTip page=…/>` an (rendert nichts);
+  Buddy zeigt ihn als Sprechblase (einmal pro Sitzung, wegtippbar für heute).
+- **Animationen:** Seitenwechsel (`.anim-page`), Zahlen zählen hoch (`CountUp`), Ringe/Balken laufen von 0 an
+  (`useMounted`), Lade-Schimmer, Drück-Feedback auf Karten, Haptik in der App (`haptic()` in `native.ts`).
+- **Nährwerte:** Ballaststoffe gleichrangig mit den Makros (Ziel 14 g/1000 kcal), Zucker/Salz/ges. Fett unter „Mehr“,
+  Zucker/Salz in den Einstellungen anpinnbar. KI-Analyse liefert Nährstoff-Highlights (z. B. „Viel Vitamin C“).
 - **Navigation wie bei iOS:** globale Suche (Lupe oben in jedem Tab, `components/search/SearchSheet.tsx`,
   Einträge + Stichwörter in `src/lib/searchIndex.ts`, Module beachten). Profil gruppiert: Ich ·
   Personalisieren · Buddy · Mitteilungen & Geräte · Konto & Daten. Deep Links für die Suche:

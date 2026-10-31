@@ -762,6 +762,23 @@ export interface MealAnalysis {
   items: FoodEstimate[]
   /** KI-Hinweise für den Score (tierische Produkte, Verarbeitung) — optional. */
   flags?: MealFlags
+  /** Bis zu 3 kurze Stichworte zu auffälligen Mikronährstoffen, z. B. „Viel Vitamin C“ — optional. */
+  highlights?: string[]
+}
+
+/** Liest die Mikronährstoff-Stichworte robust: nur kurze Texte, ohne Dubletten, max. 3. */
+export function toMealHighlights(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const out: string[] = []
+  for (const h of raw) {
+    if (typeof h !== 'string') continue
+    const t = h.replace(/\s+/g, ' ').trim()
+    if (!t || t.length > 24) continue
+    if (out.some((o) => o.toLowerCase() === t.toLowerCase())) continue
+    out.push(t)
+    if (out.length === 3) break
+  }
+  return out
 }
 
 const ANIMAL_FLAGS = ['meat', 'fish', 'dairy_egg', 'none'] as const
@@ -785,12 +802,25 @@ function fallbackTitle(items: FoodEstimate[]): string {
 
 /** Parst eine Analyse-Antwort ({title, verdict, items}) robust. */
 export function toMealAnalysis(text: string): MealAnalysis {
-  const raw = parseJson<{ title?: unknown; verdict?: unknown; items?: Partial<FoodEstimate>[]; flags?: unknown }>(text)
+  const raw = parseJson<{
+    title?: unknown
+    verdict?: unknown
+    items?: Partial<FoodEstimate>[]
+    flags?: unknown
+    highlights?: unknown
+  }>(text)
   const items = toEstimateList(raw.items)
   const title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim().slice(0, 60) : ''
   const verdict = typeof raw.verdict === 'string' ? raw.verdict.trim().slice(0, 200) : ''
   const flags = toMealFlags(raw.flags)
-  return { title: title || fallbackTitle(items), verdict, items, ...(flags ? { flags } : {}) }
+  const highlights = toMealHighlights(raw.highlights)
+  return {
+    title: title || fallbackTitle(items),
+    verdict,
+    items,
+    ...(flags ? { flags } : {}),
+    ...(highlights.length ? { highlights } : {}),
+  }
 }
 
 /**
@@ -814,7 +844,11 @@ export async function analyzeMeal(input: {
     '. Außerdem "flags": {"animal":"meat|fish|dairy_egg|none" (strengste enthaltene tierische ' +
     'Zutat: Fleisch/Wurst > Fisch/Meeresfrüchte > Milch/Käse/Ei/Honig > keine),"processing":1-4 ' +
     '(Verarbeitungsgrad wie NOVA: 1 unverarbeitet … 4 stark verarbeitetes Fertigprodukt)}. ' +
-    'Gesamtformat: {"title":"...","verdict":"...","flags":{...},"items":[...]}.' +
+    'Und "highlights": bis zu 3 kurze deutsche Stichworte (je max. 24 Zeichen) zu auffälligen ' +
+    'Mikronährstoffen/Qualitäten, die sich aus der Art der Lebensmittel sicher ableiten lassen, z. B. ' +
+    '"Viel Vitamin C", "Gute Eisenquelle", "Omega-3", "Kalziumreich", "Viel Ballaststoffe". ' +
+    'Nur wenn eindeutig zutreffend, sonst []. ' +
+    'Gesamtformat: {"title":"...","verdict":"...","flags":{...},"highlights":[...],"items":[...]}.' +
     diet
   const prompt = input.image
     ? 'Erkenne das Essen auf dem Bild und schätze die Nährwerte der abgebildeten Portion. ' +

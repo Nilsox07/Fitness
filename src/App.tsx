@@ -39,6 +39,7 @@ import ActivityDetail from './pages/ActivityDetail'
 import { NativeNav, NativeSync } from './components/NativeSync'
 import { SearchHost } from './components/search/SearchSheet'
 import { Splash } from './components/Splash'
+import { FloatingBuddy } from './components/buddy/FloatingBuddy'
 import { OnboardingHost } from './components/onboarding/Onboarding'
 import { useChallengeSync } from './hooks/useChallenges'
 import { useModulesSync } from './hooks/useModulesSync'
@@ -135,35 +136,38 @@ export default function App() {
         ref={mainRef}
         className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4"
       >
-        <Routes>
-          <Route path="/" element={<Workout />} />
-          <Route path="/today" element={<Today />} />
-          <Route path="/cardio" element={hasWatch ? <Cardio /> : <Navigate to="/progress" replace />} />
-          <Route path="/cardio/:id" element={hasWatch ? <ActivityDetail /> : <Navigate to="/progress" replace />} />
-          <Route path="/sleep" element={hasWatch ? <Sleep /> : <Navigate to="/progress" replace />} />
-          <Route path="/vitals" element={hasWatch ? <Vitals /> : <Navigate to="/progress" replace />} />
-          <Route path="/nutrition" element={showNutrition ? <Nutrition /> : <Navigate to="/" replace />} />
-          <Route path="/exercises" element={<Exercises />} />
-          <Route path="/exercises/:id" element={<ExerciseDetail />} />
-          <Route path="/plans" element={<Plans />} />
-          <Route path="/social" element={showSocial ? <Social /> : <Navigate to="/today" replace />} />
-          <Route path="/badges" element={<Badges />} />
-          <Route path="/recipes" element={showNutrition ? <Recipes /> : <Navigate to="/" replace />} />
-          <Route path="/shopping" element={showNutrition ? <Shopping /> : <Navigate to="/" replace />} />
-          <Route path="/feed" element={<Feed />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/progress" element={<Progress />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/body" element={<Body />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/quick" element={<QuickWorkout />} />
-          <Route path="/share" element={<ShareTarget />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <div key={pathname} className="anim-page">
+          <Routes>
+            <Route path="/" element={<Workout />} />
+            <Route path="/today" element={<Today />} />
+            <Route path="/cardio" element={hasWatch ? <Cardio /> : <Navigate to="/progress" replace />} />
+            <Route path="/cardio/:id" element={hasWatch ? <ActivityDetail /> : <Navigate to="/progress" replace />} />
+            <Route path="/sleep" element={hasWatch ? <Sleep /> : <Navigate to="/progress" replace />} />
+            <Route path="/vitals" element={hasWatch ? <Vitals /> : <Navigate to="/progress" replace />} />
+            <Route path="/nutrition" element={showNutrition ? <Nutrition /> : <Navigate to="/" replace />} />
+            <Route path="/exercises" element={<Exercises />} />
+            <Route path="/exercises/:id" element={<ExerciseDetail />} />
+            <Route path="/plans" element={<Plans />} />
+            <Route path="/social" element={showSocial ? <Social /> : <Navigate to="/today" replace />} />
+            <Route path="/badges" element={<Badges />} />
+            <Route path="/recipes" element={showNutrition ? <Recipes /> : <Navigate to="/" replace />} />
+            <Route path="/shopping" element={showNutrition ? <Shopping /> : <Navigate to="/" replace />} />
+            <Route path="/feed" element={<Feed />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/body" element={<Body />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/quick" element={<QuickWorkout />} />
+            <Route path="/share" element={<ShareTarget />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </main>
       <Assistant />
       <SearchHost />
       <BuddyMomentHost />
+      <FloatingBuddy />
       <WhatsNew />
       <WeeklyReview />
       <Splash />

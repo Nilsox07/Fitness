@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useMounted } from '../components/ui/CountUp'
 import { useNavigate } from 'react-router-dom'
 import {
   Activity,
@@ -286,6 +287,7 @@ function Trend({ pct }: { pct: number }) {
 function Bars({ values, small, target }: { values: number[]; small?: boolean; target?: number }) {
   const h = small ? 34 : 56
   const max = Math.max(1, target ?? 0, ...values)
+  const mounted = useMounted()
   return (
     <span className="relative flex w-full items-end gap-1" style={{ height: h }}>
       {target != null && (
@@ -298,7 +300,10 @@ function Bars({ values, small, target }: { values: number[]; small?: boolean; ta
         <span
           key={i}
           className={`flex-1 rounded-t-[4px] ${i === values.length - 1 ? 'bg-brand' : 'bg-brand/25'}`}
-          style={{ height: Math.max(v > 0 ? 3 : 2, (v / max) * h) }}
+          style={{
+            height: mounted ? Math.max(v > 0 ? 3 : 2, (v / max) * h) : 2,
+            transition: `height .6s cubic-bezier(.2,.8,.2,1) ${i * 40}ms`,
+          }}
         />
       ))}
     </span>
@@ -338,6 +343,7 @@ function Ring({ pct, size, children }: { pct: number; size: number; children: Re
   const stroke = 9
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
+  const mounted = useMounted()
   return (
     <span className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="absolute inset-0 -rotate-90">
@@ -357,7 +363,7 @@ function Ring({ pct, size, children }: { pct: number; size: number; children: Re
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
-          strokeDashoffset={c * (1 - pct)}
+          strokeDashoffset={c * (1 - (mounted ? pct : 0))}
           style={{ stroke: 'rgb(var(--c-ruby))', transition: 'stroke-dashoffset .6s ease' }}
         />
       </svg>

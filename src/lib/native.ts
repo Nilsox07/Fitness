@@ -411,3 +411,17 @@ export function liveFastingEnabled(): boolean {
     return false
   }
 }
+
+// ---------- Haptik (leichtes Feedback beim Tippen) ----------
+
+/** Kurzes, leichtes Vibrieren – nur in der App, still im Browser. */
+export async function haptic(kind: 'light' | 'medium' | 'success' = 'light'): Promise<void> {
+  if (!isNative()) return
+  try {
+    const { Haptics, ImpactStyle, NotificationType } = await import('@capacitor/haptics')
+    if (kind === 'success') await Haptics.notification({ type: NotificationType.Success })
+    else await Haptics.impact({ style: kind === 'medium' ? ImpactStyle.Medium : ImpactStyle.Light })
+  } catch {
+    /* ignore */
+  }
+}

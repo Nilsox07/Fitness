@@ -5,15 +5,11 @@ import { useNutritionSettings } from '../../hooks/useNutrition'
 import { usePrefs } from '../../lib/prefs'
 import { getRestRules, getRestSeconds, setRestRules, setRestSeconds, type RestRules } from '../../lib/workoutSession'
 import { definesDays, describeSchedule, weeklyGoal } from '../../lib/schedule'
-import {
-  DEFAULT_KCAL_BONUS,
-  DEFAULT_MEAL_SPLIT,
-  mealSplitSum,
-  type MealSplit,
-} from '../../lib/userPrefs'
+import { DEFAULT_KCAL_BONUS, DEFAULT_MEAL_SPLIT, mealSplitSum, type MealSplit } from '../../lib/userPrefs'
 import { DAY_CUTOFF_H } from '../../lib/day'
 import { fmtLiters } from '../../lib/nutritionHome'
 import { MEALS, MEAL_LABEL } from '../../types'
+import { Toggle } from './ui'
 
 const REST_DEFAULT = 120
 
@@ -43,6 +39,8 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
   const [rules, setRules] = useState<RestRules>(getRestRules())
   const savedRules = getRestRules()
   const [cutoff, setCutoff] = useState(prefs.dayCutoff)
+  const [showSugar, setShowSugar] = useState(prefs.showSugar)
+  const [showSalt, setShowSalt] = useState(prefs.showSalt)
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -56,12 +54,16 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
     rules.warmupToWarmup !== savedRules.warmupToWarmup ||
     rules.warmupToWorking !== savedRules.warmupToWorking ||
     rules.beforeDrop !== savedRules.beforeDrop ||
-    cutoff !== prefs.dayCutoff
+    cutoff !== prefs.dayCutoff ||
+    showSugar !== prefs.showSugar ||
+    showSalt !== prefs.showSalt
 
-  const change = <T,>(set: (v: T) => void) => (v: T) => {
-    setSaved(false)
-    set(v)
-  }
+  const change =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      setSaved(false)
+      set(v)
+    }
 
   async function submit() {
     if (!splitOk) return
@@ -73,8 +75,12 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
         kcalBonus: bonus,
         mealSplit: split,
         dayCutoff: cutoff,
+        showSugar,
+        showSalt,
         // Wochenziel nur übernehmen, wenn geändert (sonst bleibt „kein Rhythmus“ bestehen)
-        ...(flexible && perWeek !== weeklyGoal(prefs.schedule) ? { schedule: { type: 'flexible' as const, perWeek } } : {}),
+        ...(flexible && perWeek !== weeklyGoal(prefs.schedule)
+          ? { schedule: { type: 'flexible' as const, perWeek } }
+          : {}),
       })
       setSaved(true)
     } finally {
@@ -250,7 +256,8 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
             </div>
             {!splitOk && (
               <p className="text-xs text-brand">
-                Die Anteile müssen zusammen 100 % ergeben ({sum > 100 ? `${sum - 100} % zu viel` : `${100 - sum} % fehlen`}).
+                Die Anteile müssen zusammen 100 % ergeben (
+                {sum > 100 ? `${sum - 100} % zu viel` : `${100 - sum} % fehlen`}).
               </p>
             )}
             {MEALS.some((m) => split[m] !== DEFAULT_MEAL_SPLIT[m]) && (
@@ -263,6 +270,17 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
               </button>
             )}
           </div>
+
+          <Line
+            label="Zucker anzeigen"
+            hint="Immer sichtbar, z. B. bei Diabetes"
+            trailing={<Toggle checked={showSugar} onChange={change(setShowSugar)} label="Zucker anzeigen" />}
+          />
+          <Line
+            label="Salz anzeigen"
+            hint="Immer sichtbar, z. B. bei Bluthochdruck"
+            trailing={<Toggle checked={showSalt} onChange={change(setShowSalt)} label="Salz anzeigen" />}
+          />
 
           {onOpenGoal && (
             <button type="button" className="w-full text-left active:bg-sand/60" onClick={onOpenGoal}>
@@ -282,7 +300,11 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
       )}
 
       <div className="space-y-2">
-        <button className="btn-primary w-full gap-2 py-3" onClick={submit} disabled={busy || !splitOk || !dirty || saved}>
+        <button
+          className="btn-primary w-full gap-2 py-3"
+          onClick={submit}
+          disabled={busy || !splitOk || !dirty || saved}
+        >
           {saved ? (
             <>
               <Check size={18} strokeWidth={2.5} />
@@ -298,7 +320,8 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
           <p className="text-center text-xs text-cocoa-muted">Wird vorerst nur auf diesem Gerät gespeichert.</p>
         )}
         <p className="text-center text-[11px] text-cocoa-muted">
-          Standard: 250 kcal · 25/35/30/10 % · {fmtRest(REST_DEFAULT)} Pause · {String(DAY_CUTOFF_H).padStart(2, '0')}:00 Uhr
+          Standard: 250 kcal · 25/35/30/10 % · {fmtRest(REST_DEFAULT)} Pause · {String(DAY_CUTOFF_H).padStart(2, '0')}
+          :00 Uhr
         </p>
       </div>
     </div>

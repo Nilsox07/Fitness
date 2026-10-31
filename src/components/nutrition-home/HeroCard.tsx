@@ -3,19 +3,28 @@ import { ChevronDown, Target } from 'lucide-react'
 import { useCountUp } from '../food/useCountUp'
 import { TRAINING_BONUS } from '../../lib/dayTarget'
 import { fmtInt } from '../../lib/nutritionHome'
-import type { Nutrients } from '../../lib/nutrition'
+import { DEFAULT_FIBER_TARGET, NUTRIENT_REFERENCE, type Nutrients } from '../../lib/nutrition'
 import { Ring } from './Ring'
 import { MyBuddy } from '../buddy/MyBuddy'
 
-type Targets = { kcal: number; protein: number; carbs: number; fat: number }
+type Targets = { kcal: number; protein: number; carbs: number; fat: number; fiber?: number }
 
-/** Großer Kalorienring + Makro-Balken + aufklappbare Mikronährwerte. */
+type Extra = 'sugar' | 'sat_fat' | 'salt'
+const EXTRAS: Extra[] = ['sugar', 'sat_fat', 'salt']
+const EXTRA: Record<Extra, { label: string; digits: number }> = {
+  sugar: { label: 'Zucker', digits: 0 },
+  sat_fat: { label: 'ges. Fett', digits: 0 },
+  salt: { label: 'Salz', digits: 1 },
+}
+
+/** Großer Kalorienring + Makro- und Ballaststoff-Balken + aufklappbare weitere Nährwerte. */
 export function HeroCard({
   totals,
   targets,
   trained,
   bonus = TRAINING_BONUS,
   onSetup,
+  pins = { sugar: false, salt: false },
   style,
 }: {
   totals: Nutrients
@@ -25,6 +34,8 @@ export function HeroCard({
   /** Trainingsbonus aus den Einstellungen (Standard 250) */
   bonus?: number
   onSetup: () => void
+  /** Zucker/Salz immer zeigen statt hinter „Mehr“ */
+  pins?: { sugar: boolean; salt: boolean }
   style?: CSSProperties
 }) {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -33,6 +44,8 @@ export function HeroCard({
   const left = targets.kcal - totals.kcal
   const leftAnim = useCountUp(Math.abs(left), 700)
   const over = left < 0
+  const pinned = EXTRAS.filter((k) => (k === 'sugar' && pins.sugar) || (k === 'salt' && pins.salt))
+  const hidden = EXTRAS.filter((k) => !pinned.includes(k))
 
   if (!hasTarget) {
     return (
@@ -86,11 +99,34 @@ export function HeroCard({
         />
       </div>
 
-      <div className="relative grid grid-cols-3 gap-3">
+      <div className="relative grid grid-cols-2 gap-x-4 gap-y-3">
         <Macro label="Eiweiß" value={totals.protein} target={targets.protein} bar="bg-brand" successWhenDone />
         <Macro label="Kohlenhydrate" value={totals.carbs} target={targets.carbs} bar="bg-brand/60" />
         <Macro label="Fett" value={totals.fat} target={targets.fat} bar="bg-bg/70 dark:bg-cocoa-light" />
+        <Macro
+          label="Ballaststoffe"
+          value={totals.fiber}
+          target={targets.fiber ?? DEFAULT_FIBER_TARGET}
+          bar="bg-brand/40"
+          successWhenDone
+        />
       </div>
+
+      {pinned.length > 0 && (
+        <div className="relative grid grid-cols-2 gap-x-4 gap-y-3">
+          {pinned.map((k) => (
+            <Macro
+              key={k}
+              label={EXTRA[k].label}
+              value={totals[k]}
+              target={NUTRIENT_REFERENCE[k]}
+              digits={EXTRA[k].digits}
+              bar="bg-bg/40 dark:bg-cocoa-muted"
+              limit
+            />
+          ))}
+        </div>
+      )}
 
       <div className="relative border-t border-bg/10 pt-2 dark:border-sand-dark/40">
         <button
@@ -102,11 +138,14 @@ export function HeroCard({
           <ChevronDown size={16} className={`transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`} />
         </button>
         {moreOpen && (
-          <div className="anim-fade tabular mt-2 grid grid-cols-4 gap-2 rounded-xl bg-bg/10 p-2 text-center text-[11px] text-bg/60 dark:bg-white/5 dark:text-cocoa-light">
-            <Micro label="Ballaststoffe" value={totals.fiber} />
-            <Micro label="Zucker" value={totals.sugar} />
-            <Micro label="ges. Fett" value={totals.sat_fat} />
-            <Micro label="Salz" value={totals.salt} />
+          <div
+            className={`anim-fade tabular mt-2 grid gap-2 rounded-xl bg-bg/10 p-2 text-center text-[11px] text-bg/60 dark:bg-white/5 dark:text-cocoa-light ${
+              hidden.length === 3 ? 'grid-cols-3' : hidden.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
+            }`}
+          >
+            {hidden.map((k) => (
+              <Micro key={k} label={EXTRA[k].label} value={totals[k]} />
+            ))}
           </div>
         )}
       </div>
@@ -130,27 +169,36 @@ function Macro({
   target,
   bar,
   successWhenDone = false,
+  digits = 0,
+  limit = false,
 }: {
   label: string
   value: number
   target: number
   bar: string
   successWhenDone?: boolean
+  /** Nachkommastellen (Salz: 1) */
+  digits?: number
+  /** Obergrenze statt Ziel: drüber = gold */
+  limit?: boolean
 }) {
   const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0
   const done = successWhenDone && target > 0 && value >= target
+  const overLimit = limit && target > 0 && value > target
+  const f = (n: number) =>
+    digits ? (Math.round(n * 10 ** digits) / 10 ** digits).toLocaleString('de-DE') : Math.round(n)
   return (
     <div className="min-w-0">
       <div className="truncate text-xs font-medium">{label}</div>
       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-bg/15 dark:bg-sand-dark/45">
         <div
-          className={`h-full rounded-full transition-[width] duration-500 ease-out ${done ? 'bg-success' : bar}`}
+          className={`h-full rounded-full transition-[width] duration-500 ease-out ${done ? 'bg-success' : overLimit ? 'bg-gold' : bar}`}
           style={{ width: `${pct}%` }}
         />
       </div>
       <div className="tabular mt-1 text-[11px] text-bg/60 dark:text-cocoa-light">
-        <span className="font-semibold text-bg dark:text-cocoa">{Math.round(value)}</span>
-        {target > 0 ? ` / ${Math.round(target)} g` : ' g'}
+        <span className="font-semibold text-bg dark:text-cocoa">{f(value)}</span>
+        {target > 0 ? ` / ${f(target)} g` : ' g'}
       </div>
     </div>
   )

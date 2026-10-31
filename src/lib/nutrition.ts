@@ -112,6 +112,21 @@ export function computeTargets(input: TargetInput): MacroTargets {
   return { kcal, protein, carbs, fat }
 }
 
+/** Standard-Ballaststoffziel (DGE: mind. 30 g am Tag). */
+export const DEFAULT_FIBER_TARGET = 30
+
+/**
+ * Ballaststoffziel: 14 g je 1000 kcal Tagesziel (gerundet, 20–40 g);
+ * ohne Kalorienziel der DGE-Richtwert von 30 g.
+ */
+export function fiberTarget(kcalTarget: number): number {
+  if (!Number.isFinite(kcalTarget) || kcalTarget <= 0) return DEFAULT_FIBER_TARGET
+  return Math.min(40, Math.max(20, Math.round((kcalTarget * 14) / 1000)))
+}
+
+/** Referenzwerte (Tageszufuhr Erwachsene) für Nährwerte ohne eigenes Ziel. */
+export const NUTRIENT_REFERENCE = { sugar: 50, sat_fat: 20, salt: 6 } as const
+
 export interface Nutrients {
   kcal: number
   protein: number

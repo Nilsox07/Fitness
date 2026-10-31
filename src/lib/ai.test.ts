@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { num, parseJson } from './ai'
+import { num, parseJson, toMealAnalysis, toMealHighlights } from './ai'
 
 describe('parseJson', () => {
   it('liest reines JSON', () => {
@@ -36,5 +36,31 @@ describe('consistentKcal', () => {
     expect(consistentKcal(300, 30, 40, 15)).toBe(415) // 4·30 + 4·40 + 9·15
     expect(consistentKcal(400, 30, 40, 15)).toBe(400) // innerhalb der Toleranz
     expect(consistentKcal(250, 0, 10, 0)).toBe(250) // z. B. Bier: Alkohol fehlt in den Makros
+  })
+})
+
+describe('Mikronährstoff-Highlights', () => {
+  it('nimmt max. 3 kurze Texte, ohne Dubletten und Unsinn', () => {
+    expect(
+      toMealHighlights([
+        'Viel Vitamin C',
+        ' Omega-3 ',
+        'omega-3',
+        42,
+        '',
+        'Viel zu langer Hinweistext hier',
+        'Kalziumreich',
+        'Gute Eisenquelle',
+      ]),
+    ).toEqual(['Viel Vitamin C', 'Omega-3', 'Kalziumreich'])
+    expect(toMealHighlights('Viel Vitamin C')).toEqual([])
+    expect(toMealHighlights(undefined)).toEqual([])
+  })
+  it('steckt in der Mahlzeit-Analyse nur, wenn vorhanden', () => {
+    const base =
+      '"title":"Lachs","verdict":"Gut.","items":[{"name":"Lachs","grams":150,"kcal":300,"protein":30,"carbs":0,"fat":20}]'
+    expect(toMealAnalysis(`{${base},"highlights":["Omega-3"]}`).highlights).toEqual(['Omega-3'])
+    expect(toMealAnalysis(`{${base},"highlights":[]}`)).not.toHaveProperty('highlights')
+    expect(toMealAnalysis(`{${base}}`)).not.toHaveProperty('highlights')
   })
 })

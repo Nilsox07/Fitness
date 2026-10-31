@@ -2,20 +2,32 @@
 // schließt „Zurück“ zuerst das oberste – statt die Seite darunter zu wechseln.
 // Reine Logik – getestet in backStack.test.ts.
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 
 type Handler = () => void
 
 const stack: { id: number; run: () => void }[] = []
 let nextId = 1
+const listeners = new Set<() => void>()
+const notify = () => listeners.forEach((l) => l())
+
+/** Benachrichtigt, wenn sich offene Sheets ändern (z. B. Buddy ausblenden). */
+export function subscribeBack(fn: () => void): () => void {
+  listeners.add(fn)
+  return () => {
+    listeners.delete(fn)
+  }
+}
 
 /** Handler oben auf den Stapel legen; gibt eine Funktion zum Entfernen zurück. */
 export function pushBack(handler: Handler): () => void {
   const id = nextId++
   stack.push({ id, run: handler })
+  notify()
   return () => {
     const i = stack.findIndex((e) => e.id === id)
     if (i >= 0) stack.splice(i, 1)
+    notify()
   }
 }
 
@@ -43,4 +55,9 @@ export function useBackClose(onClose: Handler, active = true): void {
     if (!active) return
     return pushBack(() => ref.current())
   }, [active])
+}
+
+/** true, solange irgendein Sheet/Overlay offen ist. */
+export function useOverlayOpen(): boolean {
+  return useSyncExternalStore(subscribeBack, () => stack.length > 0)
 }

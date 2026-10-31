@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeTargets, defaultWaterTarget, scalePer100, sumEntries } from './nutrition'
+import { computeTargets, defaultWaterTarget, fiberTarget, scalePer100, sumEntries } from './nutrition'
 
 describe('computeTargets', () => {
   it('berechnet kcal & Makros (Mann, Halten)', () => {
@@ -161,5 +161,18 @@ describe('computeTargets – weitere Ernährungsweisen', () => {
   it('Low Fat: ~20 % Fett', () => {
     const t = computeTargets({ ...base, diet: 'low_fat' })
     expect(Math.round((t.fat * 9 * 100) / t.kcal)).toBe(20)
+  })
+})
+
+describe('fiberTarget', () => {
+  it('ohne Kalorienziel 30 g', () => {
+    expect(fiberTarget(0)).toBe(30)
+    expect(fiberTarget(NaN)).toBe(30)
+  })
+  it('14 g je 1000 kcal, begrenzt auf 20–40 g', () => {
+    expect(fiberTarget(2000)).toBe(28)
+    expect(fiberTarget(2500)).toBe(35)
+    expect(fiberTarget(1000)).toBe(20)
+    expect(fiberTarget(4000)).toBe(40)
   })
 })

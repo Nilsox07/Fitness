@@ -2,6 +2,7 @@
 // seine Daten aus useToday() – so lassen sie sich frei anordnen.
 
 import type { ReactNode } from 'react'
+import { CountUp, useMounted } from '../ui/CountUp'
 import { useNavigate } from 'react-router-dom'
 import {
   Activity,
@@ -86,7 +87,8 @@ function Ring({
 }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
-  const v = Math.max(0, Math.min(1, value))
+  const mounted = useMounted()
+  const v = mounted ? Math.max(0, Math.min(1, value)) : 0
   return (
     <span className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
@@ -109,7 +111,7 @@ function Ring({
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - v)}
-          style={{ transition: 'stroke-dashoffset 600ms ease' }}
+          style={{ transition: 'stroke-dashoffset 900ms cubic-bezier(.2,.8,.2,1)' }}
         />
       </svg>
       <span className="absolute inset-0 grid place-items-center">{children}</span>
@@ -151,7 +153,9 @@ function ReadinessWidget({ t }: { t: TodaySummary }) {
         {r ? (
           <div className="mt-2 flex items-center gap-4">
             <Ring value={r.score / 100} size={76} stroke={8} color={color} track="text-white/10 dark:text-sand-dark/50">
-              <span className="tabular text-2xl font-bold">{r.score}</span>
+              <span className="tabular text-2xl font-bold">
+                <CountUp value={r.score} />
+              </span>
             </Ring>
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-semibold leading-snug">{r.advice}</p>
@@ -431,7 +435,9 @@ function KcalWidget({ t }: { t: TodaySummary }) {
     >
       <Ring value={pct} size={72} stroke={7} color={pct > 1.05 ? 'rgb(var(--c-gold))' : 'rgb(var(--c-ruby))'}>
         <span className="text-center leading-none">
-          <span className="tabular block text-lg font-bold">{fmt(Math.abs(left))}</span>
+          <span className="tabular block text-lg font-bold">
+            <CountUp value={Math.abs(left)} />
+          </span>
           <span className="text-[9px] font-semibold text-cocoa-muted">{left >= 0 ? 'übrig' : 'drüber'}</span>
         </span>
       </Ring>

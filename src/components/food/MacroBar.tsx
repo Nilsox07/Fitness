@@ -54,3 +54,25 @@ export function MacroBar({ protein, carbs, fat }: { protein: number; carbs: numb
     </div>
   )
 }
+
+/** Ballaststoffe wie ein Makro: Balken gegen das Tagesziel. */
+export function FiberBar({ fiber, target }: { fiber: number; target: number }) {
+  const pct = target > 0 ? Math.min(100, (fiber / target) * 100) : 0
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-baseline justify-between text-xs text-cocoa-light">
+        <span>Ballaststoffe</span>
+        <span className="tabular">
+          <span className="text-sm font-semibold text-cocoa">{fmt(fiber)} g</span>
+          {target > 0 && <span className="text-cocoa-muted"> · {Math.round((fiber / target) * 100)} % vom Ziel</span>}
+        </span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-sand">
+        <div
+          className="h-full rounded-full bg-brand/60 transition-[width] duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  )
+}

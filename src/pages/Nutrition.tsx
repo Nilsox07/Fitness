@@ -65,7 +65,7 @@ import {
   useNutritionSettings,
   useDietStyle,
 } from '../hooks/useNutrition'
-import { GOAL_LABEL, scalePer100, sumEntries } from '../lib/nutrition'
+import { GOAL_LABEL, fiberTarget, scalePer100, sumEntries } from '../lib/nutrition'
 import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
 import {
@@ -87,6 +87,7 @@ import { GoalEditor } from '../components/GoalEditor'
 import { WeekStrip } from '../components/nutrition-home/WeekStrip'
 import { HeroCard } from '../components/nutrition-home/HeroCard'
 import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
+import { NutrientExtras } from '../components/food/NutrientExtras'
 import { RecentChips } from '../components/nutrition-home/RecentChips'
 import { MealCard } from '../components/nutrition-home/MealCard'
 import { WaterRow } from '../components/nutrition-home/WaterRow'
@@ -99,7 +100,7 @@ import { stagger } from '../components/nutrition-home/motion'
 import { kcalByDate, mealRecommendation } from '../lib/nutritionHome'
 import { dayLabel } from '../lib/day'
 import type { FoodEntry } from '../types'
-import { useNutritionPrefs } from '../hooks/usePrefsSync'
+import { useNutrientPins, useNutritionPrefs } from '../hooks/usePrefsSync'
 import { ToolTiles } from '../components/home/ToolTiles'
 import { TabHeader } from '../components/ui/TabHeader'
 import { QuestStrip } from '../components/buddy/QuestStrip'
@@ -180,7 +181,7 @@ function recentFirst(ids: string[]): string[] {
   })
 }
 
-/** Felder der manuellen Eingabe (die ersten fünf sind die Hauptwerte). */
+/** Felder der manuellen Eingabe (die ersten sechs sind die Hauptwerte, inkl. Ballaststoffe). */
 const MANUAL_FIELDS = [
   ['kcal', 'kcal'],
   ['amount_g', 'Menge (g)'],
@@ -192,6 +193,7 @@ const MANUAL_FIELDS = [
   ['sat_fat', 'ges. Fett (g)'],
   ['salt', 'Salz (g)'],
 ] as const
+const MANUAL_MAIN = 6
 
 const fmtNum = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 1 })
 
@@ -305,6 +307,7 @@ function ManualField({ label, value, onChange }: { label: string; value: number;
 
 export default function Nutrition() {
   const { kcalBonus, mealSplit } = useNutritionPrefs()
+  const nutrientPins = useNutrientPins()
   const { user } = useAuth()
   const addRecipe = useAddRecipe()
   // Ausgewählter Tag (?date=YYYY-MM-DD) — so lassen sich vergangene Tage nachtragen/korrigieren.
@@ -1092,7 +1095,9 @@ export default function Nutrition() {
             protein: settings?.protein_target ?? 0,
             carbs: settings?.carbs_target ?? 0,
             fat: settings?.fat_target ?? 0,
+            fiber: fiberTarget(settings?.kcal_target ?? 0),
           }}
+          pins={nutrientPins}
           trained={trainedToday}
           bonus={kcalBonus}
           onSetup={openSetup}
@@ -1106,6 +1111,14 @@ export default function Nutrition() {
           onPhoto={(file) => {
             setMealOverride(null)
             void handlePhoto(file)
+          }}
+          onDescribe={() => {
+            setMealOverride(null)
+            go('aitext')
+          }}
+          onSuggest={() => {
+            setMealOverride(null)
+            go('plan')
           }}
           onScan={() => {
             setMealOverride(null)
@@ -1292,6 +1305,17 @@ export default function Nutrition() {
                 />
               </div>
               <button
+                type="button"
+                className="grid w-12 shrink-0 place-items-center rounded-2xl bg-sand text-cocoa-light transition active:scale-95"
+                onClick={() => {
+                  setError(null)
+                  setScanning(true)
+                }}
+                aria-label="Barcode scannen"
+              >
+                <ScanBarcode size={20} />
+              </button>
+              <button
                 type="submit"
                 className="btn-primary shrink-0 rounded-2xl px-5"
                 disabled={searching || !query.trim()}
@@ -1394,6 +1418,9 @@ export default function Nutrition() {
                       <MacroCell label="Kohlenh." value={m.carbs} dot="bg-gold" />
                       <MacroCell label="Fett" value={m.fat} dot="bg-cocoa-light" />
                     </div>
+                    <div className="mt-2.5 flex justify-center">
+                      <NutrientExtras values={m} />
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -1462,7 +1489,7 @@ export default function Nutrition() {
             <div>
               <GroupLabel>Hauptwerte</GroupLabel>
               <div className="grid grid-cols-2 gap-2">
-                {MANUAL_FIELDS.slice(0, 5).map(([key, lbl]) => (
+                {MANUAL_FIELDS.slice(0, MANUAL_MAIN).map(([key, lbl]) => (
                   <ManualField
                     key={key}
                     label={lbl}
@@ -1475,7 +1502,7 @@ export default function Nutrition() {
             <div>
               <GroupLabel>Optional</GroupLabel>
               <div className="grid grid-cols-2 gap-2">
-                {MANUAL_FIELDS.slice(5).map(([key, lbl]) => (
+                {MANUAL_FIELDS.slice(MANUAL_MAIN).map(([key, lbl]) => (
                   <ManualField
                     key={key}
                     label={lbl}
@@ -1960,6 +1987,7 @@ export default function Nutrition() {
             proteinTarget: settings?.protein_target ?? 0,
             carbsTarget: settings?.carbs_target ?? 0,
             fatTarget: settings?.fat_target ?? 0,
+            fiberTarget: fiberTarget(settings?.kcal_target ?? 0),
             goal: settings?.goal ?? null,
             eaten: { kcal: totals.kcal, protein: totals.protein },
           }}
@@ -2078,6 +2106,9 @@ export default function Nutrition() {
                 <MacroCell label="Eiweiß" value={recipe.nutrition.protein} dot="bg-brand" />
                 <MacroCell label="Kohlenh." value={recipe.nutrition.carbs} dot="bg-gold" />
                 <MacroCell label="Fett" value={recipe.nutrition.fat} dot="bg-cocoa-light" />
+              </div>
+              <div className="mt-2.5">
+                <NutrientExtras values={recipe.nutrition} />
               </div>
             </div>
             <div>
@@ -2233,6 +2264,16 @@ function EditEntrySheet({
         <p className="tabular mt-1 text-xs text-cocoa-light">
           {kcal} kcal · E {r1(entry.protein * factor)} / K {r1(entry.carbs * factor)} / F {r1(entry.fat * factor)}
         </p>
+        <div className="mt-2">
+          <NutrientExtras
+            values={{
+              fiber: r1((entry.fiber ?? 0) * factor),
+              sugar: r1((entry.sugar ?? 0) * factor),
+              sat_fat: r1((entry.sat_fat ?? 0) * factor),
+              salt: Math.round((entry.salt ?? 0) * factor * 100) / 100,
+            }}
+          />
+        </div>
       </div>
       <div>
         <label className="label">Mahlzeit</label>

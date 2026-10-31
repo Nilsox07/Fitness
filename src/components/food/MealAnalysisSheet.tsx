@@ -1,12 +1,13 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, ChevronDown, Loader2, RotateCcw, TriangleAlert, UtensilsCrossed, X } from 'lucide-react'
+import { Check, ChevronDown, Loader2, RotateCcw, Sparkles, TriangleAlert, UtensilsCrossed, X } from 'lucide-react'
 import type { FoodEstimate, MealAnalysis } from '../../lib/ai'
 import { scoreMeal } from '../../lib/mealScore'
 import { useDietStyle } from '../../hooks/useNutrition'
 import { MEALS, MEAL_LABEL, type Meal, type NutritionGoal } from '../../types'
 import { ScoreRing, TONE_TEXT } from './ScoreRing'
-import { MacroBar } from './MacroBar'
+import { FiberBar, MacroBar } from './MacroBar'
+import { fiberTarget } from '../../lib/nutrition'
 import { DayFit } from './DayFit'
 import { NutrientList } from './NutrientList'
 import { IngredientRow } from './IngredientRow'
@@ -32,6 +33,8 @@ export interface MealDayContext {
   proteinTarget: number
   carbsTarget: number
   fatTarget: number
+  /** Ballaststoffziel am Tag (Standard aus dem kcal-Ziel) */
+  fiberTarget?: number
   goal: NutritionGoal | null
   /** Am Tag bereits gegessen (ohne diese Mahlzeit). */
   eaten: { kcal: number; protein: number }
@@ -293,6 +296,7 @@ function ReadyBody({
     [totals, day.goal, remainingKcal, diet, flags],
   )
   const bigKcal = Math.round(useCountUp(totals.kcal))
+  const fiberGoal = day.fiberTarget ?? fiberTarget(day.kcalTarget)
 
   // Nach dem Speichern kurz den Haken zeigen, dann schließen
   const closeRef = useRef(onClose)
@@ -409,6 +413,20 @@ function ReadyBody({
                 </div>
               </div>
 
+              {result.highlights && result.highlights.length > 0 && (
+                <div className="flex flex-wrap gap-1.5" aria-label="Nährstoff-Highlights">
+                  {result.highlights.map((h) => (
+                    <span
+                      key={h}
+                      className="anim-fade inline-flex items-center gap-1 rounded-full bg-sand px-2.5 py-1 text-xs font-medium text-cocoa-light"
+                    >
+                      <Sparkles size={12} className="text-brand/70" aria-hidden />
+                      {h}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {score.highlights.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {score.highlights.map((h) => (
@@ -432,6 +450,7 @@ function ReadyBody({
                 <span className="text-sm text-cocoa-light">kcal</span>
               </div>
               <MacroBar protein={totals.protein} carbs={totals.carbs} fat={totals.fat} />
+              <FiberBar fiber={totals.fiber} target={fiberGoal} />
             </Section>
 
             <Section title="Für deinen Tag">
@@ -454,6 +473,7 @@ function ReadyBody({
                   protein: day.proteinTarget,
                   carbs: day.carbsTarget,
                   fat: day.fatTarget,
+                  fiber: fiberGoal,
                 }}
               />
             </Section>
