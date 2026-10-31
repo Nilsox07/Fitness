@@ -32,11 +32,20 @@ export default function Today() {
   const { prefs } = useUserPrefs()
   const [params, setParams] = useSearchParams()
   const [editing, setEditing] = useState(() => params.has('edit'))
-  // ?edit=1 (aus der Suche) nur einmal auswerten
+  // ?edit=1 (aus der Suche) öffnet das Anpassen – auch wenn „Heute“ schon offen ist; danach Parameter entfernen
+  const wantsEdit = params.has('edit')
   useEffect(() => {
-    if (params.has('edit')) setParams({}, { replace: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (!wantsEdit) return
+    setEditing(true)
+    setParams(
+      (p) => {
+        const n = new URLSearchParams(p)
+        n.delete('edit')
+        return n
+      },
+      { replace: true },
+    )
+  }, [wantsEdit, setParams])
   const layout = visibleLayout(prefs.dashboard, mods, t.caps)
 
   const dateLabel = new Date(t.day + 'T00:00:00').toLocaleDateString('de-DE', {

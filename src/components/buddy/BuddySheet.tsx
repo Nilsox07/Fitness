@@ -260,7 +260,7 @@ export function BuddySheet({ onClose, ask }: { onClose: () => void; ask?: string
           <div className="grid grid-cols-2 gap-2">
             <button type="button" className="btn-ghost gap-2 text-sm" onClick={() => go('/badges')}>
               <Trophy size={16} />
-              Buddy-Seite
+              Erfolge
             </button>
             <button type="button" className="btn-ghost gap-2 text-sm" onClick={() => go('/profile')}>
               <User size={16} />

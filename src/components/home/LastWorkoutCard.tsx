@@ -36,7 +36,7 @@ export function LastWorkoutCard({
     <button
       className="card block w-full space-y-3 text-left transition active:scale-[0.99]"
       style={enter(index)}
-      onClick={() => navigate('/history')}
+      onClick={() => navigate('/history?view=training')}
     >
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-semibold">Letztes Training</h2>

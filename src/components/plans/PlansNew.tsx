@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { CalendarDays, Check, ChevronRight, Dumbbell, List, Moon, PenLine, Plus, Sparkles } from 'lucide-react'
+import { CalendarDays, Check, ChevronRight, Dumbbell, List, Moon, PenLine, Plus, Sparkles, Wand2 } from 'lucide-react'
+import { openPlanWizard } from '../onboarding/Onboarding'
 import { useExercises } from '../../hooks/useExercises'
 import { useAllSets, useWorkouts } from '../../hooks/useWorkouts'
 import { useAiStatus } from '../../hooks/useAi'
@@ -110,6 +111,14 @@ export default function PlansNew() {
 
   const editPlan = editId ? plans?.find((p) => p.id === editId) : undefined
 
+  // ?new=1 (z. B. aus dem Trainingsrhythmus) → „Neuer Plan“ direkt öffnen
+  const wantsNew = params.get('new') === '1'
+  useEffect(() => {
+    if (!wantsNew) return
+    setSheet('create')
+    setParams({}, { replace: true })
+  }, [wantsNew, setParams])
+
   // Editor-ID zeigt auf gelöschten/unbekannten Plan → Parameter still entfernen.
   useEffect(() => {
     if (editId && plans && !isFetching && !editPlan) setParams({}, { replace: true })
@@ -149,7 +158,7 @@ export default function PlansNew() {
         <div className="mt-1 flex shrink-0 gap-2">
           <button
             className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-95"
-            onClick={() => navigate('/exercises')}
+            onClick={() => navigate('/exercises', { replace: true })}
             aria-label="Übungen"
             title="Übungen"
           >
@@ -193,6 +202,21 @@ export default function PlansNew() {
           ))}
         </ul>
       )}
+
+      <button
+        className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left transition active:scale-[0.99]"
+        onClick={openPlanWizard}
+        style={enter(idx++)}
+      >
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/15 text-brand">
+          <Wand2 size={17} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold">Plan zusammenstellen lassen</span>
+          <span className="block truncate text-xs text-cocoa-light">Ziel, Tage & Ausdauer – Buddy fragt kurz nach</span>
+        </span>
+        <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
+      </button>
 
       {hasPlans && aiAvailable && (
         <button

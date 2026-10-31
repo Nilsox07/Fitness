@@ -1,6 +1,7 @@
 // CSV-Export der eigenen Daten — „deine Daten gehören dir".
 
 import type { Exercise, FoodEntry, SetWithDate } from '../types'
+import { shareFile, type ShareOutcome } from './shareFile'
 
 function toCsv(rows: (string | number | null)[][]): string {
   return rows
@@ -15,17 +16,13 @@ function toCsv(rows: (string | number | null)[][]): string {
     .join('\n')
 }
 
-function download(filename: string, content: string) {
+/** Im Browser herunterladen, in der App über das Teilen-Menü speichern/senden. */
+function download(filename: string, content: string): Promise<ShareOutcome> {
   const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  return shareFile(blob, filename, { title: filename })
 }
 
-export function exportSetsCsv(sets: SetWithDate[], exercises: Exercise[]) {
+export function exportSetsCsv(sets: SetWithDate[], exercises: Exercise[]): Promise<ShareOutcome> {
   const name = new Map(exercises.map((e) => [e.id, e.name]))
   const rows: (string | number | null)[][] = [
     ['Datum', 'Übung', 'Satz', 'Typ', 'Wdh', 'Gewicht', 'Wdh_rechts', 'Gewicht_rechts', 'bis_Versagen'],
@@ -43,15 +40,15 @@ export function exportSetsCsv(sets: SetWithDate[], exercises: Exercise[]) {
         s.to_failure ? 'ja' : 'nein',
       ]),
   ]
-  download('training.csv', toCsv(rows))
+  return download('training.csv', toCsv(rows))
 }
 
-export function exportNutritionCsv(entries: FoodEntry[]) {
+export function exportNutritionCsv(entries: FoodEntry[]): Promise<ShareOutcome> {
   const rows: (string | number | null)[][] = [
     ['Datum', 'Name', 'Menge_g', 'kcal', 'Eiweiß', 'Kohlenhydrate', 'Fett'],
     ...[...entries]
       .sort((a, b) => a.date.localeCompare(b.date))
       .map((e) => [e.date, e.name, e.amount_g ?? '', e.kcal, e.protein, e.carbs, e.fat]),
   ]
-  download('ernaehrung.csv', toCsv(rows))
+  return download('ernaehrung.csv', toCsv(rows))
 }

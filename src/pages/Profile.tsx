@@ -1,3 +1,4 @@
+import { isNative } from '../lib/native'
 import { openPlanWizard } from '../components/onboarding/Onboarding'
 import { AppearanceSettings } from '../components/profile/AppearanceSettings'
 import { useEffect, useState } from 'react'
@@ -15,7 +16,6 @@ import {
   Target,
   User,
   Volume2,
-  Flame,
   LayoutGrid,
   ClipboardList,
   SlidersHorizontal,
@@ -35,7 +35,7 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
-import { pushSupported, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
+import { pushSupported } from '../lib/push'
 import { setSoundEnabled, soundEnabled } from '../lib/sound'
 import { ACCENTS, getAccentId, getSkinId } from '../lib/cosmetics'
 import { GoalEditor } from '../components/GoalEditor'
@@ -94,7 +94,7 @@ export default function Profile() {
   const { data: myProfile } = useMyProfile()
   const [nameOpen, setNameOpen] = useState(false)
   const { mode, setMode } = useTheme()
-  const { showNutrition, showSocial, hasWatch } = usePrefs()
+  const { showNutrition, hasWatch } = usePrefs()
   const { data: ai } = useAiStatus()
   const { data: allSets } = useAllSets()
   const { data: exercises } = useExercises()
@@ -103,7 +103,6 @@ export default function Profile() {
   const accent = getAccentId()
   const skin = getSkinId()
   const [sound, setSound] = useState(soundEnabled())
-  const [cheat, setCheat] = useState(shareCheatEnabled())
   const { data: settings } = useNutritionSettings()
 
   const tones: CoachTone[] = ['coach', 'sergeant', 'bro']
@@ -119,7 +118,7 @@ export default function Profile() {
     goal: showNutrition,
     review: true,
     coach: Boolean(ai?.enabled),
-    push: pushSupported,
+    push: pushSupported || isNative(),
     export: true,
     modules: true,
     appearance: true,
@@ -299,7 +298,7 @@ export default function Profile() {
         <Row
           icon={SlidersHorizontal}
           label="Meine Einstellungen"
-          hint="Kalorien-Bonus, Mahlzeiten, Tageswechsel"
+          hint={showNutrition ? 'Wochenziel, Pausen, Kalorien-Bonus' : 'Wochenziel, Pausen & Tageswechsel'}
           onClick={() => openSub('settings')}
         />
       </Group>
@@ -342,25 +341,10 @@ export default function Profile() {
       </Group>
 
       <Group title="Mitteilungen & Geräte">
-        {pushSupported && <Row icon={Bell} label="Benachrichtigungen" onClick={() => openSub('push')} />}
-        <Row icon={Watch} label="Smartwatch" value={hasWatch ? 'An' : 'Aus'} onClick={() => openSub('modules')} />
-        {showNutrition && showSocial && (
-          <Row
-            icon={Flame}
-            label="Cheat-Meal-Alarm"
-            hint="Freunde sehen deine Cheat-Meals"
-            trailing={
-              <Toggle
-                label="Cheat-Meal-Alarm"
-                checked={cheat}
-                onChange={(v) => {
-                  setCheat(v)
-                  setShareCheatEnabled(v)
-                }}
-              />
-            }
-          />
+        {(pushSupported || isNative()) && (
+          <Row icon={Bell} label="Benachrichtigungen" onClick={() => openSub('push')} />
         )}
+        <Row icon={Watch} label="Smartwatch" value={hasWatch ? 'An' : 'Aus'} onClick={() => openSub('modules')} />
       </Group>
 
       <Group title="Konto & Daten">

@@ -84,8 +84,8 @@ export function QuestStrip({ area, style }: { area: 'training' | 'food'; style?:
           {quests.food && <QuestGroup title="Ernährung · diese Woche" quests={quests.food.weekly} />}
           <QuestGroup title="Training · diese Woche" quests={quests.training.weekly} />
           <p className="px-1 text-xs leading-snug text-cocoa-muted">
-            XP aus Training und Ernährung lassen Buddy aufsteigen – mit neuen Looks und Freischaltungen unter
-            Fortschritt → Erfolge.
+            XP aus Training und Ernährung lassen Buddy aufsteigen – neue Looks und Freischaltungen findest du unter
+            Profil → Aussehen.
           </p>
         </PremiumSheet>
       )}

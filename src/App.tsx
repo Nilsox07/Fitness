@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { isWorkoutRunning } from './lib/activeWorkout'
 import { useAuth } from './lib/auth'
+import { historyIndex, recordNav } from './lib/navHistory'
+import { launchRoute, recentDeepLink } from './lib/deepLink'
 import { usePrefs } from './lib/prefs'
 import { TabBar } from './components/TabBar'
 import { TopBar } from './components/TopBar'
@@ -39,6 +41,13 @@ import { SearchHost } from './components/search/SearchSheet'
 import { Splash } from './components/Splash'
 import { OnboardingHost } from './components/onboarding/Onboarding'
 import { useChallengeSync } from './hooks/useChallenges'
+import { useModulesSync } from './hooks/useModulesSync'
+
+/** Module zusätzlich im Konto ablegen (Server-Erinnerungen richten sich danach). */
+function ModulesSync() {
+  useModulesSync()
+  return null
+}
 
 /** Eigenen Stand in laufenden Wetten im Hintergrund aktuell halten. */
 function ChallengeSync() {
@@ -62,6 +71,11 @@ export default function App() {
     if (mainRef.current) mainRef.current.scrollTop = 0
   }, [pathname, search])
 
+  // Verlauf merken, damit „Zurück“ dorthin führt, wo man herkam
+  useEffect(() => {
+    recordNav(historyIndex(), { pathname, search })
+  }, [pathname, search])
+
   // Startbereich: „Heute“ (persönliches Dashboard), außer es läuft gerade ein
   // Training. Gilt beim Start und wenn die App nach längerer Pause (30 min)
   // wieder in den Vordergrund kommt.
@@ -71,12 +85,15 @@ export default function App() {
   pathRef.current = pathname
   useEffect(() => {
     if (!session) return
+    // Nicht, wenn die App gerade über einen Deep Link (Widget, Benachrichtigung) geöffnet wurde
     const goHome = () => {
-      if (pathRef.current === '/' && !isWorkoutRunning()) navigate('/today', { replace: true })
+      if (pathRef.current === '/' && !isWorkoutRunning() && !recentDeepLink()) navigate('/today', { replace: true })
     }
     if (!startChecked.current) {
       startChecked.current = true
-      goHome()
+      void launchRoute().then((route) => {
+        if (!route) goHome()
+      })
     }
     let hiddenAt = 0
     const onVis = () => {
@@ -111,6 +128,7 @@ export default function App() {
       <SaveStatus />
       <TopBar />
       {showSocial && <ChallengeSync />}
+      <ModulesSync />
       <NativeSync />
       <NativeNav />
       <main

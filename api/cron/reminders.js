@@ -13,7 +13,7 @@
 import webpush from 'web-push'
 import { SUPABASE_URL } from '../_supabase.js'
 import { createClient } from '@supabase/supabase-js'
-import { fastingDue, inWindow, localNow, message, normalizeNotify, dueKinds, toMin } from '../_notify.js'
+import { fastingDue, inWindow, localNow, message, moduleAllows, normalizeNotify, dueKinds, toMin } from '../_notify.js'
 
 const DAYS_THRESHOLD = 3
 
@@ -87,7 +87,9 @@ async function remindUser(db, userId, subs, prefs, now) {
   const notify = normalizeNotify(prefs.notify)
   const local = localNow(prefs.tz, now)
   const today = local.date
-  const kinds = dueKinds(notify, local)
+  // Ausgeblendete Module (Ernährung/Community) bekommen keine Erinnerungen
+  const allowed = (k) => moduleAllows(k, prefs.modules)
+  const kinds = dueKinds(notify, local).filter(allowed)
 
   // Daten nur laden, wenn sie gebraucht werden (einmal pro Nutzer)
   const cache = {}
@@ -112,7 +114,7 @@ async function remindUser(db, userId, subs, prefs, now) {
           .data || [],
     )
 
-  if (notify.fasting.on) {
+  if (notify.fasting.on && allowed('fasting')) {
     const s = await settings()
     const phase = s ? fastingDue(s.fasting, s.fasting_start, local) : null
     if (phase) kinds.push(`fasting_${phase}`)
@@ -121,7 +123,7 @@ async function remindUser(db, userId, subs, prefs, now) {
   let count = 0
 
   // Supplemente: eigene Uhrzeiten pro Supplement
-  if (notify.supplements.on) {
+  if (notify.supplements.on && allowed('supplements')) {
     const { data: supps } = await db
       .from('supplements')
       .select('id, name, dose, times, days, remind')

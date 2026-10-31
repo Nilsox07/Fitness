@@ -4,16 +4,23 @@ import { useSyncExternalStore } from 'react'
 
 export type HomeCard = 'recent' | 'weight' | 'supplements' | 'recovery' | 'lastWorkout' | 'nutrition' | 'challenge'
 
-export const HOME_CARDS: Record<'food' | 'training', { id: HomeCard; label: string; hint: string }[]> = {
+export const HOME_CARDS: Record<
+  'food' | 'training',
+  { id: HomeCard; label: string; hint: string; needsNutrition?: boolean }[]
+> = {
   food: [
     { id: 'recent', label: 'Zuletzt gegessen', hint: 'Schnell nochmal eintragen (steht auch in der Suche)' },
-    { id: 'weight', label: 'Körpergewicht', hint: 'Gewicht eintragen (Verlauf im Fortschritt)' },
+    {
+      id: 'weight',
+      label: 'Körpergewicht',
+      hint: 'Gewicht eintragen (Verlauf unter Fortschritt → Gewicht & Körperfett)',
+    },
     { id: 'supplements', label: 'Supplemente', hint: 'Kreatin & Co. abhaken – mit Erinnerung' },
   ],
   training: [
     { id: 'recovery', label: 'Erholung', hint: 'Welche Muskeln bereit sind' },
     { id: 'lastWorkout', label: 'Letztes Training', hint: 'Dauer, Sätze, Volumen, Rekorde' },
-    { id: 'nutrition', label: 'Ernährung heute', hint: 'Kalorien & Eiweiß auf einen Blick' },
+    { id: 'nutrition', label: 'Ernährung heute', hint: 'Kalorien & Eiweiß auf einen Blick', needsNutrition: true },
     { id: 'challenge', label: 'Challenge des Tages', hint: 'Kleine Tagesaufgabe' },
   ],
 }

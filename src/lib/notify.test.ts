@@ -6,6 +6,7 @@ import {
   inWindow,
   localNow,
   message,
+  moduleAllows,
   normalizeNotify,
 } from '../../api/_notify.js'
 import { NOTIFY_ITEMS } from './notify'
@@ -21,6 +22,19 @@ describe('Erinnerungen (Server-Logik)', () => {
     expect(n.weigh.days).toEqual([2])
     expect(n.water.time).toBe('16:00')
     expect(n.dinner).toEqual(NOTIFY_DEFAULTS.dinner)
+  })
+  it('ausgeblendete Module: keine Erinnerungen dazu', () => {
+    expect(moduleAllows('lunch', { nutrition: false })).toBe(false)
+    expect(moduleAllows('supp:x:08:00', { nutrition: false })).toBe(false)
+    expect(moduleAllows('fasting_open', { nutrition: false })).toBe(false)
+    expect(moduleAllows('workout', { nutrition: false, social: false })).toBe(true)
+    expect(moduleAllows('social', { social: false })).toBe(false)
+    expect(moduleAllows('lunch', undefined)).toBe(true)
+  })
+  it('Links führen zur passenden Seite', () => {
+    expect(message('weigh')?.url).toBe('/body')
+    expect(message('review')?.url).toBe('/profile?s=review')
+    expect(message('protein', { missing: 30 })?.url).toBe('/nutrition')
   })
   it('Client kennt dieselben Arten wie der Server', () => {
     expect(NOTIFY_ITEMS.map((i) => i.kind).sort()).toEqual(Object.keys(NOTIFY_DEFAULTS).sort())

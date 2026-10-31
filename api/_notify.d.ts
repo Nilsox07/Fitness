@@ -1,6 +1,7 @@
 // Typen für die Tests (api/_notify.js ist reines JS für die Serverless-Funktionen).
 export const NOTIFY_DEFAULTS: Record<string, { on: boolean; time?: string; days?: number[] }>
 export const NOTIFY_KINDS: string[]
+export function moduleAllows(kind: string, modules: unknown): boolean
 export function normalizeNotify(raw: unknown): Record<string, { on: boolean; time?: string; days?: number[] }>
 export function localNow(tz: string | null | undefined, now?: Date): { date: string; min: number; weekday: number }
 export function inWindow(nowMin: number, targetMin: number | null): boolean

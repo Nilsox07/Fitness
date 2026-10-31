@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { judgeCheatMeal } from '../lib/ai'
-import { notifyFriendsCheat, shareCheatEnabled } from '../lib/push'
+import { notifyFriendsCheat } from '../lib/push'
+import { useShareCheat } from './useShareCheat'
 import {
   dietToColumns,
   resolveDiet,
@@ -17,9 +18,16 @@ import { isMissingFluidColumn, rememberFluid } from '../lib/fluid'
 
 /** Prüft ein geloggtes Lebensmittel und postet bei echten „Cheats" einen
  *  Freunde-Alarm (Feed + Push). Läuft im Hintergrund, Fehler werden ignoriert. */
-async function maybePostCheat(entry: FoodEntry, userId: string, authorName: string | undefined, qc: QueryClient) {
+async function maybePostCheat(
+  share: boolean,
+  entry: FoodEntry,
+  userId: string,
+  authorName: string | undefined,
+  qc: QueryClient,
+) {
   try {
-    if (!shareCheatEnabled() || (entry.kcal ?? 0) < 400) return
+    // Nur mit Community und ausdrücklich eingeschaltetem Teilen
+    if (!share || (entry.kcal ?? 0) < 400) return
     // Höchstens ein Cheat-Alarm pro Tag – sonst wird der Feed zur Pizza-Chronik.
     const capKey = `cheat_posted_${entry.date}`
     try {
@@ -97,8 +105,7 @@ export function useUpsertNutritionSettings() {
       // Diät-Spalten aus der Basiseingabe entfernen; sie werden unten gezielt gesetzt.
       const { diet_macro: _m, diet_restrictions: _r, fasting: _f, fasting_start: _s, ...base } = input
       const row = { ...base, user_id: user!.id, updated_at: new Date().toISOString() }
-      const save = (payload: object) =>
-        supabase.from('nutrition_settings').upsert(payload).select().single()
+      const save = (payload: object) => supabase.from('nutrition_settings').upsert(payload).select().single()
 
       if (diet && dietColumnsKnown !== false) {
         const res = await save({ ...row, ...dietToColumns(diet) })
@@ -198,6 +205,7 @@ async function insertFood(rows: (FoodEntryInput & { user_id: string })[]): Promi
 export function useAddFoodEntry() {
   const qc = useQueryClient()
   const { user } = useAuth()
+  const share = useShareCheat().enabled
   return useMutation({
     mutationFn: async (input: FoodEntryInput) => {
       const [row] = await insertFood([{ ...input, user_id: user!.id }])
@@ -205,7 +213,7 @@ export function useAddFoodEntry() {
     },
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ['food_entries'] })
-      void maybePostCheat(s, user!.id, user?.email?.split('@')[0], qc)
+      void maybePostCheat(share, s, user!.id, user?.email?.split('@')[0], qc)
     },
   })
 }
@@ -215,6 +223,7 @@ export function useAddFoodEntry() {
 export function useAddFoodEntries() {
   const qc = useQueryClient()
   const { user } = useAuth()
+  const share = useShareCheat().enabled
   return useMutation({
     mutationFn: async (inputs: FoodEntryInput[]) => {
       if (inputs.length === 0) return [] as FoodEntry[]
@@ -222,7 +231,7 @@ export function useAddFoodEntries() {
     },
     onSuccess: (rows) => {
       qc.invalidateQueries({ queryKey: ['food_entries'] })
-      for (const r of rows) void maybePostCheat(r, user!.id, user?.email?.split('@')[0], qc)
+      for (const r of rows) void maybePostCheat(share, r, user!.id, user?.email?.split('@')[0], qc)
     },
   })
 }

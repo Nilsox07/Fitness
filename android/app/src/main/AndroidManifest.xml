@@ -31,6 +31,13 @@
                 <data android:scheme="fitnessbuddy" android:host="open" />
             </intent-filter>
 
+            <!-- Teilen-Menü: Links/Text (z. B. Rezepte) an die App senden -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
         </activity>
 
         <!-- Datenschutz für Health Connect (bis Android 13) -->
@@ -146,6 +153,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Barcode-Scanner (Kamera im WebView) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- Android 16: Live-Updates (Countdown hervorgehoben in der Statusleiste) -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 

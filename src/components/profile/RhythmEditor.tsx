@@ -75,11 +75,7 @@ function RhythmEditorInner() {
   const [busy, setBusy] = useState(false)
 
   const draft: Schedule =
-    type === 'weekdays'
-      ? { type, days }
-      : type === 'rotation'
-        ? { type, steps, anchor }
-        : { type, perWeek }
+    type === 'weekdays' ? { type, days } : type === 'rotation' ? { type, steps, anchor } : { type, perWeek }
   const goal = weeklyGoal(draft)
   const preview = upcoming(draft, history, today, 7)
   const position = type === 'rotation' ? rotationPosition(draft, history, today) : null
@@ -115,7 +111,11 @@ function RhythmEditorInner() {
     if (anchor) {
       const left = steps.length - 1
       if (left <= 0) setAnchor(null)
-      else setAnchor({ ...anchor, stepIndex: Math.min(left - 1, anchor.stepIndex > i ? anchor.stepIndex - 1 : anchor.stepIndex) })
+      else
+        setAnchor({
+          ...anchor,
+          stepIndex: Math.min(left - 1, anchor.stepIndex > i ? anchor.stepIndex - 1 : anchor.stepIndex),
+        })
     }
   }
 
@@ -160,7 +160,7 @@ function RhythmEditorInner() {
         {noPlans && type !== 'flexible' && (
           <div className="flex items-center justify-between gap-3 rounded-xl bg-sand px-3 py-2.5 text-sm">
             <span className="text-cocoa-light">Du hast noch keine Pläne.</span>
-            <button className="shrink-0 font-semibold text-brand" onClick={() => navigate('/plans')}>
+            <button className="shrink-0 font-semibold text-brand" onClick={() => navigate('/plans?new=1')}>
               Plan anlegen
             </button>
           </div>
@@ -173,7 +173,12 @@ function RhythmEditorInner() {
           {days.map((id, i) => (
             <div key={i} className="flex min-h-[52px] items-center gap-3 px-4 py-2">
               <span className="w-24 shrink-0 font-medium">{WEEKDAY_LONG[i]}</span>
-              <PlanChip id={id} name={nameOf(id)} onClick={() => setPick({ kind: 'weekday', i })} label={WEEKDAY_LONG[i]} />
+              <PlanChip
+                id={id}
+                name={nameOf(id)}
+                onClick={() => setPick({ kind: 'weekday', i })}
+                label={WEEKDAY_LONG[i]}
+              />
             </div>
           ))}
         </div>
@@ -194,7 +199,12 @@ function RhythmEditorInner() {
                     <span className="tabular grid h-6 w-6 shrink-0 place-items-center rounded-full bg-sand text-[11px] font-bold text-cocoa-light">
                       {i + 1}
                     </span>
-                    <PlanChip id={id} name={nameOf(id)} onClick={() => setPick({ kind: 'step', i })} label={`Schritt ${i + 1}`} />
+                    <PlanChip
+                      id={id}
+                      name={nameOf(id)}
+                      onClick={() => setPick({ kind: 'step', i })}
+                      label={`Schritt ${i + 1}`}
+                    />
                     <div className="flex shrink-0 items-center">
                       <IconBtn label={`Schritt ${i + 1} nach oben`} disabled={i === 0} onClick={() => move(i, -1)}>
                         <ArrowUp size={16} />
@@ -231,8 +241,8 @@ function RhythmEditorInner() {
             <div className="space-y-2 rounded-2xl bg-cream p-4">
               <div className="font-semibold">Wo stehe ich gerade?</div>
               <p className="text-xs text-cocoa-light">
-                Was ist als Nächstes dran? Normalerweise erkennt die App das an deinem letzten Training —
-                hier kannst du es korrigieren.
+                Was ist als Nächstes dran? Normalerweise erkennt die App das an deinem letzten Training — hier kannst du
+                es korrigieren.
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {steps.map((id, i) => {
@@ -303,8 +313,8 @@ function RhythmEditorInner() {
         </div>
         {type === 'flexible' ? (
           <p className="text-sm text-cocoa-light">
-            Keine festen Tage — du trainierst, wann es passt. Die App schlägt jeweils den Plan vor, der am
-            längsten nicht dran war.
+            Keine festen Tage — du trainierst, wann es passt. Die App schlägt jeweils den Plan vor, der am längsten
+            nicht dran war.
           </p>
         ) : !hasTraining ? (
           <p className="text-sm text-cocoa-light">Wähle mindestens einen Trainingstag.</p>
@@ -366,8 +376,7 @@ function RhythmEditorInner() {
         >
           <div className="space-y-2">
             {[null, ...planList.map((p) => p.id)].map((id) => {
-              const current =
-                pick.kind === 'weekday' ? days[pick.i] : pick.kind === 'step' ? steps[pick.i] : undefined
+              const current = pick.kind === 'weekday' ? days[pick.i] : pick.kind === 'step' ? steps[pick.i] : undefined
               const active = current !== undefined && current === id
               return (
                 <button
@@ -397,7 +406,17 @@ function RhythmEditorInner() {
   )
 }
 
-function PlanChip({ id, name, onClick, label }: { id: string | null; name: string; onClick: () => void; label: string }) {
+function PlanChip({
+  id,
+  name,
+  onClick,
+  label,
+}: {
+  id: string | null
+  name: string
+  onClick: () => void
+  label: string
+}) {
   return (
     <button
       type="button"

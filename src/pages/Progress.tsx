@@ -46,7 +46,7 @@ export default function Progress() {
       to: '/analytics?view=strength',
       value: `${t.weekDone} von ${t.weekGoal} diese Woche`,
     },
-    { id: 'history', label: 'Verlauf', Icon: CalendarDays, to: '/history' },
+    { id: 'history', label: 'Verlauf', Icon: CalendarDays, to: '/history?view=training' },
   ]
   const watch: Row[] = hasWatch
     ? [

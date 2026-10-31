@@ -21,6 +21,29 @@ export const NOTIFY_DEFAULTS = {
 
 export const NOTIFY_KINDS = Object.keys(NOTIFY_DEFAULTS)
 
+/** Arten, die zum Ernährungs- bzw. Community-Modul gehören (abgeschaltet → keine Erinnerung). */
+const NUTRITION_KINDS = [
+  'breakfast',
+  'lunch',
+  'dinner',
+  'water',
+  'protein',
+  'fasting',
+  'fasting_open',
+  'fasting_close',
+  'supplements',
+]
+const SOCIAL_KINDS = ['social']
+
+/** Ist die Art bei diesen Modulen (profiles.prefs.modules) erlaubt? Unbekannt = an. */
+export function moduleAllows(kind, modules) {
+  const m = modules && typeof modules === 'object' ? modules : {}
+  const base = String(kind).startsWith('supp:') ? 'supplements' : kind
+  if (m.nutrition === false && NUTRITION_KINDS.includes(base)) return false
+  if (m.social === false && SOCIAL_KINDS.includes(base)) return false
+  return true
+}
+
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/
 
 /** Gespeicherte Einstellungen mit Standardwerten zusammenführen (robust gegen Müll). */
@@ -163,7 +186,7 @@ export function message(kind, ctx = {}, seed = 0) {
       return {
         title: 'Buddy: Eiweiß fehlt noch 💪',
         body: `Noch ${ctx.missing} g bis zu deinem Ziel – Skyr, Quark oder ein Shake?`,
-        url: '/recipes',
+        url: '/nutrition',
       }
     case 'fasting_open':
       return {
@@ -220,10 +243,14 @@ export function message(kind, ctx = {}, seed = 0) {
       return {
         title: 'Kurz auf die Waage ⚖️',
         body: 'Morgens nüchtern wiegen – dann wird die Trendkurve genau.',
-        url: '/nutrition?weigh=1',
+        url: '/body',
       }
     case 'review':
-      return { title: 'Dein Wochenfazit ist da ✨', body: 'Buddy hat deine Woche ausgewertet – schau rein.', url: '/' }
+      return {
+        title: 'Dein Wochenfazit ist da ✨',
+        body: 'Buddy hat deine Woche ausgewertet – schau rein.',
+        url: '/profile?s=review',
+      }
     case 'body':
       return {
         title: 'Zeit für ein Vergleichsfoto 📸',

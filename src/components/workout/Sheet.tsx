@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import { useBackClose } from '../../lib/backStack'
 
 /**
  * Einheitliches Bottom-Sheet (gleitet von unten herein, tippen außerhalb oder
@@ -8,18 +9,11 @@ import { X } from 'lucide-react'
  * Eltern mit backdrop-blur/transform (z. B. der Aktionsleiste im Training)
  * „gefangen", weil die einen eigenen Bezugsrahmen für position: fixed bilden.
  */
-export function Sheet({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: ReactNode
-}) {
+export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   const titleId = useId()
   const closeRef = useRef(onClose)
   closeRef.current = onClose
+  useBackClose(() => closeRef.current())
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -30,10 +24,7 @@ export function Sheet({
   }, [])
 
   return createPortal(
-    <div
-      className="anim-fade fixed inset-0 z-50 flex items-end justify-center bg-black/50"
-      onClick={onClose}
-    >
+    <div className="anim-fade fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"

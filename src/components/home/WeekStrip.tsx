@@ -49,16 +49,14 @@ export function WeekStrip({
                   : 'bg-sand text-cocoa-light'
           return (
             <div key={d} className="flex flex-col items-center gap-1.5">
-              <span
-                className={`text-[11px] font-medium ${isToday ? 'text-brand' : 'text-cocoa-muted'}`}
-              >
+              <span className={`text-[11px] font-medium ${isToday ? 'text-brand' : 'text-cocoa-muted'}`}>
                 {LABELS[i]}
               </span>
               {trained && !isToday ? (
                 <button
                   className={`${base} ${look}`}
                   style={pop(120 + i * 40)}
-                  onClick={() => navigate('/history')}
+                  onClick={() => navigate('/history?view=training')}
                   aria-label={`${LABELS[i]}: trainiert — Verlauf öffnen`}
                 >
                   <Check size={16} strokeWidth={3} />
@@ -94,7 +92,10 @@ export function WeekStrip({
       </div>
       {hasPlannedAhead && (
         <p className="-mt-1 flex items-center gap-1.5 text-[11px] text-cocoa-muted">
-          <span className="inline-block h-2.5 w-2.5 rounded-full border-[1.5px] border-dashed border-brand/70" aria-hidden />
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-full border-[1.5px] border-dashed border-brand/70"
+            aria-hidden
+          />
           Geplant laut Rhythmus
         </p>
       )}

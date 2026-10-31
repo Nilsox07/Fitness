@@ -2,11 +2,15 @@ import { useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { PremiumSheet } from '../ui/PremiumSheet'
 import { HOME_CARDS, useHomeCards } from '../../lib/homeCards'
+import { usePrefs } from '../../lib/prefs'
 
 /** Unauffälliger Knopf am Ende der Startseite + Sheet mit Schaltern für Zusatz-Karten. */
 export function CustomizeHome({ area }: { area: 'food' | 'training' }) {
   const [open, setOpen] = useState(false)
   const [cards, setCard] = useHomeCards()
+  const { showNutrition } = usePrefs()
+  // Ohne Ernährungs-Modul keine Ernährungs-Karten anbieten
+  const list = HOME_CARDS[area].filter((c) => showNutrition || !c.needsNutrition)
   return (
     <>
       <button
@@ -28,7 +32,7 @@ export function CustomizeHome({ area }: { area: 'food' | 'training' }) {
           onClose={() => setOpen(false)}
           bodyClassName="space-y-2"
         >
-          {HOME_CARDS[area].map((c) => {
+          {list.map((c) => {
             const on = !!cards[c.id]
             return (
               <button

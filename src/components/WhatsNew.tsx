@@ -1,16 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import { MyBuddy } from './buddy/MyBuddy'
 import { PremiumSheet, SheetHero } from './ui/PremiumSheet'
-import { APP_VERSION, RELEASES, lastSeenVersion, markSeen } from '../lib/whatsnew'
+import { APP_VERSION, RELEASES, lastSeenVersion, markSeen, shouldShowWhatsNew } from '../lib/whatsnew'
 import { useUserPrefs } from '../hooks/usePrefsSync'
 
 /** Zeigt beim ersten Öffnen nach einem Update die neuen Features. */
 export function WhatsNew() {
-  const { prefs, ready } = useUserPrefs()
+  const { prefs, ready, source, save } = useUserPrefs()
   const [closed, setClosed] = useState(false)
-  // Neue Nutzer sehen erst das Intro (das markiert die Version als gesehen)
-  const open = ready && prefs.onboarded && !closed && lastSeenVersion() !== APP_VERSION
+  const local = lastSeenVersion()
+  // Neue Nutzer sehen erst das Intro; frisches Gerät oder schon woanders gesehen → nur still merken
+  const loaded = ready && source !== null
+  const open = loaded && !closed && shouldShowWhatsNew({ onboarded: prefs.onboarded, local, remote: prefs.seenVersion })
+  useEffect(() => {
+    if (!loaded || !prefs.onboarded || open) return
+    if (local !== APP_VERSION) markSeen()
+    if (prefs.seenVersion !== APP_VERSION) void save({ seenVersion: APP_VERSION })
+  }, [loaded, open, local, prefs.onboarded, prefs.seenVersion, save])
 
   if (!open) return null
   const release = RELEASES.find((r) => r.version === APP_VERSION) ?? RELEASES[0]
@@ -18,6 +25,7 @@ export function WhatsNew() {
 
   function close() {
     markSeen()
+    void save({ seenVersion: APP_VERSION })
     setClosed(true)
   }
 

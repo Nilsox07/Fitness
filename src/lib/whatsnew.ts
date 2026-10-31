@@ -40,9 +40,7 @@ export const RELEASES: Release[] = [
       },
       {
         title: '📈 Auswertung',
-        items: [
-          'Sätze pro Muskel/Woche, Drücken/Ziehen-Balance, Regeneration, Monatskalender.',
-        ],
+        items: ['Sätze pro Muskel/Woche, Drücken/Ziehen-Balance, Regeneration, Monatskalender.'],
       },
       {
         title: '🎮 Gamification',
@@ -62,9 +60,7 @@ export const RELEASES: Release[] = [
       },
       {
         title: '⌚ Mehr',
-        items: [
-          'Offline-Speicher, Trainings-Erinnerungen, CSV-Export, frisches Design.',
-        ],
+        items: ['Offline-Speicher, Trainings-Erinnerungen, CSV-Export, frisches Design.'],
       },
     ],
   },
@@ -84,4 +80,19 @@ export function markSeen(version = APP_VERSION) {
   } catch {
     /* ignore */
   }
+}
+
+/**
+ * „Was ist neu?“ zeigen? Nur nach einem echten Update auf diesem Gerät (vorher gab es
+ * eine ältere Version) und wenn die Version nicht schon auf einem anderen Gerät gesehen wurde.
+ * Frische Installation (noch nie etwas gesehen) → nichts zeigen, nur still merken.
+ */
+export function shouldShowWhatsNew(o: {
+  onboarded: boolean
+  local: string | null
+  remote: string | null
+  version?: string
+}): boolean {
+  const v = o.version ?? APP_VERSION
+  return o.onboarded && o.local !== null && o.local !== v && o.remote !== v
 }

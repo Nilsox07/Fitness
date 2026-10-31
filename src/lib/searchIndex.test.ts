@@ -25,6 +25,20 @@ describe('App-Suche', () => {
     expect(suggestions(mods).every((e) => !e.needs)).toBe(true)
   })
 
+  it('KI- und Push-Einträge nur, wenn verfügbar', () => {
+    const off = { ...ALL, ai: false, push: false }
+    expect(searchEntries('buddy', off).some((e) => e.id === 'buddy' || e.id === 'buddy-tone')).toBe(false)
+    expect(searchEntries('benachrichtigung', off).some((e) => e.id === 'notify')).toBe(false)
+    const on = { ...ALL, ai: true, push: true }
+    expect(searchEntries('buddy ton', on)[0].id).toBe('buddy-tone')
+    expect(searchEntries('benachrichtigung', on)[0].id).toBe('notify')
+  })
+
+  it('Gewicht führt zur Körperseite, Verlauf zum Fortschritt', () => {
+    expect(searchEntries('gewicht', ALL)[0].to).toBe('/body')
+    expect(SEARCH_ENTRIES.find((e) => e.id === 'history')?.section).toBe('Fortschritt')
+  })
+
   it('jede ID ist eindeutig', () => {
     const ids = SEARCH_ENTRIES.map((e) => e.id)
     expect(new Set(ids).size).toBe(ids.length)

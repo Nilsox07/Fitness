@@ -14,7 +14,15 @@ import {
   takePendingWater,
   updateWidgetBuddy,
   updateWidgets,
+  syncReminders,
 } from '../lib/native'
+import { REMINDER_ID_MAX, REMINDER_ID_MIN, planReminders } from '../lib/localReminders'
+import { useTrainingRhythm, useUserPrefs } from '../hooks/usePrefsSync'
+import { useFoodEntries } from '../hooks/useNutrition'
+import { useAllSets } from '../hooks/useWorkouts'
+import { isPerformed } from '../lib/analytics'
+import { daysBetween, plannedTrainingDates } from '../lib/schedule'
+import { shiftDate } from '../lib/day'
 import { useBuddy, useBuddyLevel } from './buddy/useBuddy'
 import { MyBuddy } from './buddy/MyBuddy'
 import { BUDDY_STAGE_LABELS } from './buddy/Buddy'
@@ -26,6 +34,8 @@ import { useDietStyle } from '../hooks/useNutrition'
 import { fastingState, fastingWindow } from '../lib/dietStyle'
 import { supabase } from '../lib/supabase'
 import type { WaterIntake } from '../types'
+import { handleBack } from '../lib/backStack'
+import { claimDeepLink, deepLinkRoute, launchRoute, markDeepLinkHandled } from '../lib/deepLink'
 
 /**
  * Nur in der Android-App: Uhr-Daten abgleichen, Homescreen-Widgets mit
@@ -68,6 +78,66 @@ function NativeSyncInner() {
     show()
     return () => clearTimeout(timer)
   }, [fasting, fastingStart, showNutrition])
+
+  // Erinnerungen für heute und morgen auf dem Gerät planen (nur, was noch fehlt)
+  const { prefs } = useUserPrefs()
+  const { data: todayFood } = useFoodEntries(t.day)
+  const rhythm = useTrainingRhythm(t.trainingDay)
+  const { data: allSetsR } = useAllSets()
+  const { data: suppsR = [] } = useSupplements()
+  const { data: suppLogR = [] } = useSupplementLog(t.day)
+  useEffect(() => {
+    if (t.loading) return
+    const id = setTimeout(() => {
+      const now = new Date()
+      const tomorrow = shiftDate(t.day, 1)
+      const meals = { breakfast: false, lunch: false, dinner: false }
+      for (const e of todayFood ?? []) if (e.meal && e.meal in meals) meals[e.meal as keyof typeof meals] = true
+      const lastTrain = (allSetsR ?? [])
+        .filter((x) => isPerformed(x))
+        .reduce<string | null>((m, x) => (m && m > x.date ? m : x.date), null)
+      const win = showNutrition && fasting !== 'none' ? fastingWindow({ fasting, fastingStart }) : null
+      const doses = (date: string, off: 0 | 1, log: typeof suppLogR) =>
+        dosesFor(date, suppsR, log).map((d) => ({
+          name: d.supplement.name,
+          time: d.slot,
+          taken: d.taken,
+          dayOffset: off,
+        }))
+      const list = planReminders({
+        now,
+        notify: prefs.notify,
+        showNutrition,
+        meals,
+        kcalLeft: t.kcalTarget - t.kcalEaten,
+        waterMl: t.waterMl,
+        waterTarget: t.waterTarget,
+        proteinEaten: t.proteinEaten,
+        proteinTarget: t.proteinTarget,
+        trainedToday: t.trainedToday,
+        trainingDays: [...plannedTrainingDates(rhythm.schedule, rhythm.history, t.trainingDay, [t.day, tomorrow])],
+        daysSinceTraining: lastTrain ? daysBetween(lastTrain, t.trainingDay) : null,
+        nextWorkout: t.nextWorkout,
+        supplements: [...doses(t.day, 0, suppLogR), ...doses(tomorrow, 1, [])],
+        fasting: win ? { open: win.start, close: win.end } : null,
+      })
+      void syncReminders(list, REMINDER_ID_MIN, REMINDER_ID_MAX)
+    }, 1500)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    t,
+    prefs.notify,
+    todayFood,
+    rhythm.schedule,
+    rhythm.history,
+    allSetsR,
+    suppsR,
+    suppLogR,
+    showNutrition,
+    fasting,
+    fastingStart,
+  ])
 
   // Widgets aktualisieren, sobald sich die Zahlen ändern (inkl. App-Farbe und Buddy)
   const buddy = useBuddy()
@@ -214,18 +284,40 @@ export function NativeNav() {
   return <NativeNavInner />
 }
 
+/** Start-Link nur einmal je App-Start öffnen (auch wenn NativeNav neu eingehängt wird). */
+let launchOpened = false
+
 function NativeNavInner() {
   const navigate = useNavigate()
+  // Kaltstart über Widget/Benachrichtigung/Teilen: Start-Link einmal öffnen
+  useEffect(() => {
+    void launchRoute().then((route) => {
+      if (!route || launchOpened) return
+      launchOpened = true
+      if (claimDeepLink(route)) navigate(route)
+    })
+  }, [navigate])
   useEffect(() => {
     let off: (() => void)[] = []
     let alive = true
     void import('@capacitor/app').then(({ App }) => {
       if (!alive) return
       void App.addListener('appUrlOpen', ({ url }) => {
-        const m = /^fitnessbuddy:\/\/open(\/[^#]*)?/.exec(url)
-        if (m) navigate(m[1] || '/today')
+        const route = deepLinkRoute(url)
+        if (route && claimDeepLink(route)) navigate(route)
       }).then((h) => off.push(() => void h.remove()))
+      // Erinnerung angetippt → passende Seite öffnen
+      void import('@capacitor/local-notifications').then(({ LocalNotifications }) =>
+        LocalNotifications.addListener('localNotificationActionPerformed', ({ notification }) => {
+          const route = (notification.extra as { route?: string } | undefined)?.route
+          if (!route || !route.startsWith('/')) return
+          markDeepLinkHandled()
+          navigate(route)
+        }).then((h) => off.push(() => void h.remove())),
+      )
       void App.addListener('backButton', ({ canGoBack }) => {
+        // Offenes Sheet/Overlay zuerst schließen
+        if (handleBack()) return
         if (canGoBack) window.history.back()
         else void App.exitApp()
       }).then((h) => off.push(() => void h.remove()))

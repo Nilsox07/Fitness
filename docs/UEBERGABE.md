@@ -68,6 +68,17 @@ einer App, aber nur das sichtbar, was man nutzt.
   Pläne und den Wochen-Rhythmus an, berechnet das Kalorienziel und speichert einen Ausdauer-Plan
   (`prefs.cardioPlan`, abhaken über `prefs.cardioDone`, mit Uhr automatisch). Erneut: Profil → „Plan neu erstellen“.
 - **Texte:** Übersichten zeigen nur kurze Zeilen; Erklärungen liegen hinter einem (i) (`components/ui/InfoTip.tsx`).
+- **Zurück** folgt dem Verlauf (`src/lib/navHistory.ts`, TopBar): man landet dort, wo man herkam. Android-Zurück
+  schließt zuerst offene Sheets (`src/lib/backStack.ts`, `useBackClose`). Deep Links (Widgets, Erinnerungen,
+  Teilen) gehen auch beim Kaltstart (`src/lib/deepLink.ts`).
+- **Erinnerungen in der App:** Web-Push gibt es in der Android-App nicht – die App plant die Erinnerungen für heute
+  und morgen selbst (`src/lib/localReminders.ts`, getestet; geplant in `NativeSync`), nach Profil →
+  Benachrichtigungen und nur, wenn noch etwas fehlt. Tippen öffnet die passende Seite.
+- **Kalorien-Schätzung:** Prompt schätzt Komponenten einzeln (Gewicht über Größenvergleich, Werte im gegarten
+  Zustand) und führt Fett/Soßen als eigene Posten (`kind`); kcal werden gegen die Makros geprüft
+  (`consistentKcal`). Im Ergebnis die Rückfrage „Fett beim Kochen“ (Ohne/1 TL/1 EL/2 EL, `mealItems.ts`).
+- **Tagesform** (`readiness` in `health.ts`): Schlaf + Tiefschlaf, HRV, Ruhepuls, Kraft- und Ausdauer-Belastung der
+  letzten 2 Tage, Ernährung, Eiweiß und Trinken von gestern. KI-Briefing direkt in der Tagesform-Karte (`useBriefing`).
 - **Navigation wie bei iOS:** globale Suche (Lupe oben in jedem Tab, `components/search/SearchSheet.tsx`,
   Einträge + Stichwörter in `src/lib/searchIndex.ts`, Module beachten). Profil gruppiert: Ich ·
   Personalisieren · Buddy · Mitteilungen & Geräte · Konto & Daten. Deep Links für die Suche:

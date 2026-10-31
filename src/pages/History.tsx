@@ -13,6 +13,7 @@ import {
   Weight,
   X,
 } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import { usePrefs } from '../lib/prefs'
 import { useExercises } from '../hooks/useExercises'
 import { newId, useAddSet, useAllSets, useCreateWorkout, useDeleteWorkout, useWorkouts } from '../hooks/useWorkouts'
@@ -33,7 +34,10 @@ import { enter } from '../components/home/motion'
 import type { Exercise, SetWithDate, Workout } from '../types'
 
 export default function History() {
-  const { world } = usePrefs()
+  // Bereich kommt aus dem Link (?view=food|training); ohne Angabe: Training
+  const { showNutrition } = usePrefs()
+  const [params] = useSearchParams()
+  const showFood = params.get('view') === 'food' && showNutrition
   const { data: workouts, isLoading } = useWorkouts()
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
@@ -178,7 +182,7 @@ export default function History() {
     )
   }
 
-  if (world === 'food') {
+  if (showFood) {
     return (
       <div className="space-y-4">
         <FoodDays />

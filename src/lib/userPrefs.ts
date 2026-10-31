@@ -37,6 +37,18 @@ export interface UserPrefs {
   cardioPlan: CardioPlan | null
   /** Tage (YYYY-MM-DD), an denen die Ausdauer-Einheit abgehakt wurde */
   cardioDone: string[]
+  /** Cheat-Meals den Freunden melden (nur mit Community) – Standard aus */
+  shareCheat: boolean
+  /** Eingeschaltete Module (für den Server, z. B. Erinnerungen); null = noch nie gespeichert */
+  modules: Modules | null
+  /** Zuletzt gesehene „Was ist neu?“-Version (geräteübergreifend) */
+  seenVersion: string | null
+}
+
+export interface Modules {
+  nutrition: boolean
+  social: boolean
+  watch: boolean
 }
 
 export const DEFAULT_KCAL_BONUS = 250
@@ -56,6 +68,9 @@ export const DEFAULT_PREFS: UserPrefs = {
   fitGoal: null,
   cardioPlan: null,
   cardioDone: [],
+  shareCheat: false,
+  modules: null,
+  seenVersion: null,
 }
 
 const num = (v: unknown, lo: number, hi: number, fallback: number): number => {
@@ -108,6 +123,30 @@ function normalizeCardioPlan(v: unknown): CardioPlan | null {
   return sessions.length ? { kind: p.kind as CardioKind, sessions } : null
 }
 
+function normalizeModules(v: unknown): Modules | null {
+  if (!v || typeof v !== 'object') return null
+  const m = v as Record<string, unknown>
+  if (typeof m.nutrition !== 'boolean' || typeof m.social !== 'boolean' || typeof m.watch !== 'boolean') return null
+  return { nutrition: m.nutrition, social: m.social, watch: m.watch }
+}
+
+export const sameModules = (a: Modules | null, b: Modules | null): boolean =>
+  !!a && !!b && a.nutrition === b.nutrition && a.social === b.social && a.watch === b.watch
+
+/**
+ * Module mit dem Konto abgleichen: Auf einem neuen Gerät die gespeicherten übernehmen
+ * ('adopt'), sonst die Geräte-Einstellung ins Konto schreiben ('push').
+ */
+export function modulesSyncAction(
+  local: Modules,
+  remote: Modules | null,
+  deviceSynced: boolean,
+): 'adopt' | 'push' | 'none' {
+  if (!remote) return 'push'
+  if (sameModules(local, remote)) return 'none'
+  return deviceSynced ? 'push' : 'adopt'
+}
+
 /** Beliebiges (DB-/localStorage-)Objekt → gültige Einstellungen mit Standardwerten. */
 export function normalizePrefs(raw: unknown): UserPrefs {
   const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
@@ -144,5 +183,8 @@ export function normalizePrefs(raw: unknown): UserPrefs {
           .sort()
           .slice(-60)
       : [],
+    shareCheat: r.shareCheat === true,
+    modules: normalizeModules(r.modules),
+    seenVersion: typeof r.seenVersion === 'string' && r.seenVersion.length < 20 ? r.seenVersion : null,
   }
 }

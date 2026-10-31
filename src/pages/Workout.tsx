@@ -421,7 +421,8 @@ export default function Workout() {
         }
       }
     }
-    navigate('/history')
+    // Im Training bleiben (Startansicht zeigt das letzte Training) – nicht in den Fortschritt-Tab springen
+    document.querySelector('main')?.scrollTo({ top: 0 })
   }
 
   async function makeHype() {
@@ -1483,7 +1484,7 @@ export default function Workout() {
                 <li className="px-4 py-3 text-sm text-cocoa-light">
                   {sheet === 'picker' && q
                     ? 'Keine eigene Übung gefunden.'
-                    : 'Keine Übung gefunden. Neue Übungen legst du im Tab „Übungen" an.'}
+                    : 'Keine Übung gefunden. Neue Übungen legst du unter Training → Übungen an.'}
                 </li>
               )}
             </ul>

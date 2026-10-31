@@ -1,6 +1,7 @@
 // Erzeugt eine teilbare Bild-Karte (Canvas) eines Trainings — ohne Foto von dir,
 // nur Statistik. Teilt per Web-Share-API, sonst Download.
 import { accentColor } from './cosmetics'
+import { shareFile, type ShareOutcome } from './shareFile'
 
 export interface StatCardData {
   title: string
@@ -15,14 +16,14 @@ export interface StatCardData {
   stats?: [string, string][]
 }
 
-export async function shareStatCard(data: StatCardData): Promise<void> {
+export async function shareStatCard(data: StatCardData): Promise<ShareOutcome> {
   const W = 1080
   const H = 1350
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = H
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) return 'failed'
 
   // Hintergrund-Verlauf
   const grad = ctx.createLinearGradient(0, 0, W, H)
@@ -76,20 +77,5 @@ export async function shareStatCard(data: StatCardData): Promise<void> {
   }
 
   const blob: Blob = await new Promise((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'))
-  const file = new File([blob], 'training.png', { type: 'image/png' })
-
-  const nav = navigator as Navigator & {
-    canShare?: (data: { files: File[] }) => boolean
-    share?: (data: { files: File[]; title?: string; text?: string }) => Promise<void>
-  }
-  if (nav.canShare?.({ files: [file] }) && nav.share) {
-    await nav.share({ files: [file], title: 'Mein Training', text: data.title })
-  } else {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'training.png'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+  return shareFile(blob, 'training.png', { title: 'Mein Training', text: data.title })
 }

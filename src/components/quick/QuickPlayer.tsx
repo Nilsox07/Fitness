@@ -4,6 +4,7 @@ import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-
 import { Ring } from '../nutrition-home/Ring'
 import { ExerciseAnimation } from '../library/ExerciseAnimation'
 import { Sheet } from '../workout/Sheet'
+import { useBackClose } from '../../lib/backStack'
 import type { LibraryExercise } from '../../lib/exerciseLibrary'
 import type { Interval, QuickWorkout } from '../../lib/quickWorkout'
 import {
@@ -85,7 +86,7 @@ export function QuickPlayer({
   const paused = c.endAt == null
   useWakeLock(!paused)
 
-  const nameOf = (id?: string) => (id ? byId.get(id)?.name_de ?? 'Übung' : '')
+  const nameOf = (id?: string) => (id ? (byId.get(id)?.name_de ?? 'Übung') : '')
 
   // ---- Ansagen beim Betreten einer Phase ----
   const announce = useCallback(
@@ -109,27 +110,24 @@ export function QuickPlayer({
     [intervals, workout.rest, byId],
   )
 
-  const finish = useCallback(
-    (completed: boolean) => {
-      if (finished.current) return
-      finished.current = true
-      const s = clock.current
-      s.endAt = null
-      if (completed) {
-        finishBeep()
-        speak('Geschafft! Stark gemacht.')
-      } else stopSpeaking()
-      const rounds = s.work.reduce((m, w) => Math.max(m, w.round), 0)
-      finishRef.current({ activeSeconds: Math.round(s.active), work: s.work, rounds, completed })
-    },
-    [],
-  )
+  const finish = useCallback((completed: boolean) => {
+    if (finished.current) return
+    finished.current = true
+    const s = clock.current
+    s.endAt = null
+    if (completed) {
+      finishBeep()
+      speak('Geschafft! Stark gemacht.')
+    } else stopSpeaking()
+    const rounds = s.work.reduce((m, w) => Math.max(m, w.round), 0)
+    finishRef.current({ activeSeconds: Math.round(s.active), work: s.work, rounds, completed })
+  }, [])
 
   /** Teil der laufenden Phase verbuchen (beim Überspringen/Beenden/Zurück). */
   const bookPartial = useCallback(() => {
     const s = clock.current
     const it = intervals[s.idx]
-    const leftMs = s.endAt != null ? s.endAt - Date.now() : s.pausedMs ?? 0
+    const leftMs = s.endAt != null ? s.endAt - Date.now() : (s.pausedMs ?? 0)
     const done = Math.max(0, Math.min(it.seconds, it.seconds - leftMs / 1000))
     s.active += done
     if (it.kind === 'work' && it.exerciseId && done >= MIN_PARTIAL_S) {
@@ -227,7 +225,7 @@ export function QuickPlayer({
   function back() {
     const s = clock.current
     const it = intervals[s.idx]
-    const leftMs = s.endAt != null ? s.endAt - Date.now() : s.pausedMs ?? 0
+    const leftMs = s.endAt != null ? s.endAt - Date.now() : (s.pausedMs ?? 0)
     const elapsed = it.seconds - leftMs / 1000
     // Zurück = Phase neu starten; ganz am Anfang einer Phase → vorherige Phase.
     s.active += Math.max(0, elapsed)
@@ -238,6 +236,14 @@ export function QuickPlayer({
     bookPartial()
     finish(false)
   }
+
+  function askEnd() {
+    resumeAfterConfirm.current = !paused
+    if (!paused) togglePause()
+    setConfirmEnd(true)
+  }
+  // Android-Zurück: erst fragen, ob das Workout beendet werden soll
+  useBackClose(() => askEnd(), !confirmEnd)
 
   function cancelEnd() {
     setConfirmEnd(false)
@@ -253,7 +259,7 @@ export function QuickPlayer({
   // ---- Anzeige ----
   const it = intervals[c.idx]
   const now = Date.now()
-  const leftMs = c.endAt != null ? Math.max(0, c.endAt - now) : c.pausedMs ?? 0
+  const leftMs = c.endAt != null ? Math.max(0, c.endAt - now) : (c.pausedMs ?? 0)
   const left = Math.ceil(leftMs / 1000)
   const isRest = it.kind === 'rest' || it.kind === 'roundRest'
   const nextWork = intervals.slice(c.idx + 1).find((x) => x.kind === 'work')
@@ -263,8 +269,7 @@ export function QuickPlayer({
   const previewId = isRest
     ? intervals.slice(c.idx + 1).filter((x) => x.kind === 'work')[1]?.exerciseId
     : nextWork?.exerciseId
-  const doneMs =
-    intervals.slice(0, c.idx).reduce((sum, x) => sum + x.seconds * 1000, 0) + (it.seconds * 1000 - leftMs)
+  const doneMs = intervals.slice(0, c.idx).reduce((sum, x) => sum + x.seconds * 1000, 0) + (it.seconds * 1000 - leftMs)
   const overall = Math.min(1, doneMs / Math.max(1, workout.totalSeconds * 1000))
   const stationCount = workout.stations.length
 
@@ -281,9 +286,7 @@ export function QuickPlayer({
           <button
             type="button"
             onClick={() => {
-              resumeAfterConfirm.current = !paused
-              if (!paused) togglePause()
-              setConfirmEnd(true)
+              askEnd()
             }}
             className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-95"
             aria-label="Workout beenden"
@@ -318,7 +321,10 @@ export function QuickPlayer({
           aria-valuemax={100}
           aria-valuenow={Math.round(overall * 100)}
         >
-          <div className="h-full rounded-full bg-brand transition-[width] duration-300 ease-linear" style={{ width: `${overall * 100}%` }} />
+          <div
+            className="h-full rounded-full bg-brand transition-[width] duration-300 ease-linear"
+            style={{ width: `${overall * 100}%` }}
+          />
         </div>
 
         {/* Countdown */}
@@ -338,7 +344,9 @@ export function QuickPlayer({
               >
                 {paused ? 'Pausiert' : PHASE_LABEL[it.kind]}
               </span>
-              <span className={`tabular block text-6xl font-bold leading-none ${left <= 3 && !paused ? 'text-brand' : ''}`}>
+              <span
+                className={`tabular block text-6xl font-bold leading-none ${left <= 3 && !paused ? 'text-brand' : ''}`}
+              >
                 {left}
               </span>
               <span className="mt-1 block text-[11px] text-cocoa-muted">Sekunden</span>
@@ -413,9 +421,7 @@ export function QuickPlayer({
       {confirmEnd && (
         <Sheet title="Workout beenden?" onClose={cancelEnd}>
           <div className="space-y-2">
-            <p className="text-sm text-cocoa-light">
-              Was du bisher geschafft hast, kannst du im Anschluss speichern.
-            </p>
+            <p className="text-sm text-cocoa-light">Was du bisher geschafft hast, kannst du im Anschluss speichern.</p>
             <button
               type="button"
               className="btn-primary w-full"
@@ -426,11 +432,7 @@ export function QuickPlayer({
             >
               Beenden &amp; auswerten
             </button>
-            <button
-              type="button"
-              className="btn-ghost w-full"
-              onClick={cancelEnd}
-            >
+            <button type="button" className="btn-ghost w-full" onClick={cancelEnd}>
               Weiter trainieren
             </button>
           </div>

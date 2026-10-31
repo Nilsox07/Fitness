@@ -33,6 +33,7 @@ import { enter } from './motion'
 import { ToolTiles } from './ToolTiles'
 import { CustomizeHome } from './CustomizeHome'
 import { useHomeCards } from '../../lib/homeCards'
+import { usePrefs } from '../../lib/prefs'
 import { ClipboardList, Dumbbell, Timer } from 'lucide-react'
 import { BuddyTip } from '../buddy/BuddyTip'
 import { CardioPlanCard } from '../today/CardioPlanCard'
@@ -65,6 +66,7 @@ export function HomeStart({
   onStartFree: () => void
 }) {
   const [homeCards] = useHomeCards()
+  const { showNutrition } = usePrefs()
   const { data: workouts } = useWorkouts()
   const { data: allSets } = useAllSets()
   const { data: exercises } = useExercises()
@@ -196,7 +198,7 @@ export function HomeStart({
       />
       {homeCards.recovery && <RecoveryCard items={muscleStates} index={++i} />}
       {homeCards.lastWorkout && last && <LastWorkoutCard stats={last} today={today} names={lastNames} index={++i} />}
-      {homeCards.nutrition && <NutritionRow allSets={allSets} index={++i} />}
+      {homeCards.nutrition && showNutrition && <NutritionRow allSets={allSets} index={++i} />}
       {homeCards.challenge && <ChallengeCard index={++i} />}
       <CustomizeHome area="training" />
     </div>

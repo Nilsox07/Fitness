@@ -6,6 +6,9 @@ import { useAiStatus } from '../../hooks/useAi'
 import { searchEntries, suggestions, type SearchEntry, type SearchSection } from '../../lib/searchIndex'
 import { openBuddySheet } from '../buddy/BuddySheet'
 import { openPlanWizard } from '../onboarding/Onboarding'
+import { useBackClose } from '../../lib/backStack'
+import { isNative } from '../../lib/native'
+import { pushSupported } from '../../lib/push'
 
 export const OPEN_SEARCH_EVENT = 'open-search'
 
@@ -34,8 +37,19 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
   const { data: ai } = useAiStatus()
   const [q, setQ] = useState('')
   const input = useRef<HTMLInputElement>(null)
-  const mods = { nutrition: showNutrition, social: showSocial, watch: hasWatch }
-  const results = useMemo(() => (q.trim() ? searchEntries(q, mods) : []), [q, showNutrition, showSocial, hasWatch]) // eslint-disable-line react-hooks/exhaustive-deps
+  const aiOn = ai ? ai.enabled : undefined
+  const mods = {
+    nutrition: showNutrition,
+    social: showSocial,
+    watch: hasWatch,
+    ai: aiOn,
+    push: pushSupported || isNative(),
+  }
+  const results = useMemo(
+    () => (q.trim() ? searchEntries(q, mods) : []),
+    [q, showNutrition, showSocial, hasWatch, aiOn],
+  ) // eslint-disable-line react-hooks/exhaustive-deps
+  useBackClose(onClose)
   const sugg = suggestions(mods)
 
   useEffect(() => {

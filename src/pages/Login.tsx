@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { API_BASE, isNative } from '../lib/native'
 import { APP_TAGLINE, AuthNote, AuthShell } from '../components/ui/AuthShell'
 
 type Mode = 'login' | 'signup'
@@ -49,7 +50,8 @@ export default function Login() {
     setBusy(true)
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin,
+        // In der App ist die Herkunft https://localhost → Link öffnet stattdessen die Web-Version
+        redirectTo: isNative() ? API_BASE : window.location.origin,
       })
       if (error) throw error
       setInfo('E-Mail zum Zurücksetzen verschickt – prüfe dein Postfach (auch Spam).')
@@ -83,7 +85,11 @@ export default function Login() {
       )}
 
       {/* Anmelden | Registrieren */}
-      <div className="mb-4 grid grid-cols-2 rounded-full bg-sand p-1" role="tablist" aria-label="Anmelden oder registrieren">
+      <div
+        className="mb-4 grid grid-cols-2 rounded-full bg-sand p-1"
+        role="tablist"
+        aria-label="Anmelden oder registrieren"
+      >
         {MODES.map((m) => (
           <button
             key={m.id}

@@ -2,6 +2,7 @@
 // Monats-Rückblick. Buddy wird aus dem gerenderten SVG übernommen.
 
 import { accentColor } from './cosmetics'
+import { shareFile, type ShareOutcome } from './shareFile'
 import type { MonthRecap } from './monthRecap'
 
 /** Gerendertes Buddy-SVG als Bild laden (CSS-Variablen werden aufgelöst). */
@@ -128,22 +129,7 @@ export async function renderMonthStory(
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'))
 }
 
-/** Per Web-Share teilen (Instagram, WhatsApp …), sonst herunterladen. */
-export async function shareImage(blob: Blob, filename: string, text: string): Promise<'shared' | 'downloaded'> {
-  const file = new File([blob], filename, { type: 'image/png' })
-  const nav = navigator as Navigator & {
-    canShare?: (data: { files: File[] }) => boolean
-    share?: (data: { files: File[]; title?: string; text?: string }) => Promise<void>
-  }
-  if (nav.canShare?.({ files: [file] }) && nav.share) {
-    await nav.share({ files: [file], text })
-    return 'shared'
-  }
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-  return 'downloaded'
+/** Teilen (Instagram, WhatsApp …): Web-Share bzw. App-Teilen-Menü, sonst herunterladen. */
+export function shareImage(blob: Blob, filename: string, text: string): Promise<ShareOutcome> {
+  return shareFile(blob, filename, { text })
 }

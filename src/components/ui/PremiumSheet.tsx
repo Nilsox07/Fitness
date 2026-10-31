@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeft, X } from 'lucide-react'
+import { useBackClose } from '../../lib/backStack'
 
 /**
  * Premium-Bottom-Sheet der neuen App (wie die Mahlzeit-Analyse): Griff, Titelzeile
@@ -45,6 +46,8 @@ export function PremiumSheet({
   closeRef.current = onClose
   const busyRef = useRef(busy)
   busyRef.current = busy
+  // Android-Zurück-Taste schließt das Sheet statt die Seite darunter zu wechseln
+  useBackClose(() => !busyRef.current && closeRef.current())
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -145,15 +148,7 @@ export function SheetFooter({ children }: { children: ReactNode }) {
 }
 
 /** Hero-Kopf mit Buddy (o. ä.) und sanftem Brand-Schimmer. */
-export function SheetHero({
-  art,
-  title,
-  subtitle,
-}: {
-  art: ReactNode
-  title: ReactNode
-  subtitle?: ReactNode
-}) {
+export function SheetHero({ art, title, subtitle }: { art: ReactNode; title: ReactNode; subtitle?: ReactNode }) {
   return (
     <div className="relative -mx-5 overflow-hidden px-5 pb-1 pt-2 text-center">
       <div className="pointer-events-none absolute left-1/2 top-2 h-36 w-36 -translate-x-1/2 rounded-full bg-brand/20 blur-3xl" />

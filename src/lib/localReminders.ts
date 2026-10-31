@@ -176,15 +176,7 @@ export function planReminders(c: ReminderCtx): Reminder[] {
 
     // ---------- Fortschritt ----------
     if (n.weigh.on && n.weigh.time && (n.weigh.days ?? [0]).includes(weekday(day)))
-      add(
-        'weigh',
-        off,
-        0,
-        at(day, n.weigh.time),
-        'Kurz auf die Waage ⚖️',
-        'Morgens, vor dem Frühstück.',
-        '/nutrition?weigh=1',
-      )
+      add('weigh', off, 0, at(day, n.weigh.time), 'Kurz auf die Waage ⚖️', 'Morgens, vor dem Frühstück.', '/body')
 
     if (n.review.on && n.review.time && weekday(day) === 0)
       add(

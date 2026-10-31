@@ -24,7 +24,7 @@ export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
         <div className="flex items-center justify-between gap-2">
           {extra ?? <span />}
           <Link
-            to="/history"
+            to={world === 'food' ? '/history?view=food' : '/history?view=training'}
             className="flex items-center gap-1 rounded-full bg-cream px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
           >
             <CalendarDays size={15} className="text-brand" />

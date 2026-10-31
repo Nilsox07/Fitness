@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType } from '@zxing/library'
+import { useBackClose } from '../lib/backStack'
 
 interface Props {
   onDetected: (code: string) => void
@@ -13,6 +14,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
   const cb = useRef(onDetected)
   cb.current = onDetected
   const [error, setError] = useState<string | null>(null)
+  useBackClose(onClose)
 
   useEffect(() => {
     const hints = new Map()
@@ -58,13 +60,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
           <p className="px-6 text-center text-sm text-red-400">{error}</p>
         ) : (
           <div className="w-full">
-            <video
-              ref={videoRef}
-              className="w-full rounded-xl ring-2 ring-white/30"
-              autoPlay
-              muted
-              playsInline
-            />
+            <video ref={videoRef} className="w-full rounded-xl ring-2 ring-white/30" autoPlay muted playsInline />
             <p className="mt-3 text-center text-sm text-white/80">Barcode in den Rahmen halten…</p>
           </div>
         )}

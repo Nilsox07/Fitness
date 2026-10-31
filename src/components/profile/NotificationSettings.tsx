@@ -1,17 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Bell, BellRing, Check, Send } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
-import { enablePush, pushSupported, sendTestPush, setShareCheatEnabled, shareCheatEnabled } from '../../lib/push'
+import { isNative, notifyPermission, requestNotifyPermission, sendTestReminder } from '../../lib/native'
+import { enablePush, pushSupported, sendTestPush } from '../../lib/push'
+import { usePrefs } from '../../lib/prefs'
+import { useShareCheat } from '../../hooks/useShareCheat'
 import { useUserPrefs } from '../../hooks/usePrefsSync'
 import { NOTIFY_GROUPS, NOTIFY_ITEMS, deviceTimeZone, type NotifyKind, type NotifySetting } from '../../lib/notify'
 import { Group, Toggle } from './ui'
 
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 
-/** Ist auf DIESEM Gerät ein Push-Abo aktiv? */
+/** Ist auf DIESEM Gerät ein Push-Abo aktiv (App: Benachrichtigungen erlaubt)? */
 function useDeviceSubscribed(): [boolean | null, () => void] {
   const [state, setState] = useState<boolean | null>(null)
   const check = () => {
+    if (isNative()) {
+      void notifyPermission().then((g) => setState(!!g))
+      return
+    }
     if (!pushSupported || Notification.permission !== 'granted') {
       setState(false)
       return
@@ -32,7 +39,10 @@ export function NotificationSettings() {
   const [subscribed, recheck] = useDeviceSubscribed()
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
-  const [shareCheat, setShareCheat] = useState(shareCheatEnabled)
+  const shareCheat = useShareCheat()
+  const { showNutrition, showSocial } = usePrefs()
+  // Gruppen ausgeblendeter Module nicht anbieten
+  const groups = NOTIFY_GROUPS.filter((g) => (g !== 'Ernährung' || showNutrition) && (g !== 'Community' || showSocial))
 
   // Zeitzone mitschicken, damit der Server die Uhrzeiten richtig umrechnet
   useEffect(() => {
@@ -50,6 +60,16 @@ export function NotificationSettings() {
     setBusy(true)
     setMsg(null)
     try {
+      if (isNative()) {
+        const ok = await requestNotifyPermission()
+        recheck()
+        setMsg(
+          ok
+            ? 'Aktiviert – teste es gleich mit „Testen“.'
+            : 'Nicht erlaubt. Du kannst es in den Android-Einstellungen der App nachholen.',
+        )
+        return
+      }
       await enablePush(user.id)
       recheck()
       setMsg('Aktiviert – teste es gleich mit „Testen“.')
@@ -64,6 +84,10 @@ export function NotificationSettings() {
     setBusy(true)
     setMsg(null)
     try {
+      if (isNative()) {
+        setMsg((await sendTestReminder()) ? 'Kommt in 5 Sekunden.' : 'Senden fehlgeschlagen.')
+        return
+      }
       setMsg(await sendTestPush())
     } catch {
       setMsg('Senden fehlgeschlagen.')
@@ -94,7 +118,11 @@ export function NotificationSettings() {
         </div>
         <div className="relative mt-3 flex gap-2">
           {!subscribed && (
-            <button className="btn-primary flex-1 gap-1.5" onClick={activate} disabled={busy || !pushSupported}>
+            <button
+              className="btn-primary flex-1 gap-1.5"
+              onClick={activate}
+              disabled={busy || !(pushSupported || isNative())}
+            >
               <Bell size={16} /> Aktivieren
             </button>
           )}
@@ -112,7 +140,7 @@ export function NotificationSettings() {
           </button>
         </div>
         {msg && <p className="relative mt-2 text-xs text-bg/75 dark:text-cocoa-light">{msg}</p>}
-        {!pushSupported && (
+        {!pushSupported && !isNative() && (
           <p className="relative mt-2 text-xs text-bg/75 dark:text-cocoa-light">
             {isIos && !standalone
               ? 'Auf dem iPhone gehen Benachrichtigungen nur, wenn die App zum Home-Bildschirm hinzugefügt ist (Teilen → „Zum Home-Bildschirm“).'
@@ -121,7 +149,7 @@ export function NotificationSettings() {
         )}
       </section>
 
-      {NOTIFY_GROUPS.map((g) => (
+      {groups.map((g) => (
         <Group
           key={g}
           title={g}
@@ -180,14 +208,7 @@ export function NotificationSettings() {
                 <div className="text-[15px] font-semibold">Meine Cheat-Meals teilen</div>
                 <div className="text-xs leading-snug text-cocoa-light">Freunde bekommen dann einen Cheat-Alarm</div>
               </div>
-              <Toggle
-                checked={shareCheat}
-                onChange={(on) => {
-                  setShareCheat(on)
-                  setShareCheatEnabled(on)
-                }}
-                label="Meine Cheat-Meals teilen"
-              />
+              <Toggle checked={shareCheat.on} onChange={shareCheat.set} label="Meine Cheat-Meals teilen" />
             </div>
           )}
         </Group>

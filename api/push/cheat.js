@@ -32,10 +32,7 @@ export default async function handler(req, res) {
     return
   }
 
-  const { data: friends } = await db
-    .from('friendships')
-    .select('friend_id')
-    .eq('user_id', user.id)
+  const { data: friends } = await db.from('friendships').select('friend_id').eq('user_id', user.id)
   const friendIds = (friends || []).map((f) => f.friend_id)
   if (friendIds.length === 0) {
     res.status(200).json({ ok: true, sent: 0 })
@@ -44,7 +41,12 @@ export default async function handler(req, res) {
 
   // Freunde, die Community-Pushes abgeschaltet haben, auslassen
   const { data: profs } = await db.from('profiles').select('id, prefs').in('id', friendIds)
-  const muted = new Set((profs || []).filter((p) => p.prefs?.notify?.social?.on === false).map((p) => p.id))
+  // … oder Community ganz ausgeblendet haben
+  const muted = new Set(
+    (profs || [])
+      .filter((p) => p.prefs?.notify?.social?.on === false || p.prefs?.modules?.social === false)
+      .map((p) => p.id),
+  )
   const { data: subs } = await db
     .from('push_subscriptions')
     .select('*')
@@ -57,10 +59,7 @@ export default async function handler(req, res) {
   let sent = 0
   for (const sub of subs || []) {
     try {
-      await webpush.sendNotification(
-        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        payload,
-      )
+      await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload)
       sent++
     } catch (err) {
       if (err && (err.statusCode === 404 || err.statusCode === 410)) {

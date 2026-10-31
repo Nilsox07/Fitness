@@ -19,7 +19,7 @@ import { useCreateExercise, useExercises, useUpdateExercise, type ExerciseInput 
 import { useAllSets } from '../hooks/useWorkouts'
 import { useAiStatus } from '../hooks/useAi'
 import { parseEquipmentList, parseNewExercise, type ExerciseDraft } from '../lib/ai'
-import { MicButton } from '../components/MicButton'
+import { MicButton, speechSupported } from '../components/MicButton'
 import { Sheet } from '../components/workout/Sheet'
 import { EMPTY_EXERCISE, ExerciseForm, cleanExerciseInput } from '../components/ExerciseForm'
 import { ExerciseEmpty, ExerciseListNew } from '../components/exercises/ExerciseListNew'
@@ -295,7 +295,7 @@ export default function Exercises() {
         <div className="mt-1 flex shrink-0 gap-2">
           <button
             className="grid h-10 w-10 place-items-center rounded-full bg-sand text-cocoa transition active:scale-95"
-            onClick={() => navigate('/plans')}
+            onClick={() => navigate('/plans', { replace: true })}
             aria-label="Trainingspläne"
           >
             <ClipboardList size={18} />
@@ -335,7 +335,7 @@ export default function Exercises() {
             {aiOn && (
               <AddOption
                 Icon={Sparkles}
-                title="Beschreiben oder sprechen"
+                title={speechSupported ? 'Beschreiben oder sprechen' : 'Beschreiben'}
                 desc="Die KI erstellt Muskeln & Gewichtsstufen für dich"
                 onClick={() => {
                   setAddOpen(false)
@@ -382,8 +382,9 @@ export default function Exercises() {
               <Dumbbell size={18} className="shrink-0 text-cocoa-light" /> Geräte deines Studios importieren
             </h2>
             <p className="text-xs text-cocoa-light">
-              Zähl deine Geräte/Maschinen auf (Text/Sprache) oder fotografiere die Geräteschilder — die KI legt daraus
-              Übungen mit Muskeln an. Für Kabelzug, Multipresse &amp; Co. gibt es mehrere Vorschläge zur Auswahl.
+              Zähl deine Geräte/Maschinen auf{speechSupported ? ' (Text/Sprache)' : ''} oder fotografiere die
+              Geräteschilder — die KI legt daraus Übungen mit Muskeln an. Für Kabelzug, Multipresse &amp; Co. gibt es
+              mehrere Vorschläge zur Auswahl.
             </p>
             <div className="flex gap-2">
               <input
@@ -499,7 +500,12 @@ export default function Exercises() {
         <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 p-4">
           <div className="card w-full max-w-md space-y-3">
             <h2 className="flex items-center gap-1.5 text-lg font-bold">
-              <Mic size={18} className="shrink-0 text-cocoa-light" /> Übung per Sprache anlegen
+              {speechSupported ? (
+                <Mic size={18} className="shrink-0 text-cocoa-light" />
+              ) : (
+                <Sparkles size={18} className="shrink-0 text-cocoa-light" />
+              )}{' '}
+              {speechSupported ? 'Übung per Sprache anlegen' : 'Übung beschreiben'}
             </h2>
             <p className="text-xs text-cocoa-light">
               Beschreib die Übung — Name und, wenn du magst, die Gewichtsstufen der Maschine. Die KI erkennt Muskeln &

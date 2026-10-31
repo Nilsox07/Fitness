@@ -10,6 +10,7 @@ import { useMyProfile } from '../../hooks/useSocial'
 import { usePrefs } from '../../lib/prefs'
 import { defaultRecapMonth, monthRecap } from '../../lib/monthRecap'
 import { renderMonthStory, shareImage } from '../../lib/storyCard'
+import { shareOutcomeText } from '../../lib/shareFile'
 
 const shift = (month: string, n: number) => {
   const [y, m] = month.split('-').map(Number)
@@ -71,9 +72,7 @@ export function MonthRecapSheet({ onClose }: { onClose: () => void }) {
     setMsg(null)
     try {
       const r = await shareImage(preview.blob, `rueckblick-${month}.png`, `Mein ${recap.monthName} 💪`)
-      if (r === 'downloaded') setMsg('Bild gespeichert – jetzt in Instagram oder WhatsApp als Story posten.')
-    } catch {
-      /* Teilen abgebrochen */
+      setMsg(shareOutcomeText(r))
     } finally {
       setBusy(false)
     }

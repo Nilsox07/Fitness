@@ -2,7 +2,9 @@ package de.fitnessbuddy.app
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import com.getcapacitor.BridgeActivity
@@ -15,8 +17,29 @@ class MainActivity : BridgeActivity() {
         registerPlugin(HealthBridgePlugin::class.java)
         registerPlugin(AppWidgetsPlugin::class.java)
         registerPlugin(LiveActivityPlugin::class.java)
+        shareToDeepLink(intent)
         super.onCreate(savedInstanceState)
         createChannels()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        shareToDeepLink(intent)
+        super.onNewIntent(intent)
+    }
+
+    /**
+     * Aus einer anderen App geteilter Text (z. B. Rezept-Link) → Deep Link
+     * fitnessbuddy://open/share?text=…, den die Web-App wie Widget-Links öffnet.
+     */
+    private fun shareToDeepLink(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_SEND) return
+        val parts = listOfNotNull(
+            intent.getStringExtra(Intent.EXTRA_SUBJECT),
+            intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString(),
+        ).map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+        if (parts.isEmpty()) return
+        intent.action = Intent.ACTION_VIEW
+        intent.data = Uri.parse("fitnessbuddy://open/share?text=" + Uri.encode(parts.joinToString("\n")))
     }
 
     /** Hell/Dunkel gewechselt: Widget-Bitmaps (Akzent-Schein) neu zeichnen. */

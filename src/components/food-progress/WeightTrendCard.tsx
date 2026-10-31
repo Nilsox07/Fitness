@@ -123,7 +123,7 @@ export function WeightTrendCard({ style }: { style?: CSSProperties }) {
         )}
         <InfoTip
           className="text-[11px] text-cocoa-muted"
-          info="Punkte = gewogene Werte, Linie = geglätteter Trend. Gewicht trägst du unter Ernährung ein."
+          info="Punkte = gewogene Werte, Linie = geglätteter Trend. Gewicht trägst du unter Fortschritt → Gewicht & Körperfett ein."
         >
           Wie lese ich das?
         </InfoTip>

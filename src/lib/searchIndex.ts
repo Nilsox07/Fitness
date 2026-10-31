@@ -11,8 +11,8 @@ export interface SearchEntry {
   /** Ziel-Route; 'buddy' öffnet den Buddy, 'intro' das Intro */
   to: string
   keywords: string
-  /** nur sichtbar, wenn das Modul an ist */
-  needs?: 'nutrition' | 'social' | 'watch'
+  /** nur sichtbar, wenn das Modul an ist bzw. KI/Push verfügbar sind */
+  needs?: 'nutrition' | 'social' | 'watch' | 'ai' | 'push'
 }
 
 export const SEARCH_ENTRIES: SearchEntry[] = [
@@ -95,8 +95,8 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     id: 'history',
     label: 'Verlauf',
     sub: 'Alle bisherigen Trainings',
-    section: 'Training',
-    to: '/history',
+    section: 'Fortschritt',
+    to: '/history?view=training',
     keywords: 'historie vergangene trainings kalender',
   },
 
@@ -258,7 +258,7 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     label: 'Gewicht',
     sub: 'Gewicht eintragen & Verlauf',
     section: 'Fortschritt',
-    to: '/nutrition?weigh=1',
+    to: '/body',
     keywords: 'waage wiegen kg gewicht trend',
   },
   {
@@ -339,10 +339,11 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     section: 'Einstellungen',
     to: '/profile?s=push',
     keywords: 'erinnerung push mitteilung benachrichtigung',
+    needs: 'push',
   },
   {
     id: 'appearance',
-    label: 'Darstellung',
+    label: 'Aussehen',
     sub: 'Hell, Dunkel, Ton',
     section: 'Einstellungen',
     to: '/profile?s=appearance',
@@ -381,6 +382,7 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     section: 'Buddy',
     to: 'buddy',
     keywords: 'ki coach frage hilfe chat assistent',
+    needs: 'ai',
   },
   {
     id: 'buddy-tone',
@@ -389,6 +391,7 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     section: 'Buddy',
     to: '/profile?s=coach',
     keywords: 'ton sprache coach locker streng',
+    needs: 'ai',
   },
 ]
 
@@ -404,6 +407,15 @@ export interface Modules {
   nutrition: boolean
   social: boolean
   watch: boolean
+  /** KI verfügbar (unbekannt = sichtbar) */
+  ai?: boolean
+  /** Benachrichtigungen möglich: Web-Push oder App (unbekannt = sichtbar) */
+  push?: boolean
+}
+
+/** Darf der Eintrag bei diesen Modulen/Fähigkeiten gezeigt werden? */
+export function entryVisible(e: SearchEntry, mods: Modules): boolean {
+  return !e.needs || mods[e.needs] !== false
 }
 
 /** Treffer sortiert: Titel-Anfang > Titel enthält > Stichwort. Alle Wörter müssen vorkommen. */
@@ -412,7 +424,7 @@ export function searchEntries(
   mods: Modules,
   list: readonly SearchEntry[] = SEARCH_ENTRIES,
 ): SearchEntry[] {
-  const visible = list.filter((e) => !e.needs || mods[e.needs])
+  const visible = list.filter((e) => entryVisible(e, mods))
   const words = normalize(query).split(/\s+/).filter(Boolean)
   if (!words.length) return []
   const scored: { e: SearchEntry; score: number }[] = []
@@ -437,6 +449,6 @@ export function suggestions(mods: Modules): SearchEntry[] {
   const ids = ['food-add', 'train', 'goal', 'sleep', 'recipes', 'watch', 'today-edit', 'color']
   return ids
     .map((id) => SEARCH_ENTRIES.find((e) => e.id === id)!)
-    .filter((e) => e && (!e.needs || mods[e.needs]))
+    .filter((e) => e && entryVisible(e, mods))
     .slice(0, 6)
 }

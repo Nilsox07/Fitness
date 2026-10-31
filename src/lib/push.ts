@@ -8,18 +8,17 @@ export const pushSupported =
   'PushManager' in window &&
   'Notification' in window
 
-export function shareCheatEnabled(): boolean {
+/**
+ * Alte, nur lokal gespeicherte Wahl „Cheat-Meals teilen“ (vor profiles.prefs.shareCheat).
+ * Liefert true nur bei ausdrücklichem Einschalten und räumt den Eintrag dabei weg.
+ */
+export function takeLegacyShareCheat(): boolean {
   try {
-    return localStorage.getItem('share_cheat') !== '0'
+    const v = localStorage.getItem('share_cheat')
+    if (v != null) localStorage.removeItem('share_cheat')
+    return v === '1'
   } catch {
-    return true
-  }
-}
-export function setShareCheatEnabled(on: boolean) {
-  try {
-    localStorage.setItem('share_cheat', on ? '1' : '0')
-  } catch {
-    /* ignore */
+    return false
   }
 }
 
@@ -87,17 +86,15 @@ export async function enablePush(userId: string): Promise<void> {
   if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
     throw new Error('Abo konnte nicht erstellt werden.')
   }
-  const { error } = await supabase
-    .from('push_subscriptions')
-    .upsert(
-      {
-        user_id: userId,
-        endpoint: json.endpoint,
-        p256dh: json.keys.p256dh,
-        auth: json.keys.auth,
-      },
-      { onConflict: 'endpoint' },
-    )
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    {
+      user_id: userId,
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth: json.keys.auth,
+    },
+    { onConflict: 'endpoint' },
+  )
   if (error) throw error
 }
 
@@ -120,6 +117,7 @@ export async function sendTestPush(): Promise<string> {
   if (res.reason === 'server_config' && res.error) return res.error
   if (res.ok) return 'Test verschickt – sollte gleich auf dem Handy erscheinen.'
   if (res.reason === 'push_not_configured') return 'Auf dem Server fehlen die VAPID-Schlüssel.'
-  if (res.reason === 'no_subscription') return 'Auf diesem Konto ist noch kein Gerät angemeldet – erst „Aktivieren“ tippen.'
+  if (res.reason === 'no_subscription')
+    return 'Auf diesem Konto ist noch kein Gerät angemeldet – erst „Aktivieren“ tippen.'
   return `Senden fehlgeschlagen${res.errors?.length ? ` (Fehler ${res.errors.join(', ')})` : ''}.`
 }

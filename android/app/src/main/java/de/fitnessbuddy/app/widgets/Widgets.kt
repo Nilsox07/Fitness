@@ -112,11 +112,12 @@ class TodayWidget : BaseWidget() {
         val v = k.views(R.layout.widget_today)
         if (k.needsData(v) || k.needsNutrition(v)) return v
         val s = k.s
-        k.click(v, "/nutrition", Req.TODAY)
         if (!s.has("kcalTarget")) {
-            k.empty(v, "Noch keine Ziele", "Leg in der App deine Ziele fest")
+            k.click(v, "/profile?s=goal", Req.TODAY)
+            k.empty(v, "Noch keine Ziele", "In der App unter Ziel & Körperdaten")
             return v
         }
+        k.click(v, "/nutrition", Req.TODAY)
         k.kcal(v, 100f)
         k.proteinText(v)
         k.bar(v, R.id.protein_bar, 170f, 6f, ratio(s.daily("proteinEaten") ?: 0, s.int("proteinTarget", 0)))
@@ -168,11 +169,12 @@ class CaloriesWidget : BaseWidget() {
     override fun render(k: Kit, opts: Bundle): RemoteViews {
         val v = k.views(R.layout.widget_kcal)
         if (k.needsData(v) || k.needsNutrition(v)) return v
-        k.click(v, "/nutrition", Req.CALORIES)
         if (!k.s.has("kcalTarget")) {
-            k.empty(v, "Noch keine Ziele", "Leg in der App deine Ziele fest")
+            k.click(v, "/profile?s=goal", Req.CALORIES)
+            k.empty(v, "Noch keine Ziele", "In der App unter Ziel & Körperdaten")
             return v
         }
+        k.click(v, "/nutrition", Req.CALORIES)
         k.kcal(v, 88f)
         k.proteinText(v)
         return v
@@ -184,13 +186,14 @@ class FastingWidget : BaseWidget() {
     override fun render(k: Kit, opts: Bundle): RemoteViews {
         val v = k.views(R.layout.widget_fasting)
         if (k.needsData(v) || k.needsNutrition(v)) return v
-        k.click(v, "/nutrition", Req.FASTING)
         val f = k.s.obj("fasting")
         val endsAt = f?.optLong("endsAt", 0) ?: 0
         if (f == null || endsAt <= 0) {
-            k.empty(v, "Kein Intervallfasten aktiv", "Starte es in der App unter Ernährung")
+            k.click(v, "/profile?s=goal", Req.FASTING)
+            k.empty(v, "Kein Intervallfasten aktiv", "In der App unter Ziel & Körperdaten")
             return v
         }
+        k.click(v, "/nutrition", Req.FASTING)
         val fasting = f.optString("phase") != "eating"
         val label = f.optString("label").trim().takeIf { it.isNotEmpty() && it != "null" }
         v.setTextViewText(R.id.phase, label ?: if (fasting) "Fastenzeit" else "Essenszeit")

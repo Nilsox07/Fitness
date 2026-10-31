@@ -1,5 +1,31 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_PREFS, mealSplitSum, normalizePrefs } from './userPrefs'
+import { DEFAULT_PREFS, mealSplitSum, modulesSyncAction, normalizePrefs } from './userPrefs'
+
+describe('Cheat-Teilen, Module, gesehene Version', () => {
+  it('Cheat-Meal teilen ist standardmäßig aus', () => {
+    expect(normalizePrefs({}).shareCheat).toBe(false)
+    expect(normalizePrefs({ shareCheat: 'ja' }).shareCheat).toBe(false)
+    expect(normalizePrefs({ shareCheat: true }).shareCheat).toBe(true)
+  })
+  it('Module nur vollständig übernehmen', () => {
+    expect(normalizePrefs({ modules: { nutrition: false, social: true, watch: false } }).modules).toEqual({
+      nutrition: false,
+      social: true,
+      watch: false,
+    })
+    expect(normalizePrefs({ modules: { nutrition: false } }).modules).toBeNull()
+    expect(normalizePrefs({ seenVersion: '2.0' }).seenVersion).toBe('2.0')
+    expect(normalizePrefs({ seenVersion: 2 }).seenVersion).toBeNull()
+  })
+  it('Module abgleichen: neues Gerät übernimmt, sonst schreibt das Gerät', () => {
+    const on = { nutrition: true, social: true, watch: false }
+    const off = { nutrition: false, social: true, watch: false }
+    expect(modulesSyncAction(on, null, false)).toBe('push')
+    expect(modulesSyncAction(on, on, false)).toBe('none')
+    expect(modulesSyncAction(on, off, false)).toBe('adopt')
+    expect(modulesSyncAction(on, off, true)).toBe('push')
+  })
+})
 
 describe('normalizePrefs', () => {
   it('leere Eingaben → Standardwerte', () => {
@@ -25,8 +51,9 @@ describe('normalizePrefs', () => {
       days: ['a', null, null, null, null, null, null],
     })
     expect(
-      normalizePrefs({ schedule: { type: 'rotation', steps: ['a', null], anchor: { stepIndex: 7, date: '2026-10-04' } } })
-        .schedule,
+      normalizePrefs({
+        schedule: { type: 'rotation', steps: ['a', null], anchor: { stepIndex: 7, date: '2026-10-04' } },
+      }).schedule,
     ).toEqual({ type: 'rotation', steps: ['a', null], anchor: { stepIndex: 1, date: '2026-10-04' } })
     expect(normalizePrefs({ schedule: { type: 'flexible', perWeek: 9 } }).schedule).toEqual({
       type: 'flexible',

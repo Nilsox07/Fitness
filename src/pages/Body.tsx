@@ -4,6 +4,7 @@ import { useBodyScans, useDeleteBodyScan, usePhotoUrls } from '../hooks/useBodyS
 import { useBodyWeights } from '../hooks/useBodyWeight'
 import { useNutritionSettings, useUpsertNutritionSettings } from '../hooks/useNutrition'
 import { BodyScanFlow } from '../components/body/BodyScanFlow'
+import { BodyWeightCard } from '../components/BodyWeightCard'
 import { CompareSlider } from '../components/body/CompareSlider'
 import { SectionTitle } from '../components/food-progress/ui'
 import { localDate } from '../lib/day'
@@ -77,7 +78,7 @@ export default function Body() {
     <div className="space-y-5">
       <header>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight">Körper</h1>
-        <p className="text-sm text-cocoa-light">Körperfett & Fortschrittsfotos</p>
+        <p className="text-sm text-cocoa-light">Gewicht, Körperfett & Fotos</p>
       </header>
 
       {!latest && (
@@ -165,6 +166,9 @@ export default function Body() {
           </div>
         </button>
       )}
+
+      {/* Gewicht eintragen – auch ohne Ernährungs-Modul */}
+      <BodyWeightCard />
 
       {comp && (
         <section>

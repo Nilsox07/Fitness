@@ -77,7 +77,9 @@ export function SeasonThemeCard({ style, compact = false }: { style?: CSSPropert
               {theme.badge.label}
             </span>
             <span className="text-bg/60 dark:text-cocoa-light">
-              {earned ? 'Trag es in der Garderobe als Anstecker.' : `Nur im ${month} – ${doneCount}/3 Quests erledigt`}
+              {earned
+                ? 'Trag es als Anstecker – unter Profil → Aussehen.'
+                : `Nur im ${month} – ${doneCount}/3 Quests erledigt`}
             </span>
           </span>
           <Gift size={16} className="shrink-0 text-gold" />

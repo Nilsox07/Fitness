@@ -23,6 +23,9 @@ function getRecognition(): SR | null {
 
 const supported = typeof window !== 'undefined' && Boolean(getRecognition())
 
+/** Spracheingabe verfügbar? (Im Android-WebView meist nicht.) */
+export const speechSupported: boolean = supported
+
 /** Diktier-Button: nimmt deutsche Sprache auf und gibt den Text zurück. */
 export function MicButton({
   onResult,

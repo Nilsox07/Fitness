@@ -9,6 +9,7 @@ import { NutrientList } from '../food/NutrientList'
 import { useCountUp } from '../food/useCountUp'
 import { FriendChip, RecipeCover } from './RecipeCards'
 import { fmtPortions, recipeTotals } from './recipeUtils'
+import { useBackClose } from '../../lib/backStack'
 
 /** Tageskontext für Score und Nährwert-Prozente. */
 export interface RecipeDayContext {
@@ -75,6 +76,7 @@ export function RecipeDetailSheet({
   closeRef.current = onClose
   const busyRef = useRef(saving)
   busyRef.current = saving
+  useBackClose(() => !busyRef.current && closeRef.current())
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
