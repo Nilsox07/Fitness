@@ -75,26 +75,6 @@ export function GroupRow({
   )
 }
 
-/** Wie GroupRow, aber als <label> um ein (verstecktes) Datei-Eingabefeld. */
-export function GroupFileRow({
-  input,
-  ...inner
-}: {
-  icon?: ReactNode
-  title: ReactNode
-  subtitle?: ReactNode
-  right?: ReactNode
-  accent?: boolean
-  input: ReactNode
-}) {
-  return (
-    <label className={`${ROW} cursor-pointer`}>
-      <RowInner {...inner} />
-      {input}
-    </label>
-  )
-}
-
 /** Dezente Fehlermeldung (inline). */
 export function ErrorNote({ error, className = '' }: { error: string | null | undefined; className?: string }) {
   if (!error) return null

@@ -11,12 +11,19 @@ const fmt = (n: number) => n.toLocaleString('de-DE')
 
 type Tone = 'good' | 'ok' | 'neutral'
 const TONE: Record<Tone, string> = {
-  good: 'text-success',
+  good: 'text-good',
   ok: 'text-gold',
   neutral: 'text-cocoa',
 }
 
-function Tile({ icon, label, value, sub, tone = 'neutral', style }: {
+function Tile({
+  icon,
+  label,
+  value,
+  sub,
+  tone = 'neutral',
+  style,
+}: {
   icon: ReactNode
   label: string
   value: string
@@ -68,11 +75,7 @@ function StatTiles({ s, start }: { s: ReviewStats; start: number }) {
         icon={<Flame size={12} />}
         label="Ø Kalorien"
         value={fmt(s.avgKcal)}
-        sub={
-          diff == null
-            ? `${s.daysLogged} Tage erfasst`
-            : `${diff > 0 ? '+' : ''}${fmt(diff)} zum Ziel`
-        }
+        sub={diff == null ? `${s.daysLogged} Tage erfasst` : `${diff > 0 ? '+' : ''}${fmt(diff)} zum Ziel`}
         tone={diff == null ? 'neutral' : Math.abs(diff) <= 150 ? 'good' : 'ok'}
       />,
     )
@@ -104,7 +107,11 @@ function StatTiles({ s, start }: { s: ReviewStats; start: number }) {
   return (
     <div className="grid grid-cols-2 gap-2">
       {tiles.map((t, i) => (
-        <div key={i} style={rise(start + i * 0.5)} className={tiles.length % 2 === 1 && i === tiles.length - 1 ? 'col-span-2' : ''}>
+        <div
+          key={i}
+          style={rise(start + i * 0.5)}
+          className={tiles.length % 2 === 1 && i === tiles.length - 1 ? 'col-span-2' : ''}
+        >
           {t}
         </div>
       ))}
@@ -112,7 +119,17 @@ function StatTiles({ s, start }: { s: ReviewStats; start: number }) {
   )
 }
 
-function TextCard({ icon, title, text, style }: { icon: ReactNode; title: string; text: string; style?: CSSProperties }) {
+function TextCard({
+  icon,
+  title,
+  text,
+  style,
+}: {
+  icon: ReactNode
+  title: string
+  text: string
+  style?: CSSProperties
+}) {
   return (
     <section className="rounded-2xl bg-cream p-4" style={style}>
       <h3 className="mb-1.5 flex items-center gap-2 text-sm font-bold text-cocoa">
@@ -156,23 +173,29 @@ export function WeeklyReviewView({ review }: { review: StoredReview }) {
     <div className="space-y-4">
       <div className="text-center" style={rise(i++)}>
         <h2 className="text-2xl font-bold leading-tight tracking-tight text-cocoa">{d.headline}</h2>
-        {d.summary && <p className="mx-auto mt-1.5 max-w-xs text-[15px] leading-relaxed text-cocoa-light">{d.summary}</p>}
+        {d.summary && (
+          <p className="mx-auto mt-1.5 max-w-xs text-[15px] leading-relaxed text-cocoa-light">{d.summary}</p>
+        )}
       </div>
 
       {s && <StatTiles s={s} start={i++} />}
 
-      {d.training && <TextCard icon={<Dumbbell size={15} />} title="Training" text={d.training} style={rise(i++ + 2)} />}
-      {d.nutrition && <TextCard icon={<Apple size={15} />} title="Ernährung" text={d.nutrition} style={rise(i++ + 2)} />}
+      {d.training && (
+        <TextCard icon={<Dumbbell size={15} />} title="Training" text={d.training} style={rise(i++ + 2)} />
+      )}
+      {d.nutrition && (
+        <TextCard icon={<Apple size={15} />} title="Ernährung" text={d.nutrition} style={rise(i++ + 2)} />
+      )}
 
       {d.wins.length > 0 && (
-        <section className="rounded-2xl bg-success/10 p-4" style={rise(i++ + 2)}>
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-success">
+        <section className="rounded-2xl bg-good/10 p-4" style={rise(i++ + 2)}>
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-good">
             <Trophy size={15} /> Das lief gut
           </h3>
           <ul className="space-y-1.5">
             {d.wins.map((w) => (
               <li key={w} className="flex items-start gap-2 text-sm text-cocoa">
-                <Check size={15} strokeWidth={3} className="mt-0.5 shrink-0 text-success" />
+                <Check size={15} strokeWidth={3} className="mt-0.5 shrink-0 text-good" />
                 {w}
               </li>
             ))}

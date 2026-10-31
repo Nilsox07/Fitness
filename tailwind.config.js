@@ -24,6 +24,7 @@ export default {
         },
         bg: 'rgb(var(--c-bg) / <alpha-value>)',
         success: 'rgb(var(--c-success) / <alpha-value>)',
+        good: 'rgb(var(--c-good) / <alpha-value>)',
         gold: 'rgb(var(--c-gold) / <alpha-value>)',
         brand: {
           DEFAULT: 'rgb(var(--c-ruby) / <alpha-value>)',

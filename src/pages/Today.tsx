@@ -1,5 +1,5 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { GripVertical, LayoutGrid, MinusCircle, PlusCircle, SlidersHorizontal } from 'lucide-react'
 import { TabHeader } from '../components/ui/TabHeader'
 import { PremiumSheet } from '../components/ui/PremiumSheet'
@@ -18,6 +18,7 @@ import {
   type Modules,
   type WidgetId,
 } from '../lib/dashboard'
+import { BuddyTip } from '../components/buddy/BuddyTip'
 
 export function useModules(): Modules {
   const { showNutrition, showSocial, hasWatch } = usePrefs()
@@ -29,7 +30,13 @@ export default function Today() {
   const t = useToday()
   const mods = useModules()
   const { prefs } = useUserPrefs()
-  const [editing, setEditing] = useState(false)
+  const [params, setParams] = useSearchParams()
+  const [editing, setEditing] = useState(() => params.has('edit'))
+  // ?edit=1 (aus der Suche) nur einmal auswerten
+  useEffect(() => {
+    if (params.has('edit')) setParams({}, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const layout = visibleLayout(prefs.dashboard, mods, t.caps)
 
   const dateLabel = new Date(t.day + 'T00:00:00').toLocaleDateString('de-DE', {
@@ -41,6 +48,7 @@ export default function Today() {
   return (
     <div className="space-y-4">
       <TabHeader overline={dateLabel} title="Heute" style={enter(0)} />
+      <BuddyTip page="today" />
       <div className="grid grid-cols-2 gap-3">
         {layout.map((id, i) => (
           <div key={id} className={widgetDef(id).size === 'full' ? 'col-span-2' : ''} style={enter(i + 1)}>

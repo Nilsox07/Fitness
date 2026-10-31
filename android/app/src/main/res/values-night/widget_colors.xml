@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget-Farben (dunkel) -->
+<resources>
+    <color name="widget_card">#0B0F19</color>
+    <color name="widget_stroke">#1FFFFFFF</color>
+    <color name="widget_text">#E5E9F0</color>
+    <color name="widget_text2">#B6BFCD</color>
+    <color name="widget_muted">#94A3B8</color>
+    <color name="widget_sand">#1B2335</color>
+    <color name="widget_success">#22C55E</color>
+    <color name="widget_gold">#F5B83D</color>
+</resources>

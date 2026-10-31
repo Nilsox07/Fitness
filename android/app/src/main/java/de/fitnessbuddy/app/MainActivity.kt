@@ -2,10 +2,12 @@ package de.fitnessbuddy.app
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import com.getcapacitor.BridgeActivity
 import de.fitnessbuddy.app.widgets.AppWidgetsPlugin
+import de.fitnessbuddy.app.widgets.WidgetStore
 
 class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,6 +17,12 @@ class MainActivity : BridgeActivity() {
         registerPlugin(LiveActivityPlugin::class.java)
         super.onCreate(savedInstanceState)
         createChannels()
+    }
+
+    /** Hell/Dunkel gewechselt: Widget-Bitmaps (Akzent-Schein) neu zeichnen. */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        WidgetStore.refreshAll(this)
     }
 
     /** Benachrichtigungs-Kanäle: einzeln in den Android-Einstellungen abschaltbar. */

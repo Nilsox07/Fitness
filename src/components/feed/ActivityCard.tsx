@@ -247,9 +247,7 @@ export function ActivityCard({
           {comments.map((c) => (
             <div key={c.id} className="rounded-xl bg-sand px-3 py-2 text-sm">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-semibold">
-                  {c.user_id === user?.id ? 'Du' : (c.author_name ?? 'Freund')}
-                </span>
+                <span className="font-semibold">{c.user_id === user?.id ? 'Du' : (c.author_name ?? 'Freund')}</span>
                 <span className="shrink-0 text-[11px] text-cocoa-muted">{timeAgo(c.created_at)}</span>
               </div>
               <div className="text-cocoa-light">{c.text}</div>
@@ -276,42 +274,6 @@ export function ActivityCard({
         </div>
       )}
     </li>
-  )
-}
-
-/** Liste von Aktivitäten; lädt Kommentare & Likes gebündelt für alle. */
-export function ActivityList({
-  activities,
-  authorOf,
-}: {
-  activities: Activity[]
-  authorOf: (a: Activity) => AuthorInfo
-}) {
-  const ids = useMemo(() => activities.map((a) => a.id), [activities])
-  const { data: comments } = useComments(ids)
-  const { data: likes } = useLikes(ids)
-
-  const byActivity = useMemo(() => {
-    const c = new Map<string, ActivityComment[]>()
-    const l = new Map<string, ActivityLike[]>()
-    for (const x of comments ?? []) c.set(x.activity_id, [...(c.get(x.activity_id) ?? []), x])
-    for (const x of likes ?? []) l.set(x.activity_id, [...(l.get(x.activity_id) ?? []), x])
-    return { c, l }
-  }, [comments, likes])
-
-  return (
-    <ul className="space-y-3">
-      {activities.map((a, i) => (
-        <ActivityCard
-          key={a.id}
-          style={{ animation: 'fade-in .3s ease-out both', animationDelay: `${Math.min(i, 8) * 45}ms` }}
-          activity={a}
-          author={authorOf(a)}
-          comments={byActivity.c.get(a.id) ?? []}
-          likes={byActivity.l.get(a.id) ?? []}
-        />
-      ))}
-    </ul>
   )
 }
 

@@ -115,7 +115,9 @@ function ClassicBadges() {
                   title={data.level.level >= a.minLevel ? a.label : `Ab Level ${a.minLevel}`}
                 />
                 {data.level.level < a.minLevel && (
-                  <span className="tabular absolute -bottom-1 -right-1 text-[10px] text-cocoa-light">Lv{a.minLevel}</span>
+                  <span className="tabular absolute -bottom-1 -right-1 text-[10px] text-cocoa-light">
+                    Lv{a.minLevel}
+                  </span>
                 )}
               </div>
             ))}
@@ -130,7 +132,10 @@ function ClassicBadges() {
                 }`}
                 title={data.level.level >= s.minLevel ? s.label : `Ab Level ${s.minLevel}`}
               >
-                {s.stages[3]} {data.level.level < s.minLevel && <span className="tabular text-xs text-cocoa-light">Lv{s.minLevel}</span>}
+                {s.stages[3]}{' '}
+                {data.level.level < s.minLevel && (
+                  <span className="tabular text-xs text-cocoa-light">Lv{s.minLevel}</span>
+                )}
               </div>
             ))}
           </div>
@@ -198,12 +203,14 @@ function BuddyPage() {
         {(titleLabel(look.title) || level.prestige > 0) && (
           <div className="mt-1 flex items-center gap-1.5">
             {level.prestige > 0 && (
-              <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-bold text-violet-600 dark:text-violet-400">
+              <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-bold text-brand">
                 {'⭐'.repeat(Math.min(level.prestige, 5))} Prestige {level.prestige}
               </span>
             )}
             {titleLabel(look.title) && (
-              <span className="rounded-full bg-gold/15 px-2 py-0.5 text-xs font-bold text-gold">{titleLabel(look.title)}</span>
+              <span className="rounded-full bg-gold/15 px-2 py-0.5 text-xs font-bold text-gold">
+                {titleLabel(look.title)}
+              </span>
             )}
           </div>
         )}
@@ -227,7 +234,9 @@ function BuddyPage() {
             <span>
               {level.xpInLevel.toLocaleString('de-DE')} / {level.xpForLevel.toLocaleString('de-DE')} XP
             </span>
-            <span>noch {(level.xpForLevel - level.xpInLevel).toLocaleString('de-DE')} bis Lv {level.level + 1}</span>
+            <span>
+              noch {(level.xpForLevel - level.xpInLevel).toLocaleString('de-DE')} bis Lv {level.level + 1}
+            </span>
           </div>
           <p className="mt-2 text-[11px] text-cocoa-muted">
             {showNutrition
@@ -369,7 +378,10 @@ function BuddyPage() {
                   </span>
                   {!done && a.id !== 'prestige1' && (
                     <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-sand-dark/40">
-                      <span className="block h-full rounded-full bg-brand/70" style={{ width: `${(val / a.goal) * 100}%` }} />
+                      <span
+                        className="block h-full rounded-full bg-brand/70"
+                        style={{ width: `${(val / a.goal) * 100}%` }}
+                      />
                     </span>
                   )}
                 </span>
@@ -387,7 +399,7 @@ function BuddyPage() {
       {/* Prestige */}
       {level.level >= PRESTIGE_LEVEL && (
         <section className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg dark:bg-sand-light dark:text-cocoa">
-          <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-violet-500/30 blur-3xl" />
+          <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
           <div className="relative space-y-2">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
               Prestige {level.prestige + 1}
@@ -399,7 +411,10 @@ function BuddyPage() {
             </p>
             {confirmPrestige ? (
               <div className="flex gap-2 pt-1">
-                <button className="btn flex-1 bg-bg/10 text-bg dark:bg-white/5 dark:text-cocoa" onClick={() => setConfirmPrestige(false)}>
+                <button
+                  className="btn flex-1 bg-bg/10 text-bg dark:bg-white/5 dark:text-cocoa"
+                  onClick={() => setConfirmPrestige(false)}
+                >
                   Abbrechen
                 </button>
                 <button className="btn-primary flex-1" onClick={startPrestige}>

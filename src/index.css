@@ -18,8 +18,10 @@
   --c-text: 11 15 25;
   --c-text-muted: 91 100 114;
   --c-text-dim: 138 146 160;
-  /* Zustandsfarben — nur für Bedeutung, nie als Deko */
-  --c-success: 22 163 74;
+  /* „Erledigt“ (abgehakt, Schalter an, Ziel erreicht) folgt der gewählten App-Farbe */
+  --c-success: var(--c-ruby);
+  /* Bewertung „gut“ (Status-Chips, Trend nach oben, Rezept-Score) – bleibt grün */
+  --c-good: 22 163 74;
   --c-gold: 217 119 6;
 }
 
@@ -37,7 +39,8 @@
   --c-text: 229 233 240;
   --c-text-muted: 148 163 184;
   --c-text-dim: 100 116 139;
-  --c-success: 34 197 94;
+  --c-success: var(--c-ruby);
+  --c-good: 34 197 94;
   --c-gold: 245 184 61;
 }
 
@@ -51,7 +54,12 @@ body {
   margin: 0;
   background-color: rgb(var(--c-bg));
   color: rgb(var(--c-text));
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 

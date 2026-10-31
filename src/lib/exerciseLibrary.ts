@@ -39,7 +39,6 @@ interface LibraryFile {
 }
 
 export const LIBRARY_URL = '/exercise-library.json'
-export const IMAGE_BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises/'
 export const LIBRARY_ATTRIBUTION = 'Übungsdaten & Bilder: free-exercise-db (Public Domain)'
 
 const CACHE_NAME = 'exercise-library-v1'
@@ -59,10 +58,6 @@ export const LIBRARY_EQUIPMENT = [
   'Gymnastikball',
   'Sonstiges',
 ] as const
-
-export function imageUrl(path: string): string {
-  return IMAGE_BASE + path
-}
 
 // ---------------------------------------------------------------------------
 // Laden & Cache
@@ -167,9 +162,7 @@ export function searchLibrary(list: LibraryExercise[], f: LibraryFilter = {}): L
     else if (words.every((w) => de.includes(w) || en.includes(w))) score = 2
     out.push({ ex, score })
   }
-  return out
-    .sort((a, b) => a.score - b.score || a.ex.name_de.localeCompare(b.ex.name_de, 'de'))
-    .map((x) => x.ex)
+  return out.sort((a, b) => a.score - b.score || a.ex.name_de.localeCompare(b.ex.name_de, 'de')).map((x) => x.ex)
 }
 
 /** Muskelgruppen in der Reihenfolge von MUSCLE_GROUPS, die in der Liste vorkommen. */
@@ -223,17 +216,6 @@ export function setLink(userExerciseId: string, libraryId: string) {
 export function setLinks(patch: LibraryLinks) {
   try {
     localStorage.setItem(LINKS_KEY, JSON.stringify({ ...getLinks(), ...patch }))
-  } catch {
-    /* ignore */
-  }
-  notifyLinks()
-}
-
-export function removeLink(userExerciseId: string) {
-  try {
-    const links = getLinks()
-    delete links[userExerciseId]
-    localStorage.setItem(LINKS_KEY, JSON.stringify(links))
   } catch {
     /* ignore */
   }
@@ -305,7 +287,7 @@ export function findLibraryMatch(
   list: LibraryExercise[],
   links: LibraryLinks = getLinks(),
 ): LibraryExercise | null {
-  const byId = (id: string | undefined) => (id ? list.find((e) => e.id === id) ?? null : null)
+  const byId = (id: string | undefined) => (id ? (list.find((e) => e.id === id) ?? null) : null)
   const linked = byId(links[exercise.id])
   if (linked) return linked
 
@@ -381,10 +363,38 @@ const EQUIP_CONCEPTS: Record<string, string[]> = {
 }
 
 const STOP = new Set([
-  'mit', 'am', 'an', 'auf', 'der', 'die', 'das', 'den', 'und', 'fur', 'im', 'in', 'zur', 'zum', 'von',
-  'the', 'with', 'on', 'to', 'of', 'and', 'a',
+  'mit',
+  'am',
+  'an',
+  'auf',
+  'der',
+  'die',
+  'das',
+  'den',
+  'und',
+  'fur',
+  'im',
+  'in',
+  'zur',
+  'zum',
+  'von',
+  'the',
+  'with',
+  'on',
+  'to',
+  'of',
+  'and',
+  'a',
   // Equipment zählt separat (sonst wären reine Equipment-Treffer Vorschläge)
-  'langhantel', 'kurzhantel', 'kabelzug', 'kabel', 'maschine', 'barbell', 'dumbbell', 'cable', 'machine',
+  'langhantel',
+  'kurzhantel',
+  'kabelzug',
+  'kabel',
+  'maschine',
+  'barbell',
+  'dumbbell',
+  'cable',
+  'machine',
 ])
 
 function hasTerm(text: string, term: string): boolean {
@@ -457,7 +467,8 @@ export function suggestLinks(
     for (const c of qConcepts) if (f.concepts.has(c)) shared++
     let overlap = 0
     for (const t of qTokens) {
-      if (f.tokens.some((u) => u === t || (t.length >= 5 && u.length >= 5 && (u.includes(t) || t.includes(u))))) overlap++
+      if (f.tokens.some((u) => u === t || (t.length >= 5 && u.length >= 5 && (u.includes(t) || t.includes(u)))))
+        overlap++
     }
     const isDirect = direct?.id === ex.id
     if (!isDirect && shared === 0 && overlap === 0) continue

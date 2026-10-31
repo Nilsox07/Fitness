@@ -5,8 +5,8 @@ import type { SavedRecipe } from '../../types'
 import { coverGradient, recipeIcon } from './recipeUtils'
 
 const TONE_DOT: Record<ScoreTone, string> = {
-  great: 'bg-success',
-  good: 'bg-success/75',
+  great: 'bg-good',
+  good: 'bg-good/75',
   ok: 'bg-gold',
   poor: 'bg-red-500 dark:bg-red-400',
 }

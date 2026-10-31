@@ -59,6 +59,15 @@ einer App, aber nur das sichtbar, was man nutzt.
   und Seiten verschwinden. Flags in `src/lib/prefs.tsx` (`showNutrition`, `showSocial`, `hasWatch`).
 - **Fortschritt-Tab** mit einer Leiste: Kraft · Ausdauer · Schlaf · Herz & Körper · Ernährung · Erfolge
   (Uhr-Bereiche nur mit `hasWatch`).
+- **Navigation wie bei iOS:** globale Suche (Lupe oben in jedem Tab, `components/search/SearchSheet.tsx`,
+  Einträge + Stichwörter in `src/lib/searchIndex.ts`, Module beachten). Profil gruppiert: Ich ·
+  Personalisieren · Buddy · Mitteilungen & Geräte · Konto & Daten. Deep Links für die Suche:
+  `/nutrition?add=photo|search|restaurant|…`, `/today?edit=1`, `/profile?s=appearance|goal|…`.
+- **Buddy begleitet überall:** `BuddyTip` (Karte oben auf Heute, Training, Ernährung, Fortschritt, Community)
+  mit regelbasiertem Tipp aus `src/lib/buddyTips.ts` (getestet), „Frag Buddy“ öffnet den Chat mit passender
+  Frage (`openBuddySheet(frage)`), auf Heute zusätzlich KI-„Tagesbriefing“ (`dailyBriefing` in `ai.ts`, 1×/Tag).
+- **Farben:** `success` = App-Farbe (erledigt, Fortschritt, Schalter). Nur echte Bewertungen („gut“) nutzen
+  das neue Token `good` (grün). Rot nur für Fehler/Löschen, `gold` für Hinweise.
 - **Tiefe Auswertung** (alles, was Health Connect liefert, `HealthBridgePlugin.kt`): Aktivität im Detail
   `/cardio/:id` (Puls-Verlauf mit Zonen, Zeit in Zonen, Pace, Höhenprofil, Kilometer-Zeiten, Belastung/TRIMP,
   Erholungszeit), jede Nacht mit Schlafphasen-Verlauf, Score und Körperwerten (Puls, HRV, SpO₂, Atmung,
@@ -70,8 +79,11 @@ einer App, aber nur das sichtbar, was man nutzt.
 - **Android-App** (`android/`, Capacitor 8, Paket `de.fitnessbuddy.app`):
   - `HealthBridgePlugin.kt` – Health Connect lesen (Aktivitäten mit Strecke, Schlafphasen, Schritte,
     Ruhepuls, HRV, VO2max); Abgleich beim Start und bei Rückkehr in die App (`useHealthSync`)
-  - Homescreen-Widgets (`widgets/`): „Ernährung heute“ mit +250-ml-Knopf (bucht ohne App-Öffnen, wird beim
-    nächsten Start übernommen), „Training“ (nächstes Training, Serie), „Tagesform“ (Uhr)
+  - 11 Homescreen-Widgets (`widgets/`, Zeichnen in `WidgetArt.kt`, Basis in `WidgetKit.kt`, Liste in
+    `WidgetStore.ALL`): Buddy (Bild + Sprechblase + Level), Ernährung heute, Wasser (1×1/2×1, +250 ml bucht ohne
+    App-Öffnen), Kalorien, Training, Tagesform, Schritte, Schlaf, Fasten (Live-Countdown), Quests, Supplemente.
+    Alle in der gewählten App-Farbe (`accent`/`accentLight`/`onAccent` im Snapshot) und hell/dunkel; ohne Modul
+    bzw. Uhr zeigen sie einen Hinweis. Den Buddy rendert `NativeSync` als PNG (`setBuddyImage`).
   - `LiveActivityPlugin.kt` – laufende Benachrichtigung mit Countdown auf dem Sperrbildschirm
     (Satzpause automatisch, Fasten optional unter Bereiche); Android 16 hebt sie als Live-Update hervor
   - „Pause vorbei“-Benachrichtigung, Deep Links `fitnessbuddy://open/<pfad>`, Zurück-Taste

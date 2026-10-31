@@ -8,7 +8,7 @@ import { PlanPickerSheet, lastDoneLabel } from './PlanPicker'
 import { BuddyLine, HeroWithBuddy, type HeroBuddyData } from './HeroBuddy'
 
 const DOT: Record<RecoveryLevel, string> = {
-  fresh: 'bg-success',
+  fresh: 'bg-good',
   almost: 'bg-gold',
   tired: 'bg-brand/60',
 }
@@ -51,9 +51,7 @@ export function NextWorkoutCard({
   const exList = (p: PlanWithExercises) =>
     p.exercise_ids.map((id) => exById.get(id)).filter((e): e is Exercise => Boolean(e))
 
-  const errorLine = error && (
-    <p className="text-sm text-red-500 dark:text-red-400">⚠️ {error.message}</p>
-  )
+  const errorLine = error && <p className="text-sm text-red-500 dark:text-red-400">⚠️ {error.message}</p>
 
   // ---- Noch keine Pläne ----
   if (!suggested) {
@@ -73,8 +71,8 @@ export function NextWorkoutCard({
             </p>
             <h2 className="relative mt-1 text-2xl font-bold tracking-tight">Leg deinen ersten Plan an</h2>
             <p className="relative mt-1 text-sm text-bg/70 dark:text-cocoa-light">
-              Mit einem Plan startest du jedes Training mit einem Tipp — Reihenfolge, Gewichte und Sätze
-              stehen schon bereit.
+              Mit einem Plan startest du jedes Training mit einem Tipp — Reihenfolge, Gewichte und Sätze stehen schon
+              bereit.
             </p>
             <button
               className="btn-primary relative mt-4 w-full gap-2 py-3.5 text-base"

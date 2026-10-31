@@ -1,9 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import {
-  useNutritionSettings,
-  useUpsertNutritionSettings,
-  type NutritionSettingsInput,
-} from '../hooks/useNutrition'
+import { useNutritionSettings, useUpsertNutritionSettings, type NutritionSettingsInput } from '../hooks/useNutrition'
 import {
   ACTIVITY_LABEL,
   GOAL_LABEL,
@@ -64,15 +60,7 @@ const EMPTY: NutritionSettingsInput = {
   water_target_ml: 2500,
 }
 
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: ReactNode
-}) {
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
@@ -116,9 +104,7 @@ function DietSection({ diet, onChange }: { diet: DietStyle; onChange: (d: DietSt
             </Chip>
           ))}
         </div>
-        <p className="mt-1 text-xs text-cocoa-light">
-          Score &amp; KI achten darauf (z. B. Hinweis „Nicht vegan").
-        </p>
+        <p className="mt-1 text-xs text-cocoa-light">Score &amp; KI achten darauf (z. B. Hinweis „Nicht vegan").</p>
       </div>
       <div>
         <label className="label">Intervallfasten</label>
@@ -155,7 +141,7 @@ function DietSection({ diet, onChange }: { diet: DietStyle; onChange: (d: DietSt
 function Delta({ show, value }: { show: boolean; value: number }) {
   if (!show || value === 0) return null
   return (
-    <span className={`tabular text-[11px] font-semibold ${value > 0 ? 'text-success' : 'text-gold'}`}>
+    <span className={`tabular text-[11px] font-semibold ${value > 0 ? 'text-good' : 'text-gold'}`}>
       {value > 0 ? '+' : '−'}
       {Math.abs(value)}
     </span>
@@ -221,7 +207,9 @@ function TargetHero({
             </div>
           ))}
         </div>
-        <p className="mt-2.5 text-[11px] text-bg/50 dark:text-cocoa-muted">Rechnet live mit, während du unten etwas änderst.</p>
+        <p className="mt-2.5 text-[11px] text-bg/50 dark:text-cocoa-muted">
+          Rechnet live mit, während du unten etwas änderst.
+        </p>
       </div>
     </div>
   )
@@ -236,13 +224,7 @@ function FieldError({ msg }: { msg: string | null }) {
  * Berechnet die Makros automatisch je nach Ziel (Abnehmen/Halten/Aufbauen/Recomp)
  * und speichert sie. Wird im Profil (inline) und im Ernährungs-Setup (Modal) genutzt.
  */
-export function GoalEditor({
-  onSaved,
-  onCancel,
-}: {
-  onSaved?: () => void
-  onCancel?: () => void
-}) {
+export function GoalEditor({ onSaved, onCancel }: { onSaved?: () => void; onCancel?: () => void }) {
   const { data: settings } = useNutritionSettings()
   const upsert = useUpsertNutritionSettings()
   const [form, setForm] = useState<NutritionSettingsInput>(EMPTY)
@@ -285,9 +267,7 @@ export function GoalEditor({
   // Plausibilitätsprüfung (DB: Alter 10–100, Größe/Gewicht > 0, Trinkziel ≥ 0).
   const fieldError = {
     age:
-      !Number.isFinite(form.age) || form.age < 10 || form.age > 100
-        ? 'Alter bitte zwischen 10 und 100 Jahren.'
-        : null,
+      !Number.isFinite(form.age) || form.age < 10 || form.age > 100 ? 'Alter bitte zwischen 10 und 100 Jahren.' : null,
     height_cm:
       !Number.isFinite(form.height_cm) || form.height_cm < 100 || form.height_cm > 250
         ? 'Größe bitte zwischen 100 und 250 cm.'
@@ -324,7 +304,8 @@ export function GoalEditor({
       onSaved?.()
     } catch (e) {
       setError(
-        'Speichern fehlgeschlagen' + (e instanceof Error && e.message ? `: ${e.message}` : '.') +
+        'Speichern fehlgeschlagen' +
+          (e instanceof Error && e.message ? `: ${e.message}` : '.') +
           ' Bitte nochmal versuchen.',
       )
     }
@@ -332,7 +313,12 @@ export function GoalEditor({
 
   if (isNew) {
     const bodyErrors = [fieldError.age, fieldError.height_cm, fieldError.weight_kg].filter(Boolean) as string[]
-    const numRow = (key: 'age' | 'height_cm' | 'weight_kg', label: string, unit: string, mode: 'numeric' | 'decimal') => (
+    const numRow = (
+      key: 'age' | 'height_cm' | 'weight_kg',
+      label: string,
+      unit: string,
+      mode: 'numeric' | 'decimal',
+    ) => (
       <label className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2" htmlFor={`goal-${key}`}>
         <span className="flex-1 text-[15px] font-semibold">{label}</span>
         <input
@@ -427,12 +413,19 @@ export function GoalEditor({
         </Group>
 
         <Group title="Ernährung" footer="Tippe auf eine Zeile – bei jeder Option steht, was dahinter steckt.">
-          <Row icon={Salad} label="Ernährungsweise" value={DIET_MACRO_LABEL[diet.macro]} onClick={() => setSheet('macro')} />
+          <Row
+            icon={Salad}
+            label="Ernährungsweise"
+            value={DIET_MACRO_LABEL[diet.macro]}
+            onClick={() => setSheet('macro')}
+          />
           <Row
             icon={Leaf}
             tint="success"
             label="Einschränkungen"
-            value={diet.restrictions.length ? diet.restrictions.map((r) => DIET_RESTRICTION_LABEL[r]).join(', ') : 'Keine'}
+            value={
+              diet.restrictions.length ? diet.restrictions.map((r) => DIET_RESTRICTION_LABEL[r]).join(', ') : 'Keine'
+            }
             onClick={() => setSheet('restrict')}
           />
           <Row
@@ -479,7 +472,11 @@ export function GoalEditor({
               <Minus size={16} />
             </button>
             <span className="tabular w-[4.5rem] text-center text-base font-semibold">
-              {(form.water_target_ml / 1000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} l
+              {(form.water_target_ml / 1000).toLocaleString('de-DE', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 2,
+              })}{' '}
+              l
             </span>
             <button
               type="button"
@@ -527,7 +524,11 @@ export function GoalEditor({
         {sheet === 'restrict' && <RestrictionSheet diet={diet} onChange={setDiet} onClose={() => setSheet(null)} />}
         {sheet === 'fasting' && <FastingSheet diet={diet} onChange={setDiet} onClose={() => setSheet(null)} />}
         {sheet === 'avoid' && (
-          <PremiumSheet title="Das esse ich nicht" subtitle="Allergien, Unverträglichkeiten, Abneigungen" onClose={() => setSheet(null)}>
+          <PremiumSheet
+            title="Das esse ich nicht"
+            subtitle="Allergien, Unverträglichkeiten, Abneigungen"
+            onClose={() => setSheet(null)}
+          >
             <textarea
               className="input rounded-2xl text-base"
               rows={4}
@@ -553,11 +554,7 @@ export function GoalEditor({
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="label">Geschlecht</label>
-          <select
-            className="input"
-            value={form.sex}
-            onChange={(e) => setForm({ ...form, sex: e.target.value as Sex })}
-          >
+          <select className="input" value={form.sex} onChange={(e) => setForm({ ...form, sex: e.target.value as Sex })}>
             <option value="m">männlich</option>
             <option value="f">weiblich</option>
           </select>
@@ -664,8 +661,7 @@ export function GoalEditor({
           onChange={(e) => setAvoid(e.target.value)}
         />
         <p className="mt-1 text-xs text-cocoa-light">
-          Die KI meidet diese Zutaten bei Rezepten, Essensplan, Einkaufsliste &amp;
-          Restaurant-Vorschlägen.
+          Die KI meidet diese Zutaten bei Rezepten, Essensplan, Einkaufsliste &amp; Restaurant-Vorschlägen.
         </p>
       </div>
 
@@ -692,9 +688,7 @@ export function GoalEditor({
                 <div className="tabular text-base font-bold text-cocoa">{t[k]}</div>
                 <div className="text-[11px] text-cocoa-light">{label}</div>
                 {showDelta && delta !== 0 && (
-                  <div
-                    className={`tabular text-[11px] font-semibold ${delta > 0 ? 'text-success' : 'text-gold'}`}
-                  >
+                  <div className={`tabular text-[11px] font-semibold ${delta > 0 ? 'text-good' : 'text-gold'}`}>
                     {delta > 0 ? '+' : '−'}
                     {Math.abs(delta)}
                   </div>

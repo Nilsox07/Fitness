@@ -43,14 +43,8 @@ export const TILE = 'btn gap-1.5 bg-sand text-cocoa'
 export function Group({ title, children, footer }: { title?: string; children: ReactNode; footer?: ReactNode }) {
   return (
     <section className="space-y-1.5">
-      {title && (
-        <h2 className="px-4 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
-          {title}
-        </h2>
-      )}
-      <div className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
-        {children}
-      </div>
+      {title && <h2 className="px-4 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">{title}</h2>}
+      <div className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">{children}</div>
       {footer && <p className="px-4 text-xs leading-relaxed text-cocoa-muted">{footer}</p>}
     </section>
   )
@@ -61,10 +55,10 @@ export type RowTint = 'brand' | 'success' | 'gold' | 'sky' | 'violet' | 'neutral
 
 const TINT: Record<RowTint, string> = {
   brand: 'bg-brand/10 text-brand',
-  success: 'bg-success/15 text-success',
-  gold: 'bg-gold/15 text-gold',
-  sky: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
-  violet: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+  success: 'bg-brand/10 text-brand',
+  gold: 'bg-brand/10 text-brand',
+  sky: 'bg-brand/10 text-brand',
+  violet: 'bg-brand/10 text-brand',
   neutral: 'bg-sand text-cocoa-light',
 }
 
@@ -112,16 +106,14 @@ export function Row({
         ))}
       <div className="min-w-0 flex-1">
         <div
-          className={`truncate text-[15px] font-semibold ${danger ? 'text-red-500 dark:text-red-400' : 'text-cocoa'}`}
+          className={`text-[15px] font-semibold leading-snug ${danger ? 'text-red-500 dark:text-red-400' : 'text-cocoa'}`}
         >
           {label}
         </div>
         {hint && <div className="text-xs leading-snug text-cocoa-light">{hint}</div>}
       </div>
       {value != null && value !== '' && (
-        <span className="tabular min-w-0 max-w-[50%] truncate text-right text-sm text-cocoa-light">
-          {value}
-        </span>
+        <span className="tabular min-w-0 max-w-[38%] truncate text-right text-sm text-cocoa-light">{value}</span>
       )}
       {trailing}
       {onClick && !danger && <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />}
@@ -129,11 +121,7 @@ export function Row({
   )
   const cls = 'flex min-h-[3.5rem] w-full items-center gap-3 px-4 py-2.5 text-left'
   return onClick ? (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`${cls} transition-colors duration-150 active:bg-sand-light`}
-    >
+    <button type="button" onClick={onClick} className={`${cls} transition-colors duration-150 active:bg-sand-light`}>
       {inner}
     </button>
   ) : (

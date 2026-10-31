@@ -1,66 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/root"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/widget_bg"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:padding="14dp">
+<!-- Tagesform (2×2): Ring mit Wert, Tipp, Schlaf & Schritte -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    style="@style/WidgetFb.Card">
 
-    <FrameLayout
-        android:layout_width="64dp"
-        android:layout_height="64dp">
+    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
 
-        <ProgressBar
-            android:id="@+id/ring"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:max="100"
-            android:progressDrawable="@drawable/widget_ring" />
-
-        <TextView
-            android:id="@+id/score"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-    </FrameLayout>
+    <include
+        android:id="@+id/empty"
+        layout="@layout/widget_empty"
+        android:visibility="gone" />
 
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:id="@+id/content"
+        style="@style/WidgetFb.Content">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="TAGESFORM"
-            android:textColor="#80FFFFFF"
-            android:textSize="10sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/advice"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:maxLines="2"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/details"
+            <FrameLayout
+                android:layout_width="54dp"
+                android:layout_height="54dp">
+
+                <ImageView android:id="@+id/ring" style="@style/WidgetFb.Ring" />
+
+                <TextView
+                    android:id="@+id/score"
+                    style="@style/WidgetFb.Number"
+                    android:layout_gravity="center"
+                    android:text="78"
+                    android:textSize="18sp" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/overline"
+                    style="@style/WidgetFb.Overline"
+                    android:letterSpacing="0.08"
+                    android:text="Tagesform" />
+
+                <TextView
+                    android:id="@+id/advice"
+                    style="@style/WidgetFb.Title"
+                    android:layout_marginTop="2dp"
+                    android:text="Gib heute Gas"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <FrameLayout style="@style/WidgetFb.Fill" />
+
+        <LinearLayout
+            android:id="@+id/stat1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:maxLines="1"
-            android:textColor="#B3FFFFFF"
-            android:textSize="11sp" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/stat1_label"
+                style="@style/WidgetFb.Body"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="Schlaf" />
+
+            <TextView
+                android:id="@+id/stat1_value"
+                style="@style/WidgetFb.Value"
+                android:text="7:20 h" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/stat2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/stat2_label"
+                style="@style/WidgetFb.Body"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="Schritte" />
+
+            <TextView
+                android:id="@+id/stat2_value"
+                style="@style/WidgetFb.Value"
+                android:text="8.432" />
+        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</FrameLayout>

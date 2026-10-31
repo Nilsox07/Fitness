@@ -15,9 +15,7 @@ import { Buddy } from './Buddy'
 
 function todayLocal(): string {
   const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 function currentMeal(): Meal {
   const h = new Date().getHours()
@@ -32,7 +30,8 @@ export interface BuddyChatState {
   input: string
   setInput: (v: string | ((v: string) => string)) => void
   busy: boolean
-  send: () => Promise<void>
+  /** sendet die Eingabe – oder direkt einen Text (z. B. „Frag Buddy“ von einer Seite) */
+  send: (text?: string) => Promise<void>
   suggestions: string[]
   inputRef: RefObject<HTMLInputElement>
   endRef: RefObject<HTMLDivElement>
@@ -135,8 +134,8 @@ export function useBuddyChat(onNavigate?: () => void): BuddyChatState {
     }
   }
 
-  async function send() {
-    const text = input.trim()
+  async function send(direct?: string) {
+    const text = (direct ?? input).trim()
     if (!text || busy) return
     const next: ChatMsg[] = [...messages, { role: 'user', content: text }]
     setMessages(next)
@@ -148,17 +147,14 @@ export function useBuddyChat(onNavigate?: () => void): BuddyChatState {
       if (res.action.type === 'log_food' && !showNutrition) {
         // Ernährungstracking ist aus → nichts loggen (auch wenn die KI es vorschlägt).
         content =
-          'Ernährungstracking ist ausgeschaltet – ich habe nichts geloggt. Du kannst es im Profil unter „Ernährungstracking" einschalten.'
+          'Ernährungstracking ist ausgeschaltet – ich habe nichts geloggt. Du kannst es im Profil unter „Bereiche“ einschalten.'
       } else {
         const note = await runAction(res.action)
         content = note ? `${res.reply}\n\n✅ ${note}` : res.reply
       }
       setMessages((m) => [...m, { role: 'assistant', content }])
     } catch (e) {
-      setMessages((m) => [
-        ...m,
-        { role: 'assistant', content: `⚠️ ${e instanceof Error ? e.message : 'Fehler'}` },
-      ])
+      setMessages((m) => [...m, { role: 'assistant', content: `⚠️ ${e instanceof Error ? e.message : 'Fehler'}` }])
     } finally {
       setBusy(false)
     }
@@ -175,15 +171,7 @@ export function useBuddyChat(onNavigate?: () => void): BuddyChatState {
 }
 
 /** Nachrichtenverlauf (Blasen + Tipp-Anzeige). */
-export function BuddyChatMessages({
-  chat,
-  stage,
-  skin,
-}: {
-  chat: BuddyChatState
-  stage: number
-  skin: string
-}) {
+export function BuddyChatMessages({ chat, stage, skin }: { chat: BuddyChatState; stage: number; skin: string }) {
   return (
     <>
       {chat.messages.map((m, i) =>
@@ -205,9 +193,7 @@ export function BuddyChatMessages({
             />
             <div
               className={`max-w-[80%] whitespace-pre-wrap break-words rounded-3xl rounded-bl-lg px-4 py-2.5 text-[15px] leading-snug ${
-                m.content.startsWith('⚠️')
-                  ? 'bg-red-500/10 text-red-600 dark:text-red-400'
-                  : 'bg-cream text-cocoa'
+                m.content.startsWith('⚠️') ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-cream text-cocoa'
               }`}
             >
               {m.content}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ab Android 12: Inhalt sauber an den runden Ecken abschneiden -->
+<resources>
+    <style name="WidgetFb.Card">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:background">@drawable/widget_card</item>
+        <item name="android:clipToOutline">true</item>
+    </style>
+</resources>

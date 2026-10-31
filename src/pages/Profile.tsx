@@ -22,6 +22,11 @@ import {
   LayoutGrid,
   ClipboardList,
   SlidersHorizontal,
+  Search,
+  CalendarDays,
+  LayoutDashboard,
+  Smile,
+  Watch,
 } from 'lucide-react'
 import { signOut } from '../lib/userData'
 import { useAuth } from '../lib/auth'
@@ -40,15 +45,7 @@ import { localDate } from '../lib/day'
 import { setSoundEnabled, soundEnabled } from '../lib/sound'
 import { useFitbitStatus, useFitbitSync } from '../hooks/useFitbit'
 import { connectFitbit, type FitbitSync } from '../lib/fitbit'
-import {
-  ACCENTS,
-  SKINS,
-  applyAccent,
-  getAccentId,
-  getSkinId,
-  setAccentId,
-  setSkinId,
-} from '../lib/cosmetics'
+import { ACCENTS, SKINS, applyAccent, getAccentId, getSkinId, setAccentId, setSkinId } from '../lib/cosmetics'
 import { GoalEditor } from '../components/GoalEditor'
 import { getStoredReview } from '../lib/weeklyReview'
 import { WeeklyReviewView } from '../components/review/WeeklyReviewView'
@@ -62,13 +59,15 @@ import { useMyProfile } from '../hooks/useSocial'
 import { SettingsEditor } from '../components/profile/SettingsEditor'
 import { NotificationSettings } from '../components/profile/NotificationSettings'
 import { ModuleSettings } from '../components/profile/ModuleSettings'
+import { openSearch } from '../components/search/SearchSheet'
+import { openBuddySheet } from '../components/buddy/BuddySheet'
 
 /**
  * Unterseiten des Profils (neue Version), per ?s=… in der URL → Zurück-Geste funktioniert.
  * Der Trainingsrhythmus liegt jetzt bei den Plänen (/plans?rhythm=1); alte Links
  * auf ?s=rhythm werden dorthin umgeleitet.
  */
-type Sub = 'settings' | 'goal' | 'review' | 'version' | 'coach' | 'push' | 'export' | 'modules'
+type Sub = 'settings' | 'goal' | 'review' | 'version' | 'coach' | 'push' | 'export' | 'modules' | 'appearance'
 
 const SUB_TITLE: Record<Sub, string> = {
   settings: 'Meine Einstellungen',
@@ -79,6 +78,7 @@ const SUB_TITLE: Record<Sub, string> = {
   push: 'Benachrichtigungen',
   export: 'Daten exportieren',
   modules: 'Bereiche',
+  appearance: 'Darstellung',
 }
 
 const SUB_SUBTITLE: Record<Sub, string> = {
@@ -90,6 +90,7 @@ const SUB_SUBTITLE: Record<Sub, string> = {
   push: 'Erinnerungen einzeln einstellen',
   export: 'CSV-Download',
   modules: 'Ein- und ausblenden, Uhr verbinden',
+  appearance: 'Hell, Dunkel, Farbe & Ton',
 }
 
 const MODES: { v: ThemeMode; label: string }[] = [
@@ -104,7 +105,7 @@ export default function Profile() {
   const { data: myProfile } = useMyProfile()
   const [nameOpen, setNameOpen] = useState(false)
   const { mode, setMode } = useTheme()
-  const { showNutrition, setShowNutrition, appMode, setAppMode, isNew } = usePrefs()
+  const { showNutrition, setShowNutrition, appMode, setAppMode, isNew, showSocial, hasWatch } = usePrefs()
   const { data: ai } = useAiStatus()
   const { data: allSets } = useAllSets()
   const { data: exercises } = useExercises()
@@ -203,13 +204,12 @@ export default function Profile() {
     push: pushSupported,
     export: true,
     modules: true,
+    appearance: true,
     // Fitbit ist in der neuen App ausgeblendet (Code bleibt für die klassische Version).
   }
   const rawSub = params.get('s') as Sub | null
   const sub: Sub | null =
-    rawSub && Object.prototype.hasOwnProperty.call(SUB_TITLE, rawSub) && available[rawSub]
-      ? rawSub
-      : null
+    rawSub && Object.prototype.hasOwnProperty.call(SUB_TITLE, rawSub) && available[rawSub] ? rawSub : null
 
   // Alte Links (/profile?s=rhythm) → Trainingsrhythmus bei den Plänen
   const legacyRhythm = isNew && rawSub === ('rhythm' as string)
@@ -231,6 +231,9 @@ export default function Profile() {
     else navigate('/')
   }
 
+  const currentAccent = ACCENTS.find((a) => a.id === accent)
+  const currentSkin = SKINS.find((x) => x.id === skin)
+
   if (isNew) {
     if (legacyRhythm) return null
     if (sub) {
@@ -249,15 +252,55 @@ export default function Profile() {
 
           {sub === 'modules' && <ModuleSettings />}
 
+          {sub === 'appearance' && (
+            <>
+              <SubCard>
+                <p className="text-xs text-cocoa-light">Hell, dunkel oder wie dein Handy.</p>
+                <div className={`${SEG_TRACK} grid-cols-3`}>
+                  {MODES.map((m) => (
+                    <button
+                      key={m.v}
+                      type="button"
+                      onClick={() => setMode(m.v)}
+                      aria-pressed={mode === m.v}
+                      className={segBtn(mode === m.v)}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </SubCard>
+              <Group>
+                <Row
+                  icon={Palette}
+                  label="App-Farbe & Buddy-Aussehen"
+                  value={[currentAccent?.label, currentSkin?.label].filter(Boolean).join(' · ')}
+                  onClick={() => navigate('/badges')}
+                />
+                <Row
+                  icon={Volume2}
+                  label="Sound-Effekte"
+                  hint="Töne bei Level-up und Quests"
+                  trailing={
+                    <Toggle
+                      label="Sound-Effekte"
+                      checked={sound}
+                      onChange={(v) => {
+                        setSound(v)
+                        setSoundEnabled(v)
+                      }}
+                    />
+                  }
+                />
+              </Group>
+            </>
+          )}
+
           {sub === 'review' && (
             <SubCard>
               {(() => {
                 const r = getStoredReview()
-                return r ? (
-                  <WeeklyReviewView review={r} />
-                ) : (
-                  <p className="text-xs text-cocoa-light">{reviewHint}</p>
-                )
+                return r ? <WeeklyReviewView review={r} /> : <p className="text-xs text-cocoa-light">{reviewHint}</p>
               })()}
             </SubCard>
           )}
@@ -265,8 +308,8 @@ export default function Profile() {
           {sub === 'version' && (
             <SubCard>
               <p className="text-xs text-cocoa-light">
-                Wechsle jederzeit zwischen der schlanken, gewohnten Basis und der neuen Version mit
-                allen Features. Deine Daten bleiben in beiden gleich.
+                Wechsle jederzeit zwischen der schlanken, gewohnten Basis und der neuen Version mit allen Features.
+                Deine Daten bleiben in beiden gleich.
               </p>
               <div className={`${SEG_TRACK} grid-cols-2`}>
                 <button
@@ -351,9 +394,6 @@ export default function Profile() {
           settings.kcal_target ? ` · ${settings.kcal_target.toLocaleString('de-DE')} kcal` : ''
         }`
       : undefined
-    const currentAccent = ACCENTS.find((a) => a.id === accent)
-    const currentSkin = SKINS.find((s) => s.id === skin)
-
     return (
       <div className="space-y-5">
         <header>
@@ -369,79 +409,76 @@ export default function Profile() {
           onOpen={() => navigate('/badges')}
         />
 
-        <Group title="Training">
-          <Row icon={SlidersHorizontal} tint="neutral" label="Meine Einstellungen" onClick={() => openSub('settings')} />
+        <button
+          onClick={openSearch}
+          className="flex w-full items-center gap-2 rounded-2xl bg-sand px-3.5 py-2.5 text-left text-[15px] text-cocoa-muted"
+        >
+          <Search size={18} /> Suchen
+        </button>
+
+        <Group title="Ich">
+          {showNutrition && (
+            <Row icon={Target} label="Ziel & Körperdaten" value={goalValue} onClick={() => openSub('goal')} />
+          )}
+          <Row icon={CalendarDays} label="Trainingsrhythmus" onClick={() => navigate('/plans?rhythm=1')} />
+          <Row
+            icon={SlidersHorizontal}
+            label="Meine Einstellungen"
+            hint="Kalorien-Bonus, Mahlzeiten, Tageswechsel"
+            onClick={() => openSub('settings')}
+          />
         </Group>
 
-        <Group title="Ziele">
-          {showNutrition && (
-            <Row
-              icon={Target} tint="success"
-              label="Ziel & Körperdaten"
-              value={goalValue}
-              onClick={() => openSub('goal')}
-            />
+        <Group title="Personalisieren">
+          <Row
+            icon={LayoutGrid}
+            label="Bereiche"
+            hint="Ernährung, Community & Smartwatch"
+            onClick={() => openSub('modules')}
+          />
+          <Row
+            icon={LayoutDashboard}
+            label="Heute anpassen"
+            hint="Widgets auswählen & sortieren"
+            onClick={() => navigate('/today?edit=1')}
+          />
+          <Row
+            icon={Moon}
+            label="Darstellung"
+            value={MODES.find((m) => m.v === mode)?.label}
+            onClick={() => openSub('appearance')}
+          />
+          <Row
+            icon={Palette}
+            label="Farbe & Buddy"
+            value={[currentAccent?.label, currentSkin?.label].filter(Boolean).join(' · ')}
+            onClick={() => navigate('/badges')}
+          />
+        </Group>
+
+        <Group title="Buddy">
+          {ai?.enabled && (
+            <Row icon={MessageSquare} label="Buddy fragen" hint="Dein KI-Coach" onClick={() => openBuddySheet()} />
+          )}
+          {ai?.enabled && (
+            <Row icon={Smile} label="Buddy-Ton" value={COACH_TONE_LABEL[tone]} onClick={() => openSub('coach')} />
           )}
           <Row
-            icon={ClipboardList} tint="sky"
+            icon={ClipboardList}
             label="Wochenfazit"
             value={review ? review.weekId.replace(/^\d{4}-W/, 'KW ') : undefined}
             onClick={() => openSub('review')}
           />
         </Group>
 
-        <Group title="App">
-          <Row
-            icon={Layers} tint="violet"
-            label="App-Version"
-            value={appMode === 'new' ? 'Neu' : 'Klassisch'}
-            onClick={() => openSub('version')}
-          />
-          <Row
-            icon={Moon} tint="neutral"
-            label="Darstellung"
-            trailing={
-              <div className="flex shrink-0 gap-1 rounded-full bg-sand p-1">
-                {MODES.map((m) => (
-                  <button
-                    key={m.v}
-                    type="button"
-                    onClick={() => setMode(m.v)}
-                    aria-pressed={mode === m.v}
-                    className={`${segBtn(mode === m.v, 'text-xs')} px-2.5`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-            }
-          />
-          <Row
-            icon={LayoutGrid} tint="success"
-            label="Bereiche"
-            hint="Ernährung, Community & Smartwatch ein- oder ausblenden"
-            onClick={() => openSub('modules')}
-          />
-          <Row
-            icon={Volume2} tint="sky"
-            label="Sound-Effekte"
-            hint="Töne bei Level-up und Quests."
-            trailing={
-              <Toggle
-                label="Sound-Effekte"
-                checked={sound}
-                onChange={(v) => {
-                  setSound(v)
-                  setSoundEnabled(v)
-                }}
-              />
-            }
-          />
-          {showNutrition && (
+        <Group title="Mitteilungen & Geräte">
+          {pushSupported && <Row icon={Bell} label="Benachrichtigungen" onClick={() => openSub('push')} />}
+          <Row icon={Watch} label="Smartwatch" value={hasWatch ? 'An' : 'Aus'} onClick={() => openSub('modules')} />
+          {showNutrition && showSocial && (
             <Row
-              icon={Flame} tint="brand"
+              icon={Flame}
               label="Cheat-Meal-Alarm"
-              hint="Freunde sehen, wenn du dir was richtig Ungesundes gönnst (die KI entscheidet)."
+              hint="Freunde sehen, wenn du dir was richtig Ungesundes gönnst"
               trailing={
                 <Toggle
                   label="Cheat-Meal-Alarm"
@@ -454,39 +491,28 @@ export default function Profile() {
               }
             />
           )}
-          {ai?.enabled && (
-            <Row
-              icon={MessageSquare} tint="violet"
-              label="Buddy-Ton"
-              value={COACH_TONE_LABEL[tone]}
-              onClick={() => openSub('coach')}
-            />
-          )}
-          {pushSupported && (
-            <Row icon={Bell} tint="gold" label="Benachrichtigungen" onClick={() => openSub('push')} />
-          )}
-          <Row
-            icon={Palette} tint="gold"
-            label="Freischaltungen"
-            value={[currentAccent?.label, currentSkin && `Buddy ${currentSkin.label}`].filter(Boolean).join(' · ')}
-            onClick={() => navigate('/badges')}
-          />
         </Group>
 
-        <Group title="Konto">
-          <Row icon={PenLine} tint="neutral" label="Name" value={myProfile?.display_name || '—'} onClick={() => setNameOpen(true)} />
-          <Row icon={User} tint="neutral" label="Angemeldet als" value={user?.email ?? '—'} />
+        <Group title="Konto & Daten">
+          <Row
+            icon={PenLine}
+            tint="neutral"
+            label="Name"
+            value={myProfile?.display_name || '—'}
+            onClick={() => setNameOpen(true)}
+          />
+          <Row icon={User} tint="neutral" label="E-Mail" value={user?.email ?? '—'} />
           <Row icon={Download} tint="neutral" label="Daten exportieren" value="CSV" onClick={() => openSub('export')} />
           <Row
-            icon={LogOut}
-            label="Abmelden"
-            danger
-            onClick={() => void signOut()}
+            icon={Layers}
+            tint="neutral"
+            label="App-Version"
+            value={appMode === 'new' ? 'Neu' : 'Klassisch'}
+            onClick={() => openSub('version')}
           />
+          <Row icon={LogOut} label="Abmelden" danger onClick={() => void signOut()} />
         </Group>
-        {nameOpen && (
-          <NameSheet current={myProfile?.display_name ?? ''} onClose={() => setNameOpen(false)} />
-        )}
+        {nameOpen && <NameSheet current={myProfile?.display_name ?? ''} onClose={() => setNameOpen(false)} />}
       </div>
     )
   }
@@ -512,8 +538,8 @@ export default function Profile() {
       <div className="card space-y-2">
         <div className="label">App-Version</div>
         <p className="text-xs text-cocoa-light">
-          Wechsle jederzeit zwischen der schlanken, gewohnten Basis und der neuen Version mit
-          allen Features. Deine Daten bleiben in beiden gleich.
+          Wechsle jederzeit zwischen der schlanken, gewohnten Basis und der neuen Version mit allen Features. Deine
+          Daten bleiben in beiden gleich.
         </p>
         <div className={`${SEG_TRACK} grid-cols-2`}>
           <button
@@ -569,11 +595,7 @@ export default function Profile() {
           <div className="label">Wochenfazit</div>
           {(() => {
             const r = getStoredReview()
-            return r ? (
-              <WeeklyReviewView review={r} />
-            ) : (
-              <p className="text-xs text-cocoa-light">{reviewHint}</p>
-            )
+            return r ? <WeeklyReviewView review={r} /> : <p className="text-xs text-cocoa-light">{reviewHint}</p>
           })()}
         </div>
       )}
@@ -610,9 +632,7 @@ export default function Profile() {
       <div className="card flex items-center justify-between gap-3">
         <div>
           <div className="font-medium">Ernährungstracking</div>
-          <div className="text-xs text-cocoa-light">
-            Zeigt den „Essen"-Tab und die Ernährungs-Auswertung.
-          </div>
+          <div className="text-xs text-cocoa-light">Zeigt den „Essen"-Tab und die Ernährungs-Auswertung.</div>
         </div>
         <Toggle checked={showNutrition} onChange={setShowNutrition} />
       </div>
@@ -652,56 +672,56 @@ export default function Profile() {
       )}
 
       {isNew && (
-      <div className="card space-y-3">
-        <div className="label">Freischaltbares (Level {level})</div>
-        <div>
-          <div className="mb-1 text-xs text-cocoa-light">Akzentfarbe</div>
-          <div className="flex flex-wrap gap-2">
-            {ACCENTS.map((a) => {
-              const locked = level < a.minLevel
-              return (
-                <button
-                  key={a.id}
-                  onClick={() => chooseAccent(a.id, a.minLevel)}
-                  disabled={locked}
-                  title={locked ? `Ab Level ${a.minLevel}` : a.label}
-                  className={`relative h-9 w-9 rounded-full ring-2 ${
-                    accent === a.id ? 'ring-cocoa' : 'ring-transparent'
-                  } ${locked ? 'opacity-40' : ''}`}
-                  style={{ background: a.swatch }}
-                >
-                  {locked && (
-                    <span className="absolute inset-0 grid place-items-center text-white">
-                      <Lock size={14} />
-                    </span>
-                  )}
-                </button>
-              )
-            })}
+        <div className="card space-y-3">
+          <div className="label">Freischaltbares (Level {level})</div>
+          <div>
+            <div className="mb-1 text-xs text-cocoa-light">Akzentfarbe</div>
+            <div className="flex flex-wrap gap-2">
+              {ACCENTS.map((a) => {
+                const locked = level < a.minLevel
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => chooseAccent(a.id, a.minLevel)}
+                    disabled={locked}
+                    title={locked ? `Ab Level ${a.minLevel}` : a.label}
+                    className={`relative h-9 w-9 rounded-full ring-2 ${
+                      accent === a.id ? 'ring-cocoa' : 'ring-transparent'
+                    } ${locked ? 'opacity-40' : ''}`}
+                    style={{ background: a.swatch }}
+                  >
+                    {locked && (
+                      <span className="absolute inset-0 grid place-items-center text-white">
+                        <Lock size={14} />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-cocoa-light">Maskottchen-Skin</div>
+            <div className="flex flex-wrap gap-2">
+              {SKINS.map((s) => {
+                const locked = level < s.minLevel
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => chooseSkin(s.id, s.minLevel)}
+                    disabled={locked}
+                    title={locked ? `Ab Level ${s.minLevel}` : s.label}
+                    className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-lg transition-colors duration-200 ${
+                      skin === s.id ? 'bg-sand-light ring-2 ring-cocoa dark:bg-sand-dark' : 'bg-sand'
+                    } ${locked ? 'opacity-40' : ''}`}
+                  >
+                    {s.stages[3]} {locked && <Lock size={14} className="text-cocoa-light" />}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
-        <div>
-          <div className="mb-1 text-xs text-cocoa-light">Maskottchen-Skin</div>
-          <div className="flex flex-wrap gap-2">
-            {SKINS.map((s) => {
-              const locked = level < s.minLevel
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => chooseSkin(s.id, s.minLevel)}
-                  disabled={locked}
-                  title={locked ? `Ab Level ${s.minLevel}` : s.label}
-                  className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-lg transition-colors duration-200 ${
-                    skin === s.id ? 'bg-sand-light ring-2 ring-cocoa dark:bg-sand-dark' : 'bg-sand'
-                  } ${locked ? 'opacity-40' : ''}`}
-                >
-                  {s.stages[3]} {locked && <Lock size={14} className="text-cocoa-light" />}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
       )}
 
       {isNew && ai?.enabled && (
@@ -726,15 +746,12 @@ export default function Profile() {
         </div>
       )}
 
-
       {pushSupported && (
         <div className="card space-y-2">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="font-medium">Trainings-Erinnerungen</div>
-              <div className="text-xs text-cocoa-light">
-                Push, wenn du ein paar Tage nicht im Gym warst.
-              </div>
+              <div className="text-xs text-cocoa-light">Push, wenn du ein paar Tage nicht im Gym warst.</div>
             </div>
             <button className="btn-primary gap-1.5 text-sm" onClick={activatePush} disabled={pushBusy}>
               {pushBusy ? (
@@ -780,9 +797,7 @@ export default function Profile() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="font-medium">Fitbit</div>
-              <div className="text-xs text-cocoa-light">
-                Gewicht, Schritte & Ruhepuls importieren.
-              </div>
+              <div className="text-xs text-cocoa-light">Gewicht, Schritte & Ruhepuls importieren.</div>
             </div>
             {fitbit.connected ? (
               <button className="btn-primary text-sm" onClick={syncFitbit} disabled={fitbitSync.isPending}>

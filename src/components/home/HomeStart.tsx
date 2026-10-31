@@ -34,6 +34,7 @@ import { ToolTiles } from './ToolTiles'
 import { CustomizeHome } from './CustomizeHome'
 import { useHomeCards } from '../../lib/homeCards'
 import { ClipboardList, Dumbbell, Timer } from 'lucide-react'
+import { BuddyTip } from '../buddy/BuddyTip'
 
 const SKIP_MUSCLES = new Set<MuscleGroup>(['Sonstige', 'Ganzkörper'])
 
@@ -146,6 +147,7 @@ export function HomeStart({
     <div className="space-y-4">
       <HomeHeader name={profile?.display_name ?? null} dateLabel={dateLabel} streak={streak} />
       <WeekStrip today={today} trainedDates={trainedDates} goal={rhythm.goal} planned={planned} index={++i} />
+      <BuddyTip page="training" />
       <QuestStrip area="training" style={enter(++i)} />
       {showPrompt && <RhythmPrompt index={++i} />}
       {plans === undefined ? (

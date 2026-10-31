@@ -1,10 +1,16 @@
 package de.fitnessbuddy.app.widgets
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.util.Base64
 import org.json.JSONObject
+import java.io.File
 import java.time.LocalDate
 
 /**
@@ -16,6 +22,24 @@ object WidgetStore {
     private const val PREFS = "widgets"
     private const val KEY_SNAPSHOT = "snapshot"
     private const val KEY_PENDING = "pending_water"
+
+    /** Alle Widget-Klassen – neue Widgets hier eintragen. */
+    val ALL: List<Class<out BaseWidget>> = listOf(
+        BuddyWidget::class.java,
+        TodayWidget::class.java,
+        WaterWidget::class.java,
+        CaloriesWidget::class.java,
+        TrainingWidget::class.java,
+        ReadinessWidget::class.java,
+        StepsWidget::class.java,
+        SleepWidget::class.java,
+        FastingWidget::class.java,
+        QuestsWidget::class.java,
+        SupplementsWidget::class.java,
+    )
+
+    /** Tageswerte, die nach Mitternacht nicht mehr gelten. */
+    internal val DAILY = listOf("kcalEaten", "proteinEaten", "waterMl", "steps", "questsDone", "supplementsDone")
 
     fun snapshot(ctx: Context): JSONObject =
         runCatching { JSONObject(prefs(ctx).getString(KEY_SNAPSHOT, "{}") ?: "{}") }.getOrDefault(JSONObject())
@@ -31,6 +55,11 @@ object WidgetStore {
         val pending = pending(ctx)
         pending.put(today, pending.optInt(today, 0) + ml)
         val snap = snapshot(ctx)
+        // Stand von gestern? Dann beginnt der Tag bei null.
+        if (!Snap.isToday(snap.optLong("updatedAt", 0))) {
+            for (k in DAILY) if (snap.has(k)) snap.put(k, 0)
+            snap.put("updatedAt", System.currentTimeMillis())
+        }
         snap.put("waterMl", snap.optInt("waterMl", 0) + ml)
         prefs(ctx).edit()
             .putString(KEY_PENDING, pending.toString())
@@ -46,6 +75,28 @@ object WidgetStore {
         return p
     }
 
+    /** Buddy-Bild (Base64-PNG) speichern; leer = löschen. false, wenn kein gültiges Bild. */
+    fun saveBuddy(ctx: Context, base64: String): Boolean {
+        val file = File(ctx.filesDir, WidgetArt.BUDDY_FILE)
+        if (base64.isBlank()) {
+            file.delete()
+            refreshAll(ctx)
+            return true
+        }
+        val bytes = runCatching { Base64.decode(base64.substringAfter("base64,"), Base64.DEFAULT) }.getOrNull() ?: return false
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || bounds.outWidth > 2048 || bounds.outHeight > 2048) return false
+        val tmp = File(ctx.filesDir, WidgetArt.BUDDY_FILE + ".tmp")
+        tmp.writeBytes(bytes)
+        if (!tmp.renameTo(file)) {
+            file.writeBytes(bytes)
+            tmp.delete()
+        }
+        refreshAll(ctx)
+        return true
+    }
+
     private fun pending(ctx: Context): JSONObject =
         runCatching { JSONObject(prefs(ctx).getString(KEY_PENDING, "{}") ?: "{}") }.getOrDefault(JSONObject())
 
@@ -53,7 +104,7 @@ object WidgetStore {
 
     fun refreshAll(ctx: Context) {
         val mgr = AppWidgetManager.getInstance(ctx)
-        for (cls in listOf(TodayWidget::class.java, TrainingWidget::class.java, ReadinessWidget::class.java)) {
+        for (cls in ALL) {
             val ids = mgr.getAppWidgetIds(ComponentName(ctx, cls))
             if (ids.isEmpty()) continue
             ctx.sendBroadcast(
@@ -64,4 +115,23 @@ object WidgetStore {
             )
         }
     }
+
+    /** Widgets zu einem Zeitpunkt neu zeichnen (z. B. Fastenende). Ungenau reicht, braucht keine Sonderrechte. */
+    fun scheduleRefresh(ctx: Context, atMillis: Long) {
+        val am = ctx.getSystemService(AlarmManager::class.java) ?: return
+        val pi = PendingIntent.getBroadcast(
+            ctx,
+            REQ_REFRESH,
+            Intent(ctx, WidgetRefreshReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        am.set(AlarmManager.RTC, atMillis, pi)
+    }
+
+    private const val REQ_REFRESH = 90
+}
+
+/** Weckt die Widgets zum geplanten Zeitpunkt. */
+class WidgetRefreshReceiver : BroadcastReceiver() {
+    override fun onReceive(ctx: Context, intent: Intent) = WidgetStore.refreshAll(ctx)
 }

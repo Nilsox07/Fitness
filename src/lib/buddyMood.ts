@@ -3,8 +3,6 @@
 
 export type BuddyMood = 'happy' | 'proud' | 'cheer' | 'sleepy' | 'sad' | 'hungry' | 'tired' | 'focus'
 
-export const BUDDY_MOODS: BuddyMood[] = ['happy', 'proud', 'cheer', 'sleepy', 'sad', 'hungry', 'tired', 'focus']
-
 export interface BuddyInput {
   /** Tage seit dem letzten Training; null = noch nie trainiert */
   daysSinceLastWorkout?: number | null

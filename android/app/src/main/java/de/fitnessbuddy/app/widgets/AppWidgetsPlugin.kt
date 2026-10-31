@@ -7,7 +7,7 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 
-/** JS ↔ Widgets: Zahlen aktualisieren, im Widget getipptes Wasser abholen. */
+/** JS ↔ Widgets: Zahlen aktualisieren, Buddy-Bild setzen, im Widget getipptes Wasser abholen. */
 @CapacitorPlugin(name = "AppWidgets")
 class AppWidgetsPlugin : Plugin() {
     @PluginMethod
@@ -15,6 +15,14 @@ class AppWidgetsPlugin : Plugin() {
         val json = call.getString("snapshot") ?: return call.reject("snapshot fehlt")
         WidgetStore.saveSnapshot(context, json)
         call.resolve()
+    }
+
+    /** Gerendertes Maskottchen als Base64-PNG (ohne data:-Präfix), leer = entfernen. */
+    @PluginMethod
+    fun setBuddyImage(call: PluginCall) {
+        val png = call.getString("png") ?: return call.reject("png fehlt")
+        // Plugin-Aufrufe laufen schon im Hintergrund-Thread von Capacitor
+        if (WidgetStore.saveBuddy(context, png)) call.resolve() else call.reject("Bild ungültig")
     }
 
     @PluginMethod

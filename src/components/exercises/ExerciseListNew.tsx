@@ -94,8 +94,8 @@ export function ExerciseListNew({
               {trend.length >= 2 && (
                 <Sparkline
                   values={trend}
-                  strokeClass={up ? 'stroke-success' : 'stroke-cocoa-muted'}
-                  fillClass={up ? 'fill-success' : 'fill-cocoa-muted'}
+                  strokeClass={up ? 'stroke-good' : 'stroke-cocoa-muted'}
+                  fillClass={up ? 'fill-good' : 'fill-cocoa-muted'}
                 />
               )}
               <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />
@@ -117,7 +117,9 @@ export function ExerciseEmpty({ onAdd }: { onAdd: () => void }) {
       </div>
       <div>
         <h2 className="font-semibold">Noch keine Übungen</h2>
-        <p className="mt-1 text-sm text-cocoa-light">Leg deine erste Übung an — danach siehst du hier deinen Verlauf.</p>
+        <p className="mt-1 text-sm text-cocoa-light">
+          Leg deine erste Übung an — danach siehst du hier deinen Verlauf.
+        </p>
       </div>
       <button className="btn-primary gap-1.5" onClick={onAdd}>
         <Plus size={16} strokeWidth={2.5} /> Übung anlegen

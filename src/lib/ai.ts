@@ -164,14 +164,14 @@ function coachSystem(): string {
   )
 }
 
-/** Klartext-Wochenfazit aus der kompakten Trainings-Zusammenfassung. */
-export async function weeklyTrainingReview(summary: unknown): Promise<string> {
+/** Buddy-Tagesbriefing: 2–3 Sätze, was heute wichtig ist (Tagesform, Training, Ernährung). */
+export async function dailyBriefing(context: unknown): Promise<string> {
   const prompt =
-    `Trainingsdaten (JSON):\n${JSON.stringify(summary)}\n\n` +
-    'Gib ein ehrliches, motivierendes Wochen-Fazit (max. ~120 Wörter): Was lief gut, ' +
-    'wo ist eine Schieflage oder zu wenig Volumen (nutze status "low"/"high"), und was ' +
-    'sollte diese oder nächste Woche priorisiert werden? 2–4 umsetzbare Empfehlungen.'
-  return complete({ system: coachSystem(), prompt, temperature: 0.5 })
+    `Mein heutiger Stand (JSON):\n${JSON.stringify(context)}\n\n` +
+    'Gib mir ein kurzes Tagesbriefing in 2–3 Sätzen (max. 45 Wörter): Was ist heute am wichtigsten ' +
+    '(Training, Erholung, Ernährung)? Konkret, freundlich, per „du“, höchstens ein Emoji. Kein Markdown.'
+  const text = await complete({ system: coachSystem(), prompt, temperature: 0.6, maxTokens: 300 })
+  return text.trim().replace(/\*\*/g, '')
 }
 
 /** Kurzer, auf das heutige Training bezogener Motivations-/Hype-Spruch. */
@@ -182,26 +182,6 @@ export async function hypeLine(context: unknown): Promise<string> {
     'der sich auf die heutige Leistung bezieht. Gym-Bro-Ton, gern mit Emoji. Nur den Spruch.'
   const text = await complete({ system: coachSystem(), prompt, temperature: 0.9 })
   return text.trim().replace(/^["']|["']$/g, '')
-}
-
-/** Persönlicher „Wrapped"-Rückblick über die gesamte Trainingshistorie. */
-export async function wrappedRecap(summary: unknown): Promise<string> {
-  const prompt =
-    `Trainingsdaten (JSON):\n${JSON.stringify(summary)}\n\n` +
-    'Schreib einen kurzen, unterhaltsamen "Wrapped"-Rückblick (max. ~140 Wörter) über die ' +
-    'bisherige Trainingsreise: Highlights, Lieblingsübung, größte Fortschritte, eine witzige ' +
-    'Zahl. Feiere den Nutzer. Nutze ein paar Emojis und kurze Absätze.'
-  return complete({ system: coachSystem(), prompt, temperature: 0.8 })
-}
-
-/** Kurzes Ernährungs-Wochenfazit aus den letzten Tagen. */
-export async function nutritionReview(summary: unknown): Promise<string> {
-  const prompt =
-    `Ernährungsdaten (JSON):\n${JSON.stringify(summary)}\n\n` +
-    'Gib ein kurzes, konkretes Wochenfazit zur Ernährung (max. ~100 Wörter): Kalorien- und ' +
-    'Eiweißtreue, Auffälligkeiten, 2–3 konkrete Tipps. Bezieh die Gewichtsentwicklung mit ein, ' +
-    'falls vorhanden.'
-  return complete({ system: coachSystem(), prompt, temperature: 0.5 })
 }
 
 /** Gesamt-Wochenfazit (Training + Ernährung zusammen) — läuft automatisch montags. */
@@ -217,29 +197,6 @@ export interface WeeklyReviewInput {
     target: { kcal: number; protein: number } | null
   } | null
   bodyweight: { start: number; current: number } | null
-}
-
-export async function combinedWeeklyReview(input: WeeklyReviewInput): Promise<string> {
-  if (!input.nutrition) {
-    const prompt =
-      `Wochendaten (JSON) für ${input.weekLabel}:\n${JSON.stringify(input)}\n\n` +
-      'Schreib ein Wochenfazit NUR über das Training (max. ~120 Wörter) — erwähne Ernährung, ' +
-      'Kalorien oder Eiweiß nicht. Struktur:\n' +
-      '1) 🏋️ Training: Sessions, Volumen, Rekorde, Auffälligkeiten.\n' +
-      '2) 🎯 Fokus nächste Woche: 2–3 konkrete, umsetzbare Empfehlungen.\n' +
-      'Ehrlich aber motivierend, per „du". Nutze ein paar Emojis.'
-    return complete({ system: coachSystem(), prompt, temperature: 0.5 })
-  }
-  const prompt =
-    `Wochendaten (JSON) für ${input.weekLabel}:\n${JSON.stringify(input)}\n\n` +
-    'Schreib EIN gemeinsames Wochenfazit über Training UND Ernährung (max. ~150 Wörter), ' +
-    'abgestimmt auf das Ziel des Nutzers (goalLabel — z. B. Abnehmen, Aufbauen, Body ' +
-    'Recomposition). Struktur mit kurzen Absätzen:\n' +
-    '1) 🏋️ Training: Sessions, Volumen, Auffälligkeiten.\n' +
-    '2) 🍎 Ernährung: Kalorien-/Eiweißtreue zum Ziel, Gewichtstrend.\n' +
-    '3) 🎯 Fokus nächste Woche: 2–3 konkrete, umsetzbare Empfehlungen.\n' +
-    'Ehrlich aber motivierend, per „du". Nutze ein paar Emojis.'
-  return complete({ system: coachSystem(), prompt, temperature: 0.5 })
 }
 
 /** Strukturiertes Wochenfazit (JSON) – die Zahlen zeigt die App selbst, die KI liefert Worte. */
@@ -310,9 +267,7 @@ export interface AssistantReply {
 }
 
 export async function assistant(history: ChatMsg[], context: unknown): Promise<AssistantReply> {
-  const convo = history
-    .map((m) => `${m.role === 'user' ? 'Nutzer' : 'Assistent'}: ${m.content}`)
-    .join('\n')
+  const convo = history.map((m) => `${m.role === 'user' ? 'Nutzer' : 'Assistent'}: ${m.content}`).join('\n')
   const system =
     'Du bist der In-App-Assistent einer Fitness-App. Du beantwortest Fragen kompakt auf ' +
     'Deutsch UND kannst genau EINE Aktion auslösen. Antworte ausschließlich mit JSON ' +
@@ -355,7 +310,10 @@ export async function assistant(history: ChatMsg[], context: unknown): Promise<A
       draft: {
         name: String(d.name ?? 'Übung').slice(0, 60),
         muscle_group: primary,
-        secondary_muscles: (d.secondary_muscles ?? []).filter(valid).filter((g) => g !== primary).slice(0, 3),
+        secondary_muscles: (d.secondary_muscles ?? [])
+          .filter(valid)
+          .filter((g) => g !== primary)
+          .slice(0, 3),
         unilateral: Boolean(d.unilateral),
         weight_steps: typeof d.weight_steps === 'string' && d.weight_steps.trim() ? d.weight_steps.trim() : null,
         target_rep_min: Math.max(1, Math.round(Number(d.target_rep_min ?? 8)) || 8),
@@ -513,7 +471,8 @@ export async function recipeFromPost(post: SharedPost | null, pastedText = ''): 
     'Übernimm Zutaten, Mengen und Schritte so originalgetreu wie möglich. Fehlen Zutaten oder Mengen ' +
     '(z. B. „Rezept im Video"), ergänze ein typisches Rezept für genau dieses Gericht und setze "guessed": true. ' +
     'Antworte ausschließlich mit JSON.'
-  const useful = (post?.caption.trim().length ?? 0) > 15 || !!post?.recipe || !!post?.image || pastedText.trim().length > 15
+  const useful =
+    (post?.caption.trim().length ?? 0) > 15 || !!post?.recipe || !!post?.image || pastedText.trim().length > 15
   if (!useful) {
     throw new Error(
       post?.source === 'Instagram'
@@ -589,9 +548,7 @@ export async function recipeFromScreenshot(image: string): Promise<ImportedRecip
 
 /** Coach-Chat: beantwortet die letzte Nutzerfrage mit Datenkontext. */
 export async function coachChat(history: ChatMsg[], context: unknown): Promise<string> {
-  const convo = history
-    .map((m) => `${m.role === 'user' ? 'Nutzer' : 'Coach'}: ${m.content}`)
-    .join('\n')
+  const convo = history.map((m) => `${m.role === 'user' ? 'Nutzer' : 'Coach'}: ${m.content}`).join('\n')
   const prompt =
     `Trainingsdaten (JSON):\n${JSON.stringify(context)}\n\n` +
     `Gespräch bisher:\n${convo}\n\nAntworte als Coach auf die letzte Nutzer-Nachricht.`
@@ -936,36 +893,6 @@ export async function menuFromPhoto(
 // Feature: Einkaufsassistent (Wochen-Einkaufsliste)
 // ---------------------------------------------------------------------------
 
-export interface ShoppingCategory {
-  category: string
-  items: string[]
-}
-
-export async function shoppingList(
-  days: number,
-  targets: { kcal: number; protein: number },
-  wish: string,
-): Promise<{ note: string; categories: ShoppingCategory[] }> {
-  const system =
-    'Du bist Ernährungsberater. Erstelle eine praktische Einkaufsliste für den genannten Zeitraum, ' +
-    'passend zu den Tageszielen. Gruppiere nach Kategorie und gib grobe Mengen an. ' +
-    'Antworte ausschließlich mit JSON.'
-  const prompt =
-    `Zeitraum: ${days} Tage. Tagesziel: ~${targets.kcal} kcal, ~${targets.protein} g Eiweiß. ` +
-    `Wunsch/Präferenzen: "${wish || 'ausgewogen, proteinreich'}".\n` +
-    'Format: {"note":"kurzer Hinweis","categories":[{"category":"z. B. Obst & Gemüse","items":["500 g Hähnchen", "..."]}]}. ' +
-    'Realistische Mengen für den Zeitraum, deutsch.' +
-    prefClause()
-  const text = await complete({ system, prompt, json: true, temperature: 0.5 })
-  const raw = parseJson<{ note?: string; categories?: Partial<ShoppingCategory>[] }>(text)
-  return {
-    note: String(raw.note ?? ''),
-    categories: (raw.categories ?? [])
-      .map((c) => ({ category: String(c.category ?? 'Sonstiges'), items: (c.items ?? []).map(String) }))
-      .filter((c) => c.items.length),
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Feature: Ganzer Ernährungsplan (mehrtägig) inkl. Einkaufsliste
 // ---------------------------------------------------------------------------
@@ -1000,9 +927,7 @@ export async function generateWeeklyPlan(input: {
     'Feste Routinen MUSST du an JEDEM Tag exakt so einplanen (Feld routine=true). ' +
     'Antworte ausschließlich mit JSON.'
   const routineText = input.routines.length
-    ? input.routines
-        .map((r) => `- ${r.meal}: ${r.title} (~${r.kcal} kcal, ${r.protein} g Eiweiß)`)
-        .join('\n')
+    ? input.routines.map((r) => `- ${r.meal}: ${r.title} (~${r.kcal} kcal, ${r.protein} g Eiweiß)`).join('\n')
     : '(keine)'
   const prompt =
     `Tage: ${input.days}. Tagesziel: ~${input.targets.kcal} kcal, ~${input.targets.protein} g Eiweiß.\n` +
@@ -1191,7 +1116,10 @@ export async function parseNewExercise(text: string): Promise<ExerciseDraft> {
   return {
     name: String(r.name ?? text).slice(0, 60),
     muscle_group: primary,
-    secondary_muscles: (r.secondary_muscles ?? []).filter(valid).filter((g) => g !== primary).slice(0, 3),
+    secondary_muscles: (r.secondary_muscles ?? [])
+      .filter(valid)
+      .filter((g) => g !== primary)
+      .slice(0, 3),
     unilateral: Boolean(r.unilateral),
     weight_steps: steps || null,
     target_rep_min: min,
@@ -1238,15 +1166,16 @@ function normalizeDraft(d: Partial<ExerciseDraft>): ExerciseDraft {
   return {
     name: String(d.name ?? 'Übung').slice(0, 60),
     muscle_group: primary,
-    secondary_muscles: (d.secondary_muscles ?? []).filter(valid).filter((g) => g !== primary).slice(0, 3),
+    secondary_muscles: (d.secondary_muscles ?? [])
+      .filter(valid)
+      .filter((g) => g !== primary)
+      .slice(0, 3),
     unilateral: Boolean(d.unilateral),
     weight_steps: steps || null,
     target_rep_min: min,
     target_rep_max: max,
     increment: Number(d.increment) > 0 ? Number(d.increment) : 2.5,
-    ...(typeof d.device === 'string' && d.device.trim()
-      ? { device: d.device.trim().slice(0, 60) }
-      : {}),
+    ...(typeof d.device === 'string' && d.device.trim() ? { device: d.device.trim().slice(0, 60) } : {}),
   }
 }
 

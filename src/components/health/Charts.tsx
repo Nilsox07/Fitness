@@ -198,7 +198,7 @@ export function Hypnogram({ stages, start }: { stages: readonly [number, number,
 }
 
 const STATUS_CLS: Record<FactorStatus, string> = {
-  gut: 'bg-success/15 text-success',
+  gut: 'bg-good/15 text-good',
   normal: 'bg-sand text-cocoa-light',
   schwach: 'bg-gold/20 text-cocoa',
 }

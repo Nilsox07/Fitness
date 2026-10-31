@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wasser kompakt (1×1): Glas, Menge – Tippen trägt 250 ml ein -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    style="@style/WidgetFb.Card"
+    android:contentDescription="250 ml Wasser eintragen">
+
+    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
+
+    <include
+        android:id="@+id/empty"
+        layout="@layout/widget_empty"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/content"
+        style="@style/WidgetFb.Content"
+        android:gravity="center"
+        android:padding="6dp">
+
+        <ImageView
+            android:id="@+id/glass"
+            android:layout_width="22dp"
+            android:layout_height="28dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:src="@drawable/widget_glass_preview" />
+
+        <TextView
+            android:id="@+id/amount"
+            style="@style/WidgetFb.Value"
+            android:layout_marginTop="3dp"
+            android:includeFontPadding="false"
+            android:text="1,25 l" />
+
+        <TextView
+            android:id="@+id/add_hint"
+            style="@style/WidgetFb.Muted"
+            android:includeFontPadding="false"
+            android:text="+250"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</FrameLayout>

@@ -271,7 +271,7 @@ export function RecipeDetailSheet({
                     <span
                       key={h.text}
                       className={`anim-fade inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                        h.kind === 'good' ? 'bg-success/10 text-success' : 'bg-gold/15 text-gold'
+                        h.kind === 'good' ? 'bg-good/10 text-good' : 'bg-gold/15 text-gold'
                       }`}
                     >
                       {h.kind === 'good' ? <Check size={13} strokeWidth={2.75} /> : <TriangleAlert size={13} />}

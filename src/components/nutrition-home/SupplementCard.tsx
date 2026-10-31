@@ -23,7 +23,7 @@ export function SupplementCard({ date, style }: { date: string; style?: CSSPrope
     <section className="card space-y-3" style={style}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400">
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-sand text-cocoa-light">
             <Pill size={16} />
           </span>
           <h2 className="font-semibold">Supplemente</h2>
@@ -112,7 +112,7 @@ function ManageSheet({ list, onClose }: { list: Supplement[]; onClose: () => voi
       title={draft ? (draft.id ? 'Supplement bearbeiten' : 'Neues Supplement') : 'Supplemente'}
       subtitle={draft ? undefined : 'Was, wie viel und wann'}
       leading={
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-sand text-cocoa-light">
           <Pill size={18} />
         </span>
       }

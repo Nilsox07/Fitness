@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type CSSProperties, type ReactNode } from 'react'
-import { BUDDY_MOODS, type BuddyMood } from '../../lib/buddyMood'
+import type { BuddyMood } from '../../lib/buddyMood'
 
 // Buddy — runde Begleiter-Figur (reines Inline-SVG, viewBox 0 0 120 120).
 // Körperfarbe folgt der Akzentfarbe (CSS-Variablen --c-ruby*), Pupillen sind immer dunkel.
@@ -780,21 +780,5 @@ export function Buddy({
         </g>
       </g>
     </svg>
-  )
-}
-
-/** Entwickler-Übersicht: alle Stimmungen × Stufen (wird nirgends eingebunden). */
-export function BuddyGallery({ skin = 'classic' }: { skin?: string }) {
-  return (
-    <div className="grid grid-cols-6 gap-2">
-      {BUDDY_MOODS.flatMap((m) =>
-        [0, 1, 2, 3, 4, 5].map((st) => (
-          <div key={`${m}${st}`} className="flex flex-col items-center text-[10px] text-cocoa-muted">
-            <Buddy size={56} mood={m} stage={st} skin={skin} />
-            {m} · {st}
-          </div>
-        )),
-      )}
-    </div>
   )
 }

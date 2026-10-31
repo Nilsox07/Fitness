@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Schritte (2×2): Ring gegen das Tagesziel -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    style="@style/WidgetFb.Card">
+
+    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
+
+    <include
+        android:id="@+id/empty"
+        layout="@layout/widget_empty"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/content"
+        style="@style/WidgetFb.Content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView android:id="@+id/dot" style="@style/WidgetFb.Dot" />
+
+            <TextView
+                android:id="@+id/overline"
+                style="@style/WidgetFb.Overline"
+                android:text="Schritte" />
+        </LinearLayout>
+
+        <FrameLayout
+            style="@style/WidgetFb.Fill"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp">
+
+            <FrameLayout
+                android:layout_width="88dp"
+                android:layout_height="88dp"
+                android:layout_gravity="center">
+
+                <ImageView android:id="@+id/ring" style="@style/WidgetFb.Ring" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/steps"
+                        style="@style/WidgetFb.Number"
+                        android:text="6.432"
+                        android:textSize="19sp" />
+
+                    <TextView
+                        android:id="@+id/goal"
+                        style="@style/WidgetFb.Muted"
+                        android:layout_marginTop="1dp"
+                        android:text="von 8.000"
+                        android:textSize="10sp" />
+                </LinearLayout>
+            </FrameLayout>
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/hint"
+            style="@style/WidgetFb.Muted"
+            android:layout_width="match_parent"
+            android:gravity="center"
+            android:text="Noch 1.568 bis zum Ziel" />
+    </LinearLayout>
+</FrameLayout>

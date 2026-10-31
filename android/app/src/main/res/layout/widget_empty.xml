@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hinweis statt Inhalt (Modul aus, keine Uhr, noch keine Daten) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/widget_pad">
+
+    <TextView
+        android:id="@+id/empty_title"
+        style="@style/WidgetFb.Title"
+        android:gravity="center"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/empty_hint"
+        style="@style/WidgetFb.Muted"
+        android:layout_width="match_parent"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:maxLines="2" />
+</LinearLayout>

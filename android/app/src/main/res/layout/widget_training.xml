@@ -1,52 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/root"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/widget_bg"
-    android:gravity="center_vertical"
-    android:orientation="vertical"
-    android:padding="14dp">
+<!-- Training (2×2): nächstes Training, Serie, Wochenziel als Punkte -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    style="@style/WidgetFb.Card">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="TRAINING HEUTE"
-        android:textColor="#80FFFFFF"
-        android:textSize="10sp"
-        android:textStyle="bold" />
+    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
 
-    <TextView
-        android:id="@+id/next"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+    <include
+        android:id="@+id/empty"
+        layout="@layout/widget_empty"
+        android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/streak"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:textColor="#FFFFFF"
-        android:textSize="13sp" />
+    <LinearLayout
+        android:id="@+id/content"
+        style="@style/WidgetFb.Content">
 
-    <ProgressBar
-        android:id="@+id/week_bar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="6dp"
-        android:layout_marginTop="6dp"
-        android:progressDrawable="@drawable/widget_bar_orange" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/week"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:textColor="#99FFFFFF"
-        android:textSize="11sp" />
-</LinearLayout>
+            <ImageView android:id="@+id/dot" style="@style/WidgetFb.Dot" />
+
+            <TextView
+                android:id="@+id/overline"
+                style="@style/WidgetFb.Overline"
+                android:text="Training heute" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/next"
+            style="@style/WidgetFb.Title"
+            android:layout_marginTop="6dp"
+            android:text="Oberkörper A"
+            android:textSize="18sp" />
+
+        <FrameLayout style="@style/WidgetFb.Fill" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/flame"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:text="🔥"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/streak"
+                style="@style/WidgetFb.Value"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:text="5 Wochen Serie" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/dots"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:layout_marginTop="8dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitStart"
+            android:src="@drawable/widget_dots_preview" />
+
+        <TextView
+            android:id="@+id/week"
+            style="@style/WidgetFb.Muted"
+            android:layout_marginTop="5dp"
+            android:text="2 von 3 diese Woche" />
+    </LinearLayout>
+</FrameLayout>

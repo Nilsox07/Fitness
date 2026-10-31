@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wasser breit (2×1): Glas, Menge und großer +250-Knopf -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    style="@style/WidgetFb.Card">
+
+    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
+
+    <include
+        android:id="@+id/empty"
+        layout="@layout/widget_empty"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/content"
+        style="@style/WidgetFb.Content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="10dp">
+
+        <ImageView
+            android:id="@+id/glass"
+            android:layout_width="24dp"
+            android:layout_height="32dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:src="@drawable/widget_glass_preview" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/amount"
+                style="@style/WidgetFb.Number"
+                android:text="1,25 l"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/target"
+                style="@style/WidgetFb.Muted"
+                android:layout_marginTop="2dp"
+                android:text="von 2,5 l" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/water_add"
+            android:layout_width="52dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="6dp"
+            android:contentDescription="250 ml Wasser eintragen">
+
+            <ImageView
+                android:id="@+id/water_add_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_pill" />
+
+            <TextView
+                android:id="@+id/water_add_text"
+                style="@style/WidgetFb.PillText"
+                android:text="+250"
+                android:textSize="13sp" />
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

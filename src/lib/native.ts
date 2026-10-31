@@ -129,12 +129,35 @@ export interface WidgetSnapshot {
   steps?: number | null
   showNutrition: boolean
   hasWatch: boolean
+  showSocial?: boolean
+  /** App-Farbe als #RRGGBB (Widgets färben sich mit) */
+  accent?: string
+  accentLight?: string
+  onAccent?: string
+  buddyLine?: string
+  buddyMood?: string
+  buddyEmoji?: string
+  level?: number
+  levelPct?: number
+  stageLabel?: string
+  questsDone?: number
+  questsTotal?: number
+  fasting?: { phase: 'eating' | 'fasting'; startsAt: number; endsAt: number; label: string } | null
+  supplementNext?: { name: string; time: string } | null
+  supplementsDone?: number
+  supplementsTotal?: number
+  stepsGoal?: number
+  restingHr?: number | null
+  hrv?: number | null
+  cardioWeekKm?: number | null
 }
 
 interface AppWidgetsPlugin {
   update(opts: { snapshot: string }): Promise<void>
   /** Wasser, das im Widget getippt wurde, seit dem letzten Abholen (ml je Datum) */
   takePendingWater(): Promise<{ entries: { date: string; ml: number }[] }>
+  /** Buddy als PNG (Base64 ohne data:-Präfix) für die Widgets */
+  setBuddyImage(opts: { png: string }): Promise<void>
 }
 
 const AppWidgets = registerPlugin<AppWidgetsPlugin>('AppWidgets')
@@ -150,6 +173,37 @@ export async function updateWidgets(s: WidgetSnapshot) {
     await AppWidgets.update({ snapshot: JSON.stringify(s) })
   } catch {
     /* Widget-Plugin fehlt (ältere App-Version) – egal */
+  }
+}
+
+let lastBuddy = ''
+/** Gerenderten Buddy an die Widgets geben (nur wenn er sich geändert hat). */
+export async function updateWidgetBuddy(png: string) {
+  if (!isNative() || !png || png === lastBuddy) return
+  lastBuddy = png
+  try {
+    await AppWidgets.setBuddyImage({ png })
+  } catch {
+    /* ältere App-Version ohne Buddy-Bild – egal */
+  }
+}
+
+/** CSS-Farbe „r g b“ bzw. rgb(...) → #RRGGBB */
+export function cssVarHex(name: string): string | undefined {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    const p = v.split(/[\s,]+/).map(Number)
+    if (p.length < 3 || p.some((x) => !Number.isFinite(x))) return undefined
+    return (
+      '#' +
+      p
+        .slice(0, 3)
+        .map((x) => Math.round(x).toString(16).padStart(2, '0'))
+        .join('')
+        .toUpperCase()
+    )
+  } catch {
+    return undefined
   }
 }
 

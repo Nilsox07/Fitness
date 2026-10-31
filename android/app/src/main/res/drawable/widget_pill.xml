@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Knopf-Fläche; Farbe wird per setColorFilter auf den Akzent gesetzt -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="#E11D48" />
     <corners android:radius="999dp" />

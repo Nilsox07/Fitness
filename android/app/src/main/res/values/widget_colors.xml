@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget-Farben (hell). Akzent kommt zur Laufzeit aus der App. -->
+<resources>
+    <color name="widget_card">#FFFFFF</color>
+    <color name="widget_stroke">#140B0F19</color>
+    <color name="widget_text">#0B0F19</color>
+    <color name="widget_text2">#5B6472</color>
+    <color name="widget_muted">#8A92A0</color>
+    <color name="widget_sand">#EEF0F4</color>
+    <color name="widget_success">#16A34A</color>
+    <color name="widget_gold">#D97706</color>
+</resources>

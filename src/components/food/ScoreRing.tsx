@@ -4,8 +4,8 @@ import { useCountUp } from './useCountUp'
 
 /** Textfarbe je Bewertung (Ring nutzt currentColor). Rot nur für die Warnstufe. */
 export const TONE_TEXT: Record<ScoreTone, string> = {
-  great: 'text-success',
-  good: 'text-success/75',
+  great: 'text-good',
+  good: 'text-good/75',
   ok: 'text-gold',
   poor: 'text-red-500 dark:text-red-400',
 }

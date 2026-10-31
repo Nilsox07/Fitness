@@ -38,13 +38,7 @@ import { useAiStatus } from '../hooks/useAi'
 import { challengeOfDay, randomExcuse } from '../lib/challenges'
 import { usePostActivity } from '../hooks/useFeed'
 import { useMyProfile } from '../hooks/useSocial'
-import {
-  type Exercise,
-  type PlanWithExercises,
-  type SetType,
-  type SetWithDate,
-  type WorkoutSet,
-} from '../types'
+import { type Exercise, type PlanWithExercises, type SetType, type SetWithDate, type WorkoutSet } from '../types'
 import { CompactSetRow, SetTableHeader, isSetDone, type PrevSet } from '../components/workout/CompactSetRow'
 import { RestControl, useRestTimer } from '../components/workout/RestControl'
 import { SessionClock } from '../components/workout/SessionClock'
@@ -103,7 +97,7 @@ const roundHalf = (v: number) => Math.round(v * 2) / 2
 const tipStyles: Record<string, string> = {
   increase: 'text-brand',
   hold: 'text-cocoa',
-  deload: 'text-amber-600 dark:text-amber-400',
+  deload: 'text-gold',
   start: 'text-cocoa-light',
 }
 
@@ -157,13 +151,7 @@ function snapWeight(ex: Exercise, w: number): number {
 
 /** Baut die Standard-Sätze für eine Übung (Wdh leer, Gewicht vorbefüllt).
  *  Mit Aufwärmsatz nur, wenn withWarmup=true (default). */
-function templateInputs(
-  workoutId: string,
-  ex: Exercise,
-  base: number,
-  startNo: number,
-  withWarmup = true,
-) {
+function templateInputs(workoutId: string, ex: Exercise, base: number, startNo: number, withWarmup = true) {
   const template = withWarmup ? TEMPLATE : TEMPLATE_NO_WARMUP
   return template.map((type, i) => {
     const d = deriveSet(type, base)
@@ -218,9 +206,7 @@ function MenuIcon({ children, danger = false }: { children: ReactNode; danger?: 
 
 /** Kleine Abschnittsüberschrift in den Sheets. */
 function SheetLabel({ children }: { children: ReactNode }) {
-  return (
-    <h3 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">{children}</h3>
-  )
+  return <h3 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">{children}</h3>
 }
 
 export default function Workout() {
@@ -297,9 +283,7 @@ export default function Workout() {
   }, [exercises, activePlan])
 
   // Fehler aus den Schreibvorgängen sichtbar machen (statt still zu scheitern)
-  const saveError = (addSet.error ||
-    addSets.error ||
-    createWorkout.error) as Error | null
+  const saveError = (addSet.error || addSets.error || createWorkout.error) as Error | null
 
   // Historie der gewählten Übung (ohne heute) → für Tipp & letzte Leistung
   const history = useMemo<SetWithDate[]>(() => {
@@ -395,9 +379,7 @@ export default function Workout() {
   // Übungs-Alternativen: eigene Übungen mit gleicher Primär-Muskelgruppe
   const alternatives = useMemo(() => {
     if (!selectedExercise || !exercises) return []
-    return exercises.filter(
-      (e) => e.id !== selectedExercise.id && e.muscle_group === selectedExercise.muscle_group,
-    )
+    return exercises.filter((e) => e.id !== selectedExercise.id && e.muscle_group === selectedExercise.muscle_group)
   }, [selectedExercise, exercises])
 
   async function shareToday() {
@@ -641,9 +623,7 @@ export default function Workout() {
     if (existing.length > 0) return
     const hist = (allSets ?? []).filter((s) => s.exercise_id === id && s.date !== today)
     const warmed = warmedMuscleGroups(workoutSets ?? [], exercises)
-    addSets.mutate(
-      templateInputs(todaysWorkout.id, ex, baseFor(ex, hist), 1, needsWarmup(ex, warmed)),
-    )
+    addSets.mutate(templateInputs(todaysWorkout.id, ex, baseFor(ex, hist), 1, needsWarmup(ex, warmed)))
   }
 
   // Ganzen Plan laden: Standard-Sätze für alle noch nicht erfassten Übungen anlegen.
@@ -752,9 +732,7 @@ export default function Workout() {
   )
   const exById = useMemo(() => new Map((exercises ?? []).map((e) => [e.id, e])), [exercises])
   const setsOf = (exId: string) =>
-    (workoutSets ?? [])
-      .filter((s) => s.exercise_id === exId)
-      .sort((a, b) => a.set_number - b.set_number)
+    (workoutSets ?? []).filter((s) => s.exercise_id === exId).sort((a, b) => a.set_number - b.set_number)
   const isUni = (exId: string) => exById.get(exId)?.unilateral ?? false
 
   // Heutige Übungen in fester Reihenfolge; Supersatz-Partner direkt nebeneinander.
@@ -878,7 +856,10 @@ export default function Workout() {
 
   function unpair(exId: string) {
     if (!woId) return
-    setPairs(woId, getPairs(woId).filter((p) => !p.includes(exId)))
+    setPairs(
+      woId,
+      getPairs(woId).filter((p) => !p.includes(exId)),
+    )
     bump()
   }
 
@@ -950,9 +931,7 @@ export default function Workout() {
     // finishWorkout zählt nur erledigte Sätze — offene werden hier ggf. entfernt.
     // Kennzahlen für den Buddy-Moment vor dem Aufräumen festhalten.
     const doneSets = (workoutSets ?? []).filter((s) => isSetDone(s, isUni(s.exercise_id)))
-    const firstMs = workoutSets?.length
-      ? Math.min(...workoutSets.map((s) => Date.parse(s.created_at)))
-      : Date.now()
+    const firstMs = workoutSets?.length ? Math.min(...workoutSets.map((s) => Date.parse(s.created_at))) : Date.now()
     const mins = Math.round((Date.now() - firstMs) / 60000)
     const prCount = todayPrs.length || (prName ? 1 : 0)
     if (dropOpenSets) for (const s of openSets) deleteSet.mutate(s)
@@ -1043,9 +1022,7 @@ export default function Workout() {
       .filter((e) => (sheet === 'pair' ? e.id !== exerciseId && !pairOf(pairs, e.id) : true))
       .filter((e) => !q || e.name.toLowerCase().includes(q) || e.muscle_group.toLowerCase().includes(q))
       .sort((a, b) => a.name.localeCompare(b.name, 'de'))
-    const startMs = hasSets
-      ? Math.min(...workoutSets!.map((s) => Date.parse(s.created_at)))
-      : Date.now()
+    const startMs = hasSets ? Math.min(...workoutSets!.map((s) => Date.parse(s.created_at))) : Date.now()
     const minutes = Math.round((Date.now() - startMs) / 60000)
 
     return (
@@ -1270,10 +1247,7 @@ export default function Workout() {
                 <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                   <MuscleChip muscle={active.muscle_group} size="xs" />
                   {(active.secondary_muscles ?? []).slice(0, 2).map((m) => (
-                    <span
-                      key={m}
-                      className="rounded-full bg-sand px-2 py-0.5 text-[10px] font-medium text-cocoa-light"
-                    >
+                    <span key={m} className="rounded-full bg-sand px-2 py-0.5 text-[10px] font-medium text-cocoa-light">
                       + {m}
                     </span>
                   ))}
@@ -1339,7 +1313,9 @@ export default function Workout() {
         {active && (
           <div
             className="fixed inset-x-0 z-10 mx-auto max-w-md px-3"
-            style={{ bottom: isNew ? 'calc(82px + env(safe-area-inset-bottom))' : 'calc(62px + env(safe-area-inset-bottom))' }}
+            style={{
+              bottom: isNew ? 'calc(82px + env(safe-area-inset-bottom))' : 'calc(62px + env(safe-area-inset-bottom))',
+            }}
           >
             <div className="flex items-center gap-2 rounded-3xl bg-cream/95 p-2 shadow-[0_4px_24px_rgb(0_0_0/0.12)] ring-1 ring-sand-dark/40 backdrop-blur">
               <RestControl timer={rest} exercise={active ? { id: active.id, name: active.name } : undefined} />
@@ -1355,14 +1331,15 @@ export default function Workout() {
                   {nextExId || remainingPlanIds[0] ? (
                     <button
                       className="btn-primary min-w-0 flex-1 gap-0.5 rounded-2xl px-2 py-2 text-sm"
-                      onClick={() =>
-                        nextExId ? setExerciseId(nextExId) : addExerciseToday(remainingPlanIds[0])
-                      }
+                      onClick={() => (nextExId ? setExerciseId(nextExId) : addExerciseToday(remainingPlanIds[0]))}
                     >
                       Nächste <ChevronRight size={16} />
                     </button>
                   ) : (
-                    <button className="btn-primary flex-1 gap-1 rounded-2xl px-2 py-2 text-sm" onClick={() => setSheet('finish')}>
+                    <button
+                      className="btn-primary flex-1 gap-1 rounded-2xl px-2 py-2 text-sm"
+                      onClick={() => setSheet('finish')}
+                    >
                       <Check size={16} strokeWidth={3} /> Fertig
                     </button>
                   )}
@@ -1452,7 +1429,10 @@ export default function Workout() {
             bodyClassName="space-y-4"
           >
             <div className="relative">
-              <Search size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-cocoa-muted" />
+              <Search
+                size={17}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-cocoa-muted"
+              />
               <input
                 className={`${BIG_INPUT} pl-10`}
                 placeholder="Suchen (Name oder Muskel) …"
@@ -1674,7 +1654,10 @@ export default function Workout() {
             }
             footer={
               <>
-                <button className="btn-primary w-full gap-2 py-3.5 text-base shadow-lg shadow-brand/30" onClick={finishNew}>
+                <button
+                  className="btn-primary w-full gap-2 py-3.5 text-base shadow-lg shadow-brand/30"
+                  onClick={finishNew}
+                >
                   <Check size={18} strokeWidth={3} />
                   Speichern & zum Verlauf
                 </button>
@@ -1727,7 +1710,9 @@ export default function Workout() {
                       {p.e1 > 0 && (
                         <span className="tabular shrink-0 text-sm font-bold text-gold">
                           ~{Math.round(p.e1)} kg
-                          <span className="ml-1 text-xs font-semibold opacity-70">+{Math.max(1, Math.round(p.gain))}</span>
+                          <span className="ml-1 text-xs font-semibold opacity-70">
+                            +{Math.max(1, Math.round(p.gain))}
+                          </span>
                         </span>
                       )}
                     </li>
@@ -1812,7 +1797,7 @@ export default function Workout() {
       {isNew && <Confetti show={confetti} onDone={() => setConfetti(false)} />}
       <RestTimer ref={restRef} />
       {isNew && prName && confetti && (
-        <div className="rounded-xl bg-gradient-to-r from-amber-500 to-ruby p-3 text-center font-bold text-white shadow-lg">
+        <div className="rounded-xl bg-gradient-to-r from-gold to-brand p-3 text-center font-bold text-white shadow-lg">
           🎉 Neuer Rekord bei {prName}!
         </div>
       )}
@@ -1834,9 +1819,7 @@ export default function Workout() {
               <div className="text-[11px] text-cocoa-light">Sätze</div>
             </div>
             <div className="card py-2 text-center">
-              <div className="text-lg font-bold text-cocoa">
-                {new Set(workoutSets.map((s) => s.exercise_id)).size}
-              </div>
+              <div className="text-lg font-bold text-cocoa">{new Set(workoutSets.map((s) => s.exercise_id)).size}</div>
               <div className="text-[11px] text-cocoa-light">Übungen</div>
             </div>
             <div className="card py-2 text-center">
@@ -1860,8 +1843,8 @@ export default function Workout() {
         <div className="card border border-red-400 text-sm text-red-500 dark:text-red-400">
           ⚠️ Konnte nicht speichern: {saveError.message}
           <div className="mt-1 text-xs text-cocoa-light">
-            Deine Eingaben sind zwischengespeichert und werden automatisch erneut gesendet, sobald
-            wieder Verbindung besteht.
+            Deine Eingaben sind zwischengespeichert und werden automatisch erneut gesendet, sobald wieder Verbindung
+            besteht.
           </div>
         </div>
       )}
@@ -1872,9 +1855,7 @@ export default function Workout() {
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             <button
               className={`shrink-0 rounded-full px-3 py-1.5 text-sm ring-1 ${
-                planId === ''
-                  ? 'bg-ruby text-white ring-ruby'
-                  : 'bg-sand-light text-cocoa ring-sand-dark'
+                planId === '' ? 'bg-ruby text-white ring-ruby' : 'bg-sand-light text-cocoa ring-sand-dark'
               }`}
               onClick={() => setPlanId('')}
             >
@@ -1884,9 +1865,7 @@ export default function Workout() {
               <button
                 key={p.id}
                 className={`shrink-0 rounded-full px-3 py-1.5 text-sm ring-1 ${
-                  planId === p.id
-                    ? 'bg-ruby text-white ring-ruby'
-                    : 'bg-sand-light text-cocoa ring-sand-dark'
+                  planId === p.id ? 'bg-ruby text-white ring-ruby' : 'bg-sand-light text-cocoa ring-sand-dark'
                 }`}
                 onClick={() => setPlanId(planId === p.id ? '' : p.id)}
               >
@@ -1909,11 +1888,7 @@ export default function Workout() {
       <div className="card space-y-3">
         <div>
           <label className="label">Übung</label>
-          <select
-            className="input"
-            value={exerciseId}
-            onChange={(e) => selectExercise(e.target.value)}
-          >
+          <select className="input" value={exerciseId} onChange={(e) => selectExercise(e.target.value)}>
             <option value="">— wählen —</option>
             {visibleExercises.map((ex) => (
               <option key={ex.id} value={ex.id}>
@@ -1923,9 +1898,7 @@ export default function Workout() {
             ))}
           </select>
           {exercises?.length === 0 && (
-            <p className="mt-1 text-sm text-amber-600 dark:text-amber-400">
-              Lege zuerst unter „Übungen" eine Übung an.
-            </p>
+            <p className="mt-1 text-sm text-gold">Lege zuerst unter „Übungen" eine Übung an.</p>
           )}
           {activePlan && visibleExercises.length === 0 && (
             <p className="mt-1 text-sm text-cocoa-muted">
@@ -1946,10 +1919,7 @@ export default function Workout() {
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
                   {alternatives.length > 0 && (
-                    <button
-                      className="text-xs font-medium text-brand"
-                      onClick={() => setShowAlts((s) => !s)}
-                    >
+                    <button className="text-xs font-medium text-brand" onClick={() => setShowAlts((s) => !s)}>
                       🔄 Gerät besetzt? Alternative ({alternatives.length})
                     </button>
                   )}
@@ -2008,8 +1978,7 @@ export default function Workout() {
                 <span className={tipStyles[suggestion.action]}>{suggestion.reason}</span>
                 {lastSession && (
                   <div className="mt-1 text-xs text-cocoa-muted">
-                    Letztes Training (
-                    {new Date(lastSession.date + 'T00:00:00').toLocaleDateString('de-DE')}):{' '}
+                    Letztes Training ({new Date(lastSession.date + 'T00:00:00').toLocaleDateString('de-DE')}):{' '}
                     {lastSession.sets.map((s) => `${s.reps}×${s.weight}kg`).join(', ')}
                   </div>
                 )}
@@ -2024,7 +1993,6 @@ export default function Workout() {
                 ))}
               </div>
             )}
-
 
             {/* Aktionen */}
             {setsForExercise.length === 0 ? (
@@ -2075,11 +2043,7 @@ export default function Workout() {
             </p>
           )}
           {isNew && ai?.enabled && (
-            <button
-              className="btn-ghost mt-2 w-full text-sm"
-              onClick={makeHype}
-              disabled={hypeBusy}
-            >
+            <button className="btn-ghost mt-2 w-full text-sm" onClick={makeHype} disabled={hypeBusy}>
               {hypeBusy ? '…' : '🔥 Motivations-Spruch'}
             </button>
           )}
@@ -2105,26 +2069,24 @@ export default function Workout() {
 
       {/* Kleine Erklärung (einklappbar) */}
       <details className="rounded-xl bg-sand/40 p-3 text-xs leading-relaxed text-cocoa-muted">
-        <summary className="cursor-pointer font-semibold text-cocoa-light">
-          So erfasst du am besten
-        </summary>
+        <summary className="cursor-pointer font-semibold text-cocoa-light">So erfasst du am besten</summary>
         <ul className="mt-2 list-disc space-y-1 pl-4">
           <li>
-            Trag nur <span className="text-cocoa">saubere Wdh</span> ein (volle Bewegung, eigene
-            Kraft) — die letzte halbe/erzwungene Wdh lässt du weg.
+            Trag nur <span className="text-cocoa">saubere Wdh</span> ein (volle Bewegung, eigene Kraft) — die letzte
+            halbe/erzwungene Wdh lässt du weg.
           </li>
           <li>
-            <span className="text-orange-400">🔥 Versagen</span> ist Standard. Tipp es nur{' '}
-            <span className="text-cocoa">aus</span> („nicht ans Limit"), wenn du den Satz mal
-            nicht bis zum Limit gemacht hast.
+            <span className="text-gold">🔥 Versagen</span> ist Standard. Tipp es nur{' '}
+            <span className="text-cocoa">aus</span> („nicht ans Limit"), wenn du den Satz mal nicht bis zum Limit
+            gemacht hast.
           </li>
           <li>
-            Der Tipp oben sagt dir dann, ob du das Gewicht <span className="text-cocoa">halten,
-            steigern</span> oder reduzieren solltest.
+            Der Tipp oben sagt dir dann, ob du das Gewicht <span className="text-cocoa">halten, steigern</span> oder
+            reduzieren solltest.
           </li>
           <li>
-            Der <span className="text-cocoa">Aufwärmsatz</span> kommt nur bei der ersten Übung
-            einer Muskelgruppe — ist der Muskel schon warm, wird er weggelassen.
+            Der <span className="text-cocoa">Aufwärmsatz</span> kommt nur bei der ersten Übung einer Muskelgruppe — ist
+            der Muskel schon warm, wird er weggelassen.
           </li>
         </ul>
       </details>

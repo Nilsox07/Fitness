@@ -28,7 +28,7 @@ function TrendChip({ pct, compare }: { pct: number | null; compare: string }) {
   return (
     <span
       className={`tabular inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-        up ? 'bg-success/20 text-success' : 'bg-bg/10 text-bg/70 dark:bg-white/5 dark:text-cocoa-light'
+        up ? 'bg-good/20 text-good' : 'bg-bg/10 text-bg/70 dark:bg-white/5 dark:text-cocoa-light'
       }`}
       title={`ggü. ${compare}`}
     >

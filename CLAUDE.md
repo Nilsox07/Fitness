@@ -15,7 +15,7 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
 - Bestehende Dateien nicht blind überschreiben (vorher lesen). Keine fremden Dateien umformatieren.
 - Sprache in der App: Deutsch, du-Form, kurz und freundlich.
 - **Design einheitlich:** Rubin (`brand`) ist die einzige Akzentfarbe, Abstufungen über Transparenz; `success` nur für
-  „gut“, `gold` für Hinweise. Keine weiteren Farben (kein Blau/Orange/Lila …). Seiten beginnen mit der dunklen
+  „erledigt“ (folgt der App-Farbe), `good` (grün) nur für echte Bewertungen „gut“, `gold` für Hinweise. Keine weiteren Farben (kein Blau/Orange/Lila …). Seiten beginnen mit der dunklen
   Hero-Karte, Abschnitte mit `SectionLabel`, Listen gruppiert, Symbole neutral (`bg-sand`). Bausteine:
   `src/components/health/ui.tsx`.
 
@@ -38,6 +38,8 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
 - Tabs (klassisch/alt): Ernährung `/nutrition`, Training `/`, Fortschritt `/analytics` `/history` `/badges` `/body`, Community `/social`.
 - Nutzer-Einstellungen geräteübergreifend in `profiles.prefs` (jsonb) über `useUserPrefs`;
   immer über `normalizePrefs` lesen (alte Caches ohne neue Felder haben schon mal die App abstürzen lassen).
+- Neue Funktion = auch einen Eintrag in `src/lib/searchIndex.ts` (globale Suche) anlegen; Buddy-Tipps je Seite in
+  `src/lib/buddyTips.ts`.
 - Neue App: Tabs Heute `/today` (anpassbare Widgets), Training `/`, Ernährung, Fortschritt (+ `/cardio`, `/sleep`
   nur mit Uhr), Community. Module (Ernährung/Community/Smartwatch) blenden alles Zugehörige aus – neue Features
   immer einem Modul zuordnen; Uhr-Funktionen nie ohne `hasWatch` zeigen.

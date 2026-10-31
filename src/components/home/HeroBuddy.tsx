@@ -27,7 +27,7 @@ export function HeroWithBuddy({ buddy, children }: { buddy?: HeroBuddyData; chil
       {children}
       <button
         type="button"
-        onClick={openBuddySheet}
+        onClick={() => openBuddySheet()}
         aria-label={`Buddy öffnen – „${buddy.line}"`}
         className="absolute right-3 z-10 rounded-full outline-offset-2 transition-transform active:scale-95"
         style={{
@@ -52,9 +52,7 @@ export function HeroWithBuddy({ buddy, children }: { buddy?: HeroBuddyData; chil
  */
 export function BuddyLine({ line, tone }: { line: string; tone: 'dark' | 'light' }) {
   const look =
-    tone === 'dark'
-      ? 'bg-bg/10 text-bg/80 dark:bg-white/5 dark:text-cocoa-light'
-      : 'bg-sand/80 text-cocoa-light'
+    tone === 'dark' ? 'bg-bg/10 text-bg/80 dark:bg-white/5 dark:text-cocoa-light' : 'bg-sand/80 text-cocoa-light'
   return (
     <p
       className={`mb-3 mr-[5.5rem] line-clamp-2 w-fit rounded-2xl rounded-tr-md px-3 py-1.5 text-[13px] font-medium leading-snug ${look}`}

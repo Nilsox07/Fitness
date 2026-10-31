@@ -10,7 +10,7 @@ export interface MuscleState {
 }
 
 const STYLE: Record<RecoveryLevel, { label: string; bar: string; text: string }> = {
-  fresh: { label: 'erholt', bar: 'bg-success', text: 'text-success' },
+  fresh: { label: 'erholt', bar: 'bg-good', text: 'text-good' },
   almost: { label: 'fast', bar: 'bg-gold', text: 'text-gold' },
   tired: { label: 'erschöpft', bar: 'bg-brand/50', text: 'text-cocoa-muted' },
 }

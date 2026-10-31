@@ -34,6 +34,7 @@ import Sleep from './pages/Sleep'
 import Vitals from './pages/Vitals'
 import ActivityDetail from './pages/ActivityDetail'
 import { NativeNav, NativeSync } from './components/NativeSync'
+import { SearchHost } from './components/search/SearchSheet'
 import { Splash } from './components/Splash'
 import { useChallengeSync } from './hooks/useChallenges'
 
@@ -111,7 +112,10 @@ export default function App() {
       {isNew && showSocial && <ChallengeSync />}
       {isNew && <NativeSync />}
       <NativeNav />
-      <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
+      <main
+        ref={mainRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4"
+      >
         <Routes>
           <Route path="/" element={<Workout />} />
           <Route path="/today" element={isNew ? <Today /> : <Navigate to="/" replace />} />
@@ -138,6 +142,7 @@ export default function App() {
         </Routes>
       </main>
       {isNew && <Assistant />}
+      {isNew && <SearchHost />}
       {isNew && <BuddyMomentHost />}
       {isNew && <WhatsNew />}
       {isNew && <WeeklyReview />}

@@ -45,7 +45,13 @@ import {
   PROTEIN_TEAM_DAYS,
   proteinStandings,
 } from '../components/community/communityUtils'
-import { daysBetween, kcalToday as friendKcalToday, planToday, proteinToday as friendProteinToday, type Person } from '../components/social/format'
+import {
+  daysBetween,
+  kcalToday as friendKcalToday,
+  planToday,
+  proteinToday as friendProteinToday,
+  type Person,
+} from '../components/social/format'
 import { useActivities } from '../hooks/useFeed'
 import { localDate } from '../lib/day'
 import {
@@ -82,6 +88,7 @@ import { rankForSessions } from '../lib/gamification'
 import { computeXp, levelInfo } from '../lib/xp'
 import { buddyLevelInfo } from '../lib/buddyLevel'
 import { seasonId, seasonXp } from '../lib/season'
+import { BuddyTip } from '../components/buddy/BuddyTip'
 
 // Reihenfolge = faire Kennzahlen zuerst; Volumen (kraftabhängig) zuletzt.
 type Metric = 'monthly_prs' | 'total_sessions' | 'week_streak' | 'season_xp' | 'level' | 'weekly_volume'
@@ -149,26 +156,19 @@ export default function Social() {
   const myStats = useMemo(() => {
     const sets = allSets ?? []
     const fe = food ?? []
-    const proteinToday = Math.round(
-      fe.filter((e) => e.date === todayStr).reduce((s, e) => s + e.protein, 0),
-    )
-    const kcalToday = Math.round(
-      fe.filter((e) => e.date === todayStr).reduce((s, e) => s + e.kcal, 0),
-    )
+    const proteinToday = Math.round(fe.filter((e) => e.date === todayStr).reduce((s, e) => s + e.protein, 0))
+    const kcalToday = Math.round(fe.filter((e) => e.date === todayStr).reduce((s, e) => s + e.kcal, 0))
     // Tage dieser Woche (Mo–So) mit erreichtem Protein-Ziel (0–7) — fürs Wochen-Duell.
     const proteinTarget = nutritionSettings?.protein_target ?? 0
     const byDay = new Map<string, number>()
     fe.filter((e) => isThisWeek(e.date, todayStr)).forEach((e) =>
       byDay.set(e.date, (byDay.get(e.date) ?? 0) + e.protein),
     )
-    const proteinWeek =
-      proteinTarget > 0 ? [...byDay.values()].filter((v) => v >= proteinTarget).length : 0
+    const proteinWeek = proteinTarget > 0 ? [...byDay.values()].filter((v) => v >= proteinTarget).length : 0
     const freq = frequencyStats([...new Set(sets.map((s) => s.date))])
     const thisWeek = isoWeekKey(new Date().toISOString().slice(0, 10))
     const wv = weeklyVolume(sets).find((w) => w.week === thisWeek)?.volume ?? 0
-    const weeklySessions = new Set(
-      sets.filter((s) => isoWeekKey(s.date) === thisWeek).map((s) => s.date),
-    ).size
+    const weeklySessions = new Set(sets.filter((s) => isoWeekKey(s.date) === thisWeek).map((s) => s.date)).size
     const dates = sets.map((s) => s.date).sort()
     // Neue App: geteiltes Level = Buddy-Level (ein Level für alles).
     const lvl = isNew
@@ -198,7 +198,17 @@ export default function Social() {
   useEffect(() => {
     if (allSets) syncStats.mutate(myStats)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myStats.total_sessions, myStats.weekly_volume, myStats.level, myStats.weekly_sessions, myStats.season_xp, myStats.monthly_prs, myStats.protein_today, myStats.kcal_today, myStats.protein_week])
+  }, [
+    myStats.total_sessions,
+    myStats.weekly_volume,
+    myStats.level,
+    myStats.weekly_sessions,
+    myStats.season_xp,
+    myStats.monthly_prs,
+    myStats.protein_today,
+    myStats.kcal_today,
+    myStats.protein_week,
+  ])
 
   const kudosReceived = useMemo(() => {
     const map = new Map<string, number>()
@@ -255,10 +265,7 @@ export default function Social() {
       {(pokes?.length ?? 0) > 0 && (
         <div className="space-y-2">
           {pokes!.map((p) => (
-            <div
-              key={p.id}
-              className="anim-fade flex items-center gap-2 rounded-xl bg-sand p-2.5 text-sm"
-            >
+            <div key={p.id} className="anim-fade flex items-center gap-2 rounded-xl bg-sand p-2.5 text-sm">
               <span className="flex-1">
                 {p.text ? (
                   <>
@@ -360,10 +367,7 @@ export default function Social() {
             {[1, 0, 2].map((rank) => {
               const u = podium[rank]
               if (!u) return <div key={rank} className="flex-1" />
-              const val =
-                chMetric === 'weekly_volume'
-                  ? `${chValue(u).toLocaleString('de-DE')} kg`
-                  : `${chValue(u)}×`
+              const val = chMetric === 'weekly_volume' ? `${chValue(u).toLocaleString('de-DE')} kg` : `${chValue(u)}×`
               const h = rank === 0 ? 'h-20' : rank === 1 ? 'h-16' : 'h-12'
               return (
                 <div key={rank} className="flex flex-1 flex-col items-center">
@@ -372,7 +376,7 @@ export default function Social() {
                     <span className="tabular">{rank + 1}</span>
                   </div>
                   <div className="max-w-full truncate text-xs font-medium">
-                    {u.user_id === user?.id ? 'Du' : u.display_name ?? 'Athlet'}
+                    {u.user_id === user?.id ? 'Du' : (u.display_name ?? 'Athlet')}
                   </div>
                   <div className="tabular text-[11px] text-cocoa-light">{val}</div>
                   <div className={`mt-1 w-full rounded-t-lg ${rank === 0 ? 'bg-gold' : 'bg-sand'} ${h}`} />
@@ -395,77 +399,73 @@ export default function Social() {
           </h2>
           <ul className="space-y-1.5">
             {battle.map(({ u, protein, kcal }, i) => {
-                const me = u.user_id === user?.id
-                return (
-                  <li key={u.user_id} className="flex items-center gap-2 text-sm">
-                    <span className="tabular w-5 text-center text-cocoa-light">{i + 1}</span>
-                    <span className="flex-1">
-                      <span className="font-medium">{me ? 'Du' : u.display_name ?? 'Freund'}</span>{' '}
-                      <span className="tabular text-cocoa-light">
-                        {protein} g · {kcal} kcal
-                      </span>
+              const me = u.user_id === user?.id
+              return (
+                <li key={u.user_id} className="flex items-center gap-2 text-sm">
+                  <span className="tabular w-5 text-center text-cocoa-light">{i + 1}</span>
+                  <span className="flex-1">
+                    <span className="font-medium">{me ? 'Du' : (u.display_name ?? 'Freund')}</span>{' '}
+                    <span className="tabular text-cocoa-light">
+                      {protein} g · {kcal} kcal
                     </span>
-                    {!me && (
-                      <button
-                        className="grid h-7 w-7 place-items-center rounded-full bg-sand text-cocoa-light"
-                        title="Auslachen"
-                        aria-label="Auslachen"
-                        onClick={() =>
-                          sendPoke.mutate({
-                            toUser: u.user_id,
-                            text: `😂 Nur ${protein} g Protein heute? Schwach!`,
-                          })
-                        }
-                      >
-                        <Laugh size={16} />
-                      </button>
-                    )}
-                  </li>
-                )
-              })}
+                  </span>
+                  {!me && (
+                    <button
+                      className="grid h-7 w-7 place-items-center rounded-full bg-sand text-cocoa-light"
+                      title="Auslachen"
+                      aria-label="Auslachen"
+                      onClick={() =>
+                        sendPoke.mutate({
+                          toUser: u.user_id,
+                          text: `😂 Nur ${protein} g Protein heute? Schwach!`,
+                        })
+                      }
+                    >
+                      <Laugh size={16} />
+                    </button>
+                  )}
+                </li>
+              )
+            })}
           </ul>
-          <p className="text-xs text-cocoa-muted">
-            Zeigt nur Summen (Protein/kcal) — keine einzelnen Lebensmittel.
-          </p>
+          <p className="text-xs text-cocoa-muted">Zeigt nur Summen (Protein/kcal) — keine einzelnen Lebensmittel.</p>
         </div>
       )}
     </>
   )
   const codeContent = (
     <>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="label">Dein Freundescode</div>
-            <div className="tabular text-xl font-bold tracking-widest">{profile?.friend_code ?? '…'}</div>
-          </div>
-          <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={shareCode}>
-            <Share2 size={16} className="text-cocoa-light" />
-            Teilen
-          </button>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="label">Dein Freundescode</div>
+          <div className="tabular text-xl font-bold tracking-widest">{profile?.friend_code ?? '…'}</div>
         </div>
-        <div className="flex gap-2">
-          <input
-            className="input uppercase"
-            placeholder="Code eingeben"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && submitCode()}
-          />
-          <button
-            className="btn-primary flex shrink-0 items-center gap-1.5"
-            onClick={submitCode}
-            disabled={addFriend.isPending}
-          >
-            <UserPlus size={16} />
-            Freund
-          </button>
-        </div>
-        {msg && <p className="text-sm text-brand">{msg}</p>}
-        <p className="text-xs text-cocoa-muted">
-          Freunde sehen nur deine Kennzahlen (Trainings, Volumen, Streak) — keine einzelnen Sätze
-          oder Ernährung.
-        </p>
+        <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={shareCode}>
+          <Share2 size={16} className="text-cocoa-light" />
+          Teilen
+        </button>
+      </div>
+      <div className="flex gap-2">
+        <input
+          className="input uppercase"
+          placeholder="Code eingeben"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submitCode()}
+        />
+        <button
+          className="btn-primary flex shrink-0 items-center gap-1.5"
+          onClick={submitCode}
+          disabled={addFriend.isPending}
+        >
+          <UserPlus size={16} />
+          Freund
+        </button>
+      </div>
+      {msg && <p className="text-sm text-brand">{msg}</p>}
+      <p className="text-xs text-cocoa-muted">
+        Freunde sehen nur deine Kennzahlen (Trainings, Volumen, Streak) — keine einzelnen Sätze oder Ernährung.
+      </p>
     </>
   )
   const metricBlock = (
@@ -485,8 +485,8 @@ export default function Social() {
         ))}
       </div>
       <p className="-mt-2 px-1 text-xs text-cocoa-muted">
-        Fair vergleichen: <strong>Fortschritt</strong> (neue Bestleistungen/Monat) &amp;{' '}
-        <strong>Trainings</strong> zählen für alle gleich — Volumen hängt vom Kraftniveau ab.
+        Fair vergleichen: <strong>Fortschritt</strong> (neue Bestleistungen/Monat) &amp; <strong>Trainings</strong>{' '}
+        zählen für alle gleich — Volumen hängt vom Kraftniveau ab.
       </p>
     </>
   )
@@ -497,27 +497,25 @@ export default function Social() {
         {ranked.map((u, i) => {
           const me = u.user_id === user?.id
           const value =
-            metric === 'monthly_prs'
-              ? (
-                  <span className="inline-flex items-center gap-1">
-                    {metricValue(u, 'monthly_prs')}
-                    <Trophy size={14} className="text-cocoa-light" />
-                  </span>
-                )
-              : metric === 'season_xp'
-              ? `${u.season_id === seasonId() ? u.season_xp : 0} XP`
-              : metric === 'level'
-              ? `Lvl ${u.level ?? 1}`
-              : metric === 'weekly_volume'
-                ? `${metricValue(u, 'weekly_volume').toLocaleString('de-DE')} kg`
-                : metric === 'total_sessions'
-                  ? `${u.total_sessions}`
-                  : (
-                      <span className="inline-flex items-center gap-1">
-                        <Flame size={14} className="text-cocoa-light" />
-                        {u.week_streak}
-                      </span>
-                    )
+            metric === 'monthly_prs' ? (
+              <span className="inline-flex items-center gap-1">
+                {metricValue(u, 'monthly_prs')}
+                <Trophy size={14} className="text-cocoa-light" />
+              </span>
+            ) : metric === 'season_xp' ? (
+              `${u.season_id === seasonId() ? u.season_xp : 0} XP`
+            ) : metric === 'level' ? (
+              `Lvl ${u.level ?? 1}`
+            ) : metric === 'weekly_volume' ? (
+              `${metricValue(u, 'weekly_volume').toLocaleString('de-DE')} kg`
+            ) : metric === 'total_sessions' ? (
+              `${u.total_sessions}`
+            ) : (
+              <span className="inline-flex items-center gap-1">
+                <Flame size={14} className="text-cocoa-light" />
+                {u.week_streak}
+              </span>
+            )
           return (
             <li
               key={u.user_id}
@@ -525,7 +523,11 @@ export default function Social() {
             >
               <span className="tabular grid w-6 place-items-center text-lg font-bold text-cocoa-light">
                 {i < 3 ? (
-                  <Medal size={20} className={i === 0 ? 'text-gold' : 'text-cocoa-light'} aria-label={`Platz ${i + 1}`} />
+                  <Medal
+                    size={20}
+                    className={i === 0 ? 'text-gold' : 'text-cocoa-light'}
+                    aria-label={`Platz ${i + 1}`}
+                  />
                 ) : (
                   i + 1
                 )}
@@ -595,10 +597,7 @@ export default function Social() {
   // Ernährungs-Einstellung des Betrachters) — sobald jemand diese Woche
   // Protein-Tage hat, zählen sie für alle.
   const includeProtein = people.some((u) => effectiveProteinDays(u, today) > 0)
-  const standings = useMemo(
-    () => duelStandings(people, { includeProtein, today }),
-    [people, includeProtein, today],
-  )
+  const standings = useMemo(() => duelStandings(people, { includeProtein, today }), [people, includeProtein, today])
   const team = useMemo(() => teamGoal(people, today), [people, today])
   const { data: challengeList } = useChallenges()
   // Wetten dieser Woche + Ergebnisse der letzten Woche (bis Mittwoch sichtbar)
@@ -617,7 +616,7 @@ export default function Social() {
     [mePerson.user_id, myStats.protein_week, myStats.protein_today, friends, today],
   )
   const weekLeft = daysLeftInWeek(today)
-  const openPerson = openId ? people.find((u) => u.user_id === openId) ?? null : null
+  const openPerson = openId ? (people.find((u) => u.user_id === openId) ?? null) : null
 
   if (!isNew) {
     return (
@@ -681,6 +680,8 @@ export default function Social() {
         }
       />
 
+      <BuddyTip page="social" />
+
       {hasFriends && (
         <button
           className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left transition active:scale-[0.99]"
@@ -718,7 +719,13 @@ export default function Social() {
             {stakes.map((c) => {
               const friend = people.find((p) => p.user_id === (c.creator === mePerson.user_id ? c.opponent : c.creator))
               return (
-                <StakeCard key={c.id} c={c} meId={mePerson.user_id} friendName={shortName(friend?.display_name)} today={today} />
+                <StakeCard
+                  key={c.id}
+                  c={c}
+                  meId={mePerson.user_id}
+                  friendName={shortName(friend?.display_name)}
+                  today={today}
+                />
               )
             })}
             <DuelHero
@@ -810,7 +817,6 @@ export default function Social() {
           </div>
         )}
       </section>
-
 
       {inboxOpen && <InboxSheet people={people} today={today} onClose={() => setInboxOpen(false)} />}
 

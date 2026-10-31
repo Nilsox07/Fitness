@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ChevronRight,
@@ -28,8 +28,9 @@ export const OPEN_BUDDY_EVENT = 'open-buddy'
 /** Älteres Event (KI-Assistent) — öffnet weiterhin dasselbe Sheet. */
 export const OPEN_ASSISTANT_EVENT = 'open-assistant'
 
-export function openBuddySheet(): void {
-  window.dispatchEvent(new Event(OPEN_BUDDY_EVENT))
+/** Buddy öffnen – optional direkt mit einer Frage an die KI (z. B. aus einem Seiten-Tipp). */
+export function openBuddySheet(ask?: string): void {
+  window.dispatchEvent(new CustomEvent(OPEN_BUDDY_EVENT, { detail: { ask } }))
 }
 
 /** Route des Schnell-Workouts. */
@@ -88,7 +89,8 @@ export function buddyTips(i: {
       text: `Noch ${i.weeklyLeft} ${i.weeklyLeft === 1 ? 'Training' : 'Trainings'} bis zum Wochenziel.`,
       to: '/',
     })
-  if (i.proteinLeft > 0) tips.push({ icon: Sandwich, text: `Heute noch ${i.proteinLeft} g Eiweiß offen.`, to: '/nutrition' })
+  if (i.proteinLeft > 0)
+    tips.push({ icon: Sandwich, text: `Heute noch ${i.proteinLeft} g Eiweiß offen.`, to: '/nutrition' })
   tips.push({ icon: Droplets, text: 'Trinken nicht vergessen – 2 Liter am Tag.' })
   return tips.slice(0, 3)
 }
@@ -96,8 +98,12 @@ export function buddyTips(i: {
 /** Einmal mounten: lauscht auf `open-buddy` / `open-assistant` und zeigt das Buddy-Sheet. */
 export function BuddySheetHost() {
   const [open, setOpen] = useState(false)
+  const [ask, setAsk] = useState<string | undefined>()
   useEffect(() => {
-    const onOpen = () => setOpen(true)
+    const onOpen = (e: Event) => {
+      setAsk((e as CustomEvent<{ ask?: string } | undefined>).detail?.ask)
+      setOpen(true)
+    }
     window.addEventListener(OPEN_BUDDY_EVENT, onOpen)
     window.addEventListener(OPEN_ASSISTANT_EVENT, onOpen)
     return () => {
@@ -106,14 +112,14 @@ export function BuddySheetHost() {
     }
   }, [])
   if (!open) return null
-  return <BuddySheet onClose={() => setOpen(false)} />
+  return <BuddySheet ask={ask} onClose={() => setOpen(false)} />
 }
 
 /**
  * Buddy-Sheet: großer Buddy mit Stimmung, Spruch, Level + XP, Tipps und Schnell-Links;
  * darunter (wenn KI an) der Chat.
  */
-export function BuddySheet({ onClose }: { onClose: () => void }) {
+export function BuddySheet({ onClose, ask }: { onClose: () => void; ask?: string }) {
   const navigate = useNavigate()
   const { data: ai } = useAiStatus()
   const aiOn = Boolean(ai?.enabled)
@@ -122,6 +128,14 @@ export function BuddySheet({ onClose }: { onClose: () => void }) {
   const rhythm = useTrainingRhythm(trainingDay())
   const chat = useBuddyChat(onClose)
   const chatting = chat.messages.length > 0
+  // Mit Frage geöffnet → sofort an die KI schicken (einmal)
+  const asked = useRef(false)
+  useEffect(() => {
+    if (!ask || !aiOn || asked.current) return
+    asked.current = true
+    void chat.send(ask)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ask, aiOn])
 
   const tips = buddyTips({
     mood: buddy.mood,
@@ -208,9 +222,7 @@ export function BuddySheet({ onClose }: { onClose: () => void }) {
         <>
           {tips.length > 0 && (
             <section aria-label="Buddy-Tipps" className="space-y-1.5">
-              <h3 className="px-1 text-[11px] font-semibold uppercase tracking-wider text-cocoa-muted">
-                Buddys Tipps
-              </h3>
+              <h3 className="px-1 text-[11px] font-semibold uppercase tracking-wider text-cocoa-muted">Buddys Tipps</h3>
               <ul className="space-y-1.5">
                 {tips.map((t) => {
                   const Icon = t.icon

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Platzhalter-Ring (70 %) für die Widget-Vorschau -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:pathData="M50,8 A42,42 0 1,1 49.99,8"
+        android:strokeWidth="9"
+        android:strokeColor="#29E11D48" />
+    <path
+        android:pathData="M50,8 A42,42 0 1,1 10.06,62.98"
+        android:strokeLineCap="round"
+        android:strokeWidth="9"
+        android:strokeColor="#E11D48" />
+</vector>

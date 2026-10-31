@@ -2,7 +2,6 @@
 // nur Statistik. Teilt per Web-Share-API, sonst Download.
 import { accentColor } from './cosmetics'
 
-
 export interface StatCardData {
   title: string
   dateLabel: string
@@ -65,7 +64,7 @@ export async function shareStatCard(data: StatCardData): Promise<void> {
   })
 
   if (data.highlight) {
-    ctx.fillStyle = '#F59E0B'
+    ctx.fillStyle = accentColor()
     ctx.font = 'bold 40px system-ui, sans-serif'
     ctx.fillText(`🏆 ${data.highlight}`, W / 2, 1200)
   }
@@ -76,9 +75,7 @@ export async function shareStatCard(data: StatCardData): Promise<void> {
     ctx.fillText(data.rank, W / 2, 1270)
   }
 
-  const blob: Blob = await new Promise((resolve) =>
-    canvas.toBlob((b) => resolve(b as Blob), 'image/png'),
-  )
+  const blob: Blob = await new Promise((resolve) => canvas.toBlob((b) => resolve(b as Blob), 'image/png'))
   const file = new File([blob], 'training.png', { type: 'image/png' })
 
   const nav = navigator as Navigator & {

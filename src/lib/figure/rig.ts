@@ -103,14 +103,7 @@ export function solveTwoBone(root: Vec3, target: Vec3, l1: number, l2: number, p
   return { mid, end }
 }
 
-function solveLimb(
-  spec: LimbSpec,
-  root: Vec3,
-  l1: number,
-  l2: number,
-  s: number,
-  defaultPole: number,
-): LimbJoints {
+function solveLimb(spec: LimbSpec, root: Vec3, l1: number, l2: number, s: number, defaultPole: number): LimbJoints {
   if (isTarget(spec)) {
     const tz = spec.zw !== undefined ? spec.zw : spec.z !== undefined ? s * spec.z : root[2]
     const target: Vec3 = [spec.to[0], spec.to[1], tz]
@@ -144,7 +137,10 @@ export function solvePose(p: PoseSpec): Skeleton {
   // Schulterlinie: z-Achse, gedreht um die Rumpfachse (twist) Richtung Brust.
   const tw = rad(p.twist ?? 0)
   const chestN = dir3(upperA + 90)
-  const shoulderOff: Vec3 = add(mul([0, 0, 1], Math.cos(tw) * LEN.shoulderHalf), mul(chestN, Math.sin(tw) * LEN.shoulderHalf))
+  const shoulderOff: Vec3 = add(
+    mul([0, 0, 1], Math.cos(tw) * LEN.shoulderHalf),
+    mul(chestN, Math.sin(tw) * LEN.shoulderHalf),
+  )
   const shNear = add(shoulderC, shoulderOff)
   const shFar = sub(shoulderC, shoulderOff)
   const hipNear = add(hip, [0, 0, LEN.hipHalf])
@@ -163,7 +159,22 @@ export function solvePose(p: PoseSpec): Skeleton {
   const footNear = p.foot ?? footDefault(legNearSpec, legNear)
   const footFar = p.footFar ?? p.foot ?? footDefault(legFarSpec, legFar)
 
-  return { hip, waist, spineTop, shoulderC, headC, torsoA, upperA, headA, armNear, armFar, legNear, legFar, footNear, footFar }
+  return {
+    hip,
+    waist,
+    spineTop,
+    shoulderC,
+    headC,
+    torsoA,
+    upperA,
+    headA,
+    armNear,
+    armFar,
+    legNear,
+    legFar,
+    footNear,
+    footFar,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -204,7 +215,10 @@ export function lerpPose(a: PoseSpec, b: PoseSpec, t: number): PoseSpec {
     leg: lerpLimb(a.leg, b.leg, t),
     legFar: a.legFar || b.legFar ? lerpLimb(a.legFar ?? a.leg, b.legFar ?? b.leg, t) : undefined,
     foot: lerpOpt(a.foot, b.foot, t),
-    footFar: a.footFar !== undefined || b.footFar !== undefined ? lerp(a.footFar ?? a.foot ?? 0, b.footFar ?? b.foot ?? 0, t) : undefined,
+    footFar:
+      a.footFar !== undefined || b.footFar !== undefined
+        ? lerp(a.footFar ?? a.foot ?? 0, b.footFar ?? b.foot ?? 0, t)
+        : undefined,
   }
 }
 
@@ -214,12 +228,17 @@ export function lerpPose(a: PoseSpec, b: PoseSpec, t: number): PoseSpec {
 
 /** cubic-bezier(.45,0,.35,1) — gleiche Kurve wie im Prototyp. */
 export function ease(x: number): number {
-  const x1 = 0.45, y1 = 0, x2 = 0.35, y2 = 1
+  const x1 = 0.45,
+    y1 = 0,
+    x2 = 0.35,
+    y2 = 1
   if (x <= 0) return 0
   if (x >= 1) return 1
   const bx = (t: number) => 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t
   const by = (t: number) => 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t
-  let lo = 0, hi = 1, t = x
+  let lo = 0,
+    hi = 1,
+    t = x
   for (let i = 0; i < 24; i++) {
     t = (lo + hi) / 2
     if (bx(t) < x) lo = t
@@ -266,7 +285,12 @@ export function peakFrame(def: FigureDef): Frame {
 }
 
 /** Standard-Zyklus: A halten · A→B · B halten · B→A · A halten. */
-export function cycle(a: string, b: string, concentric: 'ab' | 'ba', holds: [number, number] = [0.08, 0.1]): TimelineKey[] {
+export function cycle(
+  a: string,
+  b: string,
+  concentric: 'ab' | 'ba',
+  holds: [number, number] = [0.08, 0.1],
+): TimelineKey[] {
   const [h0, h1] = holds
   const mid1 = 0.5 - h1 / 2
   const mid2 = 0.5 + h1 / 2
@@ -294,14 +318,5 @@ export function hipFromAnkle(ankle: Vec2, thighA: number, shinA: number): Vec2 {
   return [
     ankle[0] - Math.cos(rad(thighA)) * LEN.thigh - Math.cos(rad(shinA)) * LEN.shin,
     ankle[1] - Math.sin(rad(thighA)) * LEN.thigh - Math.sin(rad(shinA)) * LEN.shin,
-  ]
-}
-
-/** Schultermitte zu Hüfte/Rumpf (für Zielpunkte relativ zur Schulter beim Autorieren). */
-export function shoulderOf(hip: Vec2, torso: number, bend = 0): Vec2 {
-  const u = torso + bend
-  return [
-    hip[0] + Math.cos(rad(torso)) * LEN.lowerTorso + Math.cos(rad(u)) * (LEN.upperTorso - 5),
-    hip[1] + Math.sin(rad(torso)) * LEN.lowerTorso + Math.sin(rad(u)) * (LEN.upperTorso - 5),
   ]
 }

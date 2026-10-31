@@ -75,7 +75,7 @@ export default function Cardio() {
           trend != null && (
             <span
               className={`tabular rounded-full px-2 py-0.5 text-xs font-semibold ${
-                trend > 0 ? 'bg-success/20 text-success' : 'bg-bg/10 text-bg/70 dark:bg-white/5 dark:text-cocoa-light'
+                trend > 0 ? 'bg-good/20 text-good' : 'bg-bg/10 text-bg/70 dark:bg-white/5 dark:text-cocoa-light'
               }`}
             >
               {trend > 0 ? '+' : ''}

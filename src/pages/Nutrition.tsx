@@ -121,6 +121,7 @@ import {
   type Chain,
   type Combo,
 } from '../lib/fastfood'
+import { BuddyTip } from '../components/buddy/BuddyTip'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
 function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
@@ -148,9 +149,7 @@ function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
 
 function todayLocal(): string {
   const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 /** Fehlermeldung — wird im jeweils offenen Sheet gezeigt, damit sie nicht hinter dem Overlay verschwindet. */
@@ -171,7 +170,8 @@ function Bar({ value, target }: { value: number; target: number }) {
     <div className="h-2 overflow-hidden rounded-full bg-sand-dark/50">
       <div
         className={`h-full rounded-full transition-[width] duration-300 ${pct >= 100 ? 'bg-success' : 'bg-brand'}`}
-        style={{ width: `${pct}%` }} />
+        style={{ width: `${pct}%` }}
+      />
     </div>
   )
 }
@@ -410,6 +410,18 @@ export default function Nutrition() {
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addWaterParam, waterLoaded])
+
+  // Direkteinstieg aus Suche/Widgets: ?add=photo|search|restaurant|aitext|recipe|plan|manual|menu
+  const addParam = params.get('add')
+  useEffect(() => {
+    if (!addParam) return
+    const next = new URLSearchParams(params)
+    next.delete('add')
+    setParams(next, { replace: true })
+    const modes = ['photo', 'search', 'restaurant', 'aitext', 'recipe', 'plan', 'manual', 'menu'] as const
+    if ((modes as readonly string[]).includes(addParam)) setAddMode(addParam as (typeof modes)[number])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addParam])
 
   // „Genommen“ aus der Supplement-Erinnerung (?supp=<id>&slot=HH:MM)
   const toggleDose = useToggleDose()
@@ -758,7 +770,9 @@ export default function Nutrition() {
     // Von der Karte gewählt → exakte Werte, keine KI nötig.
     if (activeChain && orderItems.length > 0) {
       const title =
-        orderItems.length <= 2 ? orderItems.map((i) => i.name).join(' + ') : `${activeChain.name} · ${orderItems.length} Artikel`
+        orderItems.length <= 2
+          ? orderItems.map((i) => i.name).join(' + ')
+          : `${activeChain.name} · ${orderItems.length} Artikel`
       if (isNew) showAnalysis(orderItems, title)
       else setAiResults(orderItems)
       setOrderQty({})
@@ -797,7 +811,10 @@ export default function Nutrition() {
     if (!chainId) return
     try {
       const recent: string[] = JSON.parse(localStorage.getItem(RECENT_PLACES_KEY) || '[]')
-      localStorage.setItem(RECENT_PLACES_KEY, JSON.stringify([chainId, ...recent.filter((r) => r !== chainId)].slice(0, 12)))
+      localStorage.setItem(
+        RECENT_PLACES_KEY,
+        JSON.stringify([chainId, ...recent.filter((r) => r !== chainId)].slice(0, 12)),
+      )
     } catch {
       /* ignore */
     }
@@ -1110,7 +1127,18 @@ export default function Nutrition() {
         barcode: null,
         meal: addMeal(),
       })
-      setManual({ name: '', amount_g: 0, kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sat_fat: 0, salt: 0 })
+      setManual({
+        name: '',
+        amount_g: 0,
+        kcal: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        sat_fat: 0,
+        salt: 0,
+      })
       setAddMode(null)
     } catch (e) {
       setError(saveError(e))
@@ -1154,9 +1182,10 @@ export default function Nutrition() {
               </button>
             }
           />
+          {isToday && <BuddyTip page="nutrition" />}
 
           {waterNote && (
-            <div className="anim-fade rounded-full bg-sky-500/15 px-4 py-2 text-center text-sm font-semibold text-sky-700 dark:text-sky-300">
+            <div className="anim-fade rounded-full bg-brand/10 px-4 py-2 text-center text-sm font-semibold text-brand">
               {waterNote}
             </div>
           )}
@@ -1381,7 +1410,9 @@ export default function Nutrition() {
                         <button
                           className="ml-2 shrink-0 px-2 text-cocoa-muted transition-colors duration-200 hover:text-red-500 dark:hover:text-red-400"
                           aria-label="Eintrag löschen"
-                          onClick={() => deleteEntry.mutate(e, { onError: (err) => setError(saveError(err, 'Löschen')) })}
+                          onClick={() =>
+                            deleteEntry.mutate(e, { onError: (err) => setError(saveError(err, 'Löschen')) })
+                          }
                         >
                           <X size={18} />
                         </button>
@@ -1397,7 +1428,6 @@ export default function Nutrition() {
               </p>
             )}
           </div>
-
         </>
       )}
 
@@ -1406,10 +1436,7 @@ export default function Nutrition() {
           entry={editEntry}
           onClose={() => setEditEntry(null)}
           onSave={(patch) => {
-            updateEntry.mutate(
-              { id: editEntry.id, ...patch },
-              { onError: (err) => setError(saveError(err)) },
-            )
+            updateEntry.mutate({ id: editEntry.id, ...patch }, { onError: (err) => setError(saveError(err)) })
             setEditEntry(null)
           }}
           onDelete={() => {
@@ -1793,8 +1820,8 @@ export default function Nutrition() {
               <h2 className="text-lg font-bold">{pending.name}</h2>
               <p className="tabular text-xs text-cocoa-light">
                 {pending.brand ? `${pending.brand} · ` : ''}
-                pro 100 g: {pending.per100.kcal} kcal · E {pending.per100.protein} / K{' '}
-                {pending.per100.carbs} / F {pending.per100.fat}
+                pro 100 g: {pending.per100.kcal} kcal · E {pending.per100.protein} / K {pending.per100.carbs} / F{' '}
+                {pending.per100.fat}
               </p>
               <Stepper label="Menge (g)" value={amount} onChange={setAmount} step={10} min={0} suffix="g" />
               <p className="tabular text-sm">
@@ -1866,7 +1893,12 @@ export default function Nutrition() {
                 <GroupLabel>Hauptwerte</GroupLabel>
                 <div className="grid grid-cols-2 gap-2">
                   {MANUAL_FIELDS.slice(0, 5).map(([key, lbl]) => (
-                    <ManualField key={key} label={lbl} value={manual[key]} onChange={(v) => setManual({ ...manual, [key]: v })} />
+                    <ManualField
+                      key={key}
+                      label={lbl}
+                      value={manual[key]}
+                      onChange={(v) => setManual({ ...manual, [key]: v })}
+                    />
                   ))}
                 </div>
               </div>
@@ -1874,7 +1906,12 @@ export default function Nutrition() {
                 <GroupLabel>Optional</GroupLabel>
                 <div className="grid grid-cols-2 gap-2">
                   {MANUAL_FIELDS.slice(5).map(([key, lbl]) => (
-                    <ManualField key={key} label={lbl} value={manual[key]} onChange={(v) => setManual({ ...manual, [key]: v })} />
+                    <ManualField
+                      key={key}
+                      label={lbl}
+                      value={manual[key]}
+                      onChange={(v) => setManual({ ...manual, [key]: v })}
+                    />
                   ))}
                 </div>
               </div>
@@ -2019,7 +2056,9 @@ export default function Nutrition() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">Speisekarte fotografieren</span>
-                    <span className="block text-xs text-cocoa-light">Jedes Restaurant – die KI sucht das Beste raus</span>
+                    <span className="block text-xs text-cocoa-light">
+                      Jedes Restaurant – die KI sucht das Beste raus
+                    </span>
                   </span>
                   <input
                     type="file"
@@ -2055,10 +2094,16 @@ export default function Nutrition() {
             </button>
           )}
           {!isNew && (
-          <div>
-            <div className={isNew ? '-mx-5 flex gap-2 overflow-x-auto px-5 pb-1' : '-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1'}>
-              {[...Object.entries(CHAIN_BADGE).map(([id, b]) => ({ id, name: b.name })), ...PLACES.map((p) => ({ id: '', name: p }))].map(
-                ({ id, name: p }) => (
+            <div>
+              <div
+                className={
+                  isNew ? '-mx-5 flex gap-2 overflow-x-auto px-5 pb-1' : '-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1'
+                }
+              >
+                {[
+                  ...Object.entries(CHAIN_BADGE).map(([id, b]) => ({ id, name: b.name })),
+                  ...PLACES.map((p) => ({ id: '', name: p })),
+                ].map(({ id, name: p }) => (
                   <button
                     key={p}
                     onClick={() => {
@@ -2075,10 +2120,9 @@ export default function Nutrition() {
                     {id && <ChainBadge id={id} size={22} />}
                     {p}
                   </button>
-                ),
-              )}
+                ))}
+              </div>
             </div>
-          </div>
           )}
           {isNew && ai?.enabled && place && !activeChain && (
             <div className="space-y-2">
@@ -2169,25 +2213,27 @@ export default function Nutrition() {
             </div>
           )}
           {(!isNew || (place && (!activeChain || showChainMenu))) && (
-          <div>
-            {isNew && <GroupLabel>{activeChain ? 'Auf der Karte suchen' : 'Oder beschreiben, was du bestellst'}</GroupLabel>}
-            <div className="flex gap-2">
-              <input
-                className={isNew ? BIG_INPUT : 'input'}
-                placeholder={
-                  activeChain
-                    ? 'Auf der Karte suchen, z. B. Big Mac'
-                    : isNew
-                      ? 'Gericht, z. B. Pasta Carbonara'
-                      : 'Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis'
-                }
-                value={restItem}
-                onChange={(e) => setRestItem(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && estimateOrder()}
-              />
-              <MicButton onResult={(t) => setRestItem((v) => (v ? v + ' ' + t : t))} />
+            <div>
+              {isNew && (
+                <GroupLabel>{activeChain ? 'Auf der Karte suchen' : 'Oder beschreiben, was du bestellst'}</GroupLabel>
+              )}
+              <div className="flex gap-2">
+                <input
+                  className={isNew ? BIG_INPUT : 'input'}
+                  placeholder={
+                    activeChain
+                      ? 'Auf der Karte suchen, z. B. Big Mac'
+                      : isNew
+                        ? 'Gericht, z. B. Pasta Carbonara'
+                        : 'Küche/Restaurant & Gericht, z. B. Indisch: Chicken Tikka mit Reis'
+                  }
+                  value={restItem}
+                  onChange={(e) => setRestItem(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && estimateOrder()}
+                />
+                <MicButton onResult={(t) => setRestItem((v) => (v ? v + ' ' + t : t))} />
+              </div>
             </div>
-          </div>
           )}
           {isNew &&
             activeChain &&
@@ -2227,10 +2273,7 @@ export default function Nutrition() {
                           <span className="text-[11px] text-bg/60 dark:text-cocoa-light">Eiweiß</span>
                         </span>
                       </div>
-                      <button
-                        className="btn-primary gap-1.5 rounded-2xl px-4 py-2.5"
-                        onClick={() => logCombo(best)}
-                      >
+                      <button className="btn-primary gap-1.5 rounded-2xl px-4 py-2.5" onClick={() => logCombo(best)}>
                         <Plus size={17} /> Eintragen
                       </button>
                     </div>
@@ -2341,8 +2384,7 @@ export default function Nutrition() {
           }
         >
           <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>
-            Optional dazu schreiben oder diktieren, was drin ist oder wie viel — macht die
-            Schätzung genauer.
+            Optional dazu schreiben oder diktieren, was drin ist oder wie viel — macht die Schätzung genauer.
           </p>
           <div className="flex gap-2">
             <input
@@ -2456,8 +2498,7 @@ export default function Nutrition() {
           }
         >
           <p className="text-xs text-cocoa-light">
-            Schätzwerte — vor dem Übernehmen kurz prüfen. Zum Feinjustieren einzeln übernehmen und
-            danach bearbeiten.
+            Schätzwerte — vor dem Übernehmen kurz prüfen. Zum Feinjustieren einzeln übernehmen und danach bearbeiten.
           </p>
           {isNew ? (
             <GroupList>
@@ -2543,8 +2584,7 @@ export default function Nutrition() {
           }
         >
           <p className={isNew ? 'text-sm text-cocoa-light' : 'text-xs text-cocoa-light'}>
-            Worauf hast du Lust? Dann den Kühlschrank/die Zutaten fotografieren — die KI macht dir
-            ein passendes Rezept.
+            Worauf hast du Lust? Dann den Kühlschrank/die Zutaten fotografieren — die KI macht dir ein passendes Rezept.
           </p>
           {isNew ? (
             <>
@@ -2658,7 +2698,11 @@ export default function Nutrition() {
           footer={
             isNew ? (
               <>
-                <PrimaryButton onClick={() => logRecipe(recipe)} disabled={addRecipe.isPending || saving} busy={addEntry.isPending}>
+                <PrimaryButton
+                  onClick={() => logRecipe(recipe)}
+                  disabled={addRecipe.isPending || saving}
+                  busy={addEntry.isPending}
+                >
                   {mealOverride ? `Zu ${MEAL_LABEL[mealOverride]} loggen` : 'Loggen'}
                 </PrimaryButton>
                 <div className="grid grid-cols-2 gap-2">
@@ -2708,7 +2752,11 @@ export default function Nutrition() {
                 >
                   Schließen
                 </button>
-                <button className="btn-primary" onClick={() => logRecipe(recipe)} disabled={addRecipe.isPending || saving}>
+                <button
+                  className="btn-primary"
+                  onClick={() => logRecipe(recipe)}
+                  disabled={addRecipe.isPending || saving}
+                >
                   {addEntry.isPending ? 'Speichert…' : 'Loggen'}
                 </button>
               </div>
@@ -2756,8 +2804,8 @@ export default function Nutrition() {
           ) : (
             <>
               <p className="tabular text-xs text-cocoa-light">
-                {recipe.servings} Portion(en) · pro Portion {recipe.nutrition.kcal} kcal · E{' '}
-                {recipe.nutrition.protein} / K {recipe.nutrition.carbs} / F {recipe.nutrition.fat}
+                {recipe.servings} Portion(en) · pro Portion {recipe.nutrition.kcal} kcal · E {recipe.nutrition.protein}{' '}
+                / K {recipe.nutrition.carbs} / F {recipe.nutrition.fat}
               </p>
               <div>
                 <div className="mb-1 text-sm font-semibold">Zutaten</div>
@@ -2817,8 +2865,7 @@ export default function Nutrition() {
             <p className="text-sm text-cocoa-light">Wünsche? Buddy plant Frühstück bis Snack passend zu deinem Ziel.</p>
           ) : (
             <p className="tabular text-xs text-cocoa-light">
-              Ziel: ~{settings?.kcal_target || 2000} kcal · {settings?.protein_target || 130} g Eiweiß.
-              Wünsche?
+              Ziel: ~{settings?.kcal_target || 2000} kcal · {settings?.protein_target || 130} g Eiweiß. Wünsche?
             </p>
           )}
           <div className="flex gap-2">
@@ -2908,8 +2955,8 @@ export default function Nutrition() {
                 ))}
               </ul>
               <div className="tabular text-xs text-cocoa-muted">
-                Summe: {planItems.reduce((s, i) => s + i.kcal, 0)} kcal ·{' '}
-                {planItems.reduce((s, i) => s + i.protein, 0)} g Eiweiß
+                Summe: {planItems.reduce((s, i) => s + i.kcal, 0)} kcal · {planItems.reduce((s, i) => s + i.protein, 0)}{' '}
+                g Eiweiß
               </div>
             </>
           )}

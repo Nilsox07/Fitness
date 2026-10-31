@@ -93,15 +93,6 @@ export interface Plan {
   created_at: string
 }
 
-export interface PlanExercise {
-  id: string
-  user_id: string
-  plan_id: string
-  exercise_id: string
-  position: number
-  created_at: string
-}
-
 /** Ein Plan angereichert um seine (geordneten) Übungs-IDs. */
 export interface PlanWithExercises extends Plan {
   exercise_ids: string[]

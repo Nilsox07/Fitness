@@ -14,6 +14,8 @@ import {
 import { usePrefs, type World } from '../lib/prefs'
 import { useHealthActivities, useHealthDaily, useHealthSleep } from '../hooks/useHealth'
 import { capabilities } from '../lib/health'
+import { BuddyTip } from './buddy/BuddyTip'
+import type { TipPage } from '../lib/buddyTips'
 
 type Item = { id: string; label: string; Icon: LucideIcon; to: string; world?: World; tint: string }
 
@@ -76,6 +78,16 @@ export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
 
   if (pathname === '/history') return null
   const onAnalytics = pathname === '/analytics'
+  const tipPage: TipPage | null =
+    onAnalytics && activeId === 'strength'
+      ? 'progress'
+      : pathname === '/cardio'
+        ? 'cardio'
+        : pathname === '/sleep'
+          ? 'sleep'
+          : pathname === '/vitals'
+            ? 'vitals'
+            : null
 
   return (
     <div className="space-y-2">
@@ -114,6 +126,7 @@ export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
         </div>
       )}
       {!onAnalytics && extra}
+      {tipPage && <BuddyTip page={tipPage} />}
     </div>
   )
 }

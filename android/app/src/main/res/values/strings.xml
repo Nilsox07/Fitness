@@ -4,7 +4,27 @@
     <string name="title_activity_main">Fitness</string>
     <string name="package_name">de.fitnessbuddy.app</string>
     <string name="custom_url_scheme">de.fitnessbuddy.app</string>
+    <!-- Homescreen-Widgets: Name in der Auswahl + Beschreibung -->
+    <string name="widget_buddy_label">Buddy</string>
+    <string name="widget_buddy_desc">Dein Buddy mit Spruch des Tages &amp; Level</string>
+    <string name="widget_today_label">Tagesübersicht</string>
     <string name="widget_today_desc">Kalorien, Eiweiß &amp; Wasser – mit +250 ml</string>
-    <string name="widget_training_desc">Nächstes Training &amp; Serie</string>
+    <string name="widget_water_label">Wasser</string>
+    <string name="widget_water_desc">Tippen und 250 ml eintragen</string>
+    <string name="widget_kcal_label">Kalorien</string>
+    <string name="widget_kcal_desc">Wie viele Kalorien heute noch drin sind</string>
+    <string name="widget_training_label">Training</string>
+    <string name="widget_training_desc">Nächstes Training, Serie &amp; Wochenziel</string>
+    <string name="widget_readiness_label">Tagesform</string>
     <string name="widget_readiness_desc">Tagesform, Schlaf &amp; Schritte von der Uhr</string>
+    <string name="widget_steps_label">Schritte</string>
+    <string name="widget_steps_desc">Schritte heute gegen dein Ziel (mit Uhr)</string>
+    <string name="widget_sleep_label">Schlaf</string>
+    <string name="widget_sleep_desc">Wie lange du letzte Nacht geschlafen hast (mit Uhr)</string>
+    <string name="widget_fasting_label">Fasten</string>
+    <string name="widget_fasting_desc">Intervallfasten mit Live-Countdown</string>
+    <string name="widget_quests_label">Quests</string>
+    <string name="widget_quests_desc">Deine Tagesquests &amp; dein Level</string>
+    <string name="widget_supps_label">Supplemente</string>
+    <string name="widget_supps_desc">Was du als Nächstes nehmen solltest</string>
 </resources>

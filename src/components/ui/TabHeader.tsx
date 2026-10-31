@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Sparkles, User } from 'lucide-react'
+import { Search, Sparkles, User } from 'lucide-react'
+import { openSearch } from '../search/SearchSheet'
 import { BuddyFace } from '../buddy/BuddyFace'
 import { openBuddySheet } from '../buddy/BuddySheet'
 import { useBuddy } from '../buddy/useBuddy'
@@ -16,7 +17,15 @@ export function HeaderActions() {
     <div className="flex shrink-0 items-center gap-2">
       <button
         type="button"
-        onClick={openBuddySheet}
+        onClick={openSearch}
+        aria-label="Suchen"
+        className="grid h-9 w-9 place-items-center rounded-full bg-sand text-cocoa transition active:scale-90"
+      >
+        <Search size={18} />
+      </button>
+      <button
+        type="button"
+        onClick={() => openBuddySheet()}
         aria-label={aiOn ? 'Frag Buddy – dein KI-Coach' : 'Buddy öffnen'}
         title={aiOn ? 'Frag Buddy – dein KI-Coach' : buddy.line}
         className="relative rounded-full bg-brand/10 ring-1 ring-brand/25 transition active:scale-90"

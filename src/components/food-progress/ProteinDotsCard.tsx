@@ -25,6 +25,8 @@ export function ProteinDotsCard({
   style?: CSSProperties
 }) {
   const hits = dots.filter((d) => d.state === 'hit').length
+  // Ab zwei Wochen als Kalender-Raster (7 Spalten), sonst eine Zeile
+  const grid = dots.length > 14
   return (
     <section style={style}>
       <SectionTitle right={`Ziel ${fmtInt(target)} g`}>Eiweiß-Konstanz</SectionTitle>
@@ -40,9 +42,13 @@ export function ProteinDotsCard({
             </span>
           )}
         </div>
-        <div className="flex items-end justify-between" role="list">
+        <div
+          className={grid ? 'grid grid-cols-7 justify-items-center gap-y-1.5' : 'flex items-end justify-between'}
+          role="list"
+        >
           {dots.map((d, i) => {
             const isToday = d.date === today
+            const label = grid ? i < 7 : i % 7 === 0 || isToday
             return (
               <div
                 key={d.date}
@@ -62,12 +68,12 @@ export function ProteinDotsCard({
                 >
                   {d.state === 'hit' && <Check size={11} strokeWidth={3} />}
                 </span>
-                {(i % 7 === 0 || isToday) && (
-                  <span className={`text-[9px] ${isToday ? 'font-semibold text-brand' : 'text-cocoa-muted'}`}>
-                    {isToday ? 'Heute' : weekday(d.date)}
+                {label && (
+                  <span className={`text-[9px] ${isToday && !grid ? 'font-semibold text-brand' : 'text-cocoa-muted'}`}>
+                    {isToday && !grid ? 'Heute' : weekday(d.date)}
                   </span>
                 )}
-                {!(i % 7 === 0 || isToday) && <span className="text-[9px] text-transparent">·</span>}
+                {!label && !grid && <span className="text-[9px] text-transparent">·</span>}
               </div>
             )
           })}

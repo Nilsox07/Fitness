@@ -1,11 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useHealthSync } from '../hooks/useHealth'
 import { useToday } from '../hooks/useToday'
 import { useSetWater } from '../hooks/useWater'
 import { usePrefs } from '../lib/prefs'
-import { isNative, liveFastingEnabled, liveStart, liveStop, takePendingWater, updateWidgets } from '../lib/native'
+import {
+  cssVarHex,
+  isNative,
+  liveFastingEnabled,
+  liveStart,
+  liveStop,
+  takePendingWater,
+  updateWidgetBuddy,
+  updateWidgets,
+} from '../lib/native'
+import { useBuddy, useBuddyLevel } from './buddy/useBuddy'
+import { MyBuddy } from './buddy/MyBuddy'
+import { BUDDY_STAGE_LABELS } from './buddy/Buddy'
+import { useQuests } from '../hooks/useQuests'
+import { useSupplementLog, useSupplements } from '../hooks/useSupplements'
+import { dosesFor } from '../lib/supplements'
+import { mascotEmoji } from '../lib/cosmetics'
 import { useDietStyle } from '../hooks/useNutrition'
 import { fastingState, fastingWindow } from '../lib/dietStyle'
 import { supabase } from '../lib/supabase'
@@ -23,7 +39,7 @@ export function NativeSync() {
 function NativeSyncInner() {
   useHealthSync()
   const t = useToday()
-  const { showNutrition, hasWatch } = usePrefs()
+  const { showNutrition, hasWatch, showSocial } = usePrefs()
   const setWater = useSetWater()
   const qc = useQueryClient()
   const { fasting, fastingStart } = useDietStyle()
@@ -53,9 +69,21 @@ function NativeSyncInner() {
     return () => clearTimeout(timer)
   }, [fasting, fastingStart, showNutrition])
 
-  // Widgets aktualisieren, sobald sich die Zahlen ändern
+  // Widgets aktualisieren, sobald sich die Zahlen ändern (inkl. App-Farbe und Buddy)
+  const buddy = useBuddy()
+  const level = useBuddyLevel()
+  const quests = useQuests()
+  const { data: supps = [] } = useSupplements()
+  const { data: suppLog = [] } = useSupplementLog(t.day)
   useEffect(() => {
     if (t.loading) return
+    const qs = [...quests.training.daily, ...(quests.food?.daily ?? [])]
+    const doses = dosesFor(t.day, supps, suppLog)
+    const now = new Date()
+    const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    const next = doses.find((d) => !d.taken && d.slot >= hhmm) ?? doses.find((d) => !d.taken)
+    const win = showNutrition && fasting !== 'none' ? fastingWindow({ fasting, fastingStart }) : null
+    const fst = win ? fastingState(now, win) : null
     void updateWidgets({
       updatedAt: Date.now(),
       kcalEaten: t.kcalEaten,
@@ -73,10 +101,52 @@ function NativeSyncInner() {
       readinessLabel: t.readiness?.advice ?? null,
       sleepMin: t.sleep?.asleep_min ?? null,
       steps: t.steps,
+      stepsGoal: 8000,
+      restingHr: t.restingHr,
+      hrv: t.hrv,
+      cardioWeekKm: t.cardioWeek ? Math.round(t.cardioWeek.distance_m / 100) / 10 : null,
       showNutrition,
       hasWatch,
+      showSocial,
+      accent: cssVarHex('--c-ruby'),
+      accentLight: cssVarHex('--c-ruby-light'),
+      onAccent: cssVarHex('--c-on-brand'),
+      buddyLine: buddy.line,
+      buddyMood: buddy.mood,
+      buddyEmoji: mascotEmoji(buddy.sessions, buddy.skin),
+      level: level.level,
+      levelPct: Math.round(level.progress),
+      stageLabel: BUDDY_STAGE_LABELS[buddy.stage] ?? '',
+      questsDone: qs.filter((q) => q.done).length,
+      questsTotal: qs.length,
+      fasting: fst
+        ? {
+            phase: fst.phase,
+            endsAt: Date.now() + fst.minutesLeft * 60_000,
+            startsAt:
+              Date.now() -
+              ((fst.phase === 'eating' ? win!.hours * 60 : 1440 - win!.hours * 60) - fst.minutesLeft) * 60_000,
+            label: fst.phase === 'eating' ? `Fenster schließt ${fst.nextChange}` : `Essen ab ${fst.nextChange}`,
+          }
+        : null,
+      supplementNext: next ? { name: next.supplement.name, time: next.slot } : null,
+      supplementsDone: doses.filter((d) => d.taken).length,
+      supplementsTotal: doses.length,
     })
-  }, [t, showNutrition, hasWatch])
+  }, [t, showNutrition, hasWatch, showSocial, buddy, level, quests, supps, suppLog, fasting, fastingStart])
+
+  // Buddy als Bild für die Widgets (gleiches Aussehen wie in der App)
+  const buddyRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const svg = buddyRef.current?.querySelector('svg')
+      if (svg)
+        void renderBuddyPng(svg).then((png) => {
+          if (png) void updateWidgetBuddy(png)
+        })
+    }, 800)
+    return () => clearTimeout(id)
+  }, [buddy.mood, buddy.stage, buddy.skin])
 
   // Wasser aus dem Widget übernehmen (beim Start und bei Rückkehr in die App)
   useEffect(() => {
@@ -102,7 +172,37 @@ function NativeSyncInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return null
+  return (
+    <div ref={buddyRef} aria-hidden className="pointer-events-none fixed -left-[9999px] top-0 opacity-0">
+      <MyBuddy size={256} mood={buddy.mood} animate={false} />
+    </div>
+  )
+}
+
+/** Buddy-SVG → PNG (Base64). CSS-Variablen der App-Farbe werden vorher eingesetzt. */
+async function renderBuddyPng(svg: SVGSVGElement): Promise<string | null> {
+  try {
+    const root = getComputedStyle(document.documentElement)
+    let xml = new XMLSerializer().serializeToString(svg)
+    for (const v of ['--c-ruby-dark', '--c-ruby-light', '--c-ruby', '--c-text-muted', '--c-text', '--c-bg']) {
+      xml = xml.split(`var(${v})`).join(root.getPropertyValue(v).trim())
+    }
+    if (!xml.includes('xmlns=')) xml = xml.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
+    const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml)
+    const img = new Image()
+    await new Promise<void>((ok, err) => {
+      img.onload = () => ok()
+      img.onerror = () => err(new Error('svg'))
+      img.src = url
+    })
+    const c = document.createElement('canvas')
+    c.width = 256
+    c.height = 256
+    c.getContext('2d')!.drawImage(img, 0, 0, 256, 256)
+    return c.toDataURL('image/png').replace(/^data:image\/png;base64,/, '')
+  } catch {
+    return null
+  }
 }
 
 /**

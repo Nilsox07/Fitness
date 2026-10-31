@@ -28,7 +28,7 @@ function InfoBody({ info }: { info: DietInfo }) {
       <ul className="space-y-1">
         {info.pros.map((p) => (
           <li key={p} className="flex gap-2">
-            <ThumbsUp size={13} className="mt-0.5 shrink-0 text-success" />
+            <ThumbsUp size={13} className="mt-0.5 shrink-0 text-good" />
             {p}
           </li>
         ))}
