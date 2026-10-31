@@ -256,9 +256,28 @@ export function CompactSetRow({
               <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-cocoa-muted" />
             )}
           </button>
-          <span className="tabular truncate text-xs text-cocoa-muted">
+          <button
+            type="button"
+            disabled={!prev}
+            onClick={() => {
+              // Wie bei Hevy: „Vorher“ antippen übernimmt Gewicht & Wiederholungen
+              if (!prev) return
+              update.mutate({
+                id: s.id,
+                weight: prev.weight,
+                reps: prev.reps,
+                ...(uni
+                  ? { weight_right: prev.weight_right ?? prev.weight, reps_right: prev.reps_right ?? prev.reps }
+                  : {}),
+              })
+              // Wdh > 0 = Satz erledigt → Pause starten wie beim ✓
+              fireDone()
+            }}
+            aria-label={prev ? `Wie letztes Mal: ${fmt(prev.weight)} kg × ${prev.reps}` : 'Kein Vorwert'}
+            className="tabular truncate rounded-md text-left text-xs text-cocoa-muted active:bg-sand"
+          >
             {prev ? `${fmt(prev.weight)}×${prev.reps}` : '–'}
-          </span>
+          </button>
           <MiniStepper
             label="Gewicht"
             value={s.weight}

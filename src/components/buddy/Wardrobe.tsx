@@ -26,16 +26,8 @@ import { accessoryProps, seasonBadges } from '../../lib/seasonBadges'
 import { useAuth } from '../../lib/auth'
 import { shareMyLook } from '../../hooks/useSocial'
 
-type Tab = 'skin' | 'accessory' | 'color' | 'background' | 'frame' | 'title'
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'skin', label: 'Skins' },
-  { id: 'accessory', label: 'Accessoires' },
-  { id: 'color', label: 'Farben' },
-  { id: 'background', label: 'Hintergrund' },
-  { id: 'frame', label: 'Rahmen' },
-  { id: 'title', label: 'Titel' },
-]
+/** Ein Bereich der Garderobe – einzeln anzeigbar (Profil → Aussehen), ohne Tab-Leiste. */
+export type LookPart = 'skin' | 'variant' | 'accessory' | 'accent' | 'theme' | 'background' | 'frame' | 'title'
 
 const NONE = (kind: UnlockDef['kind'], label = 'Ohne'): UnlockDef => ({ kind, id: 'none', label, level: 1 })
 
@@ -44,11 +36,20 @@ function lockText(def: UnlockDef): string {
   return `Lv ${def.level}`
 }
 
-/** Garderobe: alles Freischaltbare an einem Ort, mit Vorschau am eigenen Buddy. */
-export function Wardrobe({ ctx, stage, onChange }: { ctx: UnlockContext; stage: number; onChange?: () => void }) {
+/** Garderobe-Bereich mit Vorschau am eigenen Buddy. */
+export function WardrobePart({
+  part,
+  ctx,
+  stage,
+  onChange,
+}: {
+  part: LookPart
+  ctx: UnlockContext
+  stage: number
+  onChange?: () => void
+}) {
   const look = useLookPrefs()
   const { user } = useAuth()
-  const [tab, setTab] = useState<Tab>('skin')
   const [accent, setAccent] = useState(getAccentId)
   const [dark, setDark] = useState(getDarkStyle)
   const st = Math.max(2, stage)
@@ -122,23 +123,7 @@ export function Wardrobe({ ctx, stage, onChange }: { ctx: UnlockContext; stage: 
 
   return (
     <section className="space-y-3">
-      <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none]" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-              tab === t.id ? 'bg-cocoa text-bg' : 'bg-sand text-cocoa-light'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'skin' && (
+      {part === 'skin' && (
         <div className="grid grid-cols-4 gap-2">
           {SKINS.map((s) =>
             tile(
@@ -152,7 +137,7 @@ export function Wardrobe({ ctx, stage, onChange }: { ctx: UnlockContext; stage: 
         </div>
       )}
 
-      {tab === 'accessory' && (
+      {part === 'accessory' && (
         <>
           <div className="grid grid-cols-4 gap-2">
             {[NONE('accessory'), ...of('accessory'), ...seasonDefs].map((d) =>
@@ -173,112 +158,104 @@ export function Wardrobe({ ctx, stage, onChange }: { ctx: UnlockContext; stage: 
         </>
       )}
 
-      {tab === 'color' && (
-        <div className="space-y-4">
-          <div>
-            <h3 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
-              Buddy-Variante
-            </h3>
-            <div className="grid grid-cols-4 gap-2">
-              {[NONE('variant', 'Normal'), ...of('variant')].map((d) => {
-                const id = d.id === 'none' ? 'normal' : d.id
-                return tile(
-                  d.id,
-                  d,
-                  look.variant === id,
-                  () => update({ variant: id }),
-                  preview({ variant: id }, !isUnlocked(d, ctx)),
-                )
-              })}
-            </div>
-          </div>
-          <div>
-            <h3 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">App-Farbe</h3>
-            <div className="card flex flex-wrap gap-3">
-              {ACCENTS.map((a) => {
-                const def: UnlockDef = { kind: 'accent', id: a.id, label: a.label, level: a.minLevel }
-                const locked = !isUnlocked(def, ctx)
-                const active = accent === a.id
-                return (
-                  <button
-                    key={a.id}
-                    type="button"
-                    disabled={locked}
-                    aria-pressed={active}
-                    aria-label={locked ? `${a.label} – ab Level ${a.minLevel}` : a.label}
-                    onClick={() => {
-                      setAccent(a.id)
-                      setAccentId(a.id)
-                      applyAccent(a.id)
-                    }}
-                    className="flex w-11 flex-col items-center gap-1"
-                  >
-                    <span
-                      className={`relative grid h-9 w-9 place-items-center rounded-full ring-2 ring-offset-2 ring-offset-cream ${
-                        active ? 'ring-cocoa' : 'ring-transparent'
-                      } ${locked ? 'opacity-40' : ''}`}
-                      style={{ background: a.swatch }}
-                    >
-                      {locked ? (
-                        <Lock size={14} className="text-white" />
-                      ) : (
-                        active && <Check size={16} strokeWidth={3} className="text-white" />
-                      )}
-                    </span>
-                    <span className="tabular text-[10px] leading-tight text-cocoa-light">
-                      {locked ? `Lv ${a.minLevel}` : a.label}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <div>
-            <h3 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
-              Dunkles Theme
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {[NONE('theme', 'Standard'), ...of('theme')].map((d) => {
-                const id = d.id === 'none' ? 'default' : d.id
-                const locked = !isUnlocked(d, ctx)
-                const active = dark === id
-                return (
-                  <button
-                    key={d.id}
-                    type="button"
-                    disabled={locked}
-                    aria-pressed={active}
-                    onClick={() => {
-                      setDark(id)
-                      setDarkStyle(id as 'default' | 'midnight')
-                    }}
-                    className={`relative flex items-center gap-2.5 rounded-2xl p-2.5 text-left ${active ? 'bg-brand/10 ring-2 ring-brand' : 'bg-sand'}`}
-                  >
-                    <span
-                      className={`h-9 w-9 shrink-0 rounded-xl ring-1 ring-black/10 ${locked ? 'opacity-40' : ''}`}
-                      style={{
-                        background:
-                          id === 'midnight'
-                            ? 'linear-gradient(135deg,#02040A,#16204A)'
-                            : 'linear-gradient(135deg,#0B0F19,#232E44)',
-                      }}
-                    />
-                    <span className="min-w-0 text-sm font-semibold">
-                      {d.id === 'none' ? 'Standard' : 'Midnight'}
-                      <span className="block text-[11px] font-normal text-cocoa-light">
-                        {locked ? lockText(d) : 'wirkt im Dunkelmodus'}
-                      </span>
-                    </span>
-                    {locked && <Lock size={12} className="absolute right-2 top-2 text-cocoa-muted" />}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+      {part === 'variant' && (
+        <div className="grid grid-cols-4 gap-2">
+          {[NONE('variant', 'Normal'), ...of('variant')].map((d) => {
+            const id = d.id === 'none' ? 'normal' : d.id
+            return tile(
+              d.id,
+              d,
+              look.variant === id,
+              () => update({ variant: id }),
+              preview({ variant: id }, !isUnlocked(d, ctx)),
+            )
+          })}
         </div>
       )}
 
-      {tab === 'background' && (
+      {part === 'accent' && (
+        <div className="card flex flex-wrap gap-3">
+          {ACCENTS.map((a) => {
+            const def: UnlockDef = { kind: 'accent', id: a.id, label: a.label, level: a.minLevel }
+            const locked = !isUnlocked(def, ctx)
+            const active = accent === a.id
+            return (
+              <button
+                key={a.id}
+                type="button"
+                disabled={locked}
+                aria-pressed={active}
+                aria-label={locked ? `${a.label} – ab Level ${a.minLevel}` : a.label}
+                onClick={() => {
+                  setAccent(a.id)
+                  setAccentId(a.id)
+                  applyAccent(a.id)
+                  onChange?.()
+                }}
+                className="flex w-11 flex-col items-center gap-1"
+              >
+                <span
+                  className={`relative grid h-9 w-9 place-items-center rounded-full ring-2 ring-offset-2 ring-offset-cream ${
+                    active ? 'ring-cocoa' : 'ring-transparent'
+                  } ${locked ? 'opacity-40' : ''}`}
+                  style={{ background: a.swatch }}
+                >
+                  {locked ? (
+                    <Lock size={14} className="text-white" />
+                  ) : (
+                    active && <Check size={16} strokeWidth={3} className="text-white" />
+                  )}
+                </span>
+                <span className="tabular text-[10px] leading-tight text-cocoa-light">
+                  {locked ? `Lv ${a.minLevel}` : a.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {part === 'theme' && (
+        <div className="grid grid-cols-2 gap-2">
+          {[NONE('theme', 'Standard'), ...of('theme')].map((d) => {
+            const id = d.id === 'none' ? 'default' : d.id
+            const locked = !isUnlocked(d, ctx)
+            const active = dark === id
+            return (
+              <button
+                key={d.id}
+                type="button"
+                disabled={locked}
+                aria-pressed={active}
+                onClick={() => {
+                  setDark(id)
+                  setDarkStyle(id as 'default' | 'midnight')
+                }}
+                className={`relative flex items-center gap-2.5 rounded-2xl p-2.5 text-left ${active ? 'bg-brand/10 ring-2 ring-brand' : 'bg-sand'}`}
+              >
+                <span
+                  className={`h-9 w-9 shrink-0 rounded-xl ring-1 ring-black/10 ${locked ? 'opacity-40' : ''}`}
+                  style={{
+                    background:
+                      id === 'midnight'
+                        ? 'linear-gradient(135deg,#02040A,#16204A)'
+                        : 'linear-gradient(135deg,#0B0F19,#232E44)',
+                  }}
+                />
+                <span className="min-w-0 text-sm font-semibold">
+                  {d.id === 'none' ? 'Standard' : 'Midnight'}
+                  <span className="block text-[11px] font-normal text-cocoa-light">
+                    {locked ? lockText(d) : 'wirkt im Dunkelmodus'}
+                  </span>
+                </span>
+                {locked && <Lock size={12} className="absolute right-2 top-2 text-cocoa-muted" />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {part === 'background' && (
         <div className="grid grid-cols-3 gap-2">
           {[NONE('background'), ...of('background')].map((d) =>
             tile(
@@ -294,7 +271,7 @@ export function Wardrobe({ ctx, stage, onChange }: { ctx: UnlockContext; stage: 
         </div>
       )}
 
-      {tab === 'frame' && (
+      {part === 'frame' && (
         <div className="grid grid-cols-4 gap-2">
           {[NONE('frame'), ...of('frame')].map((d) =>
             tile(
@@ -314,7 +291,7 @@ export function Wardrobe({ ctx, stage, onChange }: { ctx: UnlockContext; stage: 
         </div>
       )}
 
-      {tab === 'title' && (
+      {part === 'title' && (
         <div className="grid grid-cols-2 gap-2">
           {[NONE('title', 'Kein Titel'), ...of('title')].map((d) =>
             tile(

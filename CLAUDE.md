@@ -39,7 +39,7 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
 - Übersichten: nur kurze Texte (eine Zeile); Erklärungen hinter `InfoTip` (erst beim Antippen).
 - Neue Funktion = auch einen Eintrag in `src/lib/searchIndex.ts` (globale Suche) anlegen; Buddy-Tipps je Seite in
   `src/lib/buddyTips.ts`.
-- Tabs: Heute `/today` (anpassbare Widgets), Training `/`, Ernährung `/nutrition`, Fortschritt `/analytics` (+ `/cardio`, `/sleep`
+- Tabs: Heute `/today` (anpassbare Widgets), Training `/`, Ernährung `/nutrition`, Fortschritt `/progress` (Übersicht → Detailseiten `/analytics`, `/cardio`, `/sleep`
   nur mit Uhr), Community. Module (Ernährung/Community/Smartwatch) blenden alles Zugehörige aus – neue Features
   immer einem Modul zuordnen; Uhr-Funktionen nie ohne `hasWatch` zeigen.
 - **Nicht jede Uhr liefert alle Werte** (HRV, Schlafphasen, SpO₂, Leistung …): jeden Wert optional behandeln,

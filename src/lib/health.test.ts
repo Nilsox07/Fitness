@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   activityBests,
+  agoText,
   baseline,
   cardioSummary,
   durationText,
@@ -140,5 +141,16 @@ describe('Schlaf & Strecke', () => {
     expect(d.startsWith('M')).toBe(true)
     expect(d).toContain('L')
     expect(routePath(null, 10, 10)).toBe('')
+  })
+})
+
+describe('agoText', () => {
+  const now = new Date('2026-10-31T12:00:00Z').getTime()
+  it('formatiert den letzten Abgleich', () => {
+    expect(agoText(null, now)).toBeNull()
+    expect(agoText('2026-10-31T11:59:30Z', now)).toBe('gerade eben')
+    expect(agoText('2026-10-31T11:48:00Z', now)).toBe('vor 12 Min.')
+    expect(agoText('2026-10-31T09:00:00Z', now)).toBe('vor 3 Std.')
+    expect(agoText('2026-10-30T12:00:00Z', now)).toBe('vor 1 Tag')
   })
 })

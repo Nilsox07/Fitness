@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react'
-import { ProgressSwitch } from '../components/ProgressSwitch'
 import { TabHeader } from '../components/ui/TabHeader'
-import { Check, Lock, Share2 } from 'lucide-react'
+import { Check, ChevronRight, Lock, Palette, Share2 } from 'lucide-react'
 import { MonthRecapSheet } from '../components/progress/MonthRecapSheet'
 import { useAllSets } from '../hooks/useWorkouts'
 import { rankForSessions } from '../lib/gamification'
 import { ACHIEVEMENTS, PRESTIGE_LEVEL, UNLOCKS, nextUnlocks, titleLabel, type UnlockKind } from '../lib/unlocks'
 import { accessoryProps } from '../lib/seasonBadges'
-import { Wardrobe } from '../components/buddy/Wardrobe'
+import { useNavigate } from 'react-router-dom'
 import { SeasonThemeCard } from '../components/buddy/SeasonThemeCard'
 import { BuddyBackdrop } from '../components/buddy/BuddyBackdrop'
 import { useAchievements } from '../hooks/useAchievements'
@@ -50,6 +49,7 @@ function BuddyPage() {
   const { progress, earned } = useAchievements()
   const { prefs, save } = useUserPrefs()
   const ctx = { level: level.level, prestige: level.prestige, achievements: earned }
+  const navigate = useNavigate()
   const next = nextUnlocks(ctx, 3)
   const [confirmPrestige, setConfirmPrestige] = useState(false)
   const [recapOpen, setRecapOpen] = useState(false)
@@ -67,8 +67,7 @@ function BuddyPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <TabHeader overline="Level, Meilensteine & Freischaltungen" title="Fortschritt" />
-        <ProgressSwitch />
+        <TabHeader overline="Level & Meilensteine" title="Erfolge" />
       </div>
 
       {/* Hero: großer Buddy + Level + XP */}
@@ -226,11 +225,17 @@ function BuddyPage() {
         </section>
       )}
 
-      {/* Garderobe */}
-      <section>
-        <h2 className="mb-2 px-1 text-sm font-semibold text-cocoa-light">Garderobe</h2>
-        <Wardrobe ctx={ctx} stage={stage} />
-      </section>
+      {/* Garderobe liegt unter Profil → Aussehen */}
+      <button
+        onClick={() => navigate('/profile?s=appearance')}
+        className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left active:bg-sand/60"
+      >
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sand text-cocoa-light">
+          <Palette size={18} />
+        </span>
+        <span className="min-w-0 flex-1 text-[15px] font-semibold">Buddy & App-Farbe anpassen</span>
+        <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
+      </button>
 
       {/* Erfolge */}
       <section>

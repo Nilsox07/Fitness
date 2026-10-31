@@ -1,4 +1,5 @@
 import { openOnboarding } from '../components/onboarding/Onboarding'
+import { AppearanceSettings } from '../components/profile/AppearanceSettings'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -10,7 +11,6 @@ import {
   LogOut,
   PenLine,
   MessageSquare,
-  Moon,
   Palette,
   Target,
   User,
@@ -37,7 +37,7 @@ import { useAllFoodEntries } from '../hooks/useNutrition'
 import { exportNutritionCsv, exportSetsCsv } from '../lib/exportData'
 import { pushSupported, setShareCheatEnabled, shareCheatEnabled } from '../lib/push'
 import { setSoundEnabled, soundEnabled } from '../lib/sound'
-import { ACCENTS, SKINS, getAccentId, getSkinId } from '../lib/cosmetics'
+import { ACCENTS, getAccentId, getSkinId } from '../lib/cosmetics'
 import { GoalEditor } from '../components/GoalEditor'
 import { getStoredReview } from '../lib/weeklyReview'
 import { WeeklyReviewView } from '../components/review/WeeklyReviewView'
@@ -68,7 +68,7 @@ const SUB_TITLE: Record<Sub, string> = {
   push: 'Benachrichtigungen',
   export: 'Daten exportieren',
   modules: 'Bereiche',
-  appearance: 'Darstellung',
+  appearance: 'Aussehen',
 }
 
 const SUB_SUBTITLE: Record<Sub, string> = {
@@ -79,7 +79,7 @@ const SUB_SUBTITLE: Record<Sub, string> = {
   push: 'Erinnerungen einzeln einstellen',
   export: 'CSV-Download',
   modules: 'Ein- und ausblenden, Uhr verbinden',
-  appearance: 'Hell, Dunkel, Farbe & Ton',
+  appearance: 'App-Farbe, Buddy & Hell/Dunkel',
 }
 
 const MODES: { v: ThemeMode; label: string }[] = [
@@ -143,7 +143,6 @@ export default function Profile() {
   }
 
   const currentAccent = ACCENTS.find((a) => a.id === accent)
-  const currentSkin = SKINS.find((x) => x.id === skin)
 
   if (legacyRhythm) return null
   if (sub) {
@@ -180,13 +179,8 @@ export default function Profile() {
                 ))}
               </div>
             </SubCard>
+            <AppearanceSettings />
             <Group>
-              <Row
-                icon={Palette}
-                label="App-Farbe & Buddy-Aussehen"
-                value={[currentAccent?.label, currentSkin?.label].filter(Boolean).join(' · ')}
-                onClick={() => navigate('/badges')}
-              />
               <Row
                 icon={Volume2}
                 label="Sound-Effekte"
@@ -324,16 +318,11 @@ export default function Profile() {
           onClick={() => navigate('/today?edit=1')}
         />
         <Row
-          icon={Moon}
-          label="Darstellung"
-          value={MODES.find((m) => m.v === mode)?.label}
-          onClick={() => openSub('appearance')}
-        />
-        <Row
           icon={Palette}
-          label="Farbe & Buddy"
-          value={[currentAccent?.label, currentSkin?.label].filter(Boolean).join(' · ')}
-          onClick={() => navigate('/badges')}
+          label="Aussehen"
+          hint="App-Farbe, Buddy, Hell/Dunkel"
+          value={currentAccent?.label}
+          onClick={() => openSub('appearance')}
         />
       </Group>
 

@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
 import { useAllSets } from '../hooks/useWorkouts'
 import { usePrefs } from '../lib/prefs'
@@ -7,12 +9,20 @@ import { ProgressHeader } from '../components/progress/ProgressHeader'
 
 /** Statistik der aktiven Welt (Fitness oder Ernährung). */
 function NewAnalytics() {
-  const { world } = usePrefs()
+  const { world, setWorld, showNutrition } = usePrefs()
+  const [params] = useSearchParams()
+  // Aus der Fortschritt-Übersicht: ?view=food|strength wählt den Bereich
+  const view = params.get('view')
+  useEffect(() => {
+    if (view === 'food' && showNutrition) setWorld('food')
+    else if (view === 'strength') setWorld('fitness')
+  }, [view, showNutrition, setWorld])
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
   const sets = allSets ?? []
 
-  if (world === 'food') {
+  const effective = view === 'food' && showNutrition ? 'food' : view === 'strength' ? 'fitness' : world
+  if (effective === 'food') {
     return (
       <div className="space-y-5">
         <FoodStats />
@@ -27,7 +37,7 @@ function NewAnalytics() {
         <FitnessStats sets={sets} exercises={exercises ?? []} />
       ) : (
         <>
-          <ProgressHeader title="Fortschritt" subtitle="Noch keine Trainings" />
+          <ProgressHeader title="Kraft" subtitle="Noch keine Trainings" />
           <p className="text-cocoa-light">Noch keine Daten — erfasse dein erstes Training.</p>
         </>
       )}

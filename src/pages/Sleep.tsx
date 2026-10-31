@@ -42,7 +42,7 @@ export default function Sleep() {
 
   return (
     <div className="space-y-4">
-      <ProgressHeader title="Fortschritt" subtitle="Schlaf & Erholung" />
+      <ProgressHeader title="Schlaf" subtitle="Von deiner Uhr" />
 
       {/* Tagesform – in Worten statt Punkten */}
       <Hero

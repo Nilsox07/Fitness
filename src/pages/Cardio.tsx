@@ -49,7 +49,7 @@ export default function Cardio() {
 
   return (
     <div className="space-y-5">
-      <ProgressHeader title="Fortschritt" subtitle="Ausdauer · von deiner Uhr" />
+      <ProgressHeader title="Ausdauer" subtitle="Von deiner Uhr" />
 
       {types.length > 1 && (
         <div className="flex gap-1 overflow-x-auto rounded-full bg-sand p-1 [scrollbar-width:none]" style={enter(1)}>

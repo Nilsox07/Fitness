@@ -72,6 +72,15 @@ export function useHealthDaily(days = 30) {
   })
 }
 
+/** Zeitpunkt des letzten erfolgreichen Abgleichs (ISO) oder null. */
+export function lastHealthSync(): string | null {
+  try {
+    return localStorage.getItem(SYNC_KEY)
+  } catch {
+    return null
+  }
+}
+
 /** Health Connect lesen und in Supabase schreiben (seit dem letzten Abgleich, max. 30 Tage). */
 export function useHealthSync() {
   const { user } = useAuth()

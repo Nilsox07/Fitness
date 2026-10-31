@@ -207,8 +207,16 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     label: 'Kraft-Fortschritt',
     sub: 'Volumen, Muskelbalance, Rekorde',
     section: 'Fortschritt',
-    to: '/analytics',
+    to: '/analytics?view=strength',
     keywords: 'statistik auswertung volumen kraft rekorde muskeln',
+  },
+  {
+    id: 'progress',
+    label: 'Fortschritt-Übersicht',
+    sub: 'Alle Bereiche auf einen Blick',
+    section: 'Fortschritt',
+    to: '/progress',
+    keywords: 'übersicht entwicklung zusammenfassung woche statistik',
   },
   {
     id: 'cardio',
@@ -345,7 +353,7 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     label: 'App-Farbe & Buddy-Aussehen',
     sub: 'Farben, Outfits, Freischaltungen',
     section: 'Einstellungen',
-    to: '/badges',
+    to: '/profile?s=appearance',
     keywords: 'farbe theme design outfit kleidung skin freischaltungen akzent',
   },
   {

@@ -243,6 +243,7 @@ export interface ChatMsg {
 export const ASSISTANT_ROUTES = [
   '/',
   '/nutrition',
+  '/progress',
   '/analytics',
   '/history',
   '/exercises',

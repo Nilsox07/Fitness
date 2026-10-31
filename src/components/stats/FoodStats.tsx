@@ -52,19 +52,29 @@ export function FoodStats() {
     const dayBar = (date: string) => {
       const v = days.get(date)
       const target = targetOn(date)
-      return { date, label: ddmm(date), kcal: v ? Math.round(v.kcal) : 0, target: target > 0 ? target : null, today: date === today }
+      return {
+        date,
+        label: ddmm(date),
+        kcal: v ? Math.round(v.kcal) : 0,
+        target: target > 0 ? target : null,
+        today: date === today,
+      }
     }
     let data
     if (period === 'year') {
       data = []
       for (let w = range.start; w <= today; w = shiftDate(w, 7)) {
         const span = Array.from({ length: 7 }, (_, i) => shiftDate(w, i)).filter((d) => d <= today && days.has(d))
-        const kcal = span.length ? Math.round(span.reduce((s2, d) => s2 + (days.get(d)?.kcal ?? 0), 0) / span.length) : 0
+        const kcal = span.length
+          ? Math.round(span.reduce((s2, d) => s2 + (days.get(d)?.kcal ?? 0), 0) / span.length)
+          : 0
         const target = targetOn(w)
         data.push({ date: w, label: ddmm(w), kcal, target: target > 0 ? target : null, today: shiftDate(w, 7) > today })
       }
     } else {
-      data = Array.from({ length: daysBetween(range.start, range.periodEnd) + 1 }, (_, i) => dayBar(shiftDate(range.start, i)))
+      data = Array.from({ length: daysBetween(range.start, range.periodEnd) + 1 }, (_, i) =>
+        dayBar(shiftDate(range.start, i)),
+      )
     }
     const elapsed = daysBetween(range.start, today) + 1
     return {
@@ -86,7 +96,11 @@ export function FoodStats() {
 
   const [, sm] = range.start.split('-').map(Number)
   const periodName =
-    period === 'week' ? `KW ${isoWeekNumber(range.start)}` : period === 'month' ? MONTHS_LONG[sm - 1] : range.start.slice(0, 4)
+    period === 'week'
+      ? `KW ${isoWeekNumber(range.start)}`
+      : period === 'month'
+        ? MONTHS_LONG[sm - 1]
+        : range.start.slice(0, 4)
 
   if (isLoading) return <p className="text-cocoa-light">Lädt…</p>
 
@@ -94,7 +108,7 @@ export function FoodStats() {
   return (
     <div className="space-y-5">
       <ProgressHeader
-        title="Fortschritt"
+        title="Ernährung"
         subtitle={`${periodName} · ${stats.logged} ${stats.logged === 1 ? 'Tag' : 'Tage'} erfasst`}
         action={
           <Segmented
@@ -106,9 +120,7 @@ export function FoodStats() {
         }
       />
 
-      {!stats.hasAny && (
-        <p className="text-cocoa-light">Noch keine Ernährungsdaten — logge dein erstes Essen.</p>
-      )}
+      {!stats.hasAny && <p className="text-cocoa-light">Noch keine Ernährungsdaten — logge dein erstes Essen.</p>}
 
       {stats.hasAny && (
         <>

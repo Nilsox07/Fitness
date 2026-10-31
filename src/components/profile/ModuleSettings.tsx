@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Dumbbell, Lock, Users, Utensils, Watch } from 'lucide-react'
 import { usePrefs } from '../../lib/prefs'
 import { useUserPrefs } from '../../hooks/usePrefsSync'
-import { useHealthSync } from '../../hooks/useHealth'
+import { lastHealthSync, useHealthSync } from '../../hooks/useHealth'
+import { agoText } from '../../lib/health'
 import { withWatchWidgets } from '../../lib/dashboard'
 import {
   LIVE_FASTING_KEY,
@@ -83,6 +84,8 @@ export function ModuleSettings() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [liveFasting, setLiveFasting] = useState(liveFastingEnabled)
+  const [lastSync, setLastSync] = useState(lastHealthSync)
+  const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
     void healthAvailability().then(setHc)
@@ -190,9 +193,21 @@ export function ModuleSettings() {
                   </button>
                 </div>
               )}
+              {agoText(lastSync) && (
+                <p className="px-1 text-xs text-cocoa-muted">Zuletzt abgeglichen: {agoText(lastSync)}</p>
+              )}
               <div className="grid grid-cols-2 gap-2">
-                <button className="btn-ghost rounded-2xl py-2.5" onClick={() => void sync()}>
-                  Jetzt abgleichen
+                <button
+                  className="btn-ghost rounded-2xl py-2.5"
+                  disabled={syncing}
+                  onClick={async () => {
+                    setSyncing(true)
+                    await sync()
+                    setLastSync(lastHealthSync())
+                    setSyncing(false)
+                  }}
+                >
+                  {syncing ? 'Gleiche ab …' : 'Jetzt abgleichen'}
                 </button>
                 <button className="btn-ghost rounded-2xl py-2.5" onClick={() => void healthOpenSettings()}>
                   Berechtigungen

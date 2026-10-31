@@ -696,3 +696,16 @@ export function missingReadinessInputs(c: Capabilities): string[] {
   if (!c.has.restingHr) out.push('Ruhepuls')
   return out
 }
+
+/** „gerade eben“, „vor 12 Min.“, „vor 3 Std.“, „vor 2 Tagen“ */
+export function agoText(iso: string | null, now = Date.now()): string | null {
+  if (!iso) return null
+  const min = Math.round((now - new Date(iso).getTime()) / 60000)
+  if (!Number.isFinite(min)) return null
+  if (min < 2) return 'gerade eben'
+  if (min < 60) return `vor ${min} Min.`
+  const h = Math.round(min / 60)
+  if (h < 24) return `vor ${h} Std.`
+  const d = Math.round(h / 24)
+  return `vor ${d} ${d === 1 ? 'Tag' : 'Tagen'}`
+}

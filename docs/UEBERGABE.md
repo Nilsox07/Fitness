@@ -57,8 +57,12 @@ einer App, aber nur das sichtbar, was man nutzt.
   `src/components/today/Widgets.tsx`, Daten aus `src/hooks/useToday.ts`. Reihenfolge in `profiles.prefs.dashboard`.
 - **Module** (Profil → Bereiche, `ModuleSettings.tsx`): Ernährung, Community, Smartwatch. Aus = Tab, Widgets
   und Seiten verschwinden. Flags in `src/lib/prefs.tsx` (`showNutrition`, `showSocial`, `hasWatch`).
-- **Fortschritt-Tab** mit einer Leiste: Kraft · Ausdauer · Schlaf · Herz & Körper · Ernährung · Erfolge
-  (Uhr-Bereiche nur mit `hasWatch`).
+- **Fortschritt-Tab** (`/progress`, `src/pages/Progress.tsx`): Übersicht wie Apple Health – Wochen-Hero, Buddy-Tipp,
+  gruppierte Liste (Training · Von deiner Uhr · Körper & Ernährung · Motivation); jede Zeile führt auf ihre Detailseite
+  (`/analytics?view=strength|food`, `/cardio`, `/sleep`, `/vitals`, `/body`, `/badges`) mit „‹ Fortschritt“ zurück.
+  Keine Wisch-Leiste mehr. Uhr-Bereiche nur mit `hasWatch`.
+- **Aussehen** (Profil → Aussehen, `AppearanceSettings.tsx`): App-Farbe, Buddy (Figur, Variante, Accessoire,
+  Hintergrund, Rahmen, Titel je als Sheet) und Hell/Dunkel an einem Ort. App ist auf Hochformat fixiert.
 - **Intro beim ersten Start** (`components/onboarding/Onboarding.tsx`, Logik in `src/lib/onboarding.ts`, getestet):
   Ziel, Erfahrung, Gym/Zuhause, Trainingstage, Ausdauer (Art + Häufigkeit), Bereiche, Körperdaten → legt Übungen,
   Pläne und den Wochen-Rhythmus an, berechnet das Kalorienziel und speichert einen Ausdauer-Plan

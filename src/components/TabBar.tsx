@@ -75,10 +75,10 @@ const TRAINING_TAB: Tab = {
   also: ['/plans', '/exercises', '/quick'],
 }
 const PROGRESS_TAB: Tab = {
-  to: '/analytics',
+  to: '/progress',
   label: 'Fortschritt',
   Icon: IconChart,
-  also: ['/history', '/badges', '/body', '/cardio', '/sleep', '/vitals'],
+  also: ['/analytics', '/history', '/badges', '/body', '/cardio', '/sleep', '/vitals'],
 }
 const SOCIAL_TAB: Tab = { to: '/social', label: 'Community', Icon: IconPeople, also: ['/feed'] }
 

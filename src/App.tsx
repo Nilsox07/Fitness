@@ -24,6 +24,7 @@ import Shopping from './pages/Shopping'
 import Feed from './pages/Feed'
 import History from './pages/History'
 import Analytics from './pages/Analytics'
+import Progress from './pages/Progress'
 import Nutrition from './pages/Nutrition'
 import Profile from './pages/Profile'
 import QuickWorkout from './pages/QuickWorkout'
@@ -119,10 +120,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Workout />} />
           <Route path="/today" element={<Today />} />
-          <Route path="/cardio" element={hasWatch ? <Cardio /> : <Navigate to="/analytics" replace />} />
-          <Route path="/cardio/:id" element={hasWatch ? <ActivityDetail /> : <Navigate to="/analytics" replace />} />
-          <Route path="/sleep" element={hasWatch ? <Sleep /> : <Navigate to="/analytics" replace />} />
-          <Route path="/vitals" element={hasWatch ? <Vitals /> : <Navigate to="/analytics" replace />} />
+          <Route path="/cardio" element={hasWatch ? <Cardio /> : <Navigate to="/progress" replace />} />
+          <Route path="/cardio/:id" element={hasWatch ? <ActivityDetail /> : <Navigate to="/progress" replace />} />
+          <Route path="/sleep" element={hasWatch ? <Sleep /> : <Navigate to="/progress" replace />} />
+          <Route path="/vitals" element={hasWatch ? <Vitals /> : <Navigate to="/progress" replace />} />
           <Route path="/nutrition" element={showNutrition ? <Nutrition /> : <Navigate to="/" replace />} />
           <Route path="/exercises" element={<Exercises />} />
           <Route path="/exercises/:id" element={<ExerciseDetail />} />
@@ -133,6 +134,7 @@ export default function App() {
           <Route path="/shopping" element={showNutrition ? <Shopping /> : <Navigate to="/" replace />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/history" element={<History />} />
+          <Route path="/progress" element={<Progress />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/body" element={<Body />} />
           <Route path="/profile" element={<Profile />} />

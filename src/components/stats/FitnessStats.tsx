@@ -74,10 +74,7 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
 
   const range = useMemo(() => periodRange(period, today), [period, today])
   const cur = useMemo(() => sets.filter((s) => inRange(s.date, range.start, range.end)), [sets, range])
-  const prev = useMemo(
-    () => sets.filter((s) => inRange(s.date, range.prevStart, range.prevEnd)),
-    [sets, range],
-  )
+  const prev = useMemo(() => sets.filter((s) => inRange(s.date, range.prevStart, range.prevEnd)), [sets, range])
 
   const kpi = useMemo(() => {
     const sessions = (list: SetWithDate[]) => new Set(list.map((s) => s.date)).size
@@ -101,7 +98,10 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
     }
     const length = daysBetween(range.start, range.periodEnd)
     const values = cumulative(range.start, daysBetween(range.start, range.end))
-    const ghost = cumulative(range.prevStart, Math.min(length, daysBetween(range.prevStart, shiftDate(range.start, -1))))
+    const ghost = cumulative(
+      range.prevStart,
+      Math.min(length, daysBetween(range.prevStart, shiftDate(range.start, -1))),
+    )
     return { length, values, ghost }
   }, [sets, range])
 
@@ -123,7 +123,10 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
   const balance = useMemo(() => balanceStats(cur, exercises), [cur, exercises])
   const byMuscle = useMemo(() => muscleVolume(cur, exercises).filter((m) => m.value > 0), [cur, exercises])
   const stale = useMemo(
-    () => lastTrainedPerMuscle(sets, exercises).filter((r) => r.daysAgo >= 5).slice(0, 3),
+    () =>
+      lastTrainedPerMuscle(sets, exercises)
+        .filter((r) => r.daysAgo >= 5)
+        .slice(0, 3),
     [sets, exercises],
   )
 
@@ -194,7 +197,7 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
   return (
     <>
       <ProgressHeader
-        title="Fortschritt"
+        title="Kraft"
         subtitle={`${periodName} · ${nf(kpi.c.sessions)} ${kpi.c.sessions === 1 ? 'Training' : 'Trainings'}`}
         action={
           <Segmented
@@ -258,7 +261,9 @@ export function FitnessStats({ sets: allSets, exercises }: { sets: SetWithDate[]
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
                   <span className="truncate text-sm font-semibold text-cocoa">{r.name}</span>
-                  {r.pr && <Trophy size={14} strokeWidth={2.5} className="shrink-0 text-gold" aria-label="Neuer Rekord" />}
+                  {r.pr && (
+                    <Trophy size={14} strokeWidth={2.5} className="shrink-0 text-gold" aria-label="Neuer Rekord" />
+                  )}
                 </span>
                 <span className="tabular block truncate text-xs text-cocoa-light">
                   {r.best.weight > 0 ? (

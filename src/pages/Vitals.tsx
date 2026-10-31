@@ -77,7 +77,7 @@ export default function Vitals() {
 
   return (
     <div className="space-y-5">
-      <ProgressHeader title="Fortschritt" subtitle="Herz & Körper · von deiner Uhr" />
+      <ProgressHeader title="Herz & Körper" subtitle="Von deiner Uhr" />
       {daily.length === 0 && <p className="card text-sm text-cocoa-light">Noch keine Werte von deiner Uhr.</p>}
 
       {(hourly.length > 1 || rhrNow != null) && (
