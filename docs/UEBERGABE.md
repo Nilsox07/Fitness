@@ -57,8 +57,9 @@ einer App, aber nur das sichtbar, was man nutzt.
   `src/components/today/Widgets.tsx`, Daten aus `src/hooks/useToday.ts`. Reihenfolge in `profiles.prefs.dashboard`.
 - **Module** (Profil → Bereiche, `ModuleSettings.tsx`): Ernährung, Community, Smartwatch. Aus = Tab, Widgets
   und Seiten verschwinden. Flags in `src/lib/prefs.tsx` (`showNutrition`, `showSocial`, `hasWatch`).
-- **Fortschritt-Tab** (`/progress`, `src/pages/Progress.tsx`): Übersicht wie Apple Health – Wochen-Hero, Buddy-Tipp,
-  gruppierte Liste (Training · Von deiner Uhr · Körper & Ernährung · Motivation); jede Zeile führt auf ihre Detailseite
+- **Fortschritt-Tab** (`/progress`, `src/pages/Progress.tsx`): Kachel-Übersicht wie Apple Health/Whoop – Wochen-Ring, Buddy-Tipp,
+  Kacheln mit großer Zahl + Mini-Verlauf (Kraft, Ausdauer, Schlaf, Herz, Ernährung, Gewicht, Verlauf; Reihen in
+  `src/lib/progressSeries.ts`); jede Kachel führt auf ihre Detailseite
   (`/analytics?view=strength|food`, `/cardio`, `/sleep`, `/vitals`, `/body`, `/badges`) mit „‹ Fortschritt“ zurück.
   Keine Wisch-Leiste mehr. Uhr-Bereiche nur mit `hasWatch`.
 - **Aussehen** (Profil → Aussehen, `AppearanceSettings.tsx`): App-Farbe, Buddy (Figur, Variante, Accessoire,
