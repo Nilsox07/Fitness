@@ -94,6 +94,14 @@ describe('Tagesform', () => {
     expect(r.factors.map((f) => f.key)).toContain('protein')
   })
 
+  it('Kraft, Ausdauer, Tiefschlaf und Trinken fließen getrennt ein', () => {
+    const base = { sleepMin: 450, hrv: 60, hrvBaseline: 60, restingHr: 52, restingHrBaseline: 52 }
+    const rested = readiness(base)!
+    const tired = readiness({ ...base, strengthSets: 26, cardioLoad: 150, deepMin: 30, waterRatioYesterday: 0.4 })!
+    expect(tired.score).toBeLessThan(rested.score - 15)
+    expect(tired.factors.map((f) => f.key)).toEqual(expect.arrayContaining(['strength', 'load', 'deep', 'water']))
+  })
+
   it('Basis aus den Vortagen', () => {
     const days: HealthDaily[] = [1, 2, 3, 4].map((n) => ({
       user_id: 'u',

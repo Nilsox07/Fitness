@@ -168,8 +168,10 @@ function coachSystem(): string {
 export async function dailyBriefing(context: unknown): Promise<string> {
   const prompt =
     `Mein heutiger Stand (JSON):\n${JSON.stringify(context)}\n\n` +
-    'Gib mir ein kurzes Tagesbriefing in 2–3 Sätzen (max. 45 Wörter): Was ist heute am wichtigsten ' +
-    '(Training, Erholung, Ernährung)? Konkret, freundlich, per „du“, höchstens ein Emoji. Kein Markdown.'
+    'Gib mir ein kurzes Tagesbriefing in 2–3 Sätzen (max. 45 Wörter). Bezieh die Tagesform mit ihren ' +
+    'Faktoren ein (Schlaf, Erholung, Kraft- und Ausdauertraining der letzten Tage, Essen und Trinken) und sag ' +
+    'konkret, wie hart ich heute trainieren sollte und was sonst am wichtigsten ist. Fehlende Werte ignorieren. ' +
+    'Freundlich, per „du“, höchstens ein Emoji. Kein Markdown.'
   const text = await complete({ system: coachSystem(), prompt, temperature: 0.6, maxTokens: 300 })
   return text.trim().replace(/\*\*/g, '')
 }
@@ -241,8 +243,15 @@ export interface ChatMsg {
 // ---------------------------------------------------------------------------
 
 export const ASSISTANT_ROUTES = [
+  '/today',
   '/',
+  '/quick',
   '/nutrition',
+  '/shopping',
+  '/sleep',
+  '/cardio',
+  '/vitals',
+  '/feed',
   '/progress',
   '/analytics',
   '/history',
@@ -665,18 +674,30 @@ export interface FoodEstimate {
   salt: number
   /** Nur Getränke: Flüssigkeit in ml (zählt zur Trinkmenge) */
   fluid_ml?: number
+  /** Versteckte Kalorien als eigener Posten: Fett beim Zubereiten bzw. Soße/Dressing */
+  kind?: 'cooking_fat' | 'sauce'
 }
 
 const NUTRITION_SYSTEM =
   'Du bist Ernährungsberater. Schätze Lebensmittel und ihre Nährwerte für die ' +
-  'GEZEIGTE bzw. BESCHRIEBENE Portion (nicht pro 100 g). Antworte ausschließlich mit JSON.'
+  'GEZEIGTE bzw. BESCHRIEBENE Portion (nicht pro 100 g). Antworte ausschließlich mit JSON. ' +
+  'Vorgehen: 1) Jede Komponente einzeln erfassen. 2) Gewicht über Größenvergleiche schätzen ' +
+  '(Teller ≈ 26 cm, Gabel, Hand, Verpackung) und typische Portionen in Deutschland – Restaurant-Portionen ' +
+  'sind größer als zuhause. 3) Nährwerte je 100 g im ZUBEREITETEN Zustand nehmen (z. B. gekochter Reis ' +
+  '≈ 130 kcal, nicht roh) und mit dem Gewicht multiplizieren. 4) Versteckte Kalorien NIE weglassen: Fett ' +
+  'beim Braten/Anbraten/Frittieren, Butter, Öl im Salat, Soßen, Dressings, Käse, Zucker in Getränken. ' +
+  'Fett beim Zubereiten als eigenen Posten "Öl/Butter (Zubereitung)" mit "kind":"cooking_fat"; Soßen/Dressings ' +
+  'als eigenen Posten mit "kind":"sauce". Glänzt etwas, ist es gebraten, paniert oder aus dem Restaurant, ' +
+  'rechne die dafür typische Fettmenge ein. 5) Nimm den WAHRSCHEINLICHSTEN Wert, nicht den kleinsten – ' +
+  'aber ohne pauschale Aufschläge. 6) Prüfe: kcal ≈ 4×Eiweiß + 4×Kohlenhydrate + 9×Fett (+ 7×Alkohol).'
 
 const NUTRITION_FORMAT =
   'Format: {"items":[{"name":"...","amount_g":<Zahl oder null>,"kcal":<Zahl>,' +
   '"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g Ballaststoffe>,"sugar":<g Zucker>,' +
   '"sat_fat":<g gesättigte Fettsäuren>,"salt":<g Salz>,"fluid_ml":<ml>}]}. Zahlen gerundet, realistische ' +
   'Schätzung. Mehrere Bestandteile = mehrere items. fluid_ml NUR bei Getränken (Wasser, Saft, Softdrink, ' +
-  'Kaffee, Tee, Milch, Proteinshake, Smoothie, Bier …) = getrunkene Menge in ml, sonst 0 (auch Suppe = 0).'
+  'Kaffee, Tee, Milch, Proteinshake, Smoothie, Bier …) = getrunkene Menge in ml, sonst 0 (auch Suppe = 0). ' +
+  '"kind" nur bei Zubereitungsfett ("cooking_fat") bzw. Soße/Dressing ("sauce"), sonst weglassen.'
 
 /** Menge in g (oder null, wenn unbekannt/unlesbar). */
 function amountG(v: unknown): number | null {
@@ -699,17 +720,33 @@ function toEstimates(text: string): FoodEstimate[] {
   return toEstimateList(parseJson<{ items?: Partial<FoodEstimate>[] }>(text).items)
 }
 
+/**
+ * kcal passend zu den Makros: liegt die genannte Zahl deutlich (>15 %) unter 4/4/9 aus Eiweiß,
+ * Kohlenhydraten und Fett, gilt der Makro-Wert (häufige Unterschätzung). Höhere Werte bleiben –
+ * z. B. Alkohol hat 7 kcal/g und taucht in den Makros nicht auf.
+ */
+export function consistentKcal(kcal: number, protein: number, carbs: number, fat: number): number {
+  const fromMacros = 4 * protein + 4 * carbs + 9 * fat
+  return kcal < fromMacros * 0.85 ? Math.round(fromMacros) : Math.round(kcal)
+}
+
 function toEstimateList(items: Partial<FoodEstimate>[] | undefined): FoodEstimate[] {
-  return (Array.isArray(items) ? items : []).map((i) => ({
-    name: String(i.name ?? 'Lebensmittel'),
-    amount_g: amountG(i.amount_g),
-    kcal: Math.round(nn(i.kcal)),
-    protein: Math.round(nn(i.protein)),
-    carbs: Math.round(nn(i.carbs)),
-    fat: Math.round(nn(i.fat)),
-    ...micros(i),
-    ...(nn(i.fluid_ml) > 0 ? { fluid_ml: Math.min(3000, Math.round(nn(i.fluid_ml))) } : {}),
-  }))
+  return (Array.isArray(items) ? items : []).map((i) => {
+    const protein = Math.round(nn(i.protein))
+    const carbs = Math.round(nn(i.carbs))
+    const fat = Math.round(nn(i.fat))
+    return {
+      name: String(i.name ?? 'Lebensmittel'),
+      amount_g: amountG(i.amount_g),
+      kcal: consistentKcal(nn(i.kcal), nn(i.protein), nn(i.carbs), nn(i.fat)),
+      protein,
+      carbs,
+      fat,
+      ...micros(i),
+      ...(nn(i.fluid_ml) > 0 ? { fluid_ml: Math.min(3000, Math.round(nn(i.fluid_ml))) } : {}),
+      ...(i.kind === 'cooking_fat' || i.kind === 'sauce' ? { kind: i.kind } : {}),
+    }
+  })
 }
 
 /** Nährwerte aus freier Texteingabe schätzen, z. B. „2 Eier und 80 g Haferflocken". */

@@ -158,8 +158,16 @@ export interface ReadinessInput {
   hrvBaseline?: number | null
   restingHr?: number | null
   restingHrBaseline?: number | null
-  /** Belastung gestern (Ausdauer-Load + Krafttraining) */
+  /** Belastung gestern (Ausdauer-Load + Krafttraining) – alt, wird auf Ausdauer gerechnet */
   loadYesterday?: number | null
+  /** Ausdauer-Belastung: gestern + ½ × vorgestern */
+  cardioLoad?: number | null
+  /** Arbeitssätze Krafttraining: gestern + ½ × vorgestern */
+  strengthSets?: number | null
+  /** Tiefschlaf letzte Nacht (min), falls die Uhr Schlafphasen liefert */
+  deepMin?: number | null
+  /** getrunken / Ziel gestern (0–1+) */
+  waterRatioYesterday?: number | null
   /** gegessen − Ziel gestern (kcal), negativ = Defizit */
   kcalBalanceYesterday?: number | null
   /** gegessenes / Ziel-Eiweiß gestern (0–1+) */
@@ -169,7 +177,7 @@ export interface ReadinessInput {
 export type FactorStatus = 'gut' | 'normal' | 'schwach'
 
 export interface ReadinessFactor {
-  key: 'sleep' | 'hrv' | 'rhr' | 'load' | 'energy' | 'protein'
+  key: 'sleep' | 'deep' | 'hrv' | 'rhr' | 'load' | 'strength' | 'energy' | 'protein' | 'water'
   label: string
   /** gemessener Wert, z. B. „6:40 h“ oder „58 ms“ */
   value: string
@@ -198,14 +206,18 @@ export const FACTOR_INFO: Record<ReadinessFactor['key'], string> = {
   sleep: 'Wie lange du letzte Nacht wirklich geschlafen hast (ohne Wachphasen). 7–9 Stunden sind ideal.',
   hrv: 'Herzratenvariabilität: wie stark der Abstand zwischen zwei Herzschlägen schwankt. Liegt sie über deinem eigenen Schnitt, ist dein Körper erholt. Deutlich darunter heißt Stress, Krankheit, Alkohol oder zu wenig Erholung.',
   rhr: 'Dein Puls in völliger Ruhe (meist nachts gemessen). Liegt er mehrere Schläge über deinem Normalwert, arbeitet der Körper noch – z. B. an Erholung oder einem Infekt.',
-  load: 'Wie anstrengend dein Training gestern war (Dauer × Intensität, Kraft und Ausdauer zusammen).',
+  load: 'Wie anstrengend deine Ausdauer-Einheiten gestern und vorgestern waren (Dauer × Puls).',
+  strength: 'Wie viele harte Sätze du gestern und vorgestern gemacht hast. Muskeln brauchen 48–72 h Erholung.',
+  deep: 'Im Tiefschlaf erholt sich der Körper am stärksten. 1–2 Stunden pro Nacht sind typisch.',
+  water: 'Schon leichter Flüssigkeitsmangel senkt Leistung und Konzentration spürbar.',
   energy: 'Ein großes Kaloriendefizit gestern bremst die Erholung von Muskeln und Nervensystem.',
   protein: 'Eiweiß repariert die Muskeln nach dem Training – genug davon beschleunigt die Erholung.',
 }
 
 /**
- * Tagesform 0–100 aus Schlaf, HRV, Ruhepuls, Belastung – und (das kann sonst
- * keine Uhr) der Ernährung von gestern. Fehlende Werte zählen neutral.
+ * Tagesform 0–100 aus allem, was wir wissen: Schlaf (Dauer + Tiefschlaf), HRV, Ruhepuls,
+ * Ausdauer- und Krafttraining der letzten zwei Tage – und (das kann sonst keine Uhr)
+ * Ernährung und Trinken von gestern. Fehlende Werte zählen neutral.
  * Gibt null zurück, wenn gar keine Uhr-Daten da sind.
  */
 export function readiness(i: ReadinessInput): Readiness | null {
@@ -269,16 +281,54 @@ export function readiness(i: ReadinessInput): Readiness | null {
       effect: e,
     })
   }
-  if (i.loadYesterday != null && i.loadYesterday > 0) {
-    const e = -Math.round(clamp((i.loadYesterday - 60) / 12, 0, 10))
+  if (i.sleepMin != null && i.deepMin != null && i.sleepMin >= 180) {
+    const e = i.deepMin >= 75 ? 3 : i.deepMin < 40 ? -4 : 0
+    f.push({
+      key: 'deep',
+      label: 'Tiefschlaf',
+      value: hoursText(i.deepMin),
+      normal: 'typisch 1–2 h',
+      status: statusOf(e),
+      text: e > 0 ? 'Viel erholsamer Schlaf' : e < 0 ? 'Wenig Tiefschlaf – weniger erholt' : 'Im normalen Bereich',
+      effect: e,
+    })
+  }
+  const cardio = i.cardioLoad ?? i.loadYesterday
+  if (cardio != null && cardio > 0) {
+    const e = -Math.round(clamp((cardio - 60) / 12, 0, 10))
     f.push({
       key: 'load',
-      label: 'Belastung gestern',
-      value: loadLabel(i.loadYesterday),
+      label: 'Ausdauer zuletzt',
+      value: loadLabel(cardio),
       normal: null,
       status: e <= -4 ? 'schwach' : 'normal',
-      text: e <= -4 ? 'Hartes Training – Muskeln brauchen noch Zeit' : 'Gut verkraftbar',
+      text: e <= -4 ? 'Harte Einheit – Ausdauer braucht noch Zeit' : 'Gut verkraftbar',
       effect: e,
+    })
+  }
+  if (i.strengthSets != null && i.strengthSets > 0) {
+    const sets = i.strengthSets
+    const e = sets >= 24 ? -7 : sets >= 14 ? -3 : 0
+    f.push({
+      key: 'strength',
+      label: 'Krafttraining zuletzt',
+      value: `${Math.round(sets)} Sätze`,
+      normal: null,
+      status: e <= -5 ? 'schwach' : 'normal',
+      text:
+        e <= -5 ? 'Viele harte Sätze – Muskeln erholen sich noch' : e < 0 ? 'Spürbar, aber okay' : 'Gut verkraftbar',
+      effect: e,
+    })
+  }
+  if (i.waterRatioYesterday != null && i.waterRatioYesterday < 0.6) {
+    f.push({
+      key: 'water',
+      label: 'Trinken gestern',
+      value: `${Math.round(i.waterRatioYesterday * 100)} %`,
+      normal: 'vom Ziel',
+      status: 'schwach',
+      text: 'Zu wenig getrunken – heute früh nachholen',
+      effect: -3,
     })
   }
   if (i.kcalBalanceYesterday != null && i.kcalBalanceYesterday < -700) {

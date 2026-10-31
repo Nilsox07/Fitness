@@ -93,3 +93,53 @@ export function totalsOf(list: FoodEstimate[]): MealTotals & { grams: number | n
 export function fmt(v: number, digits = 1): string {
   return v.toLocaleString('de-DE', { maximumFractionDigits: digits })
 }
+
+// ---------- Fett beim Zubereiten (größte Fehlerquelle bei Foto-Schätzungen) ----------
+
+export type FatLevel = 0 | 5 | 10 | 20
+
+/** Ohne · 1 TL · 1 EL · 2 EL (Gramm Öl/Butter). */
+export const FAT_LEVELS: { g: FatLevel; label: string }[] = [
+  { g: 0, label: 'Ohne' },
+  { g: 5, label: '1 TL' },
+  { g: 10, label: '1 EL' },
+  { g: 20, label: '2 EL' },
+]
+
+/** Welche Stufe entspricht dem Zubereitungsfett der KI (bzw. 0, wenn keins)? */
+export function fatLevelOf(items: MealItem[]): FatLevel {
+  const g = items
+    .filter((i) => i.base.kind === 'cooking_fat')
+    .reduce((s, i) => s + (i.base.amount_g ?? i.base.fat) * i.factor, 0)
+  if (g <= 2) return 0
+  if (g <= 7) return 5
+  if (g <= 14) return 10
+  return 20
+}
+
+/** Zubereitungsfett ersetzen (Öl: 9 kcal/g, Fett 100 %). 0 entfernt den Posten. */
+export function withCookingFat(items: MealItem[], g: FatLevel, key = 'fat'): MealItem[] {
+  const rest = items.filter((i) => i.base.kind !== 'cooking_fat')
+  if (g === 0) return rest
+  const sat = Math.round(g * 0.15 * 10) / 10
+  return [
+    ...rest,
+    {
+      key,
+      factor: 1,
+      base: {
+        name: 'Öl/Butter (Zubereitung)',
+        amount_g: g,
+        kcal: g * 9,
+        protein: 0,
+        carbs: 0,
+        fat: g,
+        fiber: 0,
+        sugar: 0,
+        sat_fat: sat,
+        salt: 0,
+        kind: 'cooking_fat',
+      },
+    },
+  ]
+}

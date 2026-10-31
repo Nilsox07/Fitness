@@ -29,3 +29,12 @@ describe('num', () => {
     expect(num(Number.NaN)).toBe(0)
   })
 })
+
+describe('consistentKcal', () => {
+  it('korrigiert nur deutlich zu niedrige Angaben', async () => {
+    const { consistentKcal } = await import('./ai')
+    expect(consistentKcal(300, 30, 40, 15)).toBe(415) // 4·30 + 4·40 + 9·15
+    expect(consistentKcal(400, 30, 40, 15)).toBe(400) // innerhalb der Toleranz
+    expect(consistentKcal(250, 0, 10, 0)).toBe(250) // z. B. Bier: Alkohol fehlt in den Makros
+  })
+})

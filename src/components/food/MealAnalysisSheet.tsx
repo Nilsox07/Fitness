@@ -10,7 +10,17 @@ import { MacroBar } from './MacroBar'
 import { DayFit } from './DayFit'
 import { NutrientList } from './NutrientList'
 import { IngredientRow } from './IngredientRow'
-import { effective, PORTIONS, toItems, totalsOf, type MealItem } from './mealItems'
+import {
+  effective,
+  FAT_LEVELS,
+  fatLevelOf,
+  PORTIONS,
+  toItems,
+  totalsOf,
+  withCookingFat,
+  type MealItem,
+} from './mealItems'
+import { InfoTip } from '../ui/InfoTip'
 import { useCountUp } from './useCountUp'
 
 export type AnalysisStatus = 'loading' | 'ready' | 'error'
@@ -271,6 +281,9 @@ function ReadyBody({
   const [done, setDone] = useState(false)
 
   const values = useMemo(() => items.map((it) => effective(it, portion)), [items, portion])
+  const fatLevel = fatLevelOf(items)
+  // Reine Getränke brauchen keine Fett-Frage
+  const drinkOnly = items.length > 0 && items.every((it) => (it.base.fluid_ml ?? 0) > 0)
   const totals = useMemo(() => totalsOf(values), [values])
   const remainingKcal = day.kcalTarget > 0 ? day.kcalTarget - day.eaten.kcal : null
   const diet = useDietStyle()
@@ -337,6 +350,32 @@ function ReadyBody({
               ))}
             </div>
           </div>
+          {/* Fett beim Zubereiten – häufigste Ursache für zu niedrige Schätzungen */}
+          {!drinkOnly && (
+            <div className="flex items-center justify-between gap-3">
+              <InfoTip
+                className="text-sm text-cocoa-light"
+                info="Öl, Butter & Co. sieht man auf Fotos kaum – dort verstecken sich oft 50–200 kcal. 1 EL Öl ≈ 90 kcal."
+              >
+                Fett beim Kochen
+              </InfoTip>
+              <div className="flex rounded-full bg-sand p-0.5" role="radiogroup" aria-label="Fett beim Kochen">
+                {FAT_LEVELS.map((f) => (
+                  <button
+                    key={f.g}
+                    role="radio"
+                    aria-checked={fatLevel === f.g}
+                    onClick={() => setItems((prev) => withCookingFat(prev, f.g, `${resultId}-fat`))}
+                    className={`h-8 rounded-full px-2.5 text-sm font-semibold transition-all duration-200 ${
+                      fatLevel === f.g ? 'bg-bg text-cocoa shadow-sm' : 'text-cocoa-light'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5" role="radiogroup" aria-label="Mahlzeit">
             {MEALS.map((m) => (
               <button

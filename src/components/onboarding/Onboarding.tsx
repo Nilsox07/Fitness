@@ -14,6 +14,7 @@ import { getLinks, normalize, setLinks } from '../../lib/exerciseLibrary'
 import { planStarter } from '../../lib/starterSets'
 import { withWidget } from '../../lib/dashboard'
 import { markSeen } from '../../lib/whatsnew'
+import { isNative, requestNotifyPermission } from '../../lib/native'
 import { computeTargets, defaultWaterTarget } from '../../lib/nutrition'
 import {
   CARDIO_KINDS,
@@ -40,8 +41,8 @@ import type { Sex } from '../../types'
 
 export const OPEN_ONBOARDING_EVENT = 'open-onboarding'
 
-/** Intro erneut öffnen (z. B. Profil → „Plan neu erstellen“). */
-export function openOnboarding(): void {
+/** Nur die Plan-Fragen öffnen (Profil/Pläne → „Plan neu erstellen“) – ohne Begrüßung und Einrichtung. */
+export function openPlanWizard(): void {
   window.dispatchEvent(new Event(OPEN_ONBOARDING_EVENT))
 }
 
@@ -67,6 +68,7 @@ export function OnboardingHost() {
   if (!open) return null
   return (
     <Onboarding
+      mode={manual && !auto ? 'plan' : 'intro'}
       onClose={() => {
         setClosed(true)
         setManual(false)
@@ -78,7 +80,8 @@ export function OnboardingHost() {
 
 type Step = 'hello' | 'goal' | 'level' | 'place' | 'days' | 'cardio' | 'modules' | 'body' | 'plan' | 'done'
 
-function Onboarding({ onClose }: { onClose: () => void }) {
+function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => void }) {
+  const planOnly = mode === 'plan'
   const navigate = useNavigate()
   const { prefs, save } = useUserPrefs()
   const mods = usePrefs()
@@ -91,9 +94,9 @@ function Onboarding({ onClose }: { onClose: () => void }) {
   const createPlan = useCreatePlan()
   const addPlanEx = useAddPlanExercise()
 
-  const [step, setStep] = useState<Step>('hello')
+  const [step, setStep] = useState<Step>(planOnly ? 'goal' : 'hello')
   const [a, setA] = useState<OnboardingAnswers>({
-    goal: 'muscle',
+    goal: prefs.fitGoal ?? 'muscle',
     experience: 'new',
     place: 'gym',
     gymDays: suggestDays(3),
@@ -110,19 +113,22 @@ function Onboarding({ onClose }: { onClose: () => void }) {
     weight: settings?.weight_kg ?? 75,
   })
   const [busy, setBusy] = useState<string | null>(null)
+  const [notifyAsk, setNotifyAsk] = useState<'open' | 'done'>('open')
   const [err, setErr] = useState<string | null>(null)
 
-  const order: Step[] = [
-    'hello',
-    'goal',
-    'level',
-    'place',
-    'days',
-    'cardio',
-    'modules',
-    ...(useNutrition ? ['body' as const] : []),
-    'plan',
-  ]
+  const order: Step[] = planOnly
+    ? ['goal', 'level', 'place', 'days', 'cardio', 'plan']
+    : [
+        'hello',
+        'goal',
+        'level',
+        'place',
+        'days',
+        'cardio',
+        'modules',
+        ...(useNutrition ? ['body' as const] : []),
+        'plan',
+      ]
   const idx = order.indexOf(step)
   const next = () => setStep(order[Math.min(order.length - 1, idx + 1)])
   const back = () => idx > 0 && setStep(order[idx - 1])
@@ -180,38 +186,45 @@ function Onboarding({ onClose }: { onClose: () => void }) {
         planIds.set(p.name, plan.id)
       }
 
-      // 2. Ernährung (nur wenn gewünscht)
-      if (useNutrition) {
+      // 2. Ernährung (nur wenn gewünscht; beim neuen Plan mit den gespeicherten Körperdaten)
+      if (useNutrition && (!planOnly || settings)) {
         setBusy('Kalorienziel berechnen …')
+        // Beim neuen Plan die gespeicherten Körperdaten nehmen (die Fragen dazu gibt es dort nicht)
+        const b =
+          planOnly && settings
+            ? { sex: settings.sex, age: settings.age, height: settings.height_cm, weight: settings.weight_kg }
+            : body
         const goal = nutritionGoalFor(a.goal, a.experience)
         const activity = activityFor(a.gymDays.length + (cardio?.sessions.length ?? 0))
         const t = computeTargets({
-          sex: body.sex,
-          age: body.age,
-          height_cm: body.height,
-          weight_kg: body.weight,
+          sex: b.sex,
+          age: b.age,
+          height_cm: b.height,
+          weight_kg: b.weight,
           activity,
           goal,
         })
         await upsertNutrition.mutateAsync({
-          sex: body.sex,
-          age: body.age,
-          height_cm: body.height,
-          weight_kg: body.weight,
+          sex: b.sex,
+          age: b.age,
+          height_cm: b.height,
+          weight_kg: b.weight,
           activity,
           goal,
           kcal_target: t.kcal,
           protein_target: t.protein,
           carbs_target: t.carbs,
           fat_target: t.fat,
-          water_target_ml: settings?.water_target_ml ?? defaultWaterTarget(body.weight),
+          water_target_ml: settings?.water_target_ml ?? defaultWaterTarget(b.weight),
         })
       }
 
-      // 3. Bereiche + Rhythmus + Ausdauer-Plan
-      mods.setShowNutrition(useNutrition)
-      mods.setHasWatch(useWatch)
-      mods.setShowSocial(useSocial)
+      // 3. Bereiche (nur im Intro) + Rhythmus + Ausdauer-Plan
+      if (!planOnly) {
+        mods.setShowNutrition(useNutrition)
+        mods.setHasWatch(useWatch)
+        mods.setShowSocial(useSocial)
+      }
       await save({
         onboarded: true,
         fitGoal: a.goal,
@@ -237,20 +250,33 @@ function Onboarding({ onClose }: { onClose: () => void }) {
       <Screen>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
           <MyBuddy size={140} mood="cheer" />
-          <h1 className="text-3xl font-extrabold">Alles bereit!</h1>
+          <h1 className="text-3xl font-extrabold">{planOnly ? 'Neuer Plan steht!' : 'Alles bereit!'}</h1>
           <p className="max-w-[18rem] text-[15px] text-cocoa-light">
-            Dein Plan steht. Ich bin immer oben rechts, wenn du Fragen hast.
+            {planOnly
+              ? 'Pläne und Trainingstage sind aktualisiert.'
+              : 'Dein Plan steht. Ich bin immer oben rechts, wenn du Fragen hast.'}
           </p>
         </div>
         <button
           className="btn-primary w-full rounded-2xl py-4 text-base"
           onClick={() => {
             onClose()
-            navigate('/today')
+            navigate(planOnly ? '/plans' : '/today')
           }}
         >
-          Los geht’s
+          {planOnly ? 'Zu meinen Plänen' : 'Los geht’s'}
         </button>
+        {!planOnly && isNative() && notifyAsk !== 'done' && (
+          <button
+            className="btn-ghost w-full rounded-2xl py-3 text-sm"
+            onClick={async () => {
+              await requestNotifyPermission()
+              setNotifyAsk('done')
+            }}
+          >
+            Erinnerungen erlauben 🔔
+          </button>
+        )}
       </Screen>
     )
 
@@ -272,8 +298,12 @@ function Onboarding({ onClose }: { onClose: () => void }) {
             style={{ width: `${((idx + 1) / order.length) * 100}%` }}
           />
         </div>
-        <button className="text-sm font-semibold text-cocoa-muted" onClick={skip} disabled={!!busy}>
-          Überspringen
+        <button
+          className="text-sm font-semibold text-cocoa-muted"
+          onClick={planOnly ? onClose : skip}
+          disabled={!!busy}
+        >
+          {planOnly ? 'Abbrechen' : 'Überspringen'}
         </button>
       </div>
 

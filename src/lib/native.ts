@@ -309,6 +309,99 @@ export async function cancelRestDone() {
   }
 }
 
+// ---------- Erinnerungen (geplant auf dem Gerät) ----------
+
+/** Darf die App Benachrichtigungen zeigen? null = im Browser / unbekannt */
+export async function notifyPermission(): Promise<boolean | null> {
+  if (!isNative()) return null
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    return (await LocalNotifications.checkPermissions()).display === 'granted'
+  } catch {
+    return null
+  }
+}
+
+/** Erlaubnis anfragen (nur auf ausdrücklichen Wunsch, z. B. in den Einstellungen). */
+export async function requestNotifyPermission(): Promise<boolean> {
+  if (!isNative()) return false
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    return (await LocalNotifications.requestPermissions()).display === 'granted'
+  } catch {
+    return false
+  }
+}
+
+let channelReady = false
+async function remindersChannel() {
+  if (channelReady) return
+  const { LocalNotifications } = await import('@capacitor/local-notifications')
+  await LocalNotifications.createChannel({
+    id: 'reminders',
+    name: 'Erinnerungen',
+    description: 'Essen, Trinken, Training & Co.',
+    importance: 4,
+  })
+  channelReady = true
+}
+
+/** Alle geplanten Erinnerungen ersetzen (IDs im reservierten Bereich). */
+export async function syncReminders(
+  list: { id: number; at: Date; title: string; body: string; route: string }[],
+  idMin: number,
+  idMax: number,
+): Promise<void> {
+  if (!isNative()) return
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    if ((await LocalNotifications.checkPermissions()).display !== 'granted') return
+    await remindersChannel()
+    const pending = await LocalNotifications.getPending()
+    const old = pending.notifications.filter((n) => n.id >= idMin && n.id <= idMax).map((n) => ({ id: n.id }))
+    if (old.length) await LocalNotifications.cancel({ notifications: old })
+    if (!list.length) return
+    await LocalNotifications.schedule({
+      notifications: list.map((r) => ({
+        id: r.id,
+        title: r.title,
+        body: r.body,
+        schedule: { at: r.at, allowWhileIdle: true },
+        channelId: 'reminders',
+        smallIcon: 'ic_stat_buddy',
+        extra: { route: r.route },
+      })),
+    })
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Test-Benachrichtigung in 5 Sekunden. */
+export async function sendTestReminder(): Promise<boolean> {
+  if (!isNative()) return false
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    await remindersChannel()
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 8499,
+          title: 'Hallo von Buddy 👋',
+          body: 'So sehen deine Erinnerungen aus.',
+          schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true },
+          channelId: 'reminders',
+          smallIcon: 'ic_stat_buddy',
+          extra: { route: '/today' },
+        },
+      ],
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 /** Einstellung: Fasten-Countdown dauerhaft auf dem Sperrbildschirm zeigen. */
 export const LIVE_FASTING_KEY = 'live_fasting'
 export function liveFastingEnabled(): boolean {

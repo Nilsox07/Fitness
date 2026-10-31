@@ -11,11 +11,10 @@ import { useLeaderboard } from '../../hooks/useSocial'
 import { useAuth } from '../../lib/auth'
 import { usePrefs } from '../../lib/prefs'
 import { baseline } from '../../lib/health'
-import { dailyBriefing } from '../../lib/ai'
+import { useBriefing } from './useBriefing'
 import { pageTip, type TipPage } from '../../lib/buddyTips'
 
 const HIDDEN_KEY = 'buddy_tip_hidden'
-const BRIEFING_KEY = 'buddy_briefing'
 
 function hiddenToday(key: string, day: string): boolean {
   try {
@@ -33,19 +32,11 @@ function hideToday(key: string, day: string) {
     /* ignore */
   }
 }
-function storedBriefing(day: string): string | null {
-  try {
-    const b = JSON.parse(localStorage.getItem(BRIEFING_KEY) || 'null') as { day: string; text: string } | null
-    return b?.day === day ? b.text : null
-  } catch {
-    return null
-  }
-}
 
 /**
  * Buddy begleitet durch die App: oben auf jeder Hauptseite ein kurzer Tipp aus deinen
  * Daten, mit passendem Knopf und „Frag Buddy“ (KI). Für heute wegtippbar.
- * Auf „Heute“ zusätzlich das KI-Tagesbriefing auf Knopfdruck (einmal am Tag).
+ * Auf „Heute“ ohne Uhr zusätzlich das KI-Tagesbriefing (mit Uhr: in der Tagesform-Karte).
  */
 export function BuddyTip({ page, style }: { page: TipPage; style?: CSSProperties }) {
   const navigate = useNavigate()
@@ -57,8 +48,11 @@ export function BuddyTip({ page, style }: { page: TipPage; style?: CSSProperties
   const { data: daily } = useHealthDaily(30)
   const { data: board } = useLeaderboard()
   const [hidden, setHidden] = useState(false)
-  const [briefing, setBriefing] = useState(() => (page === 'today' ? storedBriefing(t.day) : null))
-  const [busy, setBusy] = useState(false)
+  // Mit Uhr steckt das Tagesbriefing in der Tagesform-Karte – sonst hier
+  const brief = useBriefing()
+  const withBriefing = page === 'today' && !(hasWatch && t.readiness)
+  const briefing = withBriefing ? brief.text : null
+  const busy = brief.busy
 
   const tip = useMemo(
     () =>
@@ -91,43 +85,6 @@ export function BuddyTip({ page, style }: { page: TipPage; style?: CSSProperties
   if (t.loading || !tip || hidden || hiddenToday(tip.key, t.day)) return null
   const aiOn = !!ai?.enabled
 
-  async function loadBriefing() {
-    setBusy(true)
-    try {
-      const text = await dailyBriefing({
-        uhrzeit: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
-        tagesform: t.readiness
-          ? { wert: t.readiness.score, faktoren: t.readiness.factors.map((f) => `${f.label}: ${f.value}`) }
-          : null,
-        training: {
-          heuteErledigt: t.trainedToday,
-          ruhetag: t.restDay,
-          geplant: t.nextWorkout,
-          woche: `${t.weekDone}/${t.weekGoal}`,
-        },
-        ernaehrung: showNutrition
-          ? {
-              kcal: `${t.kcalEaten}/${t.kcalTarget}`,
-              eiweiss: `${t.proteinEaten}/${t.proteinTarget} g`,
-              wasser: `${t.waterMl}/${t.waterTarget} ml`,
-            }
-          : null,
-        schlafMin: t.sleep?.asleep_min ?? null,
-        schritte: t.steps,
-      })
-      setBriefing(text)
-      try {
-        localStorage.setItem(BRIEFING_KEY, JSON.stringify({ day: t.day, text }))
-      } catch {
-        /* ignore */
-      }
-    } catch {
-      /* Fehler: einfach beim Regel-Tipp bleiben */
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <section className="anim-fade flex gap-3 rounded-2xl bg-cream p-3.5" style={style} aria-label="Tipp von Buddy">
       <button
@@ -148,10 +105,10 @@ export function BuddyTip({ page, style }: { page: TipPage; style?: CSSProperties
               {tip.action.label}
             </button>
           )}
-          {aiOn && page === 'today' && !briefing && (
+          {aiOn && withBriefing && !briefing && (
             <button
               className="flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-on-brand active:scale-95"
-              onClick={loadBriefing}
+              onClick={() => void brief.load()}
               disabled={busy}
             >
               {busy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}

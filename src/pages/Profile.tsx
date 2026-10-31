@@ -1,4 +1,4 @@
-import { openOnboarding } from '../components/onboarding/Onboarding'
+import { openPlanWizard } from '../components/onboarding/Onboarding'
 import { AppearanceSettings } from '../components/profile/AppearanceSettings'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -295,7 +295,7 @@ export default function Profile() {
           <Row icon={Target} label="Ziel & Körperdaten" value={goalValue} onClick={() => openSub('goal')} />
         )}
         <Row icon={CalendarDays} label="Trainingsrhythmus" onClick={() => navigate('/plans?rhythm=1')} />
-        <Row icon={Wand2} label="Plan neu erstellen" hint="Ziel, Tage, Ausdauer" onClick={openOnboarding} />
+        <Row icon={Wand2} label="Plan neu erstellen" hint="Ziel, Tage, Ausdauer" onClick={openPlanWizard} />
         <Row
           icon={SlidersHorizontal}
           label="Meine Einstellungen"

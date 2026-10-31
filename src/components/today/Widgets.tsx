@@ -12,7 +12,9 @@ import {
   Flame,
   Footprints,
   HeartPulse,
+  Loader2,
   Plus,
+  Sparkles,
   Users,
   Watch,
 } from 'lucide-react'
@@ -30,6 +32,7 @@ import { SupplementCard } from '../nutrition-home/SupplementCard'
 import { BodyWeightCard } from '../BodyWeightCard'
 import type { WidgetId } from '../../lib/dashboard'
 import { CardioPlanCard } from './CardioPlanCard'
+import { useBriefing } from '../buddy/useBriefing'
 
 const fmt = (n: number) => Math.round(n).toLocaleString('de-DE')
 
@@ -133,40 +136,60 @@ function ConnectWatch() {
 
 function ReadinessWidget({ t }: { t: TodaySummary }) {
   const navigate = useNavigate()
+  const brief = useBriefing()
   const r = t.readiness
   const color = 'rgb(var(--c-ruby))'
   return (
-    <button
-      onClick={() => navigate('/sleep')}
-      className="relative w-full overflow-hidden rounded-3xl bg-cocoa p-5 text-left text-bg shadow-lg shadow-black/10 transition active:scale-[0.99] dark:bg-sand-light dark:text-cocoa dark:shadow-none"
-    >
+    <section className="relative w-full overflow-hidden rounded-3xl bg-cocoa p-5 text-left text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
       <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
-      <span className="relative flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-        Tagesform · heute
-      </span>
-      {r ? (
-        <div className="relative mt-2 flex items-center gap-4">
-          <Ring value={r.score / 100} size={76} stroke={8} color={color} track="text-white/10 dark:text-sand-dark/50">
-            <span className="tabular text-2xl font-bold">{r.score}</span>
-          </Ring>
-          <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-semibold leading-snug">{r.advice}</p>
-            <p className="mt-1 text-xs text-bg/60 dark:text-cocoa-light">
-              {r.factors
-                .slice(0, 2)
-                .map((f) => `${f.label} ${f.value}`)
-                .join(' · ')}
-            </p>
+      <button className="relative block w-full text-left" onClick={() => navigate('/sleep')}>
+        <span className="flex items-center justify-between gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
+          Tagesform · heute
+          <ChevronRight size={15} />
+        </span>
+        {r ? (
+          <div className="mt-2 flex items-center gap-4">
+            <Ring value={r.score / 100} size={76} stroke={8} color={color} track="text-white/10 dark:text-sand-dark/50">
+              <span className="tabular text-2xl font-bold">{r.score}</span>
+            </Ring>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-semibold leading-snug">{r.advice}</p>
+              <p className="mt-1 text-xs text-bg/60 dark:text-cocoa-light">
+                {r.factors
+                  .slice(0, 3)
+                  .map((f) => f.label)
+                  .join(' · ')}
+              </p>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="relative mt-2">
-          <p className="text-[15px] font-semibold">Noch keine Daten</p>
-          <p className="text-xs text-bg/60 dark:text-cocoa-light">Uhr beim Schlafen tragen</p>
+        ) : (
+          <div className="mt-2">
+            <p className="text-[15px] font-semibold">Noch keine Daten</p>
+            <p className="text-xs text-bg/60 dark:text-cocoa-light">Uhr beim Schlafen tragen</p>
+          </div>
+        )}
+      </button>
+      {r && brief.aiOn && (
+        <div className="relative mt-3 border-t border-white/10 pt-3 dark:border-sand-dark/40">
+          {brief.text ? (
+            <p className="flex gap-2 text-sm leading-snug">
+              <Sparkles size={15} className="mt-0.5 shrink-0 text-brand" />
+              {brief.text}
+            </p>
+          ) : (
+            <button
+              className="flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand active:scale-95"
+              onClick={() => void brief.load()}
+              disabled={brief.busy}
+            >
+              {brief.busy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+              Buddy-Briefing für heute
+            </button>
+          )}
         </div>
       )}
-    </button>
+    </section>
   )
 }
 

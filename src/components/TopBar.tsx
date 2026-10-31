@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
+import { historyIndex, previousNav, type NavEntry } from '../lib/navHistory'
 
 /** Bereich (Tab) bzw. übergeordnete Seite zur aktuellen Route – für Titel und Zurück-Pfeil. */
 type NavInfo = { title: string; back?: { to: string; label: string } }
@@ -36,23 +37,31 @@ export function TopBar() {
   const { pathname, search } = useLocation()
   const nav = navInfo(pathname, search)
   // Profil-Unterseiten (?s=…) gehen zurück zur Profil-Übersicht
-  const back = pathname === '/profile' && search.includes('s=') ? { to: '/profile', label: 'Profil' } : nav.back
-  if (!back) return null
+  const parent = pathname === '/profile' && search.includes('s=') ? { to: '/profile', label: 'Profil' } : nav.back
+  if (!parent) return null
+  // Zurück dorthin, wo man herkam (Verlauf) – sonst zur Elternseite
+  const prev = previousNav(historyIndex(), { pathname, search })
+  const prevLabel = prev ? backLabel(prev) : null
 
   return (
     <header className="sticky top-0 z-20 bg-bg/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="flex items-center py-1.5">
         <button
           type="button"
-          onClick={() =>
-            back.to ? navigate(back.to, { replace: back.to === '/profile' || back.to === '/plans' }) : navigate(-1)
-          }
+          onClick={() => (prev ? navigate(-1) : parent.to ? navigate(parent.to, { replace: true }) : navigate(-1))}
           className="-ml-1 flex min-w-0 items-center gap-0.5 py-1.5 pr-3 text-base font-semibold text-brand"
         >
           <ChevronLeft size={22} strokeWidth={2.5} className="shrink-0" />
-          <span className="truncate">{back.label}</span>
+          <span className="truncate">{prevLabel ?? parent.label}</span>
         </button>
       </div>
     </header>
   )
+}
+
+/** Beschriftung für „Zurück zu …“ aus der vorherigen Seite. */
+function backLabel(prev: NavEntry): string {
+  if (prev.pathname === '/profile') return 'Profil'
+  const t = navInfo(prev.pathname, prev.search).title
+  return t || 'Zurück'
 }

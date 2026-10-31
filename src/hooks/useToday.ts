@@ -69,6 +69,7 @@ export function useToday(): TodaySummary {
   const { data: entries } = useFoodEntries(day)
   const { data: entriesY } = useFoodEntries(yesterday)
   const { data: water } = useWater(day)
+  const { data: waterY } = useWater(yesterday)
   const { data: activities } = useHealthActivities(30)
   const { data: sleepList } = useHealthSleep(30)
   const { data: daily } = useHealthDaily(30)
@@ -88,8 +89,12 @@ export function useToday(): TodaySummary {
     const today = hasWatch ? ((daily ?? []).find((d) => d.date === day) ?? null) : null
     let ready: Readiness | null = null
     if (hasWatch) {
-      const yAct = (activities ?? []).filter((a) => a.started_at.slice(0, 10) === yesterday)
-      const ySets = (allSets ?? []).filter((s) => s.date === yesterday).length
+      // Belastung der letzten zwei Tage: gestern voll, vorgestern halb
+      const before = shiftDate(yesterday, -1)
+      const loadOn = (d: string) =>
+        (activities ?? []).filter((a) => a.started_at.slice(0, 10) === d).reduce((s, a) => s + activityLoad(a), 0)
+      const setsOn = (d: string) =>
+        (allSets ?? []).filter((s) => s.date === d && s.set_type !== 'warmup' && (s.reps ?? 0) > 0).length
       const totY = sumEntries(entriesY ?? [])
       const targetY = kcalTargetFor(settings, trainedOn(yesterday, allSets), kcalBonus)
       const nutritionKnown = showNutrition && (entriesY?.length ?? 0) > 0
@@ -99,7 +104,11 @@ export function useToday(): TodaySummary {
         hrvBaseline: baseline(daily ?? [], 'hrv_ms', day),
         restingHr: today?.resting_hr ?? null,
         restingHrBaseline: baseline(daily ?? [], 'resting_hr', day),
-        loadYesterday: yAct.reduce((s, a) => s + activityLoad(a), 0) + ySets * 3,
+        cardioLoad: loadOn(yesterday) + loadOn(before) / 2,
+        strengthSets: setsOn(yesterday) + setsOn(before) / 2,
+        deepMin: sleep?.deep_min ?? null,
+        waterRatioYesterday:
+          showNutrition && waterY && settings?.water_target_ml ? waterY.ml / settings.water_target_ml : null,
         kcalBalanceYesterday: nutritionKnown && targetY ? totY.kcal - targetY : null,
         proteinRatioYesterday:
           nutritionKnown && settings?.protein_target ? totY.protein / settings.protein_target : null,
@@ -142,6 +151,7 @@ export function useToday(): TodaySummary {
     entries,
     entriesY,
     water,
+    waterY,
     activities,
     sleepList,
     daily,
