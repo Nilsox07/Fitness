@@ -46,6 +46,14 @@ describe('Buddy-Tipps', () => {
     expect(pageTip('training', { ...base, trainedToday: true })!.mood).toBe('proud')
   })
 
+  it('ohne Buddy Plus: leerer Tag führt zur Suche statt zum Foto', () => {
+    const plus = pageTip('nutrition', { ...base, hour: 12, kcalEaten: 0 })!
+    expect(plus.action?.to).toBe('/nutrition?add=photo')
+    const free = pageTip('nutrition', { ...base, hour: 12, kcalEaten: 0, aiPlus: false })!
+    expect(free.key).toBe('food-empty')
+    expect(free.action?.to).toBe('/nutrition?add=search')
+  })
+
   it('Ruhepuls deutlich erhöht → Hinweis', () => {
     expect(pageTip('vitals', { ...base, restingHr: 60, restingHrNormal: 54 })!.key).toBe('vitals-rhr')
   })

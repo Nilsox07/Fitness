@@ -4,7 +4,8 @@ import { CalendarDays, Check, ChevronRight, Dumbbell, List, Moon, PenLine, Plus,
 import { openPlanWizard } from '../onboarding/Onboarding'
 import { useExercises } from '../../hooks/useExercises'
 import { useAllSets, useWorkouts } from '../../hooks/useWorkouts'
-import { useAiStatus } from '../../hooks/useAi'
+import { useAiGate } from '../../hooks/usePremium'
+import { PlusBadge } from '../premium/PlusBadge'
 import { nextPlanPosition, useCreatePlan, usePlans } from '../../hooks/usePlans'
 import { getPlanQueue } from '../../lib/workoutSession'
 import { lastDoneByPlan, suggestNextPlan } from '../../lib/home'
@@ -36,12 +37,14 @@ export default function PlansNew() {
   const { data: exercises } = useExercises()
   const { data: workouts } = useWorkouts()
   const { data: allSets } = useAllSets()
-  const { data: ai } = useAiStatus()
+  const gate = useAiGate()
   const createPlan = useCreatePlan()
 
   const [sheet, setSheet] = useState<null | 'create' | 'ai'>(null)
   const [newName, setNewName] = useState('')
-  const aiAvailable = !!ai?.enabled && (exercises?.length ?? 0) > 0
+  const aiAvailable = gate.enabled && (exercises?.length ?? 0) > 0
+  /** KI-Plan nur mit Buddy Plus – sonst Plus-Sheet */
+  const openAi = () => gate.requirePlus() && setSheet('ai')
   const today = trainingDay()
 
   const exById = useMemo(() => new Map((exercises ?? []).map((e) => [e.id, e])), [exercises])
@@ -221,7 +224,7 @@ export default function PlansNew() {
       {hasPlans && aiAvailable && (
         <button
           className="flex w-full items-center gap-3 rounded-2xl bg-cream px-4 py-3 text-left transition active:scale-[0.99]"
-          onClick={() => setSheet('ai')}
+          onClick={openAi}
           style={enter(idx++)}
         >
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/15 text-brand">
@@ -231,6 +234,7 @@ export default function PlansNew() {
             <span className="block text-sm font-semibold">Plan mit KI erstellen</span>
             <span className="block truncate text-xs text-cocoa-light">Wunsch eingeben, Vorschlag übernehmen</span>
           </span>
+          {gate.locked && <PlusBadge />}
           <ChevronRight size={16} className="shrink-0 text-cocoa-muted" />
         </button>
       )}
@@ -259,8 +263,8 @@ export default function PlansNew() {
               <EmptyTile
                 icon={<Sparkles size={22} />}
                 title="Mit KI erstellen"
-                desc="Aus deinem Wunsch"
-                onClick={() => setSheet('ai')}
+                desc={gate.locked ? 'Mit Buddy Plus' : 'Aus deinem Wunsch'}
+                onClick={openAi}
               />
             ) : (
               <EmptyTile
@@ -311,11 +315,9 @@ export default function PlansNew() {
             {createPlan.isPending ? 'Lege an…' : 'Plan erstellen'}
           </button>
           {aiAvailable && (
-            <button
-              className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
-              onClick={() => setSheet('ai')}
-            >
+            <button className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm" onClick={openAi}>
               <Sparkles size={16} className="text-brand" /> Plan mit KI erstellen
+              {gate.locked && <PlusBadge />}
             </button>
           )}
         </Sheet>

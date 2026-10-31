@@ -29,6 +29,8 @@ export interface TipContext {
   hasWatch: boolean
   /** Anteil Zeit in Zone 4/5 der letzten Ausdauer-Einheiten (0–1) */
   hardShare: number | null
+  /** KI nutzbar (Buddy Plus); false = Tipps ohne KI-Funktionen. Fehlt = ja. */
+  aiPlus?: boolean
 }
 
 export interface Tip {
@@ -126,8 +128,15 @@ export function pageTip(page: TipPage, c: TipContext): Tip | null {
         return {
           key: 'food-empty',
           mood: 'hungry',
-          text: 'Noch nichts eingetragen – ein Foto reicht.',
-          action: { label: 'Foto', to: '/nutrition?add=photo' },
+          ...(c.aiPlus === false
+            ? {
+                text: 'Noch nichts eingetragen – scannen oder suchen geht schnell.',
+                action: { label: 'Suchen', to: '/nutrition?add=search' },
+              }
+            : {
+                text: 'Noch nichts eingetragen – ein Foto reicht.',
+                action: { label: 'Foto', to: '/nutrition?add=photo' },
+              }),
         }
       if (c.hour >= 17 && proteinLeft >= 30) return nutritionProtein(proteinLeft, kcalLeft)
       if (c.waterTarget > 0 && c.waterMl < c.waterTarget * 0.4 && c.hour >= 14)

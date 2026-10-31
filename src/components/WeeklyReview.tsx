@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Trophy } from 'lucide-react'
 import { PremiumSheet, SheetHero } from './ui/PremiumSheet'
-import { useAiStatus } from '../hooks/useAi'
+import { useAiGate } from '../hooks/usePremium'
+import { weeklyReviewText } from '../lib/freeTexts'
+import { weekStreakWithFreezes } from '../lib/streaks'
+import { useStreakState } from '../hooks/useStreak'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useExercises } from '../hooks/useExercises'
 import { useAllFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
@@ -30,7 +33,8 @@ import {
  * und zeigt es als Popup. Läuft im Hintergrund, einmal pro Kalenderwoche.
  */
 export function WeeklyReview() {
-  const { data: ai } = useAiStatus()
+  const gate = useAiGate()
+  const { data: streakState } = useStreakState()
   const { data: allSets } = useAllSets()
   const weeklyGoal = useWeeklyGoal()
   const { data: exercises } = useExercises()
@@ -48,15 +52,18 @@ export function WeeklyReview() {
 
   useEffect(() => {
     if (tried.current) return
-    if (!ai?.enabled || !allSets || (showNutrition && !foodEntries) || weightsLoading) return
+    // KI-Status abwarten (undefined = lädt noch); ohne KI oder ohne Plus → festes Fazit aus freeTexts.
+    if (!gate.ready || !allSets || (showNutrition && !foodEntries) || weightsLoading) return
     tried.current = true
+    const useAi = gate.canUse
 
     const weekId = isoWeekId()
     const stored = getStoredReview()
 
     // Schon für diese Woche im neuen Format erstellt → ggf. nur Popup zeigen.
-    // (Altes Fließtext-Fazit dieser Woche wird einmal im neuen Format neu erzeugt.)
-    if (stored && stored.weekId === weekId && stored.data) {
+    // (Altes Fließtext-Fazit dieser Woche wird einmal im neuen Format neu erzeugt;
+    // ein festes Fazit wird mit Plus einmal durch das KI-Fazit ersetzt.)
+    if (stored && stored.weekId === weekId && stored.data && !(stored.free && useAi)) {
       setReview(stored)
       if (getSeenWeekId() !== weekId) show()
       return
@@ -65,9 +72,7 @@ export function WeeklyReview() {
     const { start, end, label } = lastWeekRange()
     const weekSets = allSets.filter((s) => s.date >= start && s.date <= end)
     // Ernährung ausgeblendet → keine Essensdaten an die KI schicken.
-    const weekFood = showNutrition
-      ? (foodEntries ?? []).filter((e) => e.date >= start && e.date <= end)
-      : []
+    const weekFood = showNutrition ? (foodEntries ?? []).filter((e) => e.date >= start && e.date <= end) : []
     // Nur erzeugen, wenn es überhaupt Daten der Vorwoche gibt.
     if (weekSets.length === 0 && weekFood.length === 0) return
 
@@ -90,9 +95,7 @@ export function WeeklyReview() {
       foodByDay.set(e.date, d)
     }
     const daysLogged = foodByDay.size
-    const avgKcal = daysLogged
-      ? Math.round([...foodByDay.values()].reduce((s, d) => s + d.kcal, 0) / daysLogged)
-      : 0
+    const avgKcal = daysLogged ? Math.round([...foodByDay.values()].reduce((s, d) => s + d.kcal, 0) / daysLogged) : 0
     const avgProtein = daysLogged
       ? Math.round([...foodByDay.values()].reduce((s, d) => s + d.protein, 0) / daysLogged)
       : 0
@@ -112,6 +115,44 @@ export function WeeklyReview() {
       avgProtein: showNutrition && daysLogged ? avgProtein : null,
       proteinTarget: showNutrition && settings?.protein_target ? settings.protein_target : null,
       weightDelta: bodyweight ? Math.round((bodyweight.current - bodyweight.start) * 10) / 10 : null,
+    }
+
+    const finish = (data: StoredReview['data'], free: boolean) => {
+      const r: StoredReview = {
+        weekId,
+        text: '',
+        createdAt: new Date().toISOString(),
+        data,
+        stats,
+        ...(free ? { free: true } : {}),
+      }
+      storeReview(r)
+      setReview(r)
+      if (getSeenWeekId() !== weekId) show()
+    }
+
+    // Kostenlos (oder KI-Fehler): festes Fazit aus den Kennzahlen.
+    const freeReview = () => {
+      const kcalT = settings?.kcal_target ?? 0
+      const protT = settings?.protein_target ?? 0
+      const daysArr = [...foodByDay.values()]
+      finish(
+        weeklyReviewText({
+          ...stats,
+          weekId: label,
+          goal: settings?.goal ?? null,
+          topMuscles,
+          proteinDays: showNutrition && protT ? daysArr.filter((d) => d.protein >= protT * 0.95).length : null,
+          kcalDays:
+            showNutrition && kcalT ? daysArr.filter((d) => Math.abs(d.kcal - kcalT) <= kcalT * 0.1).length : null,
+          streakWeeks: weekStreakWithFreezes(sessionDates(allSets), streakState?.frozen_weeks ?? []),
+        }),
+        true,
+      )
+    }
+    if (!useAi) {
+      freeReview()
+      return
     }
 
     ;(async () => {
@@ -136,17 +177,14 @@ export function WeeklyReview() {
             : null,
           bodyweight,
         })
-        const r: StoredReview = { weekId, text: '', createdAt: new Date().toISOString(), data, stats }
-        storeReview(r)
-        setReview(r)
-        if (getSeenWeekId() !== weekId) show()
+        finish(data, false)
       } catch {
-        /* still im Hintergrund – nächster Öffnen-Versuch probiert erneut */
-        tried.current = false
+        // KI nicht erreichbar → festes Fazit; beim nächsten Öffnen versucht es die KI erneut.
+        freeReview()
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ai?.enabled, allSets, foodEntries, exercises, settings, weights, weightsLoading, showNutrition])
+  }, [gate.ready, gate.canUse, allSets, foodEntries, exercises, settings, weights, weightsLoading, showNutrition])
 
   // Buddy ist stolz, wenn die Vorwoche das (persönliche) Wochenziel erreicht hat.
   const goalReached = useMemo(() => {

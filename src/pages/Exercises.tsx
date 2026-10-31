@@ -17,7 +17,8 @@ import {
 } from 'lucide-react'
 import { useCreateExercise, useExercises, useUpdateExercise, type ExerciseInput } from '../hooks/useExercises'
 import { useAllSets } from '../hooks/useWorkouts'
-import { useAiStatus } from '../hooks/useAi'
+import { useAiGate } from '../hooks/usePremium'
+import { PlusBadge } from '../components/premium/PlusBadge'
 import { parseEquipmentList, parseNewExercise, type ExerciseDraft } from '../lib/ai'
 import { MicButton, speechSupported } from '../components/MicButton'
 import { Sheet } from '../components/workout/Sheet'
@@ -80,12 +81,15 @@ function AddOption({
   desc,
   onClick,
   primary = false,
+  locked = false,
 }: {
   Icon: LucideIcon
   title: string
   desc: string
   onClick: () => void
   primary?: boolean
+  /** nur mit Buddy Plus */
+  locked?: boolean
 }) {
   return (
     <button className="flex w-full items-center gap-3 px-3 py-3 text-left" onClick={onClick}>
@@ -100,6 +104,7 @@ function AddOption({
         <span className="block font-semibold text-cocoa">{title}</span>
         <span className="block truncate text-xs text-cocoa-light">{desc}</span>
       </span>
+      {locked && <PlusBadge />}
       <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />
     </button>
   )
@@ -112,8 +117,8 @@ export default function Exercises() {
   const createEx = useCreateExercise()
   const updateEx = useUpdateExercise()
 
-  const { data: ai } = useAiStatus()
-  const aiOn = Boolean(ai?.enabled)
+  const gate = useAiGate()
+  const aiOn = gate.enabled
   const [editing, setEditing] = useState<Exercise | null>(null)
   const [form, setForm] = useState<ExerciseInput>(EMPTY_EXERCISE)
   const [open, setOpen] = useState(false)
@@ -171,6 +176,7 @@ export default function Exercises() {
 
   async function genEquip(image?: string) {
     if (!equipText.trim() && !image) return
+    if (!gate.requirePlus()) return
     setEquipBusy(true)
     setEquipErr(null)
     try {
@@ -228,7 +234,7 @@ export default function Exercises() {
   }
 
   async function runAssistant() {
-    if (!assistText.trim()) return
+    if (!assistText.trim() || !gate.requirePlus()) return
     setAssistBusy(true)
     setAssistErr(null)
     try {
@@ -337,7 +343,9 @@ export default function Exercises() {
                 Icon={Sparkles}
                 title={speechSupported ? 'Beschreiben oder sprechen' : 'Beschreiben'}
                 desc="Die KI erstellt Muskeln & Gewichtsstufen für dich"
+                locked={gate.locked}
                 onClick={() => {
+                  if (!gate.requirePlus()) return
                   setAddOpen(false)
                   setAssistOpen(true)
                 }}
@@ -348,7 +356,9 @@ export default function Exercises() {
                 Icon={Camera}
                 title="Geräte importieren"
                 desc="Geräte deines Studios per Text oder Foto übernehmen"
+                locked={gate.locked}
                 onClick={() => {
+                  if (!gate.requirePlus()) return
                   setAddOpen(false)
                   setEquipOpen(true)
                 }}
@@ -636,7 +646,12 @@ export default function Exercises() {
           )}
 
           {autoLinkOpen && library && (
-            <AutoLinkSheet exercises={unlinked} list={library} aiOn={aiOn} onClose={() => setAutoLinkOpen(false)} />
+            <AutoLinkSheet
+              exercises={unlinked}
+              list={library}
+              aiOn={gate.canUse}
+              onClose={() => setAutoLinkOpen(false)}
+            />
           )}
         </>
       )}

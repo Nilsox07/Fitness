@@ -82,7 +82,9 @@ import {
   type MealPlanItem,
   type Recipe,
 } from '../lib/ai'
-import { useAiStatus } from '../hooks/useAi'
+import { useAiGate } from '../hooks/usePremium'
+import { PlusBadge } from '../components/premium/PlusBadge'
+import { mealVerdictText } from '../lib/freeTexts'
 import { GoalEditor } from '../components/GoalEditor'
 import { WeekStrip } from '../components/nutrition-home/WeekStrip'
 import { HeroCard } from '../components/nutrition-home/HeroCard'
@@ -164,6 +166,8 @@ function saveError(e: unknown, what = 'Speichern'): string {
 
 /** „Anderes Restaurant“ (ohne Kette): Speisekarte fotografieren oder beschreiben. */
 const OTHER_PLACE = 'Restaurant'
+/** Hinzufügen-Modi, die nur mit KI (Buddy Plus) gehen. Restaurant bleibt offen (Ketten-Karten ohne KI). */
+const AI_MODES = ['photo', 'aitext', 'recipe', 'plan'] as const
 const RECENT_PLACES_KEY = 'recent_places'
 
 /** Zuletzt genutzte Ketten zuerst (schneller unterwegs). */
@@ -334,17 +338,24 @@ export default function Nutrition() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addWaterParam, waterLoaded])
 
+  // KI-Funktionen: sichtbar, sobald der Server KI hat; nutzbar nur mit Buddy Plus (sonst Plus-Sheet).
+  const gate = useAiGate()
+
   // Direkteinstieg aus Suche/Widgets: ?add=photo|search|restaurant|aitext|recipe|plan|manual|menu
   const addParam = params.get('add')
   useEffect(() => {
     if (!addParam) return
+    // KI-Modi erst nach dem KI-Status prüfen (Plus-Sperre)
+    const aiMode = (AI_MODES as readonly string[]).includes(addParam)
+    if (aiMode && !gate.ready) return
     const next = new URLSearchParams(params)
     next.delete('add')
     setParams(next, { replace: true })
     const modes = ['photo', 'search', 'restaurant', 'aitext', 'recipe', 'plan', 'manual', 'menu'] as const
+    if (aiMode && !gate.requirePlus()) return
     if ((modes as readonly string[]).includes(addParam)) setAddMode(addParam as (typeof modes)[number])
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addParam])
+  }, [addParam, gate.ready])
 
   // „Genommen“ aus der Supplement-Erinnerung (?supp=<id>&slot=HH:MM)
   const toggleDose = useToggleDose()
@@ -517,13 +528,14 @@ export default function Nutrition() {
   const addMeal = (): Meal => mealOverride ?? currentMeal()
   /** Sheet wechseln und alte Fehlermeldung verwerfen. */
   const go = (mode: typeof addMode) => {
+    if (mode && (AI_MODES as readonly string[]).includes(mode) && !gate.requirePlus()) return
     setError(null)
     setAddMode(mode)
   }
 
   // KI-Erfassung (Foto/Text)
-  const { data: ai } = useAiStatus()
-  const aiOn = ai?.enabled
+  const aiOn = gate.enabled
+  const lock = gate.locked ? <PlusBadge /> : undefined
   const [aiResults, setAiResults] = useState<FoodEstimate[] | null>(null)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiText, setAiText] = useState('')
@@ -580,7 +592,7 @@ export default function Nutrition() {
   }
 
   async function handlePhoto(file: File | undefined) {
-    if (!file) return
+    if (!file || !gate.requirePlus()) return
     setError(null)
     try {
       const dataUrl = await fileToDataUrl(file)
@@ -594,7 +606,7 @@ export default function Nutrition() {
   }
 
   async function handleAiText() {
-    if (!aiText.trim()) return
+    if (!aiText.trim() || !gate.requirePlus()) return
     setError(null)
     setAddMode(null)
     setAiText('')
@@ -609,6 +621,7 @@ export default function Nutrition() {
   const [planNote, setPlanNote] = useState('')
 
   async function genPlan() {
+    if (!gate.requirePlus()) return
     setAiBusy(true)
     setError(null)
     try {
@@ -658,12 +671,29 @@ export default function Nutrition() {
         orderItems.length <= 2
           ? orderItems.map((i) => i.name).join(' + ')
           : `${activeChain.name} · ${orderItems.length} Artikel`
-      showAnalysis(orderItems, title)
+      showAnalysis(
+        orderItems,
+        title,
+        mealVerdictText(
+          orderItems.reduce(
+            (a, i) => ({
+              kcal: a.kcal + i.kcal,
+              protein: a.protein + i.protein,
+              carbs: a.carbs + i.carbs,
+              fat: a.fat + i.fat,
+              fiber: a.fiber + i.fiber,
+            }),
+            { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+          ),
+          { goal: settings?.goal, kcalLeft: hasTarget ? kcalTarget - totals.kcal : null },
+        ),
+      )
       setOrderQty({})
       setAddMode(null)
       return
     }
     if (!place && !restItem.trim()) return
+    if (!gate.requirePlus()) return
     setAiBusy(true)
     setError(null)
     try {
@@ -739,7 +769,7 @@ export default function Nutrition() {
 
   /** Alle Kartenfotos zusammen auswerten → 3 passende Optionen fürs Rest-Budget. */
   async function evaluateMenu() {
-    if (!menuPhotos.length) return
+    if (!menuPhotos.length || !gate.requirePlus()) return
     setAiBusy(true)
     setError(null)
     setMenuPicks(null)
@@ -783,6 +813,7 @@ export default function Nutrition() {
       setAddMode(null)
       return
     }
+    if (!gate.requirePlus()) return
     setAiBusy(true)
     setError(null)
     try {
@@ -804,7 +835,7 @@ export default function Nutrition() {
   }
 
   async function genRecipeText() {
-    if (!recipeText.trim()) return
+    if (!recipeText.trim() || !gate.requirePlus()) return
     setAiBusy(true)
     setError(null)
     try {
@@ -819,7 +850,7 @@ export default function Nutrition() {
   }
 
   async function handleFridge(file: File | undefined) {
-    if (!file) return
+    if (!file || !gate.requirePlus()) return
     setAiBusy(true)
     setError(null)
     try {
@@ -1107,7 +1138,9 @@ export default function Nutrition() {
         {isToday && diet.fasting !== 'none' && <FastingCard entries={entries ?? []} style={stagger(2)} />}
 
         <QuickAddBar
-          aiOn={!!aiOn}
+          aiOn={aiOn}
+          locked={gate.locked}
+          onLocked={() => gate.requirePlus()}
           onPhoto={(file) => {
             setMealOverride(null)
             void handlePhoto(file)
@@ -1217,12 +1250,14 @@ export default function Nutrition() {
                     icon={<Camera size={18} />}
                     title="Foto"
                     subtitle="Essen fotografieren, Buddy schätzt"
+                    right={lock}
                     onClick={() => go('photo')}
                   />
                   <GroupRow
                     icon={<MessageSquare size={18} />}
                     title="Beschreiben"
                     subtitle="z. B. „2 Eier und ein Brot"
+                    right={lock}
                     onClick={() => go('aitext')}
                   />
                   <GroupRow
@@ -1235,12 +1270,14 @@ export default function Nutrition() {
                     icon={<ChefHat size={18} />}
                     title="Rezept"
                     subtitle="Aus Kühlschrank-Foto oder Wunsch"
+                    right={lock}
                     onClick={() => go('recipe')}
                   />
                   <GroupRow
                     icon={<ClipboardList size={18} />}
                     title="Tagesplan für heute"
                     subtitle="Passend zu deinem Ziel"
+                    right={lock}
                     onClick={() => go('plan')}
                   />
                 </GroupList>
@@ -1601,8 +1638,11 @@ export default function Nutrition() {
                   ))}
                 </div>
               )}
-              {ai?.enabled && (
-                <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-cream p-3.5 transition active:scale-[0.99]">
+              {aiOn && (
+                <label
+                  className="flex cursor-pointer items-center gap-3 rounded-2xl bg-cream p-3.5 transition active:scale-[0.99]"
+                  onClick={gate.guard}
+                >
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
                     <Camera size={19} />
                   </span>
@@ -1612,6 +1652,7 @@ export default function Nutrition() {
                       Jedes Restaurant – die KI sucht das Beste raus
                     </span>
                   </span>
+                  {lock}
                   <input
                     type="file"
                     accept="image/*"
@@ -1645,7 +1686,7 @@ export default function Nutrition() {
               <span className="text-xs font-semibold text-brand">Ändern</span>
             </button>
           )}
-          {ai?.enabled && place && !activeChain && (
+          {aiOn && place && !activeChain && (
             <div className="space-y-2">
               <div className="space-y-2.5 rounded-2xl bg-cream p-3.5">
                 <div className="flex items-center gap-3">

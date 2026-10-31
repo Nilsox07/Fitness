@@ -50,3 +50,5 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
 - Serverfunktionen (noch Vercel) in `api/`: `ai.js` (KI-Vermittler mit Schutz aus `_aiguard.js`),
   `season.js`, `recipe-import.js`, `cron/reminders.js`, `push/*`, `fitbit/*`.
 - KI-Prompts liegen clientseitig in `src/lib/ai.ts`; der Server hängt die Themen-Grenze an und begrenzt Nutzung.
+- **KI = Buddy Plus:** Neue KI-Funktionen immer mit `useAiGate()` sperren (`requirePlus()` vor dem Aufruf,
+  `PlusBadge` wenn `locked`) und für KI-Texte einen festen Ersatz in `src/lib/freeTexts.ts` (mit Test) anlegen.

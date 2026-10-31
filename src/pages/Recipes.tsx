@@ -4,6 +4,8 @@ import { ChevronRight, Link2, PenLine, Plus, Search, Sparkles, X } from 'lucide-
 import { MyBuddy } from '../components/buddy/MyBuddy'
 import { useAuth } from '../lib/auth'
 import { useAiStatus } from '../hooks/useAi'
+import { useAiGate } from '../hooks/usePremium'
+import { PlusBadge } from '../components/premium/PlusBadge'
 import { useRecipes, useToggleRecipeShared, useDeleteRecipe } from '../hooks/useRecipes'
 import { useAddFoodEntry, useDietStyle, useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useAllSets } from '../hooks/useWorkouts'
@@ -42,6 +44,8 @@ function NewRecipes() {
   const { data: recipes, isLoading } = useRecipes()
   const { data: ai, isPending: aiPending } = useAiStatus()
   const aiOn = !!ai?.enabled
+  // Rezept-Import/-Erstellung per KI nur mit Buddy Plus (sichtbar bleibt es trotzdem).
+  const gate = useAiGate()
   const { data: settings } = useNutritionSettings()
   const date = localDate()
   const { data: entries } = useFoodEntries(date)
@@ -87,13 +91,13 @@ function NewRecipes() {
       }
     }
     if (!shared || aiPending) return // erst wissen, ob die KI verfügbar ist
-    if (aiOn) setShareText(shared)
+    if (gate.canUse) setShareText(shared)
     else {
       setImportText(shared)
       setSheet('link')
     }
     if (params.get('import')) setParams({}, { replace: true })
-  }, [params, setParams, aiPending, aiOn])
+  }, [params, setParams, aiPending, gate.canUse])
 
   // Neues eigenes Rezept gespeichert → „Meine Rezepte" zeigen.
   const prevMine = useRef<number | null>(null)
@@ -251,6 +255,7 @@ function NewRecipes() {
         <button
           className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left transition active:scale-[0.99]"
           onClick={() => {
+            if (!gate.requirePlus()) return
             setImportText('')
             setSheet('link')
           }}
@@ -263,6 +268,7 @@ function NewRecipes() {
             <span className="block text-sm font-semibold text-cocoa">Rezept von TikTok, Insta & Co.</span>
             <span className="block text-xs text-cocoa-light">Link einfügen oder direkt an die App teilen</span>
           </span>
+          {gate.locked && <PlusBadge />}
           <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />
         </button>
       )}
@@ -293,7 +299,13 @@ function NewRecipes() {
             </div>
           )}
 
-          {!isLoading && all.length === 0 && <EmptyState aiOn={aiOn} onCreate={(m) => setSheet(m)} />}
+          {!isLoading && all.length === 0 && (
+            <EmptyState
+              aiOn={aiOn}
+              locked={gate.locked}
+              onCreate={(m) => (m !== 'ai' || gate.requirePlus()) && setSheet(m)}
+            />
+          )}
 
           {!isLoading && all.length > 0 && (
             <>
@@ -443,7 +455,7 @@ function NewRecipes() {
 }
 
 /** Leerer Zustand: großes Icon + zwei Kacheln (KI / selbst). */
-function EmptyState({ aiOn, onCreate }: { aiOn: boolean; onCreate: (m: CreateMode) => void }) {
+function EmptyState({ aiOn, locked, onCreate }: { aiOn: boolean; locked: boolean; onCreate: (m: CreateMode) => void }) {
   const tile =
     'flex flex-col items-center justify-center gap-1.5 rounded-2xl px-3 py-5 text-sm font-semibold transition active:scale-95'
   return (
@@ -465,6 +477,7 @@ function EmptyState({ aiOn, onCreate }: { aiOn: boolean; onCreate: (m: CreateMod
           <button className={`${tile} bg-brand text-on-brand`} onClick={() => onCreate('ai')}>
             <Sparkles size={24} />
             Mit KI erstellen
+            {locked && <PlusBadge onDark />}
           </button>
         )}
         <button

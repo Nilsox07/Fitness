@@ -10,6 +10,8 @@ import { usePrefs } from '../../lib/prefs'
 import { useOverlayOpen } from '../../lib/backStack'
 import { isWorkoutRunning } from '../../lib/activeWorkout'
 import { haptic } from '../../lib/native'
+import { openPlusSheet } from '../../lib/premium'
+import { PlusBadge } from '../premium/PlusBadge'
 import { getTipPage, parsePos, snapPos, subscribeTipPage, type FloatPos } from '../../lib/buddyFloat'
 
 const POS_KEY = 'buddy_float_pos'
@@ -82,13 +84,15 @@ export function FloatingBuddy() {
   // Sprechblase schließt sich nach einer Weile von selbst
   useEffect(() => {
     if (!bubble || brief.busy) return
-    const id = setTimeout(() => setBubble(false), brief.text ? 20000 : 12000)
+    const id = setTimeout(() => setBubble(false), brief.aiOn && brief.text ? 20000 : 12000)
     return () => clearTimeout(id)
-  }, [bubble, brief.busy, brief.text])
+  }, [bubble, brief.busy, brief.text, brief.aiOn])
 
   if (pathname === '/profile' || pathname.startsWith('/exercises/')) return null
 
-  const withBriefing = page === 'today' && brief.aiOn && !(hasWatch && t.readiness)
+  // Plus: KI-Briefing auf Knopfdruck; kostenlos: fester Briefing-Text sofort + Knopf mit Plus-Schild.
+  const withBriefing = page === 'today' && (brief.aiOn || brief.locked) && !(hasWatch && t.readiness)
+  const briefText = withBriefing ? brief.text : null
   // Während eines laufenden Trainings nicht über den Satz-Knöpfen schweben
   const hidden = overlay || (pathname === '/' && isWorkoutRunning())
 
@@ -151,7 +155,7 @@ export function FloatingBuddy() {
           role="status"
         >
           <div className="relative rounded-3xl bg-cream p-3.5 pr-9 shadow-[0_12px_32px_-10px_rgb(0_0_0/0.35)] ring-1 ring-black/5 dark:ring-white/10">
-            <p className="text-[14px] leading-snug">{brief.text && withBriefing ? brief.text : tip.text}</p>
+            <p className="text-[14px] leading-snug">{briefText || tip.text}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {tip.action && (
                 <button
@@ -164,25 +168,28 @@ export function FloatingBuddy() {
                   {tip.action.label}
                 </button>
               )}
-              {withBriefing && !brief.text && (
+              {withBriefing && (brief.locked || !briefText) && (
                 <button
                   className="flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-on-brand active:scale-95"
                   onClick={() => void brief.load()}
                   disabled={brief.busy}
                 >
                   {brief.busy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                  Tagesbriefing
+                  {brief.locked ? 'KI-Briefing' : 'Tagesbriefing'}
+                  {brief.locked && <PlusBadge onDark />}
                 </button>
               )}
-              {brief.aiOn && tip.ask && (
+              {(brief.aiOn || brief.locked) && tip.ask && (
                 <button
                   className="flex items-center gap-1 rounded-full bg-sand px-3 py-1 text-xs font-semibold text-cocoa active:scale-95"
                   onClick={() => {
                     setBubble(false)
-                    openBuddySheet(tip.ask)
+                    if (brief.locked) openPlusSheet()
+                    else openBuddySheet(tip.ask)
                   }}
                 >
                   <Sparkles size={12} className="text-brand" /> Frag Buddy
+                  {brief.locked && <PlusBadge />}
                 </button>
               )}
             </div>

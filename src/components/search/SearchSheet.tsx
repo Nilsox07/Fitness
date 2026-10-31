@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Search, Sparkles, X } from 'lucide-react'
 import { usePrefs } from '../../lib/prefs'
 import { useAiStatus } from '../../hooks/useAi'
+import { useAiGate } from '../../hooks/usePremium'
+import { openPlusSheet } from '../../lib/premium'
+import { PlusBadge } from '../premium/PlusBadge'
 import { searchEntries, suggestions, type SearchEntry, type SearchSection } from '../../lib/searchIndex'
 import { openBuddySheet } from '../buddy/BuddySheet'
 import { openPlanWizard } from '../onboarding/Onboarding'
@@ -35,6 +38,7 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const { showNutrition, showSocial, hasWatch } = usePrefs()
   const { data: ai } = useAiStatus()
+  const gate = useAiGate()
   const [q, setQ] = useState('')
   const input = useRef<HTMLInputElement>(null)
   const aiOn = ai ? ai.enabled : undefined
@@ -63,6 +67,7 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
     onClose()
     if (e.to === 'buddy') openBuddySheet()
     else if (e.to === 'intro') openPlanWizard()
+    else if (e.to === 'plus') openPlusSheet()
     else navigate(e.to)
   }
 
@@ -117,6 +122,7 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
           <button
             className="flex w-full items-center gap-3 rounded-2xl bg-brand/10 px-4 py-3 text-left"
             onClick={() => {
+              if (!gate.requirePlus()) return
               onClose()
               openBuddySheet(q.trim())
             }}
@@ -126,6 +132,7 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
               <span className="block text-sm font-semibold text-brand">Buddy fragen</span>
               <span className="block truncate text-xs text-cocoa-light">„{q.trim()}“</span>
             </span>
+            {gate.locked && <PlusBadge />}
           </button>
         )}
       </div>

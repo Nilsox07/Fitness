@@ -5,6 +5,8 @@ import { useAuth } from '../../lib/auth'
 import { useAddRecipe } from '../../hooks/useRecipes'
 import { recipeFromText, type ImportedRecipe, type Recipe } from '../../lib/ai'
 import { ImportRecipeForm } from './ImportRecipeForm'
+import { useAiGate } from '../../hooks/usePremium'
+import { PlusBadge } from '../premium/PlusBadge'
 
 export type CreateMode = 'menu' | 'ai' | 'manual' | 'link'
 
@@ -26,7 +28,11 @@ export function RecipeCreateSheet({
   /** Erkanntes Import-Rezept in der großen Ansicht zeigen */
   onImported?: (r: ImportedRecipe) => void
 }) {
-  const [mode, setMode] = useState<CreateMode>((initial === 'ai' || initial === 'link') && !aiEnabled ? 'menu' : initial)
+  const [mode, setMode] = useState<CreateMode>(
+    (initial === 'ai' || initial === 'link') && !aiEnabled ? 'menu' : initial,
+  )
+  const gate = useAiGate()
+  const lock = gate.locked ? <PlusBadge /> : undefined
   const title =
     mode === 'ai'
       ? 'Rezept mit KI'
@@ -45,7 +51,8 @@ export function RecipeCreateSheet({
               icon={<Link2 size={20} />}
               title="Von TikTok, Insta & Co."
               sub="Link oder Screenshot – Rezept wird übernommen"
-              onClick={() => setMode('link')}
+              badge={lock}
+              onClick={() => gate.requirePlus() && setMode('link')}
             />
           )}
           {aiEnabled && (
@@ -53,7 +60,8 @@ export function RecipeCreateSheet({
               icon={<Sparkles size={20} />}
               title="Mit KI erstellen"
               sub="Beschreib, worauf du Lust hast"
-              onClick={() => setMode('ai')}
+              badge={lock}
+              onClick={() => gate.requirePlus() && setMode('ai')}
             />
           )}
           <OptionButton
@@ -66,12 +74,14 @@ export function RecipeCreateSheet({
       )}
       {mode === 'ai' && <AiRecipeForm onDone={onClose} />}
       {mode === 'manual' && <ManualRecipeForm onDone={onClose} />}
-      {mode === 'link' && <ImportRecipeForm
+      {mode === 'link' && (
+        <ImportRecipeForm
           initialText={initialText}
           initialError={initialError}
           onDone={onClose}
           onRecognized={onImported}
-        />}
+        />
+      )}
     </Sheet>
   )
 }
@@ -80,11 +90,13 @@ function OptionButton({
   icon,
   title,
   sub,
+  badge,
   onClick,
 }: {
   icon: ReactNode
   title: string
   sub: string
+  badge?: ReactNode
   onClick: () => void
 }) {
   return (
@@ -97,6 +109,7 @@ function OptionButton({
         <span className="block font-semibold">{title}</span>
         <span className="block text-xs text-cocoa-light">{sub}</span>
       </span>
+      {badge}
       <ChevronRight size={18} className="shrink-0 text-cocoa-muted" />
     </button>
   )
@@ -120,9 +133,10 @@ function AiRecipeForm({ onDone }: { onDone: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [shared, setShared] = useState(false)
+  const gate = useAiGate()
 
   async function generate() {
-    if (!prompt.trim() || busy) return
+    if (!prompt.trim() || busy || !gate.requirePlus()) return
     setBusy(true)
     setError(null)
     try {
@@ -317,11 +331,7 @@ function ManualRecipeForm({ onDone }: { onDone: () => void }) {
       </div>
       <label className="block">
         <span className="label">Zutaten (eine pro Zeile)</span>
-        <textarea
-          className="input min-h-[5rem]"
-          value={ingredients}
-          onChange={(e) => setIngredients(e.target.value)}
-        />
+        <textarea className="input min-h-[5rem]" value={ingredients} onChange={(e) => setIngredients(e.target.value)} />
       </label>
       <label className="block">
         <span className="label">Zubereitung (ein Schritt pro Zeile)</span>

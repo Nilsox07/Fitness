@@ -6,7 +6,9 @@ import { fileToDataUrl } from '../../lib/image'
 import { localDate } from '../../lib/day'
 import { bfCategory, type BodyFatEstimate } from '../../lib/bodyScan'
 import { useAddBodyScan } from '../../hooks/useBodyScans'
-import { useAiStatus } from '../../hooks/useAi'
+import { useAiGate } from '../../hooks/usePremium'
+import { openPlusSheet } from '../../lib/premium'
+import { PlusBadge } from '../premium/PlusBadge'
 import type { NutritionSettings } from '../../types'
 
 const CONSENT_KEY = 'body_photo_consent'
@@ -59,8 +61,9 @@ export function BodyScanFlow({
   weightKg: number | null
   onClose: () => void
 }) {
-  const { data: ai } = useAiStatus()
-  const aiOn = !!ai?.enabled
+  // KI-Schätzung nur mit Buddy Plus; kostenlos: Foto + eigener Wert.
+  const gate = useAiGate()
+  const aiOn = gate.canUse
   const add = useAddBodyScan()
   const fileRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState<Step>('guide')
@@ -225,6 +228,20 @@ export function BodyScanFlow({
             ))}
           </div>
 
+          {gate.locked && (
+            <button
+              type="button"
+              onClick={openPlusSheet}
+              className="flex w-full items-center gap-3 rounded-2xl bg-cream p-3 text-left text-sm"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">Körperfett per KI schätzen</span>
+                <span className="block text-xs text-cocoa-light">Sonst trägst du deinen Wert selbst ein.</span>
+              </span>
+              <PlusBadge />
+            </button>
+          )}
+
           {aiOn && (
             <label className="flex items-start gap-3 rounded-2xl bg-sand/60 p-3 text-xs leading-snug text-cocoa-light">
               <input
@@ -323,7 +340,9 @@ export function BodyScanFlow({
         <>
           {!aiOn && photo && (
             <p className="text-sm text-cocoa-light">
-              Die KI-Schätzung ist gerade nicht verfügbar – trag deinen Wert ein, dein Foto wird trotzdem gespeichert.
+              {gate.locked
+                ? 'Die KI-Schätzung gibt es mit Buddy Plus – trag deinen Wert ein, dein Foto wird gespeichert.'
+                : 'Die KI-Schätzung ist gerade nicht verfügbar – trag deinen Wert ein, dein Foto wird trotzdem gespeichert.'}
             </p>
           )}
           <label className="block">

@@ -14,7 +14,11 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react'
-import { useAiStatus } from '../../hooks/useAi'
+import { useAiGate } from '../../hooks/usePremium'
+import { useMyProfile } from '../../hooks/useSocial'
+import { buddyFreeNote } from '../../lib/freeTexts'
+import { openPlusSheet } from '../../lib/premium'
+import { PlusBadge } from '../premium/PlusBadge'
 import { useTrainingRhythm } from '../../hooks/usePrefsSync'
 import { trainingDay } from '../../lib/day'
 import type { BuddyMood } from '../../lib/buddyMood'
@@ -121,8 +125,10 @@ export function BuddySheetHost() {
  */
 export function BuddySheet({ onClose, ask }: { onClose: () => void; ask?: string }) {
   const navigate = useNavigate()
-  const { data: ai } = useAiStatus()
-  const aiOn = Boolean(ai?.enabled)
+  const gate = useAiGate()
+  // Chat nur mit Buddy Plus; kostenlos: Tipps, Schnell-Links und ein Hinweis auf Plus.
+  const aiOn = gate.canUse
+  const { data: me } = useMyProfile()
   const buddy = useBuddy()
   const level = useBuddyLevel()
   const rhythm = useTrainingRhythm(trainingDay())
@@ -267,6 +273,22 @@ export function BuddySheet({ onClose, ask }: { onClose: () => void; ask?: string
               Profil
             </button>
           </div>
+
+          {gate.locked && (
+            <button
+              type="button"
+              onClick={openPlusSheet}
+              className="flex w-full items-center gap-3 rounded-2xl bg-cream px-3 py-3 text-left ring-1 ring-sand-dark/40 transition active:scale-[0.99]"
+            >
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sand text-cocoa-light">
+                <MessageCircle size={16} />
+              </span>
+              <span className="min-w-0 flex-1 text-sm font-medium text-cocoa">
+                {buddyFreeNote(me?.display_name?.split(' ')[0])}
+              </span>
+              <PlusBadge />
+            </button>
+          )}
 
           {aiOn && (
             <p className="flex items-center justify-center gap-1.5 pt-2 text-xs text-cocoa-muted">

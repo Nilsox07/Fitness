@@ -41,6 +41,8 @@ export interface StoredReview {
   createdAt: string
   data?: ReviewData
   stats?: ReviewStats
+  /** true = festes Fazit ohne KI (kostenlose Version) */
+  free?: boolean
 }
 
 /** Markdown-Reste (Sternchen, Rauten, Unterstriche) aus altem Fließtext entfernen. */
@@ -67,9 +69,7 @@ export function isoWeekId(d = new Date()): string {
 
 /** Lokales Datum als YYYY-MM-DD. */
 function ymd(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 /** Montag–Sonntag der VORIGEN Kalenderwoche (das wird montags ausgewertet). */
@@ -148,9 +148,7 @@ export function weekBodyweight(
   start: string,
   end: string,
 ): { start: number; current: number } | null {
-  const inRange = weights
-    .filter((w) => w.date >= start && w.date <= end)
-    .sort((a, b) => a.date.localeCompare(b.date))
+  const inRange = weights.filter((w) => w.date >= start && w.date <= end).sort((a, b) => a.date.localeCompare(b.date))
   if (inRange.length < 2) return null
   return { start: Number(inRange[0].weight_kg), current: Number(inRange[inRange.length - 1].weight_kg) }
 }

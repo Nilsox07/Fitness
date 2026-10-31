@@ -23,7 +23,9 @@ import {
   CalendarDays,
   LayoutDashboard,
   Smile,
+  Sparkles,
   Watch,
+  FlaskConical,
 } from 'lucide-react'
 import { signOut } from '../lib/userData'
 import { useAuth } from '../lib/auth'
@@ -52,6 +54,8 @@ import { NotificationSettings } from '../components/profile/NotificationSettings
 import { ModuleSettings } from '../components/profile/ModuleSettings'
 import { openSearch } from '../components/search/SearchSheet'
 import { openBuddySheet } from '../components/buddy/BuddySheet'
+import { usePremium } from '../hooks/usePremium'
+import { openPlusSheet } from '../lib/premium'
 
 /**
  * Unterseiten des Profils, per ?s=… in der URL → Zurück-Geste funktioniert.
@@ -104,6 +108,7 @@ export default function Profile() {
   const skin = getSkinId()
   const [sound, setSound] = useState(soundEnabled())
   const { data: settings } = useNutritionSettings()
+  const { premium, testFree, setTestFree } = usePremium()
 
   const tones: CoachTone[] = ['coach', 'sergeant', 'bro']
   const reviewHint = `Dein persönliches Wochenfazit (${
@@ -327,6 +332,15 @@ export default function Profile() {
 
       <Group title="Buddy">
         {ai?.enabled && (
+          <Row
+            icon={Sparkles}
+            label="Buddy Plus"
+            hint="Alle KI-Funktionen"
+            value={premium ? 'Aktiv' : 'Kostenlos'}
+            onClick={openPlusSheet}
+          />
+        )}
+        {ai?.enabled && (
           <Row icon={MessageSquare} label="Buddy fragen" hint="Dein KI-Coach" onClick={() => openBuddySheet()} />
         )}
         {ai?.enabled && (
@@ -357,6 +371,13 @@ export default function Profile() {
         />
         <Row icon={User} tint="neutral" label="E-Mail" value={user?.email ?? '—'} />
         <Row icon={Download} tint="neutral" label="Daten exportieren" value="CSV" onClick={() => openSub('export')} />
+        <Row
+          icon={FlaskConical}
+          tint="neutral"
+          label="Kostenlose Version testen"
+          hint="Zeigt die App ohne Buddy Plus"
+          trailing={<Toggle label="Kostenlose Version testen" checked={testFree} onChange={setTestFree} />}
+        />
         <Row icon={LogOut} label="Abmelden" danger onClick={() => void signOut()} />
       </Group>
       {nameOpen && <NameSheet current={myProfile?.display_name ?? ''} onClose={() => setNameOpen(false)} />}

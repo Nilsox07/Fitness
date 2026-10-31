@@ -8,7 +8,7 @@ export interface SearchEntry {
   label: string
   sub: string
   section: SearchSection
-  /** Ziel-Route; 'buddy' öffnet den Buddy, 'intro' das Intro */
+  /** Ziel-Route; 'buddy' öffnet den Buddy, 'intro' das Intro, 'plus' das Buddy-Plus-Sheet */
   to: string
   keywords: string
   /** nur sichtbar, wenn das Modul an ist bzw. KI/Push verfügbar sind */
@@ -418,6 +418,15 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     section: 'Buddy',
     to: '/profile?s=coach',
     keywords: 'ton sprache coach locker streng',
+    needs: 'ai',
+  },
+  {
+    id: 'plus',
+    label: 'Buddy Plus',
+    sub: 'Alle KI-Funktionen freischalten',
+    section: 'Buddy',
+    to: 'plus',
+    keywords: 'premium abo pro ki freischalten kaufen upgrade bezahlen foto analyse chat',
     needs: 'ai',
   },
 ]

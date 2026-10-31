@@ -136,6 +136,33 @@ einer App, aber nur das sichtbar, was man nutzt.
 
 ---
 
+## 1c. Buddy Plus – kostenlos vs. Plus (vorbereitet, noch ohne Abrechnung)
+
+**Kostenlos:** alles ohne KI – Lebensmittel-Suche, Barcode, manuell, Rezept-Katalog, Ketten-Speisekarten,
+Training, Pläne, Statistiken, Uhr-Daten, Community, Widgets, Erinnerungen, Körperfoto mit eigenem Wert.
+**Buddy Plus (Abo):** alles, was über `src/lib/ai.ts` läuft – Foto-Analyse, Essen beschreiben, Tagesplan/Ideen,
+Restaurant-Schätzung und Speisekarten-Foto, Kühlschrank-/KI-Rezept, Rezept-Import (Link/Screenshot), Essensplan
+(erstellen, anpassen, Rezepte, Routinen schätzen), KI-Trainingsplan, Übung beschreiben/Geräte importieren,
+Muskeln vorschlagen, Übungs-Abgleich per KI, beste Alternative, KI-Aufwärm-Check, Körperfett per Foto,
+Buddy-Chat, KI-Tagesbriefing, KI-Wochenfazit, KI-Spruch, KI-Cheat-Erkennung.
+
+- **Status:** `src/lib/premium.ts` (getestet) + `usePremium()` in `src/hooks/usePremium.ts`. Bis zum Start sind
+  alle Plus. Test-Schalter: Profil → Konto & Daten → „Kostenlose Version testen“ (localStorage `plus_test_free`).
+- **Sperre:** `useAiGate()` → `{ enabled, canUse, locked, requirePlus(), guard }`. KI-Funktionen bleiben
+  sichtbar (mit `PlusBadge`), Tippen öffnet das Sheet `components/premium/PlusSheet.tsx` (`openPlusSheet()`,
+  Event `open-plus`, auch über die Suche „Buddy Plus“). Hintergrund-KI (Aufwärmen, Übungs-Abgleich, Cheat)
+  läuft ohne Plus einfach nicht bzw. regelbasiert.
+- **Feste Texte statt KI:** `src/lib/freeTexts.ts` (getestet) – `dailyBriefingText`, `weeklyReviewText`,
+  `mealVerdictText`, `hypeLineText`, `cheatJudgeText`, `buddyFreeNote`. Sie dienen auch als Ersatz, wenn die KI
+  nicht erreichbar ist (z. B. Wochenfazit). Ein festes Wochenfazit (`free: true`) wird mit Plus einmal durch das
+  KI-Fazit ersetzt.
+- **Abrechnung anschließen:** nur `setBillingEntitlement(active)` in `src/lib/premium.ts` aufrufen – z. B. nach
+  dem App-Start und im RevenueCat-`addCustomerInfoUpdateListener` mit dem Entitlement „plus“ (`null` = keine
+  Abrechnung, alle Plus). Danach im Plus-Sheet „Plus freischalten“ auf den Kauf umstellen. Der Server sollte das
+  Abo zusätzlich prüfen (Phase 4, Tabelle `entitlements`), sonst ist die Sperre nur clientseitig.
+
+---
+
 ## 2. Entscheidungen
 
 - **Nur Android zuerst.** Die Web-Version bleibt intern zum Testen und wird nicht offiziell angeboten.
@@ -256,8 +283,8 @@ lokal bzw. in GitHub-Secrets.
    - EU-Einwilligung über Google UMP (Consent-Dialog)
 4. **RevenueCat** (Play Billing) für das Pro-Abo mit Testphase. Der RevenueCat-Webhook ruft eine Edge
    Function auf, die `pro_until` setzt.
-5. UI:
-   - einheitliches „KI freischalten“-Sheet mit den Optionen „Video ansehen“ und „Pro testen“
+5. UI (Grundlage steht, siehe 1b „Buddy Plus“):
+   - einheitliches „KI freischalten“-Sheet (`PlusSheet.tsx`) um „Video ansehen“ und „Plus testen“ erweitern
    - Paywall-Seite
    - Pro-Badge im Profil
    - Werbung nie mitten im Training

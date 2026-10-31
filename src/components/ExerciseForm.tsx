@@ -2,6 +2,8 @@ import { useState, type Dispatch, type SetStateAction } from 'react'
 import { Sparkles, TriangleAlert } from 'lucide-react'
 import type { ExerciseInput } from '../hooks/useExercises'
 import { suggestMuscles } from '../lib/ai'
+import { useAiGate } from '../hooks/usePremium'
+import { PlusBadge } from './premium/PlusBadge'
 import { expandWithAddons, generateLadder } from '../lib/weights'
 import { MUSCLE_GROUPS, type Exercise, type MuscleGroup } from '../types'
 
@@ -55,6 +57,7 @@ export function ExerciseForm({
   const [gen, setGen] = useState({ start: '', pattern: '', max: '', addons: '' })
   const [suggesting, setSuggesting] = useState(false)
   const [suggestErr, setSuggestErr] = useState<string | null>(null)
+  const gate = useAiGate()
 
   function toggleSecondary(g: MuscleGroup) {
     setForm((f) => ({
@@ -66,7 +69,7 @@ export function ExerciseForm({
   }
 
   async function aiSuggestMuscles() {
-    if (!form.name.trim()) return
+    if (!form.name.trim() || !gate.requirePlus()) return
     setSuggesting(true)
     setSuggestErr(null)
     try {
@@ -124,6 +127,7 @@ export function ExerciseForm({
               ) : (
                 <>
                   <Sparkles size={14} /> Muskeln vorschlagen
+                  {gate.locked && <PlusBadge />}
                 </>
               )}
             </button>
@@ -132,9 +136,7 @@ export function ExerciseForm({
         <select
           className="input"
           value={form.muscle_group}
-          onChange={(e) =>
-            setForm({ ...form, muscle_group: e.target.value as Exercise['muscle_group'] })
-          }
+          onChange={(e) => setForm({ ...form, muscle_group: e.target.value as Exercise['muscle_group'] })}
         >
           {MUSCLE_GROUPS.map((g) => (
             <option key={g} value={g}>
@@ -169,8 +171,7 @@ export function ExerciseForm({
           })}
         </div>
         <p className="mt-1 text-xs text-cocoa-muted">
-          z. B. Rudern → auch Schultern &amp; Bizeps. Verbessert Aufwärm-Logik &amp;
-          Muskel-Balance.
+          z. B. Rudern → auch Schultern &amp; Bizeps. Verbessert Aufwärm-Logik &amp; Muskel-Balance.
         </p>
       </div>
       <div className="grid grid-cols-3 gap-2">
@@ -253,8 +254,7 @@ export function ExerciseForm({
           onChange={(e) => setForm({ ...form, weight_steps: e.target.value || null })}
         />
         <p className="mt-1 text-xs text-cocoa-light">
-          Real wählbare Gewichte deines Geräts, mit Leerzeichen getrennt. +/- springt dann exakt auf
-          diese Werte.
+          Real wählbare Gewichte deines Geräts, mit Leerzeichen getrennt. +/- springt dann exakt auf diese Werte.
         </p>
         <div className="mt-2 grid grid-cols-3 items-end gap-2">
           <div>
@@ -302,9 +302,8 @@ export function ExerciseForm({
           </button>
         </div>
         <p className="mt-1 text-xs text-cocoa-muted">
-          Generator: Start + sich wiederholendes Zuwachs-Muster. Bsp. Start 4, Muster „5 4" → 4 · 9
-          · 13 · 18 · 22 … Zusatzgewichte (z. B. „2,5 5 7") werden zusätzlich aufgelegt und machen
-          die Stufen feiner.
+          Generator: Start + sich wiederholendes Zuwachs-Muster. Bsp. Start 4, Muster „5 4" → 4 · 9 · 13 · 18 · 22 …
+          Zusatzgewichte (z. B. „2,5 5 7") werden zusätzlich aufgelegt und machen die Stufen feiner.
         </p>
       </div>
     </>

@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { LoaderCircle, Sparkles, X } from 'lucide-react'
 import { MicButton } from '../MicButton'
+import { PlusBadge } from '../premium/PlusBadge'
 import { fmtInt } from '../../lib/nutritionHome'
 
 const DAY_OPTIONS = [3, 7, 14]
@@ -16,6 +17,7 @@ export function PlanHero({
   busy,
   hasPlan,
   onGenerate,
+  locked = false,
   onCancel,
   style,
 }: {
@@ -28,6 +30,8 @@ export function PlanHero({
   busy: boolean
   hasPlan: boolean
   onGenerate: () => void
+  /** nur mit Buddy Plus */
+  locked?: boolean
   /** nur wenn schon ein Plan existiert: zurück zum Plan */
   onCancel?: () => void
   style?: CSSProperties
@@ -61,7 +65,11 @@ export function PlanHero({
           Mahlzeiten passend zu deinem Ziel — mit Rezepten und fertiger Einkaufsliste.
         </p>
 
-        <div className="mt-4 flex gap-1 rounded-full bg-bg/10 p-1 dark:bg-white/5" role="radiogroup" aria-label="Anzahl Tage">
+        <div
+          className="mt-4 flex gap-1 rounded-full bg-bg/10 p-1 dark:bg-white/5"
+          role="radiogroup"
+          aria-label="Anzahl Tage"
+        >
           {DAY_OPTIONS.map((d) => (
             <button
               key={d}
@@ -101,6 +109,7 @@ export function PlanHero({
         >
           {busy ? <LoaderCircle size={18} className="animate-spin" /> : <Sparkles size={18} />}
           {busy ? 'Erstelle Plan…' : 'Plan erstellen'}
+          {locked && <PlusBadge onDark />}
         </button>
       </div>
     </section>

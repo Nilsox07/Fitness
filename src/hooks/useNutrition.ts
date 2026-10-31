@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { judgeCheatMeal } from '../lib/ai'
+import { cheatJudgeText } from '../lib/freeTexts'
+import { isPremium } from '../lib/premium'
 import { notifyFriendsCheat } from '../lib/push'
 import { useShareCheat } from './useShareCheat'
 import {
@@ -35,13 +37,9 @@ async function maybePostCheat(
     } catch {
       /* ignore */
     }
-    const res = await judgeCheatMeal({
-      name: entry.name,
-      kcal: entry.kcal,
-      protein: entry.protein,
-      carbs: entry.carbs,
-      fat: entry.fat,
-    })
+    const food = { name: entry.name, kcal: entry.kcal, protein: entry.protein, carbs: entry.carbs, fat: entry.fat }
+    // Buddy Plus: KI entscheidet und neckt; kostenlos: feste Regel + Spruch.
+    const res = isPremium() ? await judgeCheatMeal(food) : cheatJudgeText(food)
     if (!res.indulgent) return
     try {
       localStorage.setItem(capKey, '1')

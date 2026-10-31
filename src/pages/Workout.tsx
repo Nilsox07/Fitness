@@ -31,7 +31,9 @@ import { trainingDay } from '../lib/day'
 import { rankForSessions } from '../lib/gamification'
 import { shareStatCard } from '../lib/statcard'
 import { alternativeExercise, hypeLine, warmupAdvice } from '../lib/ai'
-import { useAiStatus } from '../hooks/useAi'
+import { useAiGate } from '../hooks/usePremium'
+import { hypeLineText } from '../lib/freeTexts'
+import { PlusBadge } from '../components/premium/PlusBadge'
 import { usePostActivity } from '../hooks/useFeed'
 import { useMyProfile } from '../hooks/useSocial'
 import { type Exercise, type PlanWithExercises, type SetType, type SetWithDate, type WorkoutSet } from '../types'
@@ -318,7 +320,7 @@ export default function Workout() {
   const autoRest = () => {
     if (restRef.current?.autoEnabled()) restRef.current.start()
   }
-  const { data: ai } = useAiStatus()
+  const gate = useAiGate()
   const postActivity = usePostActivity()
   const { data: myProfile } = useMyProfile()
   const authorName = myProfile?.display_name ?? undefined
@@ -329,6 +331,7 @@ export default function Workout() {
 
   async function findAltAi() {
     if (!selectedExercise || !exercises) return
+    if (!gate.requirePlus()) return
     setAltBusy(true)
     setAltAi(null)
     try {
@@ -432,13 +435,22 @@ export default function Workout() {
       const done = workoutSets.filter(isPerformed)
       const perEx = new Map<string, number>()
       done.forEach((s) => perEx.set(s.exercise_id, (perEx.get(s.exercise_id) ?? 0) + 1))
+      // Buddy Plus: KI-Spruch; kostenlos (oder ohne KI): fester Spruch mit den echten Zahlen.
       setHype(
-        await hypeLine({
-          saetze: done.length,
-          uebungen: perEx.size,
-          volumen: Math.round(totalVolume(done)),
-          rekord: prName ?? null,
-        }),
+        gate.canUse
+          ? await hypeLine({
+              saetze: done.length,
+              uebungen: perEx.size,
+              volumen: Math.round(totalVolume(done)),
+              rekord: prName ?? null,
+            })
+          : hypeLineText({
+              sets: done.length,
+              exercises: perEx.size,
+              volumeKg: Math.round(totalVolume(done)),
+              pr: prName ?? null,
+              seed: today,
+            }),
       )
     } catch {
       setHype('Stark durchgezogen! 💪')
@@ -552,7 +564,8 @@ export default function Workout() {
     !setsForExercise.some((s) => isSetDone(s, selectedExercise.unilateral))
   useEffect(() => {
     const wid = todaysWorkout?.id
-    if (!ai?.enabled || !selectedExercise || !wid || !exNotStarted) return
+    // KI-Aufwärm-Check nur mit Buddy Plus – sonst bleibt die Standardregel.
+    if (!gate.canUse || !selectedExercise || !wid || !exNotStarted) return
     const checked = readWarmupChecked(wid)
     if (checked.has(selectedExercise.id)) return
     checked.add(selectedExercise.id)
@@ -586,7 +599,7 @@ export default function Workout() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ai?.enabled, selectedExercise?.id, exNotStarted, todaysWorkout?.id])
+  }, [gate.canUse, selectedExercise?.id, exNotStarted, todaysWorkout?.id])
 
   // Übung auswählen → bei leerem Stand automatisch die Standard-Sätze anlegen
   function selectExercise(id: string) {
@@ -1556,7 +1569,7 @@ export default function Workout() {
           ) : (
             <p className="text-sm text-cocoa-light">Keine eigene Übung mit gleicher Muskelgruppe.</p>
           )}
-          {ai?.enabled && (
+          {gate.enabled && (
             <button
               className="btn w-full gap-2 rounded-2xl bg-sand py-3 text-cocoa"
               onClick={findAltAi}
@@ -1564,6 +1577,7 @@ export default function Workout() {
             >
               <Sparkles size={16} className="text-brand" />
               {altBusy ? 'Suche …' : 'Beste Alternative finden'}
+              {gate.locked && <PlusBadge />}
             </button>
           )}
           {altAi &&
@@ -1699,19 +1713,14 @@ export default function Workout() {
             </p>
           )}
           <div className="grid grid-cols-2 gap-2">
-            {ai?.enabled && (
-              <button
-                className="btn gap-1.5 rounded-2xl bg-sand py-3 text-sm text-cocoa"
-                onClick={makeHype}
-                disabled={hypeBusy}
-              >
-                <Flame size={16} className="text-brand" /> {hypeBusy ? '…' : 'Spruch'}
-              </button>
-            )}
             <button
-              className={`btn gap-1.5 rounded-2xl bg-sand py-3 text-sm text-cocoa ${ai?.enabled ? '' : 'col-span-2'}`}
-              onClick={shareToday}
+              className="btn gap-1.5 rounded-2xl bg-sand py-3 text-sm text-cocoa"
+              onClick={makeHype}
+              disabled={hypeBusy}
             >
+              <Flame size={16} className="text-brand" /> {hypeBusy ? '…' : 'Spruch'}
+            </button>
+            <button className="btn gap-1.5 rounded-2xl bg-sand py-3 text-sm text-cocoa" onClick={shareToday}>
               <Share2 size={16} /> Teilen
             </button>
           </div>

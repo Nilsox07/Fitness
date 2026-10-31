@@ -31,6 +31,7 @@ import {
   type WeeklyPlan,
 } from '../../lib/ai'
 import { localDate } from '../../lib/day'
+import { useAiGate } from '../../hooks/usePremium'
 import { fmtInt } from '../../lib/nutritionHome'
 import { MEAL_LABEL, type Meal, type PlanMeal, type SavedMealPlan } from '../../types'
 import { stagger } from '../nutrition-home/motion'
@@ -67,6 +68,8 @@ const errText = (e: unknown, fallback = 'KI-Fehler') => (e instanceof Error ? e.
 
 /** Ernährungsplan im neuen Design: Segment „Plan | Einkaufsliste", ein Tag zur Zeit. */
 export function MealPlanPage() {
+  // Plan, Anpassen, Rezepte und Routinen-Schätzung laufen über die KI → Buddy Plus.
+  const gate = useAiGate()
   const { data: settings } = useNutritionSettings()
   const { data: routines } = useMealRoutines()
   const { data: savedPlans } = useMealPlans()
@@ -146,6 +149,7 @@ export function MealPlanPage() {
 
   // ---- Routinen ----
   async function addRoutineItem(meal: Meal, text: string) {
+    if (!gate.requirePlus()) throw new Error('Nährwerte schätzen gibt es mit Buddy Plus.')
     const items = await estimateFoodFromText(text)
     const sum = items.reduce(
       (a, i) => ({
@@ -174,6 +178,7 @@ export function MealPlanPage() {
   }
 
   async function generate() {
+    if (!gate.requirePlus()) return
     setBusy(true)
     setErr(null)
     setMsg(null)
@@ -207,7 +212,7 @@ export function MealPlanPage() {
   }
 
   async function adjust(instruction: string) {
-    if (!plan) return
+    if (!plan || !gate.requirePlus()) return
     setAdjustBusy(true)
     setAdjustErr(null)
     try {
@@ -250,7 +255,8 @@ export function MealPlanPage() {
     } catch (e) {
       setMenuOpen(false)
       setErr(
-        errText(e, 'Speichern fehlgeschlagen') + ' — sind die Datenbank-Updates (Migration 0026) in Supabase ausgeführt?',
+        errText(e, 'Speichern fehlgeschlagen') +
+          ' — sind die Datenbank-Updates (Migration 0026) in Supabase ausgeführt?',
       )
     }
   }
@@ -355,6 +361,7 @@ export function MealPlanPage() {
 
   // ---- Rezept ----
   async function makeRecipe(m: PlanMeal, key: string) {
+    if (!gate.requirePlus()) return
     setRecipeKey(key)
     setErr(null)
     try {
@@ -447,9 +454,7 @@ export function MealPlanPage() {
 
   // ---- Ableitungen ----
   const avg = plan ? planAverages(plan.days) : null
-  const openItems = plan
-    ? plan.shopping.flatMap(checkKeys).filter((k) => !checked.has(k)).length
-    : 0
+  const openItems = plan ? plan.shopping.flatMap(checkKeys).filter((k) => !checked.has(k)).length : 0
   const day = plan?.days[selDay]
   const dayKcal = day ? dayTotals(day).kcal : 0
   const savedCount = savedPlans?.length ?? 0
@@ -520,7 +525,9 @@ export function MealPlanPage() {
 
       {plan && dirty && !showCreate && (
         <div className="anim-fade flex items-center justify-between gap-2 rounded-full bg-sand px-3 py-1.5 text-xs text-cocoa-light">
-          <span className="truncate">{currentPlanId ? 'Ungespeicherte Änderungen' : 'Plan noch nicht gespeichert'}</span>
+          <span className="truncate">
+            {currentPlanId ? 'Ungespeicherte Änderungen' : 'Plan noch nicht gespeichert'}
+          </span>
           <button className="shrink-0 font-semibold text-brand disabled:opacity-50" onClick={save} disabled={saving}>
             {saving ? 'Speichert…' : 'Speichern'}
           </button>
@@ -551,6 +558,7 @@ export function MealPlanPage() {
               busy={busy}
               hasPlan={!!plan}
               onGenerate={generate}
+              locked={gate.locked}
               onCancel={plan ? () => setCreating(false) : undefined}
               style={stagger(2)}
             />
@@ -571,7 +579,10 @@ export function MealPlanPage() {
         ) : (
           <div key="plan" className="space-y-3">
             {plan.note && (
-              <p className="flex gap-2 rounded-2xl bg-sand-light px-3 py-2.5 text-sm text-cocoa-light ring-1 ring-sand-dark/60" style={stagger(2)}>
+              <p
+                className="flex gap-2 rounded-2xl bg-sand-light px-3 py-2.5 text-sm text-cocoa-light ring-1 ring-sand-dark/60"
+                style={stagger(2)}
+              >
                 <Sparkles size={15} className="mt-0.5 shrink-0 text-brand" />
                 <span>{plan.note}</span>
               </p>
@@ -587,7 +598,9 @@ export function MealPlanPage() {
             {day && (
               <div key={selDay} className="space-y-3">
                 <div className="flex items-baseline justify-between gap-2 px-1">
-                  <h2 className="truncate text-xs font-semibold uppercase tracking-wide text-cocoa-muted">{day.label}</h2>
+                  <h2 className="truncate text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
+                    {day.label}
+                  </h2>
                   <span className="tabular shrink-0 text-xs text-cocoa-light">
                     <span className={`font-semibold ${dayKcal > targets.kcal * 1.1 ? 'text-gold' : 'text-cocoa'}`}>
                       {fmtInt(dayKcal)}
@@ -614,6 +627,7 @@ export function MealPlanPage() {
                       onRecipe={() => makeRecipe(m, key)}
                       onEdit={() => setEditing({ d: selDay, j })}
                       onAdjust={() => {
+                        if (!gate.requirePlus()) return
                         setAdjustErr(null)
                         setAdjustInit(`${day.label}, ${MEAL_LABEL[m.meal]} („${m.name}"): `)
                       }}
@@ -629,7 +643,11 @@ export function MealPlanPage() {
                     disabled={addEntries.isPending}
                     style={stagger(day.meals.length + 3, 50)}
                   >
-                    {addEntries.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <CalendarPlus size={16} />}
+                    {addEntries.isPending ? (
+                      <LoaderCircle size={16} className="animate-spin" />
+                    ) : (
+                      <CalendarPlus size={16} />
+                    )}
                     Ganzen Tag heute eintragen
                   </button>
                 )}
@@ -651,7 +669,11 @@ export function MealPlanPage() {
           />
         </div>
       ) : (
-        <section key="shopping-empty" className="card flex flex-col items-center gap-3 py-8 text-center" style={stagger(2)}>
+        <section
+          key="shopping-empty"
+          className="card flex flex-col items-center gap-3 py-8 text-center"
+          style={stagger(2)}
+        >
           <div className="grid h-14 w-14 place-items-center rounded-full bg-sand text-brand">
             <ShoppingBasket size={26} />
           </div>
@@ -689,6 +711,7 @@ export function MealPlanPage() {
           }}
           onAdjust={() => {
             setMenuOpen(false)
+            if (!gate.requirePlus()) return
             setAdjustErr(null)
             setAdjustInit('')
           }}

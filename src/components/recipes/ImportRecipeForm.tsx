@@ -3,6 +3,8 @@ import { ClipboardPaste, ExternalLink, Image as ImageIcon, Link2, Loader2, Trian
 import { useAuth } from '../../lib/auth'
 import { useAddRecipe } from '../../hooks/useRecipes'
 import { importRecipe, recipeFromScreenshot, type ImportedRecipe } from '../../lib/ai'
+import { useAiGate } from '../../hooks/usePremium'
+import { PlusBadge } from '../premium/PlusBadge'
 
 /** Bild verkleinern (spart KI-Kosten und Upload-Zeit). */
 function fileToDataUrl(file: File, maxDim = 1280): Promise<string> {
@@ -56,10 +58,11 @@ export function ImportRecipeForm({
   const [recipe, setRecipe] = useState<ImportedRecipe | null>(null)
   const started = useRef(false)
   const busy = phase === 'loading-post' || phase === 'reading'
+  const gate = useAiGate()
 
   async function run(input: string) {
     const value = input.trim()
-    if (!value || busy) return
+    if (!value || busy || !gate.requirePlus()) return
     setError(null)
     setRecipe(null)
     try {
@@ -77,7 +80,7 @@ export function ImportRecipeForm({
   }
 
   async function fromScreenshot(file: File | undefined) {
-    if (!file || busy) return
+    if (!file || busy || !gate.requirePlus()) return
     setError(null)
     setRecipe(null)
     setPhase('reading')
@@ -157,7 +160,10 @@ export function ImportRecipeForm({
             <button className="btn-ghost gap-1.5" onClick={paste} disabled={busy}>
               <ClipboardPaste size={16} /> Einfügen
             </button>
-            <label className={`btn-ghost cursor-pointer gap-1.5 ${busy ? 'pointer-events-none opacity-60' : ''}`}>
+            <label
+              className={`btn-ghost cursor-pointer gap-1.5 ${busy ? 'pointer-events-none opacity-60' : ''}`}
+              onClick={gate.guard}
+            >
               <ImageIcon size={16} /> Screenshot
               <input
                 type="file"
@@ -173,6 +179,7 @@ export function ImportRecipeForm({
           <button className="btn-primary w-full gap-1.5" onClick={() => run(text)} disabled={busy || !text.trim()}>
             {busy && <Loader2 size={16} className="animate-spin" />}
             {phase === 'loading-post' ? 'Lade Beitrag…' : phase === 'reading' ? 'Lese Rezept…' : 'Rezept übernehmen'}
+            {gate.locked && <PlusBadge onDark />}
           </button>
         </>
       )}

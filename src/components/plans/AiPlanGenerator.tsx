@@ -3,6 +3,7 @@ import { TriangleAlert } from 'lucide-react'
 import { useExercises } from '../../hooks/useExercises'
 import { nextPlanPosition, useAddPlanExercise, useCreatePlan, usePlans } from '../../hooks/usePlans'
 import { generatePlan, type PlanSuggestion } from '../../lib/ai'
+import { useAiGate } from '../../hooks/usePremium'
 
 const PRESETS = ['Push / Pull / Beine', 'Oberkörper / Unterkörper', 'Ganzkörper 3×', 'Push / Pull']
 
@@ -61,9 +62,10 @@ export function AiPlanGeneratorBody({ onClose }: { onClose: () => void }) {
   const [genBusy, setGenBusy] = useState(false)
   const [genErr, setGenErr] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<PlanSuggestion[] | null>(null)
+  const gate = useAiGate()
 
   async function runGenerate() {
-    if (!exercises?.length) return
+    if (!exercises?.length || !gate.requirePlus()) return
     setGenBusy(true)
     setGenErr(null)
     try {

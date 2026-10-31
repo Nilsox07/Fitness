@@ -34,6 +34,13 @@ describe('App-Suche', () => {
     expect(searchEntries('benachrichtigung', on)[0].id).toBe('notify')
   })
 
+  it('Buddy Plus öffnet das Plus-Sheet', () => {
+    const r = searchEntries('plus', { ...ALL, ai: true })
+    expect(r[0].id).toBe('plus')
+    expect(r[0].to).toBe('plus')
+    expect(searchEntries('abo', { ...ALL, ai: false }).some((e) => e.id === 'plus')).toBe(false)
+  })
+
   it('Gewicht führt zur Körperseite, Verlauf zum Fortschritt', () => {
     expect(searchEntries('gewicht', ALL)[0].to).toBe('/body')
     expect(SEARCH_ENTRIES.find((e) => e.id === 'history')?.section).toBe('Fortschritt')
