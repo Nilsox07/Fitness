@@ -686,9 +686,12 @@ const NUTRITION_SYSTEM =
   'sind größer als zuhause. 3) Nährwerte je 100 g im ZUBEREITETEN Zustand nehmen (z. B. gekochter Reis ' +
   '≈ 130 kcal, nicht roh) und mit dem Gewicht multiplizieren. 4) Versteckte Kalorien NIE weglassen: Fett ' +
   'beim Braten/Anbraten/Frittieren, Butter, Öl im Salat, Soßen, Dressings, Käse, Zucker in Getränken. ' +
-  'Fett beim Zubereiten als eigenen Posten "Öl/Butter (Zubereitung)" mit "kind":"cooking_fat"; Soßen/Dressings ' +
-  'als eigenen Posten mit "kind":"sauce". Glänzt etwas, ist es gebraten, paniert oder aus dem Restaurant, ' +
-  'rechne die dafür typische Fettmenge ein. 5) Nimm den WAHRSCHEINLICHSTEN Wert, nicht den kleinsten – ' +
+  'Fett beim Zubereiten als eigenen Posten "Öl/Butter (Zubereitung)" mit "kind":"cooking_fat" – NUR wenn das ' +
+  'Gericht wirklich mit Fett zubereitet wurde (gebraten, angebraten, frittiert, paniert, aus Pfanne/Wok): ' +
+  'zuhause die typische Menge (meist 1 EL ≈ 10 g pro Portion), aus Restaurant/Imbiss die dort übliche, ' +
+  'höhere Menge (meist 15–25 g). Bei Rohem, Brot, Obst, Joghurt, Müsli, Salat ohne Dressing, Gekochtem ohne ' +
+  'Fett, Fertigprodukten mit Nährwertangabe und Getränken KEIN Zubereitungsfett. Soßen/Dressings als eigenen ' +
+  'Posten mit "kind":"sauce". 5) Nimm den WAHRSCHEINLICHSTEN Wert, nicht den kleinsten – ' +
   'aber ohne pauschale Aufschläge. 6) Prüfe: kcal ≈ 4×Eiweiß + 4×Kohlenhydrate + 9×Fett (+ 7×Alkohol).'
 
 const NUTRITION_FORMAT =

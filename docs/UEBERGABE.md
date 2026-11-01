@@ -77,7 +77,7 @@ einer App, aber nur das sichtbar, was man nutzt.
   Benachrichtigungen und nur, wenn noch etwas fehlt. Tippen öffnet die passende Seite.
 - **Kalorien-Schätzung:** Prompt schätzt Komponenten einzeln (Gewicht über Größenvergleich, Werte im gegarten
   Zustand) und führt Fett/Soßen als eigene Posten (`kind`); kcal werden gegen die Makros geprüft
-  (`consistentKcal`). Im Ergebnis die Rückfrage „Fett beim Kochen“ (Ohne/1 TL/1 EL/2 EL, `mealItems.ts`).
+  (`consistentKcal`). Zubereitungsfett rechnet die KI selbst ein (nur bei Gebratenem; Restaurant = übliche, höhere Menge) – keine Rückfrage, der Posten steht löschbar in der Zutatenliste.
 - **Tagesform** (`readiness` in `health.ts`): Schlaf + Tiefschlaf, HRV, Ruhepuls, Kraft- und Ausdauer-Belastung der
   letzten 2 Tage, Ernährung, Eiweiß und Trinken von gestern. KI-Briefing direkt in der Tagesform-Karte (`useBriefing`).
 - **Buddy oben auf jeder Hauptseite** (`<BuddyTip page=…/>`): ganze Figur mit Sprechblase (Tipp aus den Daten,
