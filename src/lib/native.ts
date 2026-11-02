@@ -179,6 +179,8 @@ interface AppWidgetsPlugin {
   takePendingWater(): Promise<{ entries: { date: string; ml: number }[] }>
   /** Buddy als PNG (Base64 ohne data:-Präfix) für die Widgets */
   setBuddyImage(opts: { png: string }): Promise<void>
+  /** Bild in die Galerie (Bilder/Fitness), ab Android 10 */
+  saveImage(opts: { png: string; name: string }): Promise<void>
 }
 
 const AppWidgets = registerPlugin<AppWidgetsPlugin>('AppWidgets')
@@ -206,6 +208,17 @@ export async function updateWidgetBuddy(png: string) {
     await AppWidgets.setBuddyImage({ png })
   } catch {
     /* ältere App-Version ohne Buddy-Bild – egal */
+  }
+}
+
+/** PNG (Base64 ohne Präfix) in die Galerie speichern. false = ging nicht (Browser, altes Android). */
+export async function saveImageToGallery(png: string, name: string): Promise<boolean> {
+  if (!isNative()) return false
+  try {
+    await AppWidgets.saveImage({ png, name })
+    return true
+  } catch {
+    return false
   }
 }
 

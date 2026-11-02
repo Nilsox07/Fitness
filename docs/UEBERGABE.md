@@ -116,6 +116,11 @@ einer App, aber nur das sichtbar, was man nutzt.
   liest zusätzlich Wasser, Ernährung, Achtsamkeit und Krafteinheiten anderer Apps; Waagen-Gewichte nur an Tagen
   ohne eigenen Eintrag (`source: 'health'`), Wasser nur nach oben angeglichen. Play Console: Health-Apps-Erklärung
   um `READ_HYDRATION`, `READ_NUTRITION`, `READ_MINDFULNESS` ergänzen.
+- **Teilen-Bilder** nach dem Training (`ShareSheet`, Inhalte `src/lib/shareCard.ts`, Zeichnen `shareRender.ts`):
+  „Buddy-Karte“ (durchsichtiger Sticker, Buddy ragt aus der Karte, große Zahl im Hintergrund, goldenes Siegel für
+  Serie/Rekord, App-Farbe), „Clean“ (nur weiße Schrift + Buddy-Silhouette, durchsichtig, zum Drüberlegen) und
+  „Story“ (Karte auf 1080×1920). In der App zusätzlich „Speichern“ in die Galerie (`AppWidgets.saveImage`,
+  Bilder/Fitness, ab Android 10). Offen: Level-up/Rückblick auf denselben Look umstellen, Widgets im neuen Stil.
 - **Navigation wie bei iOS:** globale Suche (Lupe oben in jedem Tab, `components/search/SearchSheet.tsx`,
   Einträge + Stichwörter in `src/lib/searchIndex.ts`, Module beachten). Profil gruppiert: Ich ·
   Personalisieren · Buddy · Mitteilungen & Geräte · Konto & Daten. Deep Links für die Suche:

@@ -28,8 +28,8 @@ import {
   totalVolume,
 } from '../lib/analytics'
 import { trainingDay } from '../lib/day'
-import { rankForSessions } from '../lib/gamification'
-import { shareStatCard } from '../lib/statcard'
+import { workoutShare, type ShareContent } from '../lib/shareCard'
+import { ShareSheet } from '../components/share/ShareSheet'
 import { alternativeExercise, hypeLine, warmupAdvice } from '../lib/ai'
 import { useAiGate } from '../hooks/usePremium'
 import { hypeLineText } from '../lib/freeTexts'
@@ -361,26 +361,23 @@ export default function Workout() {
     return exercises.filter((e) => e.id !== selectedExercise.id && e.muscle_group === selectedExercise.muscle_group)
   }, [selectedExercise, exercises])
 
-  async function shareToday() {
+  const [shareContent, setShareContent] = useState<ShareContent | null>(null)
+  function shareToday() {
     if (!workoutSets) return
     const done = workoutSets.filter(isPerformed)
-    const exCount = new Set(done.map((s) => s.exercise_id)).size
-    const sessions = frequencyStats(sessionDates(allSets ?? [])).totalSessions
-    await shareStatCard({
-      title: 'Training abgeschlossen 💪',
-      dateLabel: new Date(today + 'T00:00:00').toLocaleDateString('de-DE', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
+    const firstMs = workoutSets.length ? Math.min(...workoutSets.map((s) => Date.parse(s.created_at))) : Date.now()
+    setShareContent(
+      workoutShare({
+        title: queuePlan?.name ?? null,
+        date: new Date(today + 'T12:00:00'),
+        volumeKg: totalVolume(done),
+        sets: done.length,
+        exercises: new Set(done.map((s) => s.exercise_id)).size,
+        minutes: Math.round((Date.now() - firstMs) / 60000),
+        weekStreak: frequencyStats(sessionDates(allSets ?? [])).weekStreak,
+        record: prName,
       }),
-      volume: Math.round(totalVolume(done)),
-      sets: done.length,
-      exercises: exCount,
-      highlight: prName ? `Rekord: ${prName}` : undefined,
-      rank: rankForSessions(sessions).title,
-      // Der Buddy ist ein SVG (im Canvas nicht darstellbar) → neutrales Emoji
-      mascot: prName ? '🏆' : '💪',
-    })
+    )
   }
 
   function finishWorkout() {
@@ -1725,6 +1722,14 @@ export default function Workout() {
             </button>
           </div>
         </PremiumSheet>
+      )}
+      {shareContent && (
+        <ShareSheet
+          content={shareContent}
+          mood={prName ? 'proud' : 'cheer'}
+          filename={`training-${today}`}
+          onClose={() => setShareContent(null)}
+        />
       )}
     </div>
   )

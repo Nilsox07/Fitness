@@ -6,7 +6,7 @@ import { shareFile, type ShareOutcome } from './shareFile'
 import type { MonthRecap } from './monthRecap'
 
 /** Gerendertes Buddy-SVG als Bild laden (CSS-Variablen werden aufgelöst). */
-async function svgToImage(svg: SVGSVGElement): Promise<HTMLImageElement | null> {
+export async function svgToImage(svg: SVGSVGElement): Promise<HTMLImageElement | null> {
   try {
     const cs = getComputedStyle(svg)
     let markup = new XMLSerializer().serializeToString(svg)

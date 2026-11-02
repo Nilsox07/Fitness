@@ -103,6 +103,14 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     keywords: 'zuhause hiit timer ohne geräte schnell',
   },
   {
+    id: 'share',
+    label: 'Training teilen',
+    sub: 'Buddy-Karte oder cleanes Story-Bild',
+    section: 'Training',
+    to: '/',
+    keywords: 'teilen instagram story whatsapp status bild sticker durchsichtig posten',
+  },
+  {
     id: 'history',
     label: 'Verlauf',
     sub: 'Alle bisherigen Trainings',
