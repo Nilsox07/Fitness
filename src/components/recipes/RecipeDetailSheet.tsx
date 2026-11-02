@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Ellipsis, Loader2, Minus, Plus, Share2, Trash2, TriangleAlert, X } from 'lucide-react'
+import { Check, ChefHat, Ellipsis, Loader2, Minus, Plus, Share2, Trash2, TriangleAlert, X } from 'lucide-react'
 import { scoreMeal } from '../../lib/mealScore'
 import { MEALS, MEAL_LABEL, type Meal, type NutritionGoal, type SavedRecipe } from '../../types'
 import { ScoreRing, TONE_TEXT } from '../food/ScoreRing'
@@ -11,6 +11,7 @@ import { useCountUp } from '../food/useCountUp'
 import { FriendChip, RecipeCover } from './RecipeCards'
 import { fmtPortions, recipeTotals } from './recipeUtils'
 import { useBackClose } from '../../lib/backStack'
+import { CookMode } from './CookMode'
 
 /** Tageskontext für Score und Nährwert-Prozente. */
 export interface RecipeDayContext {
@@ -39,6 +40,7 @@ export function RecipeDetailSheet({
   extra,
   heroImage,
   footerAction,
+  onSaveRecipe,
 }: {
   recipe: SavedRecipe
   mine: boolean
@@ -57,6 +59,8 @@ export function RecipeDetailSheet({
   heroImage?: string | null
   /** Zusätzlicher Knopf im Fuß neben „Hinzufügen" (z. B. „Speichern") */
   footerAction?: ReactNode
+  /** Beim Nachkochen anbieten: Rezept in „Meine Rezepte“ speichern (nur wenn noch nicht gespeichert) */
+  onSaveRecipe?: () => Promise<unknown>
 }) {
   const titleId = useId()
   const [portions, setPortions] = useState(1)
@@ -65,6 +69,7 @@ export function RecipeDetailSheet({
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [cooking, setCooking] = useState(false)
 
   const totals = useMemo(() => recipeTotals(recipe, portions), [recipe, portions])
   const score = useMemo(
@@ -77,11 +82,13 @@ export function RecipeDetailSheet({
   closeRef.current = onClose
   const busyRef = useRef(saving)
   busyRef.current = saving
+  const cookingRef = useRef(cooking)
+  cookingRef.current = cooking
   useBackClose(() => !busyRef.current && closeRef.current())
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || busyRef.current) return
+      if (e.key !== 'Escape' || busyRef.current || cookingRef.current) return
       closeRef.current()
     }
     window.addEventListener('keydown', onKey)
@@ -220,6 +227,15 @@ export function RecipeDetailSheet({
 
           <div className="space-y-7 px-5 pb-6 pt-5">
             {extra}
+            {(recipe.steps.length > 0 || recipe.ingredients.length > 0) && (
+              <button
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand/10 py-3.5 font-semibold text-brand transition active:scale-[0.98]"
+                onClick={() => setCooking(true)}
+                disabled={saving || done}
+              >
+                <ChefHat size={18} /> Nachkochen
+              </button>
+            )}
             {!mine && recipe.author_name && (
               <div className="-mt-1 flex items-center gap-1.5 text-xs text-cocoa-light">
                 Geteilt von <FriendChip name={recipe.author_name} className="text-xs font-semibold text-cocoa" />
@@ -388,6 +404,21 @@ export function RecipeDetailSheet({
           </div>
         </div>
       </div>
+      {cooking && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <CookMode
+            recipe={recipe}
+            defaultMeal={meal}
+            onLog={onLog}
+            onSaveRecipe={onSaveRecipe}
+            onClose={() => setCooking(false)}
+            onDone={() => {
+              setCooking(false)
+              setDone(true)
+            }}
+          />
+        </div>
+      )}
     </div>,
     document.body,
   )

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { MK, withId, type SetInput, type SetPatch, type WorkoutInput } from '../lib/mutationDefaults'
 import type { SetWithDate, Workout, WorkoutSet } from '../types'
+import { track } from '../lib/track'
 
 export type { SetInput, WorkoutInput } from '../lib/mutationDefaults'
 export { newId } from '../lib/mutationDefaults'
@@ -67,8 +68,14 @@ export function useCreateWorkout() {
   const m = useMutation<Workout, Error, WorkoutInput>({ mutationKey: MK.workoutCreate })
   return {
     ...m,
-    mutate: (v: WorkoutInput, o?: Parameters<typeof m.mutate>[1]) => m.mutate(withId(v), o),
-    mutateAsync: (v: WorkoutInput, o?: Parameters<typeof m.mutateAsync>[1]) => m.mutateAsync(withId(v), o),
+    mutate: (v: WorkoutInput, o?: Parameters<typeof m.mutate>[1]) => {
+      track('workout_started')
+      m.mutate(withId(v), o)
+    },
+    mutateAsync: (v: WorkoutInput, o?: Parameters<typeof m.mutateAsync>[1]) => {
+      track('workout_started')
+      return m.mutateAsync(withId(v), o)
+    },
   }
 }
 

@@ -1,6 +1,8 @@
 // Kostenlose, offene Lebensmittel-Datenbank (kein API-Key, keine KI).
 // https://world.openfoodfacts.org
 
+import { hintFoodMethod } from './track'
+
 export interface FoodProduct {
   barcode: string | null
   name: string
@@ -73,6 +75,7 @@ const FIELDS = 'code,product_name,product_name_de,brands,nutriments,categories_t
 
 /** Produkt per Barcode holen. null, wenn nicht gefunden. */
 export async function fetchProductByBarcode(barcode: string): Promise<FoodProduct | null> {
+  hintFoodMethod('barcode')
   const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(
     barcode,
   )}.json?fields=${FIELDS}`
@@ -85,6 +88,7 @@ export async function fetchProductByBarcode(barcode: string): Promise<FoodProduc
 
 /** Produkte nach Namen suchen (nur Treffer mit kcal-Angabe). */
 export async function searchProducts(query: string): Promise<FoodProduct[]> {
+  hintFoodMethod('search')
   const url =
     `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}` +
     `&search_simple=1&action=process&json=1&page_size=25&fields=${FIELDS}`

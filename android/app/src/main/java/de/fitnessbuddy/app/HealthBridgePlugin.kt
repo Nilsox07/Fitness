@@ -6,6 +6,7 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.aggregate.AggregateMetric
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
@@ -20,8 +21,11 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.FloorsClimbedRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
+import androidx.health.connect.client.records.HydrationRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
+import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.PowerRecord
 import androidx.health.connect.client.records.Record
@@ -66,8 +70,10 @@ import kotlin.reflect.KClass
  *  - Tageswerte: Schritte, Strecke, Etagen, Kalorien, Puls (min/max/Ø, stündlich), Ruhepuls, HRV, SpO₂,
  *    Atemfrequenz, VO₂max, Gewicht, Körperfett, Blutdruck, Blutzucker, Körpertemperatur
  *  - Zyklus: Perioden (Start/Ende) und einzelne Blutungstage
+ *  - aus anderen Apps: Getrunkenes, Essen (kcal/Eiweiß), Achtsamkeit, Krafttraining
  * Jeder Datentyp ist optional: fehlt eine Berechtigung, bleibt das Feld einfach leer.
  */
+@OptIn(ExperimentalMindfulnessSessionApi::class)
 @CapacitorPlugin(name = "HealthBridge")
 class HealthBridgePlugin : Plugin() {
     private companion object {
@@ -112,6 +118,9 @@ class HealthBridgePlugin : Plugin() {
         BodyTemperatureRecord::class,
         MenstruationPeriodRecord::class,
         MenstruationFlowRecord::class,
+        HydrationRecord::class,
+        NutritionRecord::class,
+        MindfulnessSessionRecord::class,
     )
     private val corePermissions = coreTypes.map { HealthPermission.getReadPermission(it) }.toSet()
     private val permissions: Set<String> =
@@ -123,8 +132,16 @@ class HealthBridgePlugin : Plugin() {
         HealthPermission.getReadPermission(MenstruationFlowRecord::class),
     )
 
+    /** Werte aus anderen Apps (Trinken, Essen, Achtsamkeit) – schön, wenn freigegeben, aber keine Lücke. */
+    private val otherAppPermissions = setOf(
+        HealthPermission.getReadPermission(HydrationRecord::class),
+        HealthPermission.getReadPermission(NutritionRecord::class),
+        HealthPermission.getReadPermission(MindfulnessSessionRecord::class),
+    )
+
     private val optional =
-        setOf(READ_ROUTES, READ_HISTORY, HealthPermission.getReadPermission(SkinTemperatureRecord::class)) + cyclePermissions
+        setOf(READ_ROUTES, READ_HISTORY, HealthPermission.getReadPermission(SkinTemperatureRecord::class)) +
+            cyclePermissions + otherAppPermissions
 
     private fun client() = HealthConnectClient.getOrCreate(context)
 
@@ -171,6 +188,8 @@ class HealthBridgePlugin : Plugin() {
                     READ_HISTORY -> featureAvailable(HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_HISTORY)
                     HealthPermission.getReadPermission(SkinTemperatureRecord::class) ->
                         featureAvailable(HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE)
+                    HealthPermission.getReadPermission(MindfulnessSessionRecord::class) ->
+                        featureAvailable(HealthConnectFeatures.FEATURE_MINDFULNESS_SESSION)
                     else -> true
                 }
             }.toSet()
@@ -420,6 +439,10 @@ class HealthBridgePlugin : Plugin() {
             HeartRateRecord.BPM_MIN,
             HeartRateRecord.BPM_MAX,
             HeartRateRecord.BPM_AVG,
+            HydrationRecord.VOLUME_TOTAL,
+            NutritionRecord.ENERGY_TOTAL,
+            NutritionRecord.PROTEIN_TOTAL,
+            MindfulnessSessionRecord.MINDFULNESS_DURATION_TOTAL,
         )
         // Einzeln abfragen: fehlt eine Berechtigung, scheitert nur dieser Wert
         for (m in metrics) {
@@ -445,6 +468,14 @@ class HealthBridgePlugin : Plugin() {
                     HeartRateRecord.BPM_MIN -> d.put("hr_min", v)
                     HeartRateRecord.BPM_MAX -> d.put("hr_max", v)
                     HeartRateRecord.BPM_AVG -> d.put("hr_avg", v)
+                    HydrationRecord.VOLUME_TOTAL ->
+                        d.put("hydration_ml", (v as androidx.health.connect.client.units.Volume).inMilliliters.roundToInt())
+                    NutritionRecord.ENERGY_TOTAL ->
+                        d.put("nutrition_kcal", (v as androidx.health.connect.client.units.Energy).inKilocalories.roundToInt())
+                    NutritionRecord.PROTEIN_TOTAL ->
+                        d.put("nutrition_protein_g", round((v as androidx.health.connect.client.units.Mass).inGrams, 1))
+                    MindfulnessSessionRecord.MINDFULNESS_DURATION_TOTAL ->
+                        d.put("mindful_min", (v as Duration).toMinutes())
                 }
             }
         }
@@ -491,10 +522,22 @@ class HealthBridgePlugin : Plugin() {
         perDay(readAll(BodyTemperatureRecord::class, since, now)) { it.time }
             .forEach { (d, v) -> day(d).put("body_temp_c", round(v.maxBy { it.time }.temperature.inCelsius, 1)) }
 
+        // Krafttraining aus anderen Apps/Uhren (die App zählt nur ihr eigenes Training) – nur zur Info
+        try {
+            perDay(readAll(ExerciseSessionRecord::class, since, now).filter { typeOf(it.exerciseType) == null }) { it.startTime }
+                .forEach { (d, v) ->
+                    day(d).put("strength_sessions", v.size)
+                        .put("strength_min", v.sumOf { Duration.between(it.startTime, it.endTime).toMinutes() })
+                }
+        } catch (_: Exception) {
+            // optional
+        }
+
         val keys = listOf(
             "steps", "distance_m", "floors", "active_kcal", "total_kcal", "resting_hr", "hr_min", "hr_max", "hr_avg",
             "hr_hourly", "hrv_ms", "spo2", "resp_rate", "vo2max", "weight_kg", "body_fat_pct", "bp_sys", "bp_dia",
-            "glucose_mmol", "body_temp_c",
+            "glucose_mmol", "body_temp_c", "hydration_ml", "nutrition_kcal", "nutrition_protein_g", "mindful_min",
+            "strength_sessions", "strength_min",
         )
         val list = JSArray()
         for (d in days.values) {

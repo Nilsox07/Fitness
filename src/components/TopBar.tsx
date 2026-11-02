@@ -11,8 +11,18 @@ export function navInfo(pathname: string, search = ''): NavInfo {
   if (pathname === '/today') return { title: 'Heute' }
   if (pathname.startsWith('/cardio/')) return { title: 'Aktivität', back: { to: '/cardio', label: 'Ausdauer' } }
   if (pathname === '/progress') return { title: 'Fortschritt' }
-  if (['/cardio', '/sleep', '/vitals', '/analytics', '/badges', '/body', '/history', '/cycle'].includes(pathname))
-    return { title: 'Fortschritt', back: { to: '/progress', label: 'Fortschritt' } }
+  const progressPages = [
+    '/cardio',
+    '/sleep',
+    '/vitals',
+    '/analytics',
+    '/badges',
+    '/body',
+    '/history',
+    '/cycle',
+    '/insights',
+  ]
+  if (progressPages.includes(pathname)) return { title: 'Fortschritt', back: { to: '/progress', label: 'Fortschritt' } }
   if (pathname === '/nutrition') return { title: 'Ernährung' }
   if (pathname === '/recipes') return { title: 'Rezepte', back: { to: '/nutrition', label: 'Ernährung' } }
   if (pathname === '/shopping') return { title: 'Wochenplan', back: { to: '/nutrition', label: 'Ernährung' } }

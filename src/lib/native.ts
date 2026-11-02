@@ -54,6 +54,14 @@ export interface NativeDaily {
   resting_hr: number | null
   hrv_ms: number | null
   vo2max: number | null
+  weight_kg?: number | null
+  /** aus anderen Apps (ältere App-Versionen liefern sie nicht) */
+  hydration_ml?: number | null
+  nutrition_kcal?: number | null
+  nutrition_protein_g?: number | null
+  mindful_min?: number | null
+  strength_sessions?: number | null
+  strength_min?: number | null
 }
 
 /** Periode aus Health Connect (lokale Daten; end null = läuft noch) */
@@ -317,6 +325,44 @@ export async function cancelRestDone() {
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications')
     await LocalNotifications.cancel({ notifications: [{ id: REST_DONE_ID }] })
+  } catch {
+    /* ignore */
+  }
+}
+
+// ---------- Koch-Timer (Nachkochen) ----------
+
+const COOK_TIMER_ID = 7002
+
+/** Benachrichtigung, wenn der Koch-Timer abläuft (auch bei gesperrtem Handy). */
+export async function scheduleCookTimer(at: number, step: string) {
+  if (!isNative()) return
+  await ensureNotifyPermission()
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    await LocalNotifications.cancel({ notifications: [{ id: COOK_TIMER_ID }] })
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: COOK_TIMER_ID,
+          title: 'Timer abgelaufen ⏰',
+          body: step.length > 80 ? step.slice(0, 79) + '…' : step,
+          schedule: { at: new Date(at), allowWhileIdle: true },
+          channelId: 'workout',
+          smallIcon: 'ic_stat_buddy',
+        },
+      ],
+    })
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function cancelCookTimer() {
+  if (!isNative()) return
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    await LocalNotifications.cancel({ notifications: [{ id: COOK_TIMER_ID }] })
   } catch {
     /* ignore */
   }

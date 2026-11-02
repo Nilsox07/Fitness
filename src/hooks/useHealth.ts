@@ -6,13 +6,14 @@ import { useCallback, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { usePrefs } from '../lib/prefs'
-import { healthHasPermissions, healthRead, isNative } from '../lib/native'
+import { healthHasPermissions, healthRead, isNative, type NativeDaily } from '../lib/native'
+import { DAILY_COLUMNS_0043, isMissingColumn, waterImports, weightImports, withoutKeys } from '../lib/healthImport'
 import { localDate, shiftDate } from '../lib/day'
 import { mergePeriods } from '../lib/cyclePeriods'
 import type { HealthActivity, HealthDaily, HealthSleep } from '../types'
 
 // Version im Schlüssel: wenn die App neue Datenfelder liest, wird einmal komplett neu abgeglichen
-const SYNC_KEY = 'health_synced_at_v2'
+const SYNC_KEY = 'health_synced_at_v3'
 
 /** Tabelle fehlt noch (Migration nicht ausgeführt) → leer statt Fehler. */
 function missingTable(e: { code?: string } | null) {
@@ -73,6 +74,53 @@ export function useHealthDaily(days = 30) {
   })
 }
 
+/**
+ * Waagen-Gewicht → body_weights (nur Tage ohne eigenen Eintrag) und Getrunkenes aus anderen Apps →
+ * water_intake (nur wenn Health Connect mehr kennt; nur mit Ernährungs-Bereich). Fehler still ignorieren.
+ */
+async function importFromHealth(uid: string, daily: readonly NativeDaily[], water: boolean) {
+  const dates = daily.map((d) => d.date).sort()
+  if (!dates.length) return
+  const from = dates[0]
+  try {
+    const { data, error } = await supabase.from('body_weights').select('date').gte('date', from)
+    if (!error) {
+      const rows = weightImports(
+        daily,
+        (data ?? []).map((w: { date: string }) => w.date),
+      )
+      if (rows.length) {
+        const opts = { onConflict: 'user_id,date', ignoreDuplicates: true }
+        const withSource = rows.map((w) => ({ ...w, user_id: uid, source: 'health' }))
+        const res = await supabase.from('body_weights').upsert(withSource, opts)
+        // Spalte „source“ kommt mit Migration 0043 – vorher ohne speichern
+        if (isMissingColumn(res.error))
+          await supabase.from('body_weights').upsert(withoutKeys(withSource, ['source']), opts)
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  if (!water || !daily.some((d) => (d.hydration_ml ?? 0) > 0)) return
+  try {
+    const { data, error } = await supabase.from('water_intake').select('date, ml').gte('date', from)
+    if (error) return
+    const app = new Map((data ?? []).map((w: { date: string; ml: number }) => [w.date, w.ml]))
+    for (const w of waterImports(daily, app)) {
+      if (w.exists) {
+        // nur erhöhen – auch wenn gerade parallel in der App getrunken wurde
+        await supabase.from('water_intake').update({ ml: w.ml }).eq('user_id', uid).eq('date', w.date).lt('ml', w.ml)
+      } else {
+        await supabase
+          .from('water_intake')
+          .upsert({ user_id: uid, date: w.date, ml: w.ml }, { onConflict: 'user_id,date', ignoreDuplicates: true })
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Zeitpunkt des letzten erfolgreichen Abgleichs (ISO) oder null. */
 export function lastHealthSync(): string | null {
   try {
@@ -85,7 +133,7 @@ export function lastHealthSync(): string | null {
 /** Health Connect lesen und in Supabase schreiben (seit dem letzten Abgleich, max. 30 Tage). */
 export function useHealthSync() {
   const { user } = useAuth()
-  const { hasWatch, hasCycle } = usePrefs()
+  const { hasWatch, hasCycle, showNutrition } = usePrefs()
   const qc = useQueryClient()
   const busy = useRef(false)
 
@@ -120,10 +168,17 @@ export function useHealthSync() {
         )
       }
       if (r.daily.length) {
-        await supabase.from('health_daily').upsert(
-          r.daily.map((d) => ({ ...d, user_id: uid })),
-          { onConflict: 'user_id,date' },
-        )
+        const rows = r.daily.map((d) => ({ ...d, user_id: uid }))
+        const { error } = await supabase.from('health_daily').upsert(rows, { onConflict: 'user_id,date' })
+        // Migration 0043 noch nicht ausgeführt → ohne die neuen Spalten speichern (nie alles verlieren)
+        if (isMissingColumn(error)) {
+          await supabase
+            .from('health_daily')
+            .upsert(withoutKeys(rows, DAILY_COLUMNS_0043), { onConflict: 'user_id,date' })
+        }
+        await importFromHealth(uid, r.daily, showNutrition)
+        await qc.invalidateQueries({ queryKey: ['body_weights'] })
+        if (showNutrition) await qc.invalidateQueries({ queryKey: ['water'] })
       }
       // Zyklus (nur wenn der Bereich an ist): Perioden + Blutungstage → cycle_periods.
       // Fehler (z. B. Migration 0039 noch nicht ausgeführt) still ignorieren.
@@ -152,7 +207,7 @@ export function useHealthSync() {
     } finally {
       busy.current = false
     }
-  }, [user, hasWatch, hasCycle, qc])
+  }, [user, hasWatch, hasCycle, showNutrition, qc])
 
   // Beim Start und bei jeder Rückkehr in die App abgleichen
   useEffect(() => {

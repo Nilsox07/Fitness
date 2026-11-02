@@ -18,7 +18,13 @@ import { isNative, requestNotifyPermission } from '../../lib/native'
 import { computeTargets, defaultWaterTarget } from '../../lib/nutrition'
 import {
   CARDIO_KINDS,
+  DAILY,
+  DEFAULT_ANSWERS,
+  EQUIPMENT,
+  FOCUSES,
   GOALS,
+  MINUTES,
+  PLACES,
   WEEKDAYS,
   activityFor,
   buildCardioPlan,
@@ -29,13 +35,16 @@ import {
   nutritionGoalFor,
   suggestCardioPerWeek,
   suggestDays,
+  toggleEquip,
+  togglePlace,
   weekPlanNames,
   type CardioKind,
   type CardioSession,
+  type Daily,
   type Experience,
   type FitGoal,
+  type Focus,
   type OnboardingAnswers,
-  type Place,
 } from '../../lib/onboarding'
 import type { Sex } from '../../types'
 
@@ -78,7 +87,23 @@ export function OnboardingHost() {
   )
 }
 
-type Step = 'hello' | 'goal' | 'level' | 'place' | 'days' | 'cardio' | 'modules' | 'body' | 'plan' | 'done'
+type Step =
+  | 'hello'
+  | 'goal'
+  | 'level'
+  | 'place'
+  | 'days'
+  | 'cardio'
+  | 'focus'
+  | 'limits'
+  | 'modules'
+  | 'daily'
+  | 'body'
+  | 'plan'
+  | 'done'
+
+const LIMITS_HINT =
+  'Bitte kläre dein Training vorher mit Ärztin/Arzt oder Physio ab. Wir erstellen keinen medizinischen Plan.'
 
 function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => void }) {
   const planOnly = mode === 'plan'
@@ -96,13 +121,11 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
 
   const [step, setStep] = useState<Step>(planOnly ? 'goal' : 'hello')
   const [a, setA] = useState<OnboardingAnswers>({
+    ...DEFAULT_ANSWERS,
     goal: prefs.fitGoal ?? 'muscle',
-    experience: 'new',
-    place: 'gym',
     gymDays: suggestDays(3),
-    cardio: null,
-    cardioPerWeek: 0,
   })
+  const [limitsNote, setLimitsNote] = useState('')
   const [useNutrition, setUseNutrition] = useState(mods.showNutrition)
   const [useWatch, setUseWatch] = useState(mods.hasWatch)
   const [useSocial, setUseSocial] = useState(mods.showSocial)
@@ -117,8 +140,19 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
   const [notifyAsk, setNotifyAsk] = useState<'open' | 'done'>('open')
   const [err, setErr] = useState<string | null>(null)
 
+  // Alltag nur, wenn ein Kalorienziel berechnet wird (beim neuen Plan mit gespeicherten Körperdaten)
   const order: Step[] = planOnly
-    ? ['goal', 'level', 'place', 'days', 'cardio', 'plan']
+    ? [
+        'goal',
+        'level',
+        'place',
+        'days',
+        'cardio',
+        'focus',
+        'limits',
+        ...(useNutrition && settings ? ['daily' as const] : []),
+        'plan',
+      ]
     : [
         'hello',
         'goal',
@@ -126,8 +160,10 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
         'place',
         'days',
         'cardio',
+        'focus',
+        'limits',
         'modules',
-        ...(useNutrition ? ['body' as const] : []),
+        ...(useNutrition ? (['daily', 'body'] as const) : []),
         'plan',
       ]
   const idx = order.indexOf(step)
@@ -196,7 +232,7 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
             ? { sex: settings.sex, age: settings.age, height: settings.height_cm, weight: settings.weight_kg }
             : body
         const goal = nutritionGoalFor(a.goal, a.experience)
-        const activity = activityFor(a.gymDays.length + (cardio?.sessions.length ?? 0))
+        const activity = activityFor(a.gymDays.length + (cardio?.sessions.length ?? 0), a.daily)
         const t = computeTargets({
           sex: b.sex,
           age: b.age,
@@ -262,6 +298,7 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
               ? 'Pläne und Trainingstage sind aktualisiert.'
               : 'Dein Plan steht. Ich bin immer oben rechts, wenn du Fragen hast.'}
           </p>
+          {a.limits && <LimitsHint note={limitsNote} />}
         </div>
         <button
           className="btn-primary w-full rounded-2xl py-4 text-base"
@@ -356,14 +393,41 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
         {step === 'place' && (
           <>
             <Ask mood="focus">Wo trainierst du?</Ask>
-            <Options
-              value={a.place}
-              onChange={(v: Place) => set('place', v)}
-              items={[
-                { id: 'gym', label: 'Im Fitnessstudio', icon: '🏋️' },
-                { id: 'home', label: 'Zuhause', sub: 'Mit Kurzhanteln oder ohne', icon: '🏠' },
-              ]}
-            />
+            <div className="space-y-2" role="group" aria-label="Orte">
+              {PLACES.map((p) => (
+                <CheckCard
+                  key={p.id}
+                  icon={p.emoji}
+                  label={p.label}
+                  on={a.places.includes(p.id)}
+                  onClick={() => setA((x) => togglePlace(x, p.id))}
+                />
+              ))}
+            </div>
+            {a.places.includes('home') ? (
+              <div className="space-y-2">
+                <p className="px-1 text-sm font-semibold text-cocoa-light">Was hast du zuhause?</p>
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Geräte zuhause">
+                  {EQUIPMENT.map((e) => {
+                    const on = a.equipment.includes(e.id)
+                    return (
+                      <button
+                        key={e.id}
+                        aria-pressed={on}
+                        onClick={() => set('equipment', toggleEquip(a.equipment, e.id))}
+                        className={`rounded-full px-4 py-2.5 text-[15px] font-semibold transition ${
+                          on ? 'bg-brand text-on-brand' : 'bg-cream text-cocoa'
+                        }`}
+                      >
+                        {e.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <p className="text-center text-sm text-cocoa-light">Mehrfachauswahl möglich.</p>
+            )}
           </>
         )}
 
@@ -389,6 +453,24 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
               label={(d) => (a.gymDays.includes(d) ? 'Gym' : '')}
             />
             <p className="text-center text-sm text-cocoa-light">Tipp auf einen Tag, um ihn an- oder abzuwählen.</p>
+            <div className="space-y-2">
+              <p className="px-1 text-sm font-semibold text-cocoa-light">Wie lange pro Training?</p>
+              <div className="flex gap-2" role="radiogroup" aria-label="Zeit pro Training">
+                {MINUTES.map((m) => (
+                  <button
+                    key={m}
+                    role="radio"
+                    aria-checked={a.minutes === m}
+                    onClick={() => set('minutes', m)}
+                    className={`flex-1 rounded-2xl py-3 text-[15px] font-bold transition ${
+                      a.minutes === m ? 'bg-brand text-on-brand' : 'bg-cream text-cocoa'
+                    }`}
+                  >
+                    {m} Min
+                  </button>
+                ))}
+              </div>
+            </div>
           </>
         )}
 
@@ -424,6 +506,73 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
                 </div>
               </div>
             )}
+          </>
+        )}
+
+        {step === 'focus' && (
+          <>
+            <Ask mood="focus">Hast du einen Schwerpunkt?</Ask>
+            <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Schwerpunkt">
+              {FOCUSES.map((f) => {
+                const on = a.focus === f.id
+                return (
+                  <button
+                    key={f.id}
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => set('focus', f.id as Focus)}
+                    className={`flex items-center gap-2.5 rounded-2xl px-3 py-3 text-left transition active:scale-[0.99] ${
+                      on ? 'bg-brand/10 ring-2 ring-brand' : 'bg-cream'
+                    }`}
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sand text-lg">
+                      {f.emoji}
+                    </span>
+                    <span className="text-[15px] font-semibold">{f.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-center text-sm text-cocoa-light">Dafür kommt eine Übung extra dazu.</p>
+          </>
+        )}
+
+        {step === 'limits' && (
+          <>
+            <Ask mood="happy">Hast du Verletzungen oder Beschwerden?</Ask>
+            <Options
+              value={a.limits ? 'yes' : 'no'}
+              onChange={(v: 'yes' | 'no') => set('limits', v === 'yes')}
+              items={[
+                { id: 'no', label: 'Nein', icon: '👍' },
+                { id: 'yes', label: 'Ja', sub: 'Dein Plan wird leichter', icon: '🩹' },
+              ]}
+            />
+            {a.limits && (
+              <>
+                <textarea
+                  value={limitsNote}
+                  onChange={(e) => setLimitsNote(e.target.value.slice(0, 200))}
+                  rows={2}
+                  placeholder="Was genau? (optional)"
+                  aria-label="Beschwerden (optional)"
+                  className="w-full resize-none rounded-2xl bg-cream px-4 py-3 text-[16px] outline-none placeholder:text-cocoa-muted focus:ring-2 focus:ring-brand"
+                />
+                <LimitsHint />
+              </>
+            )}
+          </>
+        )}
+
+        {step === 'daily' && (
+          <>
+            <Ask mood="happy">Wie aktiv ist dein Alltag?</Ask>
+            <Options
+              value={a.daily}
+              onChange={(v: Daily) => set('daily', v)}
+              items={DAILY.map((d) => ({ id: d.id, label: d.label, sub: d.sub, icon: d.emoji }))}
+            />
+            <p className="text-center text-sm text-cocoa-light">Ohne Sport – für dein Kalorienziel.</p>
           </>
         )}
 
@@ -520,7 +669,8 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
             <Hero overline="Dein Training" index={0}>
               <p className="mt-1 text-2xl font-bold">{template.title}</p>
               <p className="text-sm text-bg/70 dark:text-cocoa-light">
-                {a.gymDays.length}× Kraft{cardio ? ` · ${cardio.sessions.length}× Ausdauer` : ''} pro Woche
+                {a.gymDays.length}× Kraft à {a.minutes} Min{cardio ? ` · ${cardio.sessions.length}× Ausdauer` : ''} pro
+                Woche
               </p>
             </Hero>
             <WeekView week={week} cardio={cardio?.sessions ?? []} />
@@ -561,6 +711,43 @@ function Screen({ children }: { children: ReactNode }) {
         {children}
       </div>
     </div>
+  )
+}
+
+/** Hinweis bei Beschwerden – kein medizinischer Plan. */
+function LimitsHint({ note }: { note?: string }) {
+  return (
+    <div className="flex gap-3 rounded-2xl bg-gold/15 p-4 text-left">
+      <Info size={18} className="mt-0.5 shrink-0 text-gold" />
+      <div className="space-y-1 text-sm text-cocoa">
+        <p className="font-semibold">{LIMITS_HINT}</p>
+        {note?.trim() && <p className="text-cocoa-light">Deine Angabe: {note.trim()}</p>}
+      </div>
+    </div>
+  )
+}
+
+/** Mehrfachauswahl als große Karte. */
+function CheckCard({ icon, label, on, onClick }: { icon: string; label: string; on: boolean; onClick: () => void }) {
+  return (
+    <button
+      role="checkbox"
+      aria-checked={on}
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition active:scale-[0.99] ${
+        on ? 'bg-brand/10 ring-2 ring-brand' : 'bg-cream'
+      }`}
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sand text-xl">{icon}</span>
+      <span className="min-w-0 flex-1 text-[16px] font-semibold">{label}</span>
+      <span
+        className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg ${
+          on ? 'bg-brand text-on-brand' : 'border-2 border-sand-dark'
+        }`}
+      >
+        {on && <Check size={14} strokeWidth={3} />}
+      </span>
+    </button>
   )
 }
 

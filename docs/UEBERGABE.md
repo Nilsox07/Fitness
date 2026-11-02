@@ -27,6 +27,10 @@ Die festen Regeln stehen in [`CLAUDE.md`](../CLAUDE.md).
 `0001`–`0035` sind ausgeführt. **`0036_ai_calls.sql` (KI-Limits), `0037_health.sql` (Uhr-Daten) und
 `0038_health_details.sql` (Verläufe, Schlafphasen, Vitalwerte) müssen noch im Supabase-SQL-Editor laufen.** Bis dahin zählt der Server keine KI-Aufrufe und die Uhr-Seiten bleiben
 leer – Fehler gibt es keine.
+Ebenfalls noch offen: `0039_cycle.sql` (Zyklus), `0040_feedback_events.sql` (Feedback + anonyme Statistik, enthält
+Auswerte-SQL als Kommentar), `0041_measurements.sql` (Körpermaße), `0042_meals_stock.sql` (gespeicherte Mahlzeiten,
+Supplement-Vorrat), `0043_health_more.sql` (mehr Health-Connect-Felder). Ohne sie bleiben die neuen Teile leer bzw.
+ausgeblendet.
 
 ### Umgebungsvariablen (Vercel, nie ins Git)
 
@@ -36,7 +40,7 @@ leer – Fehler gibt es keine.
 | `GEMINI_MODEL` | optional, kommagetrennt mit Ausweichmodellen |
 | `AI_PROVIDER` | optional (`gemini`) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web-Push |
-| `SUPABASE_SERVICE_ROLE_KEY` | Cron, Push, KI-Limits |
+| `SUPABASE_SERVICE_ROLE_KEY` | Cron, Push, KI-Limits, Konto löschen (`api/account/delete.js`, ohne Key → 503) |
 | `CRON_SECRET` | schützt `/api/cron/reminders`; pg_cron schickt `Authorization: Bearer …` |
 | `AI_UNLIMITED_EMAILS` | **neu, noch eintragen:** eure beiden E-Mails, kommagetrennt |
 | `FITBIT_CLIENT_ID`, `FITBIT_CLIENT_SECRET` | Fitbit (optional) |
@@ -93,6 +97,24 @@ einer App, aber nur das sichtbar, was man nutzt.
   Wassereinlagerung), Daten `cycle_periods`/`cycle_logs` (Migration 0039, RLS nur eigene Zeilen), Health Connect
   `READ_MENSTRUATION` (Perioden + Blutungstage → `mergePeriods`). Widget „Zyklus“, Kachel im Fortschritt,
   Faktor in der Tagesform, Hinweis beim Gewicht. Keine Fruchtbarkeits-/Verhütungsaussagen; nie in der Community.
+- **Store-Pflichten:** Einwilligung + 18+ bei der Registrierung (`prefs.consent`, `src/lib/consent.ts`; neue Abfrage
+  durch Erhöhen von `CONSENT_VERSION`, Bestandsnutzer sehen einmal `ConsentGate`), Konto & Daten löschen (Profil →
+  Konto & Daten, `api/account/delete.js`: Körperfotos, `app_events`, dann Auth-User; Rest per `on delete cascade`),
+  Feedback (Tabelle `feedback`, optional mit Screenshot), anonyme Statistik (`src/lib/track.ts` → `app_events`,
+  nur mit Einwilligung, gehashte Nutzer-ID).
+- **Zielgewicht & Körpermaße** (`/body`): `prefs.targetWeight`/`targetWeightSince`, ungefährer Weg als Spanne
+  (`src/lib/goalPath.ts`, auch Untertitel der Gewichts-Kachel), Körpermaße `body_measurements` (`measurements.ts`).
+- **Mahlzeiten & Kochen:** „Als Mahlzeit speichern“ (`saved_meals`, Chips im Hinzufügen-Sheet, ein Tipp trägt alles
+  ein), Nachkochen-Modus (`CookMode.tsx`: Portionen, Zutaten mit „Fehlt mir“, Schritte mit Timer, Eintragen;
+  „Fehlt mir“-Liste nur auf dem Gerät), Supplement-Vorrat mit Reichweite (`supplementStock.ts`).
+- **Intro erweitert:** Ort (Mehrfachwahl) + Geräte zuhause, Zeit pro Training (Übungszahl), Schwerpunkt,
+  Einschränkungen (höhere Wdh., Anfänger ohne schwere Langhantel), Alltag (Aktivitätsfaktor).
+- **Erkenntnisse** (`/insights`, `src/lib/insights.ts`, Top 3 im Fortschritt): Belastungsverhältnis 7/28 Tage,
+  VO₂max-Trend und Fitnessalter, Ruhepuls/HRV-Trend, Schlafschuld und Schlafrhythmus, WHO-Intensitätsminuten,
+  Schritte-Trend, echter Verbrauch aus Essen + Gewichtsverlauf (`adaptiveTdee`, auch ohne Uhr). Health Connect
+  liest zusätzlich Wasser, Ernährung, Achtsamkeit und Krafteinheiten anderer Apps; Waagen-Gewichte nur an Tagen
+  ohne eigenen Eintrag (`source: 'health'`), Wasser nur nach oben angeglichen. Play Console: Health-Apps-Erklärung
+  um `READ_HYDRATION`, `READ_NUTRITION`, `READ_MINDFULNESS` ergänzen.
 - **Navigation wie bei iOS:** globale Suche (Lupe oben in jedem Tab, `components/search/SearchSheet.tsx`,
   Einträge + Stichwörter in `src/lib/searchIndex.ts`, Module beachten). Profil gruppiert: Ich ·
   Personalisieren · Buddy · Mitteilungen & Geräte · Konto & Daten. Deep Links für die Suche:
@@ -134,7 +156,7 @@ einer App, aber nur das sichtbar, was man nutzt.
 - Push-Erinnerungen in der App brauchen **Firebase (FCM)**: `google-services.json` in `android/app/` legen
   (nicht geheim, aber projektbezogen) und den Cron auf FCM umstellen (Phase 3). Bis dahin kommen in der App nur
   lokale Benachrichtigungen (Pause, Countdown).
-- Datenschutzseite `/datenschutz` anlegen – Health Connect verlinkt darauf (`PrivacyActivity.kt`).
+- Datenschutzerklärung: TODO-Stellen in `src/pages/Privacy.tsx` (`/datenschutz`) ausfüllen bzw. prüfen lassen.
 - Teilen-Menü (Rezept-Links) in der App: braucht ein Plugin für eingehende `SEND`-Intents.
 - Paketname `de.fitnessbuddy.app` vor dem ersten Play-Upload final festlegen (danach unveränderbar).
 - Eigenes GPS-Tracking (Lauf/Rad ohne Uhr) und Wear-OS-Kachel: später.
@@ -302,8 +324,8 @@ lokal bzw. in GitHub-Secrets.
 
 ### Phase 6 – Store-Voraussetzungen
 
-- **Konto löschen**, in der App und über eine Web-URL (Play-Pflicht): löscht Auth-User, alle Tabellen
-  (`on delete cascade`) und die Storage-Dateien (Körperfotos).
+- **Konto löschen** ✅ in der App (Profil → Konto & Daten). Für das Play-Formular als Web-URL `<vercel>/datenschutz`
+  angeben; dort den Kontakt-Abschnitt noch ausfüllen.
 - **Rechtliches:**
   - Impressum, Datenschutzerklärung (Gesundheitsdaten nach Art. 9 DSGVO, ausdrückliche Einwilligung),
     AGB/Abo-Bedingungen

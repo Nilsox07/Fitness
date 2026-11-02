@@ -38,7 +38,7 @@ export function PremiumSheet({
   busy?: boolean
   /** Volle Höhe (z. B. Chat). */
   full?: boolean
-  z?: 'z-40' | 'z-50'
+  z?: 'z-40' | 'z-50' | 'z-[70]'
   bodyClassName?: string
 }) {
   const titleId = useId()

@@ -26,10 +26,16 @@ import { useBodyWeights } from '../hooks/useBodyWeight'
 import { useAllSets } from '../hooks/useWorkouts'
 import { useHealthActivities, useHealthDaily, useHealthSleep } from '../hooks/useHealth'
 import { useAllFoodEntries } from '../hooks/useNutrition'
+import { useInsights } from '../hooks/useInsights'
+import { topInsights } from '../lib/insights'
+import { InsightList } from '../components/insights/InsightList'
+import { SectionLabel } from '../components/progress/ProgressHeader'
 import { usePrefs } from '../lib/prefs'
 import { hoursText } from '../lib/health'
 import { isPerformed, setVolume } from '../lib/analytics'
 import { dailySeries, lastWeeks, trendPct, weeklySum } from '../lib/progressSeries'
+import { useGoalPath } from '../hooks/useGoalPath'
+import { goalPathLine } from '../lib/goalPath'
 
 const fmt = (n: number) => Math.round(n).toLocaleString('de-DE')
 const tons = (kg: number) =>
@@ -47,11 +53,13 @@ export default function Progress() {
   const buddy = useBuddy()
   const level = useBuddyLevel()
   const { data: weights } = useBodyWeights()
+  const goalLine = goalPathLine(useGoalPath())
   const { data: allSets } = useAllSets()
   const { data: acts } = useHealthActivities(60)
   const { data: sleep } = useHealthSleep(14)
   const { data: daily } = useHealthDaily(14)
   const { data: food } = useAllFoodEntries()
+  const top = topInsights(useInsights().insights)
 
   const today = t.trainingDay
   const weeks = lastWeeks(today, 8)
@@ -230,7 +238,10 @@ export default function Progress() {
           index={i++}
           value={lastW ? lastW.weight_kg.toLocaleString('de-DE') : '–'}
           unit={lastW ? 'kg' : undefined}
-          sub={wDelta != null ? `${wDelta > 0 ? '+' : ''}${wDelta.toLocaleString('de-DE')} kg` : 'Gewicht & Körperfett'}
+          sub={
+            goalLine ??
+            (wDelta != null ? `${wDelta > 0 ? '+' : ''}${wDelta.toLocaleString('de-DE')} kg` : 'Gewicht & Körperfett')
+          }
         >
           <Line values={sortedW.map((w) => w.weight_kg)} />
         </Tile>
@@ -245,6 +256,24 @@ export default function Progress() {
           <Bars values={sessions} small />
         </Tile>
       </div>
+
+      {top.length > 0 && (
+        <section style={enter(i++)}>
+          <SectionLabel
+            right={
+              <button
+                className="flex items-center text-xs font-semibold text-brand"
+                onClick={() => navigate('/insights')}
+              >
+                Alle Erkenntnisse <ChevronRight size={14} />
+              </button>
+            }
+          >
+            Erkenntnisse
+          </SectionLabel>
+          <InsightList items={top} />
+        </section>
+      )}
     </div>
   )
 }

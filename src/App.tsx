@@ -36,12 +36,15 @@ import Today from './pages/Today'
 import Cardio from './pages/Cardio'
 import Sleep from './pages/Sleep'
 import Vitals from './pages/Vitals'
+import Insights from './pages/Insights'
 import ActivityDetail from './pages/ActivityDetail'
 import { NativeNav, NativeSync } from './components/NativeSync'
 import { SearchHost } from './components/search/SearchSheet'
 import { Splash } from './components/Splash'
 import { FloatingBuddy } from './components/buddy/FloatingBuddy'
 import { OnboardingHost } from './components/onboarding/Onboarding'
+import { ConsentGate } from './components/privacy/ConsentGate'
+import Privacy from './pages/Privacy'
 import { useChallengeSync } from './hooks/useChallenges'
 import { useModulesSync } from './hooks/useModulesSync'
 
@@ -121,7 +124,8 @@ export default function App() {
   }
 
   if (!session) {
-    return <Login />
+    // Datenschutzerklärung auch ohne Anmeldung (Play Store, Health Connect)
+    return pathname === '/datenschutz' ? <Privacy standalone /> : <Login />
   }
 
   return (
@@ -156,12 +160,14 @@ export default function App() {
             <Route path="/feed" element={<Feed />} />
             <Route path="/history" element={<History />} />
             <Route path="/progress" element={<Progress />} />
+            <Route path="/insights" element={<Insights />} />
             <Route path="/cycle" element={hasCycle ? <Cycle /> : <Navigate to="/progress" replace />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/body" element={<Body />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/quick" element={<QuickWorkout />} />
             <Route path="/share" element={<ShareTarget />} />
+            <Route path="/datenschutz" element={<Privacy />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
@@ -174,6 +180,7 @@ export default function App() {
       <WeeklyReview />
       <Splash />
       <OnboardingHost />
+      <ConsentGate />
       <TabBar />
     </div>
   )

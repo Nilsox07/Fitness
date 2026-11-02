@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { fluidOf } from '../../lib/fluid'
-import { Coffee, Cookie, Moon, Plus, Sun, type LucideIcon } from 'lucide-react'
+import { Bookmark, Coffee, Cookie, Moon, Plus, Sun, type LucideIcon } from 'lucide-react'
 import { MEAL_LABEL, type FoodEntry, type Meal } from '../../types'
 import { fmtInt } from '../../lib/nutritionHome'
 
@@ -18,6 +18,7 @@ export function MealCard({
   recommended,
   onAdd,
   onEdit,
+  onSaveMeal,
   style,
 }: {
   meal: Meal
@@ -26,6 +27,8 @@ export function MealCard({
   recommended: number
   onAdd: () => void
   onEdit: (e: FoodEntry) => void
+  /** „Als Mahlzeit speichern" (nur mit Einträgen sichtbar) */
+  onSaveMeal?: () => void
   style?: CSSProperties
 }) {
   const Icon = ICON[meal]
@@ -87,6 +90,17 @@ export function MealCard({
               </button>
             </li>
           ))}
+          {onSaveMeal && (
+            <li>
+              <button
+                className="flex w-full items-center gap-1.5 px-4 py-2 text-xs font-semibold text-cocoa-light transition-colors duration-200 hover:bg-sand-light"
+                onClick={onSaveMeal}
+              >
+                <Bookmark size={13} />
+                Als Mahlzeit speichern
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </section>

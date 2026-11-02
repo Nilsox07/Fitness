@@ -190,6 +190,14 @@ export function RecipeDiscover({
           onToggleShared={() => {}}
           onDelete={() => {}}
           onClose={() => setOpenId(null)}
+          onSaveRecipe={
+            savedTitles.has(open.title)
+              ? undefined
+              : () => {
+                  const { id: _id, user_id: _u, created_at: _c, ...input } = catalogAsSaved(open)
+                  return addRecipe.mutateAsync(input)
+                }
+          }
           badges={[`${open.minutes} Min`, ...open.restrictions.map((x) => DIET_RESTRICTION_LABEL[x])].filter(
             (b, i, a) => a.indexOf(b) === i && !(b === 'Pescetarisch' && a.includes('Vegetarisch')),
           )}

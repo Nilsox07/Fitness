@@ -8,6 +8,7 @@ import type { Schedule } from './schedule'
 import { NOTIFY_DEFAULTS, normalizeNotify, type NotifyPrefs } from './notify'
 import { normalizePrestige, type PrestigeState } from './unlocks'
 import type { CardioKind, CardioPlan, CardioType, FitGoal } from './onboarding'
+import { normalizeConsent, type Consent } from './consent'
 
 /** Prozent je Mahlzeit (Summe = 100). */
 export type MealSplit = Record<Meal, number>
@@ -43,10 +44,16 @@ export interface UserPrefs {
   modules: Modules | null
   /** Zuletzt gesehene „Was ist neu?“-Version (geräteübergreifend) */
   seenVersion: string | null
+  /** Einwilligung Gesundheitsdaten + 18+ (Version + Zeitpunkt); null = noch keine */
+  consent: Consent | null
   /** Zucker immer sichtbar statt hinter „Mehr“ (z. B. bei Diabetes) */
   showSugar: boolean
   /** Salz immer sichtbar statt hinter „Mehr“ (z. B. bei Bluthochdruck) */
   showSalt: boolean
+  /** Zielgewicht in kg (null = keins) – für den „ungefähren Weg“ unter Körper */
+  targetWeight: number | null
+  /** Seit wann das Zielgewicht gilt (YYYY-MM-DD) – Start für den Fortschrittsbalken */
+  targetWeightSince: string | null
 }
 
 export interface Modules {
@@ -77,8 +84,18 @@ export const DEFAULT_PREFS: UserPrefs = {
   shareCheat: false,
   modules: null,
   seenVersion: null,
+  consent: null,
   showSugar: false,
   showSalt: false,
+  targetWeight: null,
+  targetWeightSince: null,
+}
+
+/** Zielgewicht: 30–300 kg, auf 0,1 kg gerundet; sonst null. */
+function normalizeTargetWeight(v: unknown): number | null {
+  if (v === null || v === undefined || v === '') return null
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) && n >= 30 && n <= 300 ? Math.round(n * 10) / 10 : null
 }
 
 const num = (v: unknown, lo: number, hi: number, fallback: number): number => {
@@ -194,7 +211,13 @@ export function normalizePrefs(raw: unknown): UserPrefs {
     shareCheat: r.shareCheat === true,
     modules: normalizeModules(r.modules),
     seenVersion: typeof r.seenVersion === 'string' && r.seenVersion.length < 20 ? r.seenVersion : null,
+    consent: normalizeConsent(r.consent),
     showSugar: r.showSugar === true,
     showSalt: r.showSalt === true,
+    targetWeight: normalizeTargetWeight(r.targetWeight),
+    targetWeightSince:
+      typeof r.targetWeightSince === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.targetWeightSince)
+        ? r.targetWeightSince
+        : null,
   }
 }

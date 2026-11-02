@@ -31,6 +31,19 @@ describe('Cheat-Teilen, Module, gesehene Version', () => {
   })
 })
 
+describe('Zielgewicht', () => {
+  it('Standard null, nur plausible Werte', () => {
+    expect(normalizePrefs({}).targetWeight).toBeNull()
+    expect(normalizePrefs({}).targetWeightSince).toBeNull()
+    expect(normalizePrefs({ targetWeight: 80.04 }).targetWeight).toBe(80)
+    expect(normalizePrefs({ targetWeight: '72.5' }).targetWeight).toBe(72.5)
+    expect(normalizePrefs({ targetWeight: 12 }).targetWeight).toBeNull()
+    expect(normalizePrefs({ targetWeight: 'viel' }).targetWeight).toBeNull()
+    expect(normalizePrefs({ targetWeightSince: '2026-11-01' }).targetWeightSince).toBe('2026-11-01')
+    expect(normalizePrefs({ targetWeightSince: 'gestern' }).targetWeightSince).toBeNull()
+  })
+})
+
 describe('normalizePrefs', () => {
   it('leere Eingaben → Standardwerte', () => {
     expect(normalizePrefs(null)).toEqual(DEFAULT_PREFS)

@@ -30,6 +30,7 @@ import {
 } from '../components/recipes/recipeUtils'
 import type { Meal, SavedRecipe } from '../types'
 import { useNutritionPrefs } from '../hooks/usePrefsSync'
+import { hintFoodMethod, track } from '../lib/track'
 
 // ---------------------------------------------------------------------------
 // „Für dich"-Karussell, Suche, Filter-Chips, 2-Spalten-Raster,
@@ -172,14 +173,21 @@ function NewRecipes() {
   ]
 
   const openRecipe = openId ? (all.find((r) => r.id === openId) ?? null) : null
+  const openRecipeId = openRecipe?.id
+  useEffect(() => {
+    if (openRecipeId) track('recipe_viewed')
+  }, [openRecipeId])
   const searching = query.trim().length > 0
   const subtitle = [
     `${mineCount} ${mineCount === 1 ? 'eigenes' : 'eigene'}`,
     ...(hasFriends ? [`${friendsCount} von Freunden`] : []),
   ].join(' · ')
 
-  const log = (r: SavedRecipe, portions: number, meal: Meal) =>
-    addEntry.mutateAsync(recipeLogEntry(r, portions, meal, localDate()))
+  const log = (r: SavedRecipe, portions: number, meal: Meal) => {
+    hintFoodMethod('recipe')
+    track('recipe_cooked')
+    return addEntry.mutateAsync(recipeLogEntry(r, portions, meal, localDate()))
+  }
 
   const iconBtn = 'grid h-10 w-10 place-items-center rounded-full transition active:scale-90'
 

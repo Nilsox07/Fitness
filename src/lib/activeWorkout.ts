@@ -3,6 +3,7 @@
 // heute gestartet/bespielt und nicht beendet wurde und die letzte Aktivität
 // höchstens 3 Stunden her ist.
 import { trainingDay } from './day'
+import { track } from './track'
 
 const KEY = 'workout_active'
 const MAX_IDLE_MS = 3 * 60 * 60 * 1000
@@ -18,6 +19,7 @@ export function touchWorkout(date = trainingDay()): void {
 
 /** Training beendet. */
 export function endWorkout(): void {
+  track('workout_finished')
   try {
     localStorage.removeItem(KEY)
   } catch {

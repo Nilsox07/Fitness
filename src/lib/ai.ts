@@ -10,6 +10,7 @@ import { dietPromptText, getActiveDiet, type DietStyle } from './dietStyle'
 import type { MealFlags } from './mealScore'
 import { toBodyFatEstimate, type BodyFatEstimate } from './bodyScan'
 import { apiUrl } from './native'
+import { hintFoodMethod, trackAi } from './track'
 
 export interface AiStatus {
   enabled: boolean
@@ -166,6 +167,7 @@ function coachSystem(): string {
 
 /** Buddy-Tagesbriefing: 2–3 Sätze, was heute wichtig ist (Tagesform, Training, Ernährung). */
 export async function dailyBriefing(context: unknown): Promise<string> {
+  trackAi('briefing')
   const prompt =
     `Mein heutiger Stand (JSON):\n${JSON.stringify(context)}\n\n` +
     'Gib mir ein kurzes Tagesbriefing in 2–3 Sätzen (max. 45 Wörter). Bezieh die Tagesform mit ihren ' +
@@ -277,6 +279,7 @@ export interface AssistantReply {
 }
 
 export async function assistant(history: ChatMsg[], context: unknown): Promise<AssistantReply> {
+  trackAi('chat')
   const convo = history.map((m) => `${m.role === 'user' ? 'Nutzer' : 'Assistent'}: ${m.content}`).join('\n')
   const system =
     'Du bist der In-App-Assistent einer Fitness-App. Du beantwortest Fragen kompakt auf ' +
@@ -356,6 +359,7 @@ export async function mealPlanForDay(
   targets: { kcal: number; protein: number },
   wish: string,
 ): Promise<{ note: string; items: MealPlanItem[] }> {
+  trackAi('day_plan')
   const system =
     'Du bist Ernährungsberater. Erstelle einen realistischen Tages-Essensplan, der die Ziele ' +
     'möglichst trifft. Antworte ausschließlich mit JSON.'
@@ -383,6 +387,7 @@ export async function mealPlanForDay(
 }
 
 export async function recipeFromText(request: string): Promise<Recipe> {
+  trackAi('recipe_text')
   const system =
     'Du bist Koch und Ernährungsberater. Erstelle EIN Rezept passend zur Anfrage. ' +
     'Antworte ausschließlich mit JSON.'
@@ -516,6 +521,7 @@ export type ImportPhase = 'loading-post' | 'reading'
 
 /** Kompletter Import aus geteiltem Text/Link: Beitrag laden, dann Rezept erkennen. */
 export async function importRecipe(input: string, onPhase?: (p: ImportPhase) => void): Promise<ImportedRecipe> {
+  trackAi('recipe_import')
   const value = input.trim()
   const url = extractUrl(value)
   const rest = url ? value.replace(url, '').trim() : value
@@ -548,6 +554,7 @@ export function sourceLabel(text: string): string | null {
 
 /** Rezept aus einem Screenshot (z. B. Rezept-Slide aus Instagram oder Text im Video). */
 export async function recipeFromScreenshot(image: string): Promise<ImportedRecipe> {
+  trackAi('recipe_screenshot')
   const system =
     'Du liest Rezepte aus Screenshots (Social-Media-Beiträge, Kochbuchseiten, Videos mit Text). ' +
     'Übernimm Zutaten, Mengen und Schritte originalgetreu. Ist nur das fertige Gericht zu sehen, ' +
@@ -599,6 +606,7 @@ export async function generatePlan(
   exercises: { name: string; muscle: string }[],
   wish: string,
 ): Promise<PlanSuggestion[]> {
+  trackAi('training_plan')
   const list = exercises.map((e) => `${e.name} (${e.muscle})`).join(', ')
   const system =
     'Du bist ein Trainingsplaner. Erstelle sinnvolle Split-Pläne AUSSCHLIESSLICH aus den ' +
@@ -754,6 +762,8 @@ function toEstimateList(items: Partial<FoodEstimate>[] | undefined): FoodEstimat
 
 /** Nährwerte aus freier Texteingabe schätzen, z. B. „2 Eier und 80 g Haferflocken". */
 export async function estimateFoodFromText(text: string): Promise<FoodEstimate[]> {
+  trackAi('food_text')
+  hintFoodMethod('text')
   const prompt = `Beschreibung: "${text}".\n${NUTRITION_FORMAT}`
   return toEstimates(await complete({ system: NUTRITION_SYSTEM, prompt, json: true, temperature: 0.2 }))
 }
@@ -837,6 +847,8 @@ export async function analyzeMeal(input: {
   text?: string
   goal?: string
 }): Promise<MealAnalysis> {
+  trackAi(input.image ? 'meal_photo' : 'meal_text')
+  hintFoodMethod(input.image ? 'photo' : 'text')
   const diet = dietContext()
   const meta =
     ' Zusätzlich: "title" = kurzer deutscher Name der ganzen Mahlzeit (max. 40 Zeichen, z. B. ' +
@@ -877,6 +889,7 @@ export async function suggestOrder(
   remaining: { kcal: number; protein: number },
   wish: string,
 ): Promise<{ note: string; items: FoodEstimate[] }> {
+  trackAi('restaurant')
   const system =
     'Du bist Ernährungsberater. Der Nutzer nennt einen Anbieter, eine Küche oder eine Restaurant-Art ' +
     '(z. B. „Indisch", „Mexikanisch", „Asiatisch", „McDonald\'s", „Supermarkt"). Empfiehl eine konkrete, ' +
@@ -915,6 +928,7 @@ export async function menuFromPhoto(
   images: string[],
   remaining: { kcal: number; protein: number },
 ): Promise<{ note: string; picks: MenuPick[] }> {
+  trackAi('menu_photo')
   const system =
     'Du bist Ernährungsberater. Du liest eine fotografierte Speisekarte (ggf. mehrere Seiten/Fotos) und empfiehlst Gerichte, ' +
     'die wirklich auf dieser Karte stehen. Schätze realistische Restaurant-Portionen (eher großzügig, ' +
@@ -978,6 +992,7 @@ export async function generateWeeklyPlan(input: {
   routines: { meal: Meal; title: string; kcal: number; protein: number }[]
   wish: string
 }): Promise<WeeklyPlan> {
+  trackAi('meal_plan')
   const system =
     'Du bist Ernährungsberater und Meal-Prep-Profi. Erstelle einen realistischen, ' +
     'abwechslungsreichen Essensplan über mehrere Tage, der die Tagesziele möglichst trifft. ' +
@@ -1025,6 +1040,7 @@ export async function adjustWeeklyPlan(input: {
   instruction: string
   targets: { kcal: number; protein: number }
 }): Promise<WeeklyPlan> {
+  trackAi('meal_plan_adjust')
   const system =
     'Du bist Ernährungsberater. Du bekommst einen bestehenden Essensplan (JSON) und eine ' +
     'Änderungsanweisung. Gib den ANGEPASSTEN Plan im GLEICHEN JSON-Format zurück, inklusive ' +
@@ -1102,6 +1118,7 @@ function recipeNutrition(n: Partial<Recipe['nutrition']> | undefined): Recipe['n
 }
 
 export async function recipeFromFridge(image: string, craving: string): Promise<Recipe> {
+  trackAi('fridge')
   const system =
     'Du bist Koch und Ernährungsberater. Erkenne die Zutaten im Bild und schlage EIN ' +
     'umsetzbares Rezept vor, das primär diese Zutaten nutzt (Grundzutaten wie Öl, Salz, ' +
@@ -1148,6 +1165,7 @@ export interface ExerciseDraft {
 
 /** Freitext/Sprache → fertiger Übungs-Entwurf (Muskeln + Gewichtsstufen). */
 export async function parseNewExercise(text: string): Promise<ExerciseDraft> {
+  trackAi('exercise')
   const groups = MUSCLE_GROUPS.join(', ')
   const system =
     'Du bist ein Trainings-Assistent. Aus der Beschreibung einer neuen Fitnessübung ' +
@@ -1362,6 +1380,7 @@ export async function estimateBodyFat(
   image: string,
   ctx: { sex?: Sex; age?: number; height_cm?: number; weight_kg?: number },
 ): Promise<BodyFatEstimate> {
+  trackAi('body_fat')
   const facts = [
     ctx.sex ? `Geschlecht: ${ctx.sex === 'f' ? 'weiblich' : 'männlich'}` : '',
     ctx.age ? `Alter: ${ctx.age}` : '',

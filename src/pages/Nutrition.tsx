@@ -92,6 +92,8 @@ import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
 import { NutrientExtras } from '../components/food/NutrientExtras'
 import { RecentChips } from '../components/nutrition-home/RecentChips'
 import { MealCard } from '../components/nutrition-home/MealCard'
+import { SaveMealSheet, SavedMealChips } from '../components/nutrition-home/SavedMeals'
+import { entriesFromSaved, type SavedMeal } from '../lib/savedMeals'
 import { WaterRow } from '../components/nutrition-home/WaterRow'
 import { SupplementCard } from '../components/nutrition-home/SupplementCard'
 import { useSupplements, useToggleDose } from '../hooks/useSupplements'
@@ -467,6 +469,25 @@ export default function Nutrition() {
   const saving = addEntry.isPending || addEntries.isPending
   const deleteEntry = useDeleteFoodEntry()
   const updateEntry = useUpdateFoodEntry()
+
+  // Gespeicherte Mahlzeiten: speichern (Karte) und mit einem Tipp eintragen (Hinzufügen-Menü)
+  const [saveMealFor, setSaveMealFor] = useState<Meal | null>(null)
+  const flashNote = (m: string) => {
+    setWaterNote(m)
+    setTimeout(() => setWaterNote(null), 3000)
+  }
+  function logSavedMeal(m: SavedMeal) {
+    if (addEntries.isPending || m.items.length === 0) return
+    const meal = addMeal()
+    setError(null)
+    addEntries.mutate(entriesFromSaved(m.items, today, meal), {
+      onSuccess: () => {
+        go(null)
+        flashNote(`„${m.name}“ zu ${MEAL_LABEL[meal]} eingetragen`)
+      },
+      onError: (err) => setError(saveError(err)),
+    })
+  }
 
   const totals = sumEntries(entries ?? [])
 
@@ -1194,6 +1215,7 @@ export default function Nutrition() {
                 go('menu')
               }}
               onEdit={setEditEntry}
+              onSaveMeal={() => setSaveMealFor(meal)}
               style={stagger(4 + i)}
             />
           ))}
@@ -1204,6 +1226,15 @@ export default function Nutrition() {
         {isToday && (homeCards.weight || params.has('weigh')) && <BodyWeightCard />}
         {isToday && <CustomizeHome area="food" />}
       </>
+
+      {saveMealFor && (
+        <SaveMealSheet
+          meal={saveMealFor}
+          entries={(entries ?? []).filter((e) => (e.meal ?? 'snack') === saveMealFor)}
+          onClose={() => setSaveMealFor(null)}
+          onSaved={(n) => flashNote(`„${n}“ gespeichert – beim Hinzufügen mit einem Tipp`)}
+        />
+      )}
 
       {editEntry && (
         <EditEntrySheet
@@ -1241,6 +1272,7 @@ export default function Nutrition() {
         >
           <>
             <ErrorNote error={error} />
+            <SavedMealChips meal={mealOverride} busy={saving} onPick={logSavedMeal} />
             {aiOn && (
               <div>
                 <GroupLabel>Mit Buddy (KI)</GroupLabel>

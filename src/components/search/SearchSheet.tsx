@@ -12,11 +12,13 @@ import { openPlanWizard } from '../onboarding/Onboarding'
 import { useBackClose } from '../../lib/backStack'
 import { isNative } from '../../lib/native'
 import { pushSupported } from '../../lib/push'
+import { track } from '../../lib/track'
 
 export const OPEN_SEARCH_EVENT = 'open-search'
 
 /** Suche öffnen (von überall). */
 export function openSearch(): void {
+  track('search_used')
   window.dispatchEvent(new Event(OPEN_SEARCH_EVENT))
 }
 

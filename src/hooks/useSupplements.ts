@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { shiftDate } from '../lib/day'
 import type { Supplement, SupplementLog } from '../lib/supplements'
+import { hasStock, type StockFields, type StockLogRow, type StockSupplement } from '../lib/supplementStock'
 
 const missing = (e: { code?: string; message?: string } | null) =>
   !!e && (e.code === '42P01' || e.code === 'PGRST205' || /supplement/.test(e.message ?? ''))
@@ -103,6 +104,47 @@ export function useToggleDose() {
       return { prev, key }
     },
     onError: (_e, _v, ctx) => ctx && qc.setQueryData(ctx.key, ctx.prev),
-    onSettled: (_d, _e, v) => qc.invalidateQueries({ queryKey: ['supplement_log', v.date] }),
+    onSettled: (_d, _e, v) => {
+      void qc.invalidateQueries({ queryKey: ['supplement_log', v.date] })
+      void qc.invalidateQueries({ queryKey: ['supplement_stock'] })
+    },
+  })
+}
+
+/** Einnahmen seit dem ältesten Vorrat-Stand (Migration 0042) – für Rest und Reichweite. */
+export function useSupplementStockLog(list: StockSupplement[]) {
+  const withStock = list.filter(hasStock)
+  const since = withStock
+    .map((s) => s.stock_set_at ?? s.created_at)
+    .filter(Boolean)
+    .sort()[0]
+  return useQuery({
+    queryKey: ['supplement_stock', since ?? null],
+    enabled: withStock.length > 0,
+    queryFn: async (): Promise<StockLogRow[]> => {
+      let q = supabase.from('supplement_log').select('supplement_id, taken_at')
+      if (since) q = q.gte('taken_at', since)
+      const { data, error } = await q
+      if (error) {
+        if (missing(error)) return []
+        throw error
+      }
+      return data as StockLogRow[]
+    },
+  })
+}
+
+/** Vorrat setzen bzw. nachfüllen (stock_set_at = jetzt, damit nichts doppelt zählt). */
+export function useSetSupplementStock() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: { id: string } & StockFields) => {
+      const { error } = await supabase.from('supplements').update(patch).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['supplements'] })
+      void qc.invalidateQueries({ queryKey: ['supplement_stock'] })
+    },
   })
 }

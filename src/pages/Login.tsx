@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { API_BASE, isNative } from '../lib/native'
 import { APP_TAGLINE, AuthNote, AuthShell } from '../components/ui/AuthShell'
+import { makeConsent } from '../lib/consent'
 
 type Mode = 'login' | 'signup'
 
@@ -18,6 +20,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [agree, setAgree] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -26,7 +29,9 @@ export default function Login() {
     setBusy(true)
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password })
+        if (!agree) throw new Error('Bitte bestätige zuerst Alter und Einwilligung.')
+        // Einwilligung mit Version + Zeitpunkt; wird beim ersten Start in die Einstellungen übernommen
+        const { error } = await supabase.auth.signUp({ email, password, options: { data: { consent: makeConsent() } } })
         if (error) throw error
         setInfo('Account erstellt. Falls E-Mail-Bestätigung aktiv ist, prüfe dein Postfach.')
       } else {
@@ -152,13 +157,32 @@ export default function Login() {
           />
         </div>
 
+        {mode === 'signup' && (
+          <label className="flex items-start gap-3 text-sm leading-snug text-cocoa">
+            <input
+              type="checkbox"
+              required
+              checked={agree}
+              onChange={(e) => setAgree(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-brand"
+            />
+            <span>
+              Ich bin mindestens 18 Jahre alt und stimme der{' '}
+              <Link to="/datenschutz" className="font-semibold text-brand underline">
+                Datenschutzerklärung
+              </Link>{' '}
+              und der Verarbeitung meiner Gesundheitsdaten (z. B. Gewicht, Training, Ernährung, Uhr-Daten) zu.
+            </span>
+          </label>
+        )}
+
         {error && <AuthNote kind="error">{error}</AuthNote>}
         {info && <AuthNote kind="info">{info}</AuthNote>}
 
         <button
           type="submit"
           className="btn-primary w-full gap-2 rounded-2xl py-3.5 text-base shadow-lg shadow-brand/25"
-          disabled={busy}
+          disabled={busy || (mode === 'signup' && !agree)}
         >
           {busy && <Loader2 size={18} className="animate-spin" />}
           {mode === 'login' ? 'Anmelden' : 'Registrieren'}

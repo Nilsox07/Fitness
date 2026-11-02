@@ -6,6 +6,7 @@
 // Noch gibt es keine Abrechnung: bis zum Play-Store-Start sind alle Plus. Später setzt
 // Play Billing / RevenueCat das Abo über `setBillingEntitlement()` – das ist die einzige Stelle,
 // die dafür angefasst werden muss (siehe docs/UEBERGABE.md, Monetarisierung).
+import { track } from './track'
 
 /** localStorage: „Kostenlose Version testen“ (Profil → Konto & Daten). */
 export const TEST_FREE_KEY = 'plus_test_free'
@@ -92,5 +93,6 @@ export function subscribePremium(cb: () => void): () => void {
 
 /** „Buddy Plus“-Sheet öffnen (von überall). */
 export function openPlusSheet(): void {
+  track('plus_sheet_opened')
   window.dispatchEvent(new Event(OPEN_PLUS_EVENT))
 }

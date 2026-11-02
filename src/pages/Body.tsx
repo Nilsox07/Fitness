@@ -6,6 +6,8 @@ import { useNutritionSettings, useUpsertNutritionSettings } from '../hooks/useNu
 import { BodyScanFlow } from '../components/body/BodyScanFlow'
 import { BodyWeightCard } from '../components/BodyWeightCard'
 import { CompareSlider } from '../components/body/CompareSlider'
+import { GoalPathCard } from '../components/body/GoalPathCard'
+import { MeasurementsSection } from '../components/body/MeasurementsSection'
 import { SectionTitle } from '../components/food-progress/ui'
 import { localDate } from '../lib/day'
 import { daysBetween } from '../components/social/format'
@@ -138,6 +140,9 @@ export default function Body() {
         </section>
       )}
 
+      {/* Zielgewicht mit ungefährem Weg */}
+      <GoalPathCard />
+
       {latest && (
         <button
           className={`flex w-full items-center gap-3 rounded-2xl p-3.5 text-left ${
@@ -169,6 +174,8 @@ export default function Body() {
 
       {/* Gewicht eintragen – auch ohne Ernährungs-Modul */}
       <BodyWeightCard />
+
+      <MeasurementsSection />
 
       {comp && (
         <section>

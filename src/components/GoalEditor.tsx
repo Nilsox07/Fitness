@@ -31,6 +31,8 @@ import { Group, IconTile, Row } from './profile/ui'
 import { PremiumSheet } from './ui/PremiumSheet'
 import { ChoiceSheet, FastingSheet, MacroSheet, RestrictionSheet, Warning } from './goal/DietPickers'
 import { ErrorNote } from './ui/GroupList'
+import { useUserPrefs } from '../hooks/usePrefsSync'
+import { localDate } from '../lib/day'
 
 const EMPTY: NutritionSettingsInput = {
   sex: 'm',
@@ -141,6 +143,16 @@ export function GoalEditor({ onSaved, onCancel }: { onSaved?: () => void; onCanc
   const [loaded, setLoaded] = useState(false)
   // Ernährungsweise
   const [diet, setDiet] = useState<DietStyle>(() => resolveDiet(settings ?? null))
+  // Zielgewicht (optional, in profiles.prefs)
+  const { prefs, save: savePrefs, ready: prefsReady } = useUserPrefs()
+  const [targetWeight, setTargetWeight] = useState('')
+  const [targetLoaded, setTargetLoaded] = useState(false)
+  useEffect(() => {
+    if (!prefsReady || targetLoaded) return
+    setTargetWeight(prefs.targetWeight != null ? String(prefs.targetWeight).replace('.', ',') : '')
+    setTargetLoaded(true)
+  }, [prefsReady, targetLoaded, prefs.targetWeight])
+  const targetKg = targetWeight.trim() ? Number(targetWeight.replace(',', '.')) : null
 
   // Gespeicherte Körperdaten/Ziele einmalig übernehmen, sobald sie geladen sind.
   useEffect(() => {
@@ -187,6 +199,10 @@ export function GoalEditor({ onSaved, onCancel }: { onSaved?: () => void; onCanc
       !Number.isFinite(form.water_target_ml) || form.water_target_ml < 0 || form.water_target_ml > 10000
         ? 'Trinkziel bitte zwischen 0 und 10000 ml.'
         : null,
+    targetWeight:
+      targetKg !== null && (!Number.isFinite(targetKg) || targetKg < 30 || targetKg > 300)
+        ? 'Zielgewicht bitte zwischen 30 und 300 kg – oder leer lassen.'
+        : null,
   }
   const invalid = Object.values(fieldError).some(Boolean)
 
@@ -208,6 +224,14 @@ export function GoalEditor({ onSaved, onCancel }: { onSaved?: () => void; onCanc
         water_target_ml: Math.round(form.water_target_ml || defaultWaterTarget(form.weight_kg)),
         diet,
       })
+      const nextTarget = targetKg === null ? null : Math.round(targetKg * 10) / 10
+      if (targetLoaded && nextTarget !== prefs.targetWeight) {
+        await savePrefs({
+          targetWeight: nextTarget,
+          // Erstes Ziel → Fortschritt ab heute; angepasst → Start bleibt; gelöscht → Start vergessen
+          targetWeightSince: nextTarget === null ? null : (prefs.targetWeightSince ?? localDate()),
+        })
+      }
       onSaved?.()
     } catch (e) {
       setError(
@@ -311,7 +335,28 @@ export function GoalEditor({ onSaved, onCancel }: { onSaved?: () => void; onCanc
             </button>
           )
         })}
+        <label className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2" htmlFor="goal-target-weight">
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-semibold">Zielgewicht</span>
+            <span className="block text-xs leading-snug text-cocoa-light">Optional – zeigt dir den Weg dorthin</span>
+          </span>
+          <input
+            id="goal-target-weight"
+            type="text"
+            inputMode="decimal"
+            placeholder="–"
+            aria-invalid={!!fieldError.targetWeight}
+            className={`tabular w-20 rounded-xl bg-sand px-2.5 py-1.5 text-right text-base font-semibold outline-none focus:ring-2 focus:ring-ruby ${
+              fieldError.targetWeight ? 'ring-2 ring-red-400' : ''
+            }`}
+            value={targetWeight}
+            onFocus={(e) => e.currentTarget.select()}
+            onChange={(e) => setTargetWeight(e.target.value.replace(/[^\d,.]/g, ''))}
+          />
+          <span className="w-10 text-sm text-cocoa-light">kg</span>
+        </label>
       </Group>
+      <FieldError msg={fieldError.targetWeight} />
 
       <Group title="Ernährung" footer="Tippe auf eine Zeile – bei jeder Option steht, was dahinter steckt.">
         <Row

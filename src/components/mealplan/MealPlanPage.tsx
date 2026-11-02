@@ -41,6 +41,7 @@ import { PlanMealCard } from './PlanMealCard'
 import { AdjustSheet, MealEditSheet, PlanMenuSheet, RecipeSheet, SavedPlansSheet } from './PlanSheets'
 import { RoutinesCard } from './RoutinesCard'
 import { ShoppingListView } from './ShoppingListView'
+import { ExtraShoppingCard } from './ExtraShoppingCard'
 import {
   checkKeys,
   dayTotals,
@@ -656,7 +657,8 @@ export function MealPlanPage() {
           </div>
         )
       ) : plan ? (
-        <div key="shopping">
+        <div key="shopping" className="space-y-3">
+          <ExtraShoppingCard style={stagger(0)} />
           <ShoppingListView
             shopping={plan.shopping}
             checked={checked}
@@ -669,33 +671,36 @@ export function MealPlanPage() {
           />
         </div>
       ) : (
-        <section
-          key="shopping-empty"
-          className="card flex flex-col items-center gap-3 py-8 text-center"
-          style={stagger(2)}
-        >
-          <div className="grid h-14 w-14 place-items-center rounded-full bg-sand text-brand">
-            <ShoppingBasket size={26} />
-          </div>
-          <div>
-            <h2 className="font-semibold">Noch keine Einkaufsliste</h2>
-            <p className="mt-1 text-sm text-cocoa-light">
-              Erstell einen Plan — die Einkaufsliste dazu entsteht automatisch.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-2">
-            <button className="btn-primary gap-1.5" onClick={() => setTab('plan')}>
-              <Sparkles size={16} />
-              Plan erstellen
-            </button>
-            {savedCount > 0 && (
-              <button className="btn-ghost gap-1.5" onClick={() => setSavedOpen(true)}>
-                <FolderOpen size={16} />
-                Plan laden
+        <div key="shopping-empty" className="space-y-3">
+          <ExtraShoppingCard style={stagger(1)} />
+          <section
+            key="shopping-empty"
+            className="card flex flex-col items-center gap-3 py-8 text-center"
+            style={stagger(2)}
+          >
+            <div className="grid h-14 w-14 place-items-center rounded-full bg-sand text-brand">
+              <ShoppingBasket size={26} />
+            </div>
+            <div>
+              <h2 className="font-semibold">Noch keine Einkaufsliste</h2>
+              <p className="mt-1 text-sm text-cocoa-light">
+                Erstell einen Plan — die Einkaufsliste dazu entsteht automatisch.
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button className="btn-primary gap-1.5" onClick={() => setTab('plan')}>
+                <Sparkles size={16} />
+                Plan erstellen
               </button>
-            )}
-          </div>
-        </section>
+              {savedCount > 0 && (
+                <button className="btn-ghost gap-1.5" onClick={() => setSavedOpen(true)}>
+                  <FolderOpen size={16} />
+                  Plan laden
+                </button>
+              )}
+            </div>
+          </section>
+        </div>
       )}
 
       {/* ---- Sheets ---- */}

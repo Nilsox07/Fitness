@@ -26,6 +26,10 @@ import {
   Sparkles,
   Watch,
   FlaskConical,
+  MessageSquareWarning,
+  ShieldCheck,
+  ShieldOff,
+  Trash2,
 } from 'lucide-react'
 import { signOut } from '../lib/userData'
 import { useAuth } from '../lib/auth'
@@ -56,6 +60,8 @@ import { openSearch } from '../components/search/SearchSheet'
 import { openBuddySheet } from '../components/buddy/BuddySheet'
 import { usePremium } from '../hooks/usePremium'
 import { openPlusSheet } from '../lib/premium'
+import { FeedbackSheet } from '../components/profile/FeedbackSheet'
+import { DeleteAccountSheet } from '../components/privacy/DeleteAccountSheet'
 
 /**
  * Unterseiten des Profils, per ?s=… in der URL → Zurück-Geste funktioniert.
@@ -97,6 +103,8 @@ export default function Profile() {
   const { user } = useAuth()
   const { data: myProfile } = useMyProfile()
   const [nameOpen, setNameOpen] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [deleteMode, setDeleteMode] = useState<'delete' | 'revoke' | null>(null)
   const { mode, setMode } = useTheme()
   const { showNutrition, hasWatch } = usePrefs()
   const { data: ai } = useAiStatus()
@@ -379,8 +387,29 @@ export default function Profile() {
           trailing={<Toggle label="Kostenlose Version testen" checked={testFree} onChange={setTestFree} />}
         />
         <Row icon={LogOut} label="Abmelden" danger onClick={() => void signOut()} />
+        <Row icon={Trash2} label="Konto & Daten löschen" danger onClick={() => setDeleteMode('delete')} />
+      </Group>
+
+      <Group title="Hilfe & Datenschutz">
+        <Row
+          icon={MessageSquareWarning}
+          tint="neutral"
+          label="Feedback & Problem melden"
+          hint="Idee, Wunsch oder Fehler"
+          onClick={() => setFeedbackOpen(true)}
+        />
+        <Row icon={ShieldCheck} tint="neutral" label="Datenschutzerklärung" onClick={() => navigate('/datenschutz')} />
+        <Row
+          icon={ShieldOff}
+          tint="neutral"
+          label="Einwilligung widerrufen"
+          hint="Löscht dein Konto mit allen Daten"
+          onClick={() => setDeleteMode('revoke')}
+        />
       </Group>
       {nameOpen && <NameSheet current={myProfile?.display_name ?? ''} onClose={() => setNameOpen(false)} />}
+      {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
+      {deleteMode && <DeleteAccountSheet revoke={deleteMode === 'revoke'} onClose={() => setDeleteMode(null)} />}
     </div>
   )
 }

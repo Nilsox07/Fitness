@@ -14,6 +14,7 @@ export type TipPage =
   | 'vitals'
   | 'social'
   | 'cycle'
+  | 'insights'
 
 export interface TipContext {
   hour: number
@@ -217,6 +218,13 @@ export function pageTip(page: TipPage, c: TipContext): Tip | null {
         key: 'vitals-tip',
         mood: 'happy',
         text: 'Vergleich dich mit dir, nicht mit anderen.',
+      }
+    case 'insights':
+      return {
+        key: 'insights-tip',
+        mood: 'focus',
+        text: 'Je länger du dabei bist, desto genauer werden die Muster.',
+        ask: 'Welche Muster siehst du in meinem Training, Schlaf und meiner Ernährung?',
       }
     case 'cycle':
       return {

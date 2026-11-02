@@ -17,6 +17,7 @@ import {
 } from '../lib/dietStyle'
 import type { FoodEntry, NutritionSettings } from '../types'
 import { isMissingFluidColumn, rememberFluid } from '../lib/fluid'
+import { foodMethod, track } from '../lib/track'
 
 /** Prüft ein geloggtes Lebensmittel und postet bei echten „Cheats" einen
  *  Freunde-Alarm (Feed + Push). Läuft im Hintergrund, Fehler werden ignoriert. */
@@ -211,6 +212,7 @@ export function useAddFoodEntry() {
     },
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ['food_entries'] })
+      track('food_logged', { method: foodMethod(!!s?.barcode) })
       void maybePostCheat(share, s, user!.id, user?.email?.split('@')[0], qc)
     },
   })
@@ -229,6 +231,7 @@ export function useAddFoodEntries() {
     },
     onSuccess: (rows) => {
       qc.invalidateQueries({ queryKey: ['food_entries'] })
+      if (rows.length) track('food_logged', { method: foodMethod(rows.some((r) => r.barcode)), items: rows.length })
       for (const r of rows) void maybePostCheat(share, r, user!.id, user?.email?.split('@')[0], qc)
     },
   })

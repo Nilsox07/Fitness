@@ -125,6 +125,8 @@ export interface BodyWeight {
   user_id: string
   date: string
   weight_kg: number
+  /** 'health' = von der Waage über Health Connect übernommen (Migration 0043), sonst selbst eingetragen */
+  source?: string | null
   created_at: string
 }
 
@@ -320,4 +322,12 @@ export interface HealthDaily {
   bp_dia?: number | null
   glucose_mmol?: number | null
   body_temp_c?: number | null
+  /** Migration 0043: aus anderen Apps über Health Connect */
+  hydration_ml?: number | null
+  nutrition_kcal?: number | null
+  nutrition_protein_g?: number | null
+  mindful_min?: number | null
+  /** Krafttraining, das andere Apps/Uhren aufgezeichnet haben (zählt nicht doppelt) */
+  strength_sessions?: number | null
+  strength_min?: number | null
 }
