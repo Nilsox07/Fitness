@@ -30,6 +30,8 @@ Ausführliche Übergabe und Plan: [`docs/UEBERGABE.md`](docs/UEBERGABE.md).
 - **SQL-Migrationen führt der Nutzer selbst** im Supabase-SQL-Editor aus: SQL im Chat in Teilen
   liefern, mit dem Hinweis, den Editor vorher zu leeren. Neue Migrationen fortlaufend nummerieren
   (`supabase/migrations/00NN_name.sql`).
+- **Neue Tabellen brauchen GRANTs** (Supabase vergibt seit 30.10.2026 keine automatischen Rechte mehr): in derselben
+  Migration `grant … to authenticated` und `to service_role` (kein `anon`), Zugriff weiter über RLS. Vorlage: `0044_grants.sql`.
 - Reine Logik in `src/lib/*.ts` bzw. `api/_*.js` halten und mit Vitest testen.
 
 ## Architektur in Kürze

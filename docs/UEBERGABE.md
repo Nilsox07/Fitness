@@ -29,7 +29,8 @@ Die festen Regeln stehen in [`CLAUDE.md`](../CLAUDE.md).
 leer – Fehler gibt es keine.
 Ebenfalls noch offen: `0039_cycle.sql` (Zyklus), `0040_feedback_events.sql` (Feedback + anonyme Statistik, enthält
 Auswerte-SQL als Kommentar), `0041_measurements.sql` (Körpermaße), `0042_meals_stock.sql` (gespeicherte Mahlzeiten,
-Supplement-Vorrat), `0043_health_more.sql` (mehr Health-Connect-Felder). Ohne sie bleiben die neuen Teile leer bzw.
+Supplement-Vorrat), `0043_health_more.sql` (mehr Health-Connect-Felder). Danach immer `0044_grants.sql` (Data-API-Rechte für
+neue Tabellen, seit 30.10.2026 nötig). Ohne sie bleiben die neuen Teile leer bzw.
 ausgeblendet.
 
 ### Umgebungsvariablen (Vercel, nie ins Git)
