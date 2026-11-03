@@ -116,6 +116,10 @@ einer App, aber nur das sichtbar, was man nutzt.
   liest zusätzlich Wasser, Ernährung, Achtsamkeit und Krafteinheiten anderer Apps; Waagen-Gewichte nur an Tagen
   ohne eigenen Eintrag (`source: 'health'`), Wasser nur nach oben angeglichen. Play Console: Health-Apps-Erklärung
   um `READ_HYDRATION`, `READ_NUTRITION`, `READ_MINDFULNESS` ergänzen.
+- **Satz-Schema** (`src/lib/setScheme.ts`, `prefs.setScheme`): bekannte Übungen starten mit der Struktur vom
+  letzten Mal (Anzahl Arbeitssätze, Drop, Aufwärmen), neue nach eigenem Schema (Standard 3 Sätze, Aufwärmen
+  automatisch = erste Übung je Muskel, kein Drop). Einstellbar unter Profil → Einstellungen. Die KI prüft den
+  Aufwärmsatz nur bei „Auto“ und wenn bei der Übung sonst aufgewärmt wird.
 - **Zuletzt gegessen** (`src/lib/recentFoods.ts`, `RecentFoods.tsx`): passend zur Mahlzeit gerankt (Häufigkeit,
   Aktualität, heute schon Gegessenes ganz oben), „+“ trägt sofort mit derselben Menge ein (Menü bleibt offen, mehrere
   nacheinander), Zeile antippen = Menge anpassen. Im Hinzufügen-Menü oben, in der Suche und optional auf der

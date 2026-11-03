@@ -29,6 +29,8 @@ import {
 } from '../lib/analytics'
 import { trainingDay } from '../lib/day'
 import { workoutShare, type ShareContent } from '../lib/shareCard'
+import { lastSessionTypes, planSetTypes } from '../lib/setScheme'
+import { useUserPrefs } from '../hooks/usePrefsSync'
 import { ShareSheet } from '../components/share/ShareSheet'
 import { alternativeExercise, hypeLine, warmupAdvice } from '../lib/ai'
 import { useAiGate } from '../hooks/usePremium'
@@ -99,10 +101,8 @@ const tipStyles: Record<string, string> = {
   start: 'text-cocoa-light',
 }
 
-// Deine Standard-Struktur. Der Aufwärmsatz wird nur vorangestellt, wenn er
-// gebraucht wird (siehe needsWarmup) — sonst geht's direkt mit den Arbeitssätzen los.
-const TEMPLATE: SetType[] = ['warmup', 'working', 'working', 'drop']
-const TEMPLATE_NO_WARMUP: SetType[] = ['working', 'working', 'drop']
+// Welche Sätze angelegt werden, entscheidet planSetTypes (src/lib/setScheme.ts):
+// bekannte Übung wie beim letzten Mal, neue nach dem eigenen Schema aus den Einstellungen.
 
 /**
  * Aufwärmsatz nötig? Spezifisches Warm-up gilt pro Muskelgruppe: die erste Übung
@@ -147,10 +147,8 @@ function snapWeight(ex: Exercise, w: number): number {
   return ladder.length ? snapToLadder(w, ladder) : w
 }
 
-/** Baut die Standard-Sätze für eine Übung (Wdh leer, Gewicht vorbefüllt).
- *  Mit Aufwärmsatz nur, wenn withWarmup=true (default). */
-function templateInputs(workoutId: string, ex: Exercise, base: number, startNo: number, withWarmup = true) {
-  const template = withWarmup ? TEMPLATE : TEMPLATE_NO_WARMUP
+/** Baut die Sätze für eine Übung (Wdh leer, Gewicht vorbefüllt). */
+function templateInputs(workoutId: string, ex: Exercise, base: number, startNo: number, template: SetType[]) {
   return template.map((type, i) => {
     const d = deriveSet(type, base)
     const weight = snapWeight(ex, d.weight)
@@ -223,6 +221,7 @@ export default function Workout() {
   const { data: workouts } = useWorkouts()
   const { data: exercises } = useExercises()
   const { data: allSets } = useAllSets()
+  const { prefs: userPrefs } = useUserPrefs()
   const { data: plans } = usePlans()
   const createWorkout = useCreateWorkout()
   const addSet = useAddSet()
@@ -511,6 +510,30 @@ export default function Workout() {
     return out
   }, [workoutSets, allSets, exercises, today])
 
+  /** Satz-Typen für eine Übung: wie beim letzten Mal bzw. eigenes Schema (Aufwärmen nur bei kaltem Muskel). */
+  function typesFor(ex: Exercise): SetType[] {
+    const hist = (allSets ?? []).filter((s) => s.exercise_id === ex.id && s.date !== today)
+    const warmed = warmedMuscleGroups(
+      (workoutSets ?? []).filter((s) => s.exercise_id !== ex.id),
+      exercises ?? [],
+    )
+    return planSetTypes({
+      scheme: userPrefs.setScheme,
+      last: lastSessionTypes(hist),
+      muscleWarm: !needsWarmup(ex, warmed),
+    })
+  }
+  // Darf die KI über den Aufwärmsatz entscheiden? Nur bei „automatisch“ und wenn du bei der Übung aufwärmst.
+  const aiWarmupAllowed =
+    !!selectedExercise &&
+    userPrefs.setScheme.warmup === 'auto' &&
+    (() => {
+      const last = lastSessionTypes(
+        (allSets ?? []).filter((s) => s.exercise_id === selectedExercise.id && s.date !== today),
+      )
+      return last.length === 0 || last.includes('warmup')
+    })()
+
   // Bekommt die gewählte Übung einen Aufwärmsatz? (nur wenn ihre Muskelgruppe heute noch kalt ist)
   const willWarmup = selectedExercise
     ? needsWarmup(
@@ -562,7 +585,7 @@ export default function Workout() {
   useEffect(() => {
     const wid = todaysWorkout?.id
     // KI-Aufwärm-Check nur mit Buddy Plus – sonst bleibt die Standardregel.
-    if (!gate.canUse || !selectedExercise || !wid || !exNotStarted) return
+    if (!gate.canUse || !selectedExercise || !wid || !exNotStarted || !aiWarmupAllowed) return
     const checked = readWarmupChecked(wid)
     if (checked.has(selectedExercise.id)) return
     checked.add(selectedExercise.id)
@@ -607,8 +630,7 @@ export default function Workout() {
     const existing = (workoutSets ?? []).filter((s) => s.exercise_id === id)
     if (existing.length > 0) return
     const hist = (allSets ?? []).filter((s) => s.exercise_id === id && s.date !== today)
-    const warmed = warmedMuscleGroups(workoutSets ?? [], exercises)
-    addSets.mutate(templateInputs(todaysWorkout.id, ex, baseFor(ex, hist), 1, needsWarmup(ex, warmed)))
+    addSets.mutate(templateInputs(todaysWorkout.id, ex, baseFor(ex, hist), 1, typesFor(ex)))
   }
 
   function addTemplate() {
@@ -616,18 +638,8 @@ export default function Workout() {
       if (!todaysWorkout || !selectedExercise) return
       // Schon Sätze da (z. B. Doppel-Tipp, optimistisch eingetragen)? Dann nichts tun.
       if ((latestSets.current ?? []).some((s) => s.exercise_id === selectedExercise.id)) return
-      const warmed = warmedMuscleGroups(
-        (workoutSets ?? []).filter((s) => s.exercise_id !== selectedExercise.id),
-        exercises ?? [],
-      )
       addSets.mutate(
-        templateInputs(
-          todaysWorkout.id,
-          selectedExercise,
-          workingBase,
-          nextSetNumber,
-          needsWarmup(selectedExercise, warmed),
-        ),
+        templateInputs(todaysWorkout.id, selectedExercise, workingBase, nextSetNumber, typesFor(selectedExercise)),
       )
     })
   }
@@ -646,7 +658,7 @@ export default function Workout() {
       let weight: number
       let weightRight: number | null
       if (setsForExercise.length === 0) {
-        type = (willWarmup ? TEMPLATE : TEMPLATE_NO_WARMUP)[0]
+        type = typesFor(selectedExercise)[0]
         weight = snapWeight(selectedExercise, deriveSet(type, workingBase).weight)
         weightRight = uni ? weight : null
       } else {

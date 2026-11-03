@@ -10,6 +10,7 @@ import { DAY_CUTOFF_H } from '../../lib/day'
 import { fmtLiters } from '../../lib/nutritionHome'
 import { MEALS, MEAL_LABEL } from '../../types'
 import { Toggle } from './ui'
+import type { SetScheme, WarmupMode } from '../../lib/setScheme'
 
 const REST_DEFAULT = 120
 
@@ -41,6 +42,7 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
   const [cutoff, setCutoff] = useState(prefs.dayCutoff)
   const [showSugar, setShowSugar] = useState(prefs.showSugar)
   const [showSalt, setShowSalt] = useState(prefs.showSalt)
+  const [scheme, setScheme] = useState<SetScheme>(prefs.setScheme)
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -56,7 +58,10 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
     rules.beforeDrop !== savedRules.beforeDrop ||
     cutoff !== prefs.dayCutoff ||
     showSugar !== prefs.showSugar ||
-    showSalt !== prefs.showSalt
+    showSalt !== prefs.showSalt ||
+    scheme.working !== prefs.setScheme.working ||
+    scheme.warmup !== prefs.setScheme.warmup ||
+    scheme.drop !== prefs.setScheme.drop
 
   const change =
     <T,>(set: (v: T) => void) =>
@@ -77,6 +82,7 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
         dayCutoff: cutoff,
         showSugar,
         showSalt,
+        setScheme: scheme,
         // Wochenziel nur übernehmen, wenn geändert (sonst bleibt „kein Rhythmus“ bestehen)
         ...(flexible && perWeek !== weeklyGoal(prefs.schedule)
           ? { schedule: { type: 'flexible' as const, perWeek } }
@@ -191,6 +197,60 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
               label="Tageswechsel"
               format={(v) => `${String(v).padStart(2, '0')}:00`}
               onChange={change(setCutoff)}
+            />
+          }
+        />
+      </Section>
+
+      <Section title="Sätze bei neuen Übungen">
+        <Line
+          label="Arbeitssätze"
+          hint="Bekannte Übungen starten wie beim letzten Mal"
+          trailing={
+            <Counter
+              value={scheme.working}
+              min={1}
+              max={8}
+              label="Arbeitssätze"
+              format={(v) => `${v}`}
+              onChange={change((v: number) => setScheme((x) => ({ ...x, working: v })))}
+            />
+          }
+        />
+        <Line
+          label="Aufwärmsatz"
+          hint="Auto = nur die erste Übung je Muskel"
+          trailing={
+            <div className="flex shrink-0 gap-1 rounded-full bg-sand p-1">
+              {(
+                [
+                  ['auto', 'Auto'],
+                  ['always', 'Immer'],
+                  ['never', 'Nie'],
+                ] as [WarmupMode, string][]
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={scheme.warmup === id}
+                  onClick={() => change(setScheme)({ ...scheme, warmup: id })}
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                    scheme.warmup === id ? 'bg-cream text-cocoa shadow-sm' : 'text-cocoa-light'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          }
+        />
+        <Line
+          label="Dropsatz am Ende"
+          trailing={
+            <Toggle
+              checked={scheme.drop}
+              onChange={change((v: boolean) => setScheme((x) => ({ ...x, drop: v })))}
+              label="Dropsatz am Ende"
             />
           }
         />

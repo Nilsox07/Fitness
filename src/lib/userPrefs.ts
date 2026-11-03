@@ -7,6 +7,7 @@ import { DAY_CUTOFF_H } from './day'
 import type { Schedule } from './schedule'
 import { NOTIFY_DEFAULTS, normalizeNotify, type NotifyPrefs } from './notify'
 import { normalizePrestige, type PrestigeState } from './unlocks'
+import { DEFAULT_SET_SCHEME, normalizeSetScheme, type SetScheme } from './setScheme'
 import type { CardioKind, CardioPlan, CardioType, FitGoal } from './onboarding'
 import { normalizeConsent, type Consent } from './consent'
 
@@ -54,6 +55,8 @@ export interface UserPrefs {
   targetWeight: number | null
   /** Seit wann das Zielgewicht gilt (YYYY-MM-DD) – Start für den Fortschrittsbalken */
   targetWeightSince: string | null
+  /** Sätze für neue Übungen (bekannte übernehmen das letzte Mal) */
+  setScheme: SetScheme
 }
 
 export interface Modules {
@@ -89,6 +92,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   showSalt: false,
   targetWeight: null,
   targetWeightSince: null,
+  setScheme: DEFAULT_SET_SCHEME,
 }
 
 /** Zielgewicht: 30–300 kg, auf 0,1 kg gerundet; sonst null. */
@@ -219,5 +223,6 @@ export function normalizePrefs(raw: unknown): UserPrefs {
       typeof r.targetWeightSince === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.targetWeightSince)
         ? r.targetWeightSince
         : null,
+    setScheme: normalizeSetScheme(r.setScheme),
   }
 }

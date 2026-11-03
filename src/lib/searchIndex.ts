@@ -111,6 +111,14 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     keywords: 'teilen instagram story whatsapp status bild sticker durchsichtig posten',
   },
   {
+    id: 'set-scheme',
+    label: 'Sätze pro Übung',
+    sub: 'Arbeitssätze, Aufwärmen, Dropsatz',
+    section: 'Training',
+    to: '/profile?s=settings',
+    keywords: 'sätze satzanzahl aufwärmsatz aufwärmen dropsatz drop schema vorlage standard',
+  },
+  {
     id: 'history',
     label: 'Verlauf',
     sub: 'Alle bisherigen Trainings',
