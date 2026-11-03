@@ -116,6 +116,12 @@ einer App, aber nur das sichtbar, was man nutzt.
   liest zusätzlich Wasser, Ernährung, Achtsamkeit und Krafteinheiten anderer Apps; Waagen-Gewichte nur an Tagen
   ohne eigenen Eintrag (`source: 'health'`), Wasser nur nach oben angeglichen. Play Console: Health-Apps-Erklärung
   um `READ_HYDRATION`, `READ_NUTRITION`, `READ_MINDFULNESS` ergänzen.
+- **Zuletzt gegessen** (`src/lib/recentFoods.ts`, `RecentFoods.tsx`): passend zur Mahlzeit gerankt (Häufigkeit,
+  Aktualität, heute schon Gegessenes ganz oben), „+“ trägt sofort mit derselben Menge ein (Menü bleibt offen, mehrere
+  nacheinander), Zeile antippen = Menge anpassen. Im Hinzufügen-Menü oben, in der Suche und optional auf der
+  Ernährungsseite. Leere Mahlzeiten-Karte zeigt „Wie gestern“ (ganze Mahlzeit vom letzten Mal, max. 7 Tage zurück).
+- **Spracheingabe in der App** über die System-Spracherkennung (`SpeechPlugin.kt`, `MicButton`); im Browser weiter
+  die Web-Spracherkennung.
 - **Teilen-Bilder** nach dem Training (`ShareSheet`, Inhalte `src/lib/shareCard.ts`, Zeichnen `shareRender.ts`):
   „Buddy-Karte“ (durchsichtiger Sticker, Buddy ragt aus der Karte, große Zahl im Hintergrund, goldenes Siegel für
   Serie/Rekord, App-Farbe), „Clean“ (nur weiße Schrift + Buddy-Silhouette, durchsichtig, zum Drüberlegen) und

@@ -17,6 +17,7 @@ class MainActivity : BridgeActivity() {
         registerPlugin(HealthBridgePlugin::class.java)
         registerPlugin(AppWidgetsPlugin::class.java)
         registerPlugin(LiveActivityPlugin::class.java)
+        registerPlugin(SpeechPlugin::class.java)
         shareToDeepLink(intent)
         super.onCreate(savedInstanceState)
         createChannels()

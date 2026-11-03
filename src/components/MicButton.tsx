@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 import { Mic } from 'lucide-react'
+import { registerPlugin } from '@capacitor/core'
+import { isNative } from '../lib/native'
 
 type SR = {
   lang: string
@@ -21,9 +23,13 @@ function getRecognition(): SR | null {
   return Ctor ? new Ctor() : null
 }
 
-const supported = typeof window !== 'undefined' && Boolean(getRecognition())
+// In der Android-App die System-Spracherkennung (Google-Dialog) – die Web-Variante läuft im WebView nicht.
+const NativeSpeech = registerPlugin<{ listen(o?: { prompt?: string }): Promise<{ text: string }> }>('Speech')
+const native = isNative()
 
-/** Spracheingabe verfügbar? (Im Android-WebView meist nicht.) */
+const supported = native || (typeof window !== 'undefined' && Boolean(getRecognition()))
+
+/** Spracheingabe verfügbar? */
 export const speechSupported: boolean = supported
 
 /** Diktier-Button: nimmt deutsche Sprache auf und gibt den Text zurück. */
@@ -40,7 +46,23 @@ export function MicButton({
 
   if (!supported) return null
 
+  async function listenNative() {
+    setListening(true)
+    try {
+      const { text } = await NativeSpeech.listen()
+      if (text?.trim()) onResult(text.trim())
+    } catch {
+      /* abgebrochen oder keine Spracherkennung */
+    } finally {
+      setListening(false)
+    }
+  }
+
   function toggle() {
+    if (native) {
+      if (!listening) void listenNative()
+      return
+    }
     if (listening) {
       ref.current?.stop()
       return

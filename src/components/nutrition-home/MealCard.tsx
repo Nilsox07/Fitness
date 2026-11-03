@@ -1,8 +1,9 @@
 import type { CSSProperties } from 'react'
 import { fluidOf } from '../../lib/fluid'
-import { Bookmark, Coffee, Cookie, Moon, Plus, Sun, type LucideIcon } from 'lucide-react'
+import { Bookmark, Coffee, Cookie, Moon, Plus, RotateCcw, Sun, type LucideIcon } from 'lucide-react'
 import { MEAL_LABEL, type FoodEntry, type Meal } from '../../types'
 import { fmtInt } from '../../lib/nutritionHome'
+import { namesLine, type MealCopy } from '../../lib/recentFoods'
 
 const ICON: Record<Meal, LucideIcon> = {
   breakfast: Coffee,
@@ -19,6 +20,9 @@ export function MealCard({
   onAdd,
   onEdit,
   onSaveMeal,
+  copy,
+  onCopy,
+  copyBusy,
   style,
 }: {
   meal: Meal
@@ -29,6 +33,10 @@ export function MealCard({
   onEdit: (e: FoodEntry) => void
   /** „Als Mahlzeit speichern" (nur mit Einträgen sichtbar) */
   onSaveMeal?: () => void
+  /** „Wie gestern“: dieselbe Mahlzeit vom letzten Tag (nur wenn heute noch leer) */
+  copy?: MealCopy | null
+  onCopy?: () => void
+  copyBusy?: boolean
   style?: CSSProperties
 }) {
   const Icon = ICON[meal]
@@ -70,7 +78,29 @@ export function MealCard({
       </div>
 
       {empty ? (
-        recommended > 0 && <p className="-mt-1 px-4 pb-3 pl-[4.25rem] text-xs text-cocoa-muted">Noch nichts — tippe +</p>
+        copy && onCopy ? (
+          <button
+            type="button"
+            onClick={onCopy}
+            disabled={copyBusy}
+            className="flex w-full items-center gap-3 border-t border-sand-dark/30 px-4 py-2.5 text-left transition-colors active:bg-sand-light disabled:opacity-50"
+          >
+            <RotateCcw size={16} className="shrink-0 text-cocoa-muted" />
+            <span className="min-w-0 flex-1">
+              <span className="tabular block text-sm font-semibold text-cocoa">
+                Wie {copy.label} <span className="font-normal text-cocoa-muted">· {fmtInt(copy.kcal)} kcal</span>
+              </span>
+              <span className="block truncate text-xs text-cocoa-muted">{namesLine(copy.items)}</span>
+            </span>
+            <span className="shrink-0 rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand">
+              Eintragen
+            </span>
+          </button>
+        ) : (
+          recommended > 0 && (
+            <p className="-mt-1 px-4 pb-3 pl-[4.25rem] text-xs text-cocoa-muted">Noch nichts — tippe +</p>
+          )
+        )
       ) : (
         <ul className="divide-y divide-sand-dark/30 border-t border-sand-dark/30">
           {entries.map((e) => (

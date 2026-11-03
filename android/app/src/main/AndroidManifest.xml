@@ -146,6 +146,10 @@
     <!-- Health Connect muss für die Abfrage sichtbar sein -->
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
+        <!-- Spracheingabe (System-Spracherkennung) -->
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
     </queries>
 
     <!-- Permissions -->

@@ -9,7 +9,7 @@ export const HOME_CARDS: Record<
   { id: HomeCard; label: string; hint: string; needsNutrition?: boolean }[]
 > = {
   food: [
-    { id: 'recent', label: 'Zuletzt gegessen', hint: 'Schnell nochmal eintragen (steht auch in der Suche)' },
+    { id: 'recent', label: 'Zuletzt gegessen', hint: 'Passend zur Mahlzeit – ein Tipp trägt ein' },
     {
       id: 'weight',
       label: 'Körpergewicht',

@@ -4,7 +4,6 @@ import {
   Camera,
   ChefHat,
   ClipboardList,
-  History,
   Loader2,
   MessageSquare,
   PenLine,
@@ -90,7 +89,8 @@ import { WeekStrip } from '../components/nutrition-home/WeekStrip'
 import { HeroCard } from '../components/nutrition-home/HeroCard'
 import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
 import { NutrientExtras } from '../components/food/NutrientExtras'
-import { RecentChips } from '../components/nutrition-home/RecentChips'
+import { RecentFoods } from '../components/nutrition-home/RecentFoods'
+import { lastMealCopy, recentFoods, repeatEntry } from '../lib/recentFoods'
 import { MealCard } from '../components/nutrition-home/MealCard'
 import { SaveMealSheet, SavedMealChips } from '../components/nutrition-home/SavedMeals'
 import { entriesFromSaved, type SavedMeal } from '../lib/savedMeals'
@@ -391,34 +391,26 @@ export default function Nutrition() {
   const { data: allSets } = useAllSets()
   const trainedToday = trainedOn(today, allSets)
 
-  // „Zuletzt gegessen": eindeutige letzte Lebensmittel für 1-Tap-Wiederholung
-  const recent = useMemo(() => {
-    const seen = new Map<string, FoodEntry>()
-    for (const e of [...(allEntries ?? [])].reverse()) {
-      const key = e.name.toLowerCase()
-      if (!seen.has(key)) seen.set(key, e)
-      if (seen.size >= 8) break
-    }
-    return [...seen.values()]
-  }, [allEntries])
+  // „Zuletzt gegessen": passend zur Mahlzeit, oft Gegessenes und heute schon Gegessenes zuerst
+  const recentFor = (meal: Meal) => recentFoods(allEntries ?? [], meal, today)
 
-  function quickAdd(e: FoodEntry) {
-    addEntry.mutate(
+  /** Ein Lebensmittel mit derselben Menge nochmal eintragen (Menü bleibt offen). */
+  function quickRepeat(e: FoodEntry, meal: Meal) {
+    setError(null)
+    addEntry.mutate(repeatEntry(e, today, meal), { onError: (err) => setError(saveError(err)) })
+  }
+
+  /** „Wie gestern“: ganze Mahlzeit vom letzten Mal übernehmen. */
+  function copyMeal(meal: Meal) {
+    const copy = lastMealCopy(allEntries ?? [], meal, today)
+    if (!copy || addEntries.isPending) return
+    setError(null)
+    addEntries.mutate(
+      copy.items.map((e) => repeatEntry(e, today, meal)),
       {
-        date: today,
-        name: e.name,
-        amount_g: e.amount_g,
-        kcal: e.kcal,
-        protein: e.protein,
-        carbs: e.carbs,
-        fat: e.fat,
-        ...micro(e),
-        barcode: e.barcode,
-        // wie alle anderen Wege: Mahlzeit nach aktueller Uhrzeit
-        meal: currentMeal(),
-        ...(fluidOf(e) > 0 ? { fluid_ml: fluidOf(e) } : {}),
+        onSuccess: () => flashNote(`${MEAL_LABEL[meal]} wie ${copy.label} eingetragen`),
+        onError: (err) => setError(saveError(err)),
       },
-      { onError: (err) => setError(saveError(err)) },
     )
   }
   /** Suche (neu): „Zuletzt gegessen" antippen → mit Gramm zur Mengen-Bestätigung, sonst direkt loggen. */
@@ -1201,7 +1193,19 @@ export default function Nutrition() {
           />
         )}
 
-        {homeCards.recent && <RecentChips items={recent} onAdd={quickAdd} style={stagger(3)} />}
+        {homeCards.recent && isToday && (
+          <div style={stagger(3)}>
+            <RecentFoods
+              label={`Nochmal zum ${MEAL_LABEL[currentMeal()]}?`}
+              items={recentFor(currentMeal()).slice(0, 3)}
+              onQuick={(e) => quickRepeat(e, currentMeal())}
+              onOpen={(e) => {
+                setMealOverride(currentMeal())
+                pickRecent(e)
+              }}
+            />
+          </div>
+        )}
 
         <div className="space-y-3">
           {MEALS.map((meal, i) => (
@@ -1216,6 +1220,9 @@ export default function Nutrition() {
               }}
               onEdit={setEditEntry}
               onSaveMeal={() => setSaveMealFor(meal)}
+              copy={lastMealCopy(allEntries ?? [], meal, today)}
+              onCopy={() => copyMeal(meal)}
+              copyBusy={addEntries.isPending}
               style={stagger(4 + i)}
             />
           ))}
@@ -1273,6 +1280,11 @@ export default function Nutrition() {
           <>
             <ErrorNote error={error} />
             <SavedMealChips meal={mealOverride} busy={saving} onPick={logSavedMeal} />
+            <RecentFoods
+              items={recentFor(addMeal())}
+              onQuick={(e) => quickRepeat(e, addMeal())}
+              onOpen={pickRecent}
+            />
             {aiOn && (
               <div>
                 <GroupLabel>Mit Buddy (KI)</GroupLabel>
@@ -1428,23 +1440,13 @@ export default function Nutrition() {
               </div>
             )}
 
-            {results.length === 0 && !searching && recent.length > 0 && (
-              <div>
-                <GroupLabel>Zuletzt gegessen</GroupLabel>
-                <GroupList>
-                  {recent.map((e) => (
-                    <GroupRow
-                      key={e.id}
-                      icon={<History size={16} />}
-                      title={e.name}
-                      subtitle={`${e.amount_g ? `${fmtNum(e.amount_g)} g · ` : ''}${fmtNum(e.protein)} g Eiweiß`}
-                      right={<KcalBadge kcal={e.kcal} />}
-                      disabled={saving}
-                      onClick={() => pickRecent(e)}
-                    />
-                  ))}
-                </GroupList>
-              </div>
+            {results.length === 0 && !searching && (
+              <RecentFoods
+                items={recentFor(addMeal())}
+                disabled={saving}
+                onQuick={(e) => quickRepeat(e, addMeal())}
+                onOpen={pickRecent}
+              />
             )}
           </>
         </FlowSheet>

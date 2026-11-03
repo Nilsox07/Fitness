@@ -238,6 +238,15 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     needs: 'nutrition',
   },
   {
+    id: 'recent-foods',
+    label: 'Zuletzt gegessen',
+    sub: 'Nochmal eintragen oder „Wie gestern“',
+    section: 'Ernährung',
+    to: '/nutrition?add=menu',
+    keywords: 'zuletzt verlauf nochmal wiederholen gleiches essen wie gestern kopieren häufig favoriten',
+    needs: 'nutrition',
+  },
+  {
     id: 'saved-meals',
     label: 'Mahlzeit speichern',
     sub: 'Lieblingsessen mit einem Tipp eintragen',
