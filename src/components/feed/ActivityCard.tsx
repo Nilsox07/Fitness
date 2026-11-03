@@ -300,7 +300,7 @@ export function DigestList({
       {digests.map((d, i) => (
         <ActivityCard
           key={d.primary.id}
-          style={{ animation: 'fade-in .3s ease-out both', animationDelay: `${Math.min(i, 8) * 45}ms` }}
+          style={{ animation: 'fade-in .3s ease-out backwards', animationDelay: `${Math.min(i, 8) * 45}ms` }}
           activity={d.primary}
           extras={d.extras}
           author={authorOf(d.primary)}

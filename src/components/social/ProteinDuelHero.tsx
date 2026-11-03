@@ -118,7 +118,7 @@ export function ProteinDuelHero({
                               ? 'bg-bg/20 dark:bg-cocoa/20'
                               : 'bg-bg/[0.07] dark:bg-cocoa/[0.08]'
                         }`}
-                        style={i < r.days ? { animation: 'check-pop .28s ease-out both', animationDelay: `${i * 50}ms` } : undefined}
+                        style={i < r.days ? { animation: 'check-pop .28s ease-out backwards', animationDelay: `${i * 50}ms` } : undefined}
                       />
                     ))}
                   </div>

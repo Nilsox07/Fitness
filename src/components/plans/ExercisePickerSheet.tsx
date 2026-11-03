@@ -168,7 +168,7 @@ export function ExercisePickerSheet({
                     <span
                       key="on"
                       className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-success text-white"
-                      style={{ animation: 'check-pop .28s ease-out both' }}
+                      style={{ animation: 'check-pop .28s ease-out backwards' }}
                       aria-label="im Plan"
                     >
                       <Check size={15} strokeWidth={3} />

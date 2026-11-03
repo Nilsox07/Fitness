@@ -4,7 +4,7 @@ import { cleanReviewText, type ReviewStats, type StoredReview } from '../../lib/
 
 /** Von unten einschweben, gestaffelt. */
 function rise(i: number): CSSProperties {
-  return { animation: 'review-rise .45s cubic-bezier(.2,.8,.2,1) both', animationDelay: `${120 + i * 80}ms` }
+  return { animation: 'review-rise .45s cubic-bezier(.2,.8,.2,1) backwards', animationDelay: `${120 + i * 80}ms` }
 }
 
 const fmt = (n: number) => n.toLocaleString('de-DE')

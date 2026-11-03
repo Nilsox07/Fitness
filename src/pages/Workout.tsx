@@ -990,7 +990,7 @@ export default function Workout() {
   const minutes = Math.round((Date.now() - startMs) / 60000)
 
   return (
-    <div className="space-y-3 pb-20">
+    <div className="space-y-3 pb-20 pt-[env(safe-area-inset-top)]">
       <Confetti show={confetti} onDone={() => setConfetti(false)} />
       {/* Rekord als schwebender Hinweis oben — verschiebt den Inhalt nicht */}
       {prName && confetti && (

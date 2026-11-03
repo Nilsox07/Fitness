@@ -10,7 +10,7 @@ export type FeedFilter = 'all' | FeedWorld
 
 /** Sanftes, gestaffeltes Einblenden (Keyframes `fade-in` aus index.css). */
 export function enter(index: number, step = 60): CSSProperties {
-  return { animation: 'fade-in .3s ease-out both', animationDelay: `${index * step}ms` }
+  return { animation: 'fade-in .3s ease-out backwards', animationDelay: `${index * step}ms` }
 }
 
 const FOOD_RE = /cheat|recipe|rezept|food|meal|nutrition|ernähr|ernaehr|protein|eiwei|water|wasser|fast/

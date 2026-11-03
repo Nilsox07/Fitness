@@ -47,7 +47,7 @@ export function WhatsNew() {
       }
     >
       {release.groups.map((g, gi) => (
-        <section key={g.title} style={{ animation: 'fade-in .3s ease-out both', animationDelay: `${100 + gi * 60}ms` }}>
+        <section key={g.title} style={{ animation: 'fade-in .3s ease-out backwards', animationDelay: `${100 + gi * 60}ms` }}>
           <h3 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">{g.title}</h3>
           <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
             {g.items.map((it, i) => (

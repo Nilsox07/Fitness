@@ -92,7 +92,7 @@ export function MonthHeatmap({
               <button
                 key={d}
                 className={`${base} ${FILL[intensityLevel(vol, max)]} transition active:scale-90`}
-                style={{ animation: 'fade-in .3s ease-out both', animationDelay: `${i * 12}ms` }}
+                style={{ animation: 'fade-in .3s ease-out backwards', animationDelay: `${i * 12}ms` }}
                 onClick={() => onPick(d)}
                 aria-label={`${day}. ${MONTHS_LONG[m - 1]}: ${formatVolume(vol)} — Training öffnen`}
               >

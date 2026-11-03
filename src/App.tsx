@@ -130,6 +130,8 @@ export default function App() {
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col">
+      {/* Statusleiste/Kamera-Bereich abdecken: gescrollter Inhalt läuft nicht unter die Uhrzeit */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-30 h-[env(safe-area-inset-top)] bg-bg" />
       <AiActivityBar />
       <SaveStatus />
       <TopBar />

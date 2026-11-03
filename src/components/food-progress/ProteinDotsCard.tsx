@@ -64,7 +64,7 @@ export function ProteinDotsCard({
                         ? 'bg-sand-dark/70'
                         : 'border border-dashed border-sand-dark'
                   } ${isToday ? 'ring-2 ring-brand/40 ring-offset-1 ring-offset-cream' : ''}`}
-                  style={{ animation: 'fade-in .3s ease-out both', animationDelay: `${i * 25}ms` }}
+                  style={{ animation: 'fade-in .3s ease-out backwards', animationDelay: `${i * 25}ms` }}
                 >
                   {d.state === 'hit' && <Check size={11} strokeWidth={3} />}
                 </span>

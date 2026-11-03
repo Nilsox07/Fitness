@@ -45,7 +45,7 @@ export function FriendsRow({
             className="flex w-[76px] shrink-0 flex-col items-center gap-1.5 text-center transition active:scale-95"
             onClick={() => onOpen(u)}
             aria-label={isMe ? 'Du' : shortName(u.display_name)}
-            style={{ animation: 'fade-in .3s ease-out both', animationDelay: `${i * 40}ms` }}
+            style={{ animation: 'fade-in .3s ease-out backwards', animationDelay: `${i * 40}ms` }}
           >
             <span className="relative">
               <RingAvatar

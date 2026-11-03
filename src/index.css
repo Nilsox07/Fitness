@@ -184,7 +184,9 @@ body {
   }
 }
 .anim-page {
-  animation: page-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* backwards statt both: nach der Animation bleibt kein transform stehen – sonst hängen
+     position:fixed-Elemente (Pausen-Leiste, Hinweise) an der Seite statt am Bildschirm */
+  animation: page-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
 /* Karten & Kacheln: weiches Drück-Feedback */
 .card {

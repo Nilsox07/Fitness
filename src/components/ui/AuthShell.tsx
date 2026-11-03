@@ -28,12 +28,12 @@ export function AuthShell({
       <div className="pointer-events-none absolute -right-24 bottom-0 h-56 w-56 rounded-full bg-brand/10 blur-3xl" />
 
       <div className="relative mx-auto flex min-h-full max-w-md flex-col justify-center px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(2rem+env(safe-area-inset-top))]">
-        <div className="mb-7 flex flex-col items-center text-center" style={{ animation: 'fade-in .35s ease-out both' }}>
+        <div className="mb-7 flex flex-col items-center text-center" style={{ animation: 'fade-in .35s ease-out backwards' }}>
           <Buddy size={120} mood={mood} stage={2} title="Buddy" />
           <h1 className="mt-3 max-w-[18rem] text-2xl font-bold leading-tight tracking-tight text-cocoa">{title}</h1>
           {subtitle && <p className="mt-1.5 max-w-[20rem] text-sm text-cocoa-light">{subtitle}</p>}
         </div>
-        <div style={{ animation: 'fade-in .35s ease-out both', animationDelay: '80ms' }}>{children}</div>
+        <div style={{ animation: 'fade-in .35s ease-out backwards', animationDelay: '80ms' }}>{children}</div>
       </div>
     </div>
   )

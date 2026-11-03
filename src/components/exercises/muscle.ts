@@ -90,7 +90,7 @@ export const CATEGORY_LABEL: Record<MovementCategory, string> = {
 
 /** Gestaffeltes Einblenden (Keyframes `fade-in` aus index.css). */
 export function enter(index: number, step = 50): CSSProperties {
-  return { animation: 'fade-in .3s ease-out both', animationDelay: `${Math.min(index, 12) * step}ms` }
+  return { animation: 'fade-in .3s ease-out backwards', animationDelay: `${Math.min(index, 12) * step}ms` }
 }
 
 /** „heute", „gestern", „vor 3 T.", „vor 2 Wo." — kurz für Meta-Zeilen. */
