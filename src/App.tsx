@@ -141,7 +141,7 @@ export default function App() {
       <NativeNav />
       <main
         ref={mainRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-[calc(10rem+env(safe-area-inset-bottom))] pt-4"
       >
         <div key={pathname} className="anim-page">
           <Routes>

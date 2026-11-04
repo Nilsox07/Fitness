@@ -109,5 +109,6 @@ export function repeatEntry(e: FoodEntry, date: string, meal: Meal) {
     salt: e.salt ?? 0,
     barcode: e.barcode,
     ...(e.fluid_ml ? { fluid_ml: e.fluid_ml } : {}),
+    ...(e.micros ? { micros: e.micros } : {}),
   }
 }

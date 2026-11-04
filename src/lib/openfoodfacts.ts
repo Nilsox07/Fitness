@@ -1,6 +1,7 @@
 // Kostenlose, offene Lebensmittel-Datenbank (kein API-Key, keine KI).
 // https://world.openfoodfacts.org
 
+import { normalizeMicros, type MicroKey, type Micros } from './micros'
 import { hintFoodMethod } from './track'
 
 export interface FoodProduct {
@@ -19,7 +20,32 @@ export interface FoodProduct {
     sugar: number
     sat_fat: number
     salt: number
+    /** Vitamine & Mineralstoffe pro 100 g, falls auf der Packung angegeben */
+    micros?: Micros
   }
+}
+
+// OFF liefert Vitamine/Mineralstoffe in Gramm pro 100 g → in mg bzw. µg umrechnen.
+const OFF_MICROS: [MicroKey, string, number][] = [
+  ['vit_c', 'vitamin-c_100g', 1000],
+  ['vit_d', 'vitamin-d_100g', 1e6],
+  ['vit_b12', 'vitamin-b12_100g', 1e6],
+  ['folate', 'vitamin-b9_100g', 1e6],
+  ['iron', 'iron_100g', 1000],
+  ['calcium', 'calcium_100g', 1000],
+  ['magnesium', 'magnesium_100g', 1000],
+  ['zinc', 'zinc_100g', 1000],
+  ['potassium', 'potassium_100g', 1000],
+]
+
+/** Vitamine aus den OFF-Nährwerten (pro 100 g); null wenn keine angegeben. */
+export function offMicros(n: Record<string, unknown>): Micros | null {
+  const raw: Record<string, number> = {}
+  for (const [k, field, f] of OFF_MICROS) {
+    const v = Number(n[field])
+    if (Number.isFinite(v) && v > 0) raw[k] = v * f
+  }
+  return normalizeMicros(raw)
 }
 
 interface OffNutriments {
@@ -67,6 +93,10 @@ function normalize(p: OffProduct): FoodProduct {
       sugar: Math.round((n.sugars_100g ?? 0) * 10) / 10,
       sat_fat: Math.round((n['saturated-fat_100g'] ?? 0) * 10) / 10,
       salt: Math.round((n.salt_100g ?? 0) * 100) / 100,
+      ...(() => {
+        const m = offMicros(n as Record<string, unknown>)
+        return m ? { micros: m } : {}
+      })(),
     },
   }
 }

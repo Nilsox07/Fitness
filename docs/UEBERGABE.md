@@ -29,7 +29,7 @@ Die festen Regeln stehen in [`CLAUDE.md`](../CLAUDE.md).
 leer – Fehler gibt es keine.
 Ebenfalls noch offen: `0039_cycle.sql` (Zyklus), `0040_feedback_events.sql` (Feedback + anonyme Statistik, enthält
 Auswerte-SQL als Kommentar), `0041_measurements.sql` (Körpermaße), `0042_meals_stock.sql` (gespeicherte Mahlzeiten,
-Supplement-Vorrat), `0043_health_more.sql` (mehr Health-Connect-Felder). Danach immer `0044_grants.sql` (Data-API-Rechte für
+Supplement-Vorrat), `0043_health_more.sql` (mehr Health-Connect-Felder). Dazu `0045_food_micros.sql` (Vitamine je Eintrag). Danach immer `0044_grants.sql` (Data-API-Rechte für
 neue Tabellen, seit 30.10.2026 nötig). Ohne sie bleiben die neuen Teile leer bzw.
 ausgeblendet.
 
@@ -126,6 +126,10 @@ einer App, aber nur das sichtbar, was man nutzt.
   letzten Mal (Anzahl Arbeitssätze, Drop, Aufwärmen), neue nach eigenem Schema (Standard 3 Sätze, Aufwärmen
   automatisch = erste Übung je Muskel, kein Drop). Einstellbar unter Profil → Einstellungen. Die KI prüft den
   Aufwärmsatz nur bei „Auto“ und wenn bei der Übung sonst aufgewärmt wird.
+- **Vitamine & Mineralstoffe** (`src/lib/micros.ts`, Karte `MicroCard`): KI schätzt je Lebensmittel Vitamin C, D,
+  B12, Folat, Eisen, Calcium, Magnesium, Zink, Kalium (`food_entries.micros` jsonb, Migration 0045); Barcode-Produkte
+  nehmen OFF-Angaben. Tagessumme gegen DGE-Referenz (Frauen eigene Werte), Hinweis „Noch wenig: …“ (ohne Vitamin D).
+  Fehlt die Spalte, wird ohne Vitamine gespeichert.
 - **Zuletzt gegessen** (`src/lib/recentFoods.ts`, `RecentFoods.tsx`): passend zur Mahlzeit gerankt (Häufigkeit,
   Aktualität, heute schon Gegessenes ganz oben), „+“ trägt sofort mit derselben Menge ein (Menü bleibt offen, mehrere
   nacheinander), Zeile antippen = Menge anpassen. Im Hinzufügen-Menü oben, in der Suche und optional auf der

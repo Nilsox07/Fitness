@@ -91,6 +91,8 @@ import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
 import { NutrientExtras } from '../components/food/NutrientExtras'
 import { RecentFoods } from '../components/nutrition-home/RecentFoods'
 import { lastMealCopy, recentFoods, repeatEntry } from '../lib/recentFoods'
+import { scaleMicros } from '../lib/micros'
+import { MicroCard } from '../components/nutrition-home/MicroCard'
 import { MealCard } from '../components/nutrition-home/MealCard'
 import { SaveMealSheet, SavedMealChips } from '../components/nutrition-home/SavedMeals'
 import { entriesFromSaved, type SavedMeal } from '../lib/savedMeals'
@@ -433,6 +435,7 @@ export default function Nutrition() {
           sugar: r1(e.sugar),
           sat_fat: r1(e.sat_fat),
           salt: Math.round((e.salt ?? 0) * k * 100) / 100,
+          ...(e.micros ? { micros: scaleMicros(e.micros, k) ?? undefined } : {}),
         },
       })
       setAmount(Math.round(g))
@@ -937,6 +940,7 @@ export default function Nutrition() {
     barcode: null,
     meal: addMeal(),
     ...(it.fluid_ml ? { fluid_ml: it.fluid_ml } : {}),
+    ...(it.micros ? { micros: it.micros } : {}),
   })
 
   /** Alle Schätzungen in einem Insert übernehmen. */
@@ -1017,6 +1021,7 @@ export default function Nutrition() {
         barcode: pending.barcode,
         meal: addMeal(),
         ...(pending.isDrink && amount > 0 ? { fluid_ml: Math.round(amount) } : {}),
+        ...(pending.per100.micros ? { micros: scaleMicros(pending.per100.micros, amount / 100) } : {}),
       })
       setPending(null)
       setAddMode(null)
@@ -1229,6 +1234,7 @@ export default function Nutrition() {
         </div>
 
         <WaterRow date={today} style={stagger(8)} />
+        <MicroCard entries={entries ?? []} sex={settings?.sex ?? null} style={stagger(9)} />
         {(homeCards.supplements || (supplements?.length ?? 0) > 0) && <SupplementCard date={today} />}
         {isToday && (homeCards.weight || params.has('weigh')) && <BodyWeightCard />}
         {isToday && <CustomizeHome area="food" />}
@@ -1280,11 +1286,7 @@ export default function Nutrition() {
           <>
             <ErrorNote error={error} />
             <SavedMealChips meal={mealOverride} busy={saving} onPick={logSavedMeal} />
-            <RecentFoods
-              items={recentFor(addMeal())}
-              onQuick={(e) => quickRepeat(e, addMeal())}
-              onOpen={pickRecent}
-            />
+            <RecentFoods items={recentFor(addMeal())} onQuick={(e) => quickRepeat(e, addMeal())} onOpen={pickRecent} />
             {aiOn && (
               <div>
                 <GroupLabel>Mit Buddy (KI)</GroupLabel>

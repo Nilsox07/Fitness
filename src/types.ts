@@ -1,3 +1,4 @@
+import type { Micros } from './lib/micros'
 export const MUSCLE_GROUPS = [
   'Brust',
   'Rücken',
@@ -200,6 +201,8 @@ export interface FoodEntry {
   meal: Meal | null
   /** Getränk: Flüssigkeit in ml (zählt zur Trinkmenge), sonst null */
   fluid_ml?: number | null
+  /** geschätzte Vitamine & Mineralstoffe (Migration 0045), sonst null */
+  micros?: Micros | null
   created_at: string
 }
 

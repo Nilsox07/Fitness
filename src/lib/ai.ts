@@ -2,6 +2,7 @@
 // Serverless-Funktion /api/ai (dort liegt der Key). Die Prompts sind nicht
 // geheim und leben deshalb hier — pro Feature ein typisierter Helfer.
 
+import { MICRO_PROMPT, normalizeMicros, type Micros } from './micros'
 import { cleanReviewText, type ReviewData } from './weeklyReview'
 import { supabase } from './supabase'
 import { MUSCLE_GROUPS, type MuscleGroup, type Meal, type PlanDay, type ShoppingCat, type Sex } from '../types'
@@ -684,6 +685,8 @@ export interface FoodEstimate {
   fluid_ml?: number
   /** Versteckte Kalorien als eigener Posten: Fett beim Zubereiten bzw. Soße/Dressing */
   kind?: 'cooking_fat' | 'sauce'
+  /** Geschätzte Vitamine & Mineralstoffe der Portion */
+  micros?: Micros
 }
 
 const NUTRITION_SYSTEM =
@@ -705,7 +708,10 @@ const NUTRITION_SYSTEM =
 const NUTRITION_FORMAT =
   'Format: {"items":[{"name":"...","amount_g":<Zahl oder null>,"kcal":<Zahl>,' +
   '"protein":<g>,"carbs":<g>,"fat":<g>,"fiber":<g Ballaststoffe>,"sugar":<g Zucker>,' +
-  '"sat_fat":<g gesättigte Fettsäuren>,"salt":<g Salz>,"fluid_ml":<ml>}]}. Zahlen gerundet, realistische ' +
+  '"sat_fat":<g gesättigte Fettsäuren>,"salt":<g Salz>,"fluid_ml":<ml>,' +
+  MICRO_PROMPT +
+  '}]}. micros = Vitamine/Mineralstoffe der Portion nach üblichen Nährwerttabellen (z. B. BLS), ' +
+  'gerundet; 0 wenn praktisch nicht enthalten. Zahlen gerundet, realistische ' +
   'Schätzung. Mehrere Bestandteile = mehrere items. fluid_ml NUR bei Getränken (Wasser, Saft, Softdrink, ' +
   'Kaffee, Tee, Milch, Proteinshake, Smoothie, Bier …) = getrunkene Menge in ml, sonst 0 (auch Suppe = 0). ' +
   '"kind" nur bei Zubereitungsfett ("cooking_fat") bzw. Soße/Dressing ("sauce"), sonst weglassen.'
@@ -756,6 +762,10 @@ function toEstimateList(items: Partial<FoodEstimate>[] | undefined): FoodEstimat
       ...micros(i),
       ...(nn(i.fluid_ml) > 0 ? { fluid_ml: Math.min(3000, Math.round(nn(i.fluid_ml))) } : {}),
       ...(i.kind === 'cooking_fat' || i.kind === 'sauce' ? { kind: i.kind } : {}),
+      ...(() => {
+        const m = normalizeMicros(i.micros)
+        return m ? { micros: m } : {}
+      })(),
     }
   })
 }
@@ -765,7 +775,9 @@ export async function estimateFoodFromText(text: string): Promise<FoodEstimate[]
   trackAi('food_text')
   hintFoodMethod('text')
   const prompt = `Beschreibung: "${text}".\n${NUTRITION_FORMAT}`
-  return toEstimates(await complete({ system: NUTRITION_SYSTEM, prompt, json: true, temperature: 0.2 }))
+  return toEstimates(
+    await complete({ system: NUTRITION_SYSTEM, prompt, json: true, temperature: 0.2, maxTokens: 2000 }),
+  )
 }
 
 /** Mahlzeit-Analyse: Bestandteile + kurzer Titel + Ein-Satz-Einschätzung. */
@@ -877,7 +889,7 @@ export async function analyzeMeal(input: {
     image: input.image,
     json: true,
     temperature: 0.2,
-    maxTokens: 1200,
+    maxTokens: 2400,
   })
   return toMealAnalysis(text)
 }
@@ -943,7 +955,7 @@ export async function menuFromPhoto(
     'Wenn auf dem Bild keine Speisekarte zu erkennen ist: picks leer und note mit dem Grund. ' +
     'Format: {"note":"…","picks":[{"name":"…","why":"…","amount_g":null,"kcal":0,"protein":0,"carbs":0,"fat":0}]}' +
     prefClause()
-  const text = await complete({ system, prompt, images, json: true, temperature: 0.3, maxTokens: 1500 })
+  const text = await complete({ system, prompt, images, json: true, temperature: 0.3, maxTokens: 2400 })
   const raw = parseJson<{ note?: string; picks?: (Partial<FoodEstimate> & { why?: string })[] }>(text)
   return {
     note: String(raw.note ?? ''),

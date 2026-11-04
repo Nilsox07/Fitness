@@ -1,5 +1,6 @@
 // Gespeicherte Mahlzeiten: Einträge einer Mahlzeit als Vorlage sichern und mit einem Tipp wieder eintragen.
 
+import { normalizeMicros, type Micros } from './micros'
 import type { FoodEntry, Meal } from '../types'
 
 /** Ein Posten einer gespeicherten Mahlzeit (Nährwerte wie im Tagebuch, absolut). */
@@ -16,6 +17,7 @@ export interface SavedMealItem {
   salt: number
   barcode: string | null
   fluid_ml?: number | null
+  micros?: Micros | null
 }
 
 export interface SavedMeal {
@@ -47,6 +49,7 @@ export function itemsFromEntries(entries: readonly FoodEntry[]): SavedMealItem[]
     salt: num(e.salt),
     barcode: e.barcode ?? null,
     ...(num(e.fluid_ml) > 0 ? { fluid_ml: num(e.fluid_ml) } : {}),
+    ...(e.micros ? { micros: e.micros } : {}),
   }))
 }
 
@@ -68,6 +71,10 @@ export function normalizeItems(raw: unknown): SavedMealItem[] {
       salt: num(x.salt),
       barcode: typeof x.barcode === 'string' ? x.barcode : null,
       ...(num(x.fluid_ml) > 0 ? { fluid_ml: num(x.fluid_ml) } : {}),
+      ...(() => {
+        const m = normalizeMicros(x.micros)
+        return m ? { micros: m } : {}
+      })(),
     }))
 }
 
@@ -112,6 +119,7 @@ export function entriesFromSaved(items: readonly SavedMealItem[], date: string, 
     salt: i.salt,
     barcode: i.barcode,
     ...(i.fluid_ml ? { fluid_ml: i.fluid_ml } : {}),
+    ...(i.micros ? { micros: i.micros } : {}),
   }))
 }
 

@@ -246,6 +246,16 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     needs: 'nutrition',
   },
   {
+    id: 'micros',
+    label: 'Vitamine & Mineralstoffe',
+    sub: 'Geschätzt aus deinem Essen',
+    section: 'Ernährung',
+    to: '/nutrition',
+    keywords:
+      'vitamine vitamin c d b12 folat eisen calcium kalzium magnesium zink kalium mineralstoffe mikronährstoffe mangel',
+    needs: 'nutrition',
+  },
+  {
     id: 'recent-foods',
     label: 'Zuletzt gegessen',
     sub: 'Nochmal eintragen oder „Wie gestern“',

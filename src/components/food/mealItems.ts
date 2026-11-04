@@ -1,5 +1,6 @@
 // Hilfen für die Mahlzeit-Analyse: Zutaten skalieren (Gramm/Portion) und summieren.
 
+import { scaleMicros } from '../../lib/micros'
 import type { FoodEstimate } from '../../lib/ai'
 import type { MealTotals } from '../../lib/mealScore'
 
@@ -35,6 +36,9 @@ export function scaleEstimate(e: FoodEstimate, f: number): FoodEstimate {
     sugar: r1(e.sugar * f),
     sat_fat: r1(e.sat_fat * f),
     salt: r2(e.salt * f),
+    ...(e.fluid_ml ? { fluid_ml: r0(e.fluid_ml * f) } : {}),
+    ...(e.kind ? { kind: e.kind } : {}),
+    ...(e.micros ? { micros: scaleMicros(e.micros, f) ?? undefined } : {}),
   }
 }
 

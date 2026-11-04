@@ -17,6 +17,7 @@ import {
 } from '../lib/dietStyle'
 import type { FoodEntry, NutritionSettings } from '../types'
 import { isMissingFluidColumn, rememberFluid } from '../lib/fluid'
+import type { Micros } from '../lib/micros'
 import { foodMethod, track } from '../lib/track'
 
 /** Prüft ein geloggtes Lebensmittel und postet bei echten „Cheats" einen
@@ -176,13 +177,31 @@ export type FoodEntryInput = Pick<
   | 'salt'
   | 'barcode'
   | 'meal'
-> & { fluid_ml?: number | null }
+> & { fluid_ml?: number | null; micros?: Micros | null }
 
 // Spalte fluid_ml (Migration 0029) fehlt? Wird beim ersten Fehler gemerkt.
 let fluidColumnMissing = false
 
 /** Einträge speichern; fehlt die Spalte fluid_ml noch, Getränke-ml lokal merken. */
+// Spalte micros (Migration 0045) fehlt? Dann ohne Vitamine speichern statt zu scheitern.
+let microsColumnMissing = false
+const isMissingMicros = (e: { code?: string; message?: string } | null) =>
+  !!e && (e.code === 'PGRST204' || e.code === '42703') && /micros/.test(e.message ?? '')
+
 async function insertFood(rows: (FoodEntryInput & { user_id: string })[]): Promise<FoodEntry[]> {
+  const withMicros = rows.some((r) => r.micros)
+  if (withMicros && !microsColumnMissing) {
+    const res = await supabase.from('food_entries').insert(rows).select()
+    if (!res.error) return res.data as FoodEntry[]
+    if (!isMissingMicros(res.error)) {
+      if (!isMissingFluidColumn(res.error)) throw res.error
+    } else microsColumnMissing = true
+  }
+  rows = rows.map(({ micros: _m, ...r }) => (void _m, r))
+  return insertFoodBase(rows)
+}
+
+async function insertFoodBase(rows: (FoodEntryInput & { user_id: string })[]): Promise<FoodEntry[]> {
   const strip = (r: FoodEntryInput & { user_id: string }) => {
     const { fluid_ml: _f, ...rest } = r
     void _f
