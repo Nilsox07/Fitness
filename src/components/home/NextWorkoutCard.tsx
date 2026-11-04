@@ -62,7 +62,7 @@ export function NextWorkoutCard({
             <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-brand/30 blur-3xl" />
             {buddy && (
               <div className="relative">
-                <BuddyLine line={buddy.line} tone="dark" />
+                <BuddyLine line={buddy.line} tone="dark" onClick={buddy.onLine} />
               </div>
             )}
             <p className="relative flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
@@ -105,7 +105,7 @@ export function NextWorkoutCard({
           <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
 
           <div className="relative">
-            {buddy && <BuddyLine line={buddy.line} tone="dark" />}
+            {buddy && <BuddyLine line={buddy.line} tone="dark" onClick={buddy.onLine} />}
             <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
               {fromRhythm ? (
                 <CalendarCheck size={13} className="text-brand" />

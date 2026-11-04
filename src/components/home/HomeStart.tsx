@@ -35,7 +35,10 @@ import { CustomizeHome } from './CustomizeHome'
 import { useHomeCards } from '../../lib/homeCards'
 import { usePrefs } from '../../lib/prefs'
 import { ClipboardList, Dumbbell, Timer } from 'lucide-react'
-import { BuddyTip } from '../buddy/BuddyTip'
+import { isTipHidden, usePageTip } from '../buddy/BuddyTip'
+import { openBuddySheet } from '../buddy/BuddySheet'
+import { useNavigate } from 'react-router-dom'
+import { useAiGate } from '../../hooks/usePremium'
 import { CardioPlanCard } from '../today/CardioPlanCard'
 
 const SKIP_MUSCLES = new Set<MuscleGroup>(['Sonstige', 'Ganzkörper'])
@@ -74,6 +77,20 @@ export function HomeStart({
   const { data: profile } = useMyProfile()
   const { data: streakState } = useStreakState()
   const buddy = useBuddy()
+  // Ein Buddy-Spruch statt zwei: ein passender Seiten-Tipp (z. B. „Tagesform niedrig“) ersetzt den
+  // allgemeinen Spruch in der Sprechblase oben; Antippen = Aktion bzw. „Frag Buddy“.
+  const { tip, day: tipDay } = usePageTip('training')
+  const navigate = useNavigate()
+  const gate = useAiGate()
+  const useTip = !!tip && tip.key !== 'train-tip' && !isTipHidden(tip.key, tipDay)
+  const tipAction = !tip
+    ? undefined
+    : tip.action
+      ? () => navigate(tip.action!.to)
+      : tip.ask && (gate.canUse || gate.locked)
+        ? () => gate.requirePlus() && openBuddySheet(tip.ask)
+        : undefined
+  const heroBuddy = useTip ? { ...buddy, line: tip.text, mood: tip.mood, onLine: tipAction } : buddy
   const rhythm = useTrainingRhythm(today)
 
   const dates = useMemo(() => sessionDates(allSets ?? []), [allSets])
@@ -166,7 +183,7 @@ export function HomeStart({
           onStartPlan={onStartPlan}
           onStartFree={onStartFree}
           index={++i}
-          buddy={buddy}
+          buddy={heroBuddy}
         />
       ) : (
         <NextWorkoutCard
@@ -182,11 +199,10 @@ export function HomeStart({
           onStartPlan={onStartPlan}
           onStartFree={onStartFree}
           index={++i}
-          buddy={buddy}
+          buddy={heroBuddy}
         />
       )}
       <CardioPlanCard />
-      <BuddyTip page="training" />
       <QuestStrip area="training" style={enter(++i)} />
       <ToolTiles
         style={enter(++i)}

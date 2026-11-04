@@ -48,7 +48,7 @@ export function RestDayCard({
         <div className="relative overflow-hidden rounded-3xl bg-cream p-5 ring-1 ring-sand-dark/40">
           <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-gold/15 blur-3xl" />
           <div className="relative">
-            {buddy && <BuddyLine line={buddy.line} tone="light" />}
+            {buddy && <BuddyLine line={buddy.line} tone="light" onClick={buddy.onLine} />}
             <div className="flex items-start gap-3">
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sand text-cocoa-light">
                 <Moon size={22} />

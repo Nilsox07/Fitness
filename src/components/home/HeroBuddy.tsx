@@ -7,6 +7,8 @@ export interface HeroBuddyData {
   line: string
   stage: number
   skin: string
+  /** Sprechblase antippbar (z. B. „Frag Buddy“ oder passende Aktion) */
+  onLine?: () => void
 }
 
 const SIZE = 84
@@ -50,13 +52,21 @@ export function HeroWithBuddy({ buddy, children }: { buddy?: HeroBuddyData; chil
  * Buddys Spruch als kleine Sprechblase oben in der Hero-Karte (zeigt nach rechts
  * oben zu Buddy). `tone`: 'dark' = auf der dunklen Karte, 'light' = auf heller Karte.
  */
-export function BuddyLine({ line, tone }: { line: string; tone: 'dark' | 'light' }) {
+export function BuddyLine({ line, tone, onClick }: { line: string; tone: 'dark' | 'light'; onClick?: () => void }) {
   const look =
     tone === 'dark' ? 'bg-bg/10 text-bg/80 dark:bg-white/5 dark:text-cocoa-light' : 'bg-sand/80 text-cocoa-light'
+  const cls = `mb-3 mr-[5.5rem] line-clamp-2 w-fit rounded-2xl rounded-tr-md px-3 py-1.5 text-left text-[13px] font-medium leading-snug ${look}`
+  if (onClick)
+    return (
+      <button type="button" onClick={onClick} className={`${cls} block transition active:scale-[0.98]`}>
+        {line}
+        <span aria-hidden className="ml-1 font-bold opacity-60">
+          ›
+        </span>
+      </button>
+    )
   return (
-    <p
-      className={`mb-3 mr-[5.5rem] line-clamp-2 w-fit rounded-2xl rounded-tr-md px-3 py-1.5 text-[13px] font-medium leading-snug ${look}`}
-    >
+    <p className={cls}>
       <span aria-hidden className="mr-0.5 font-bold opacity-60">
         „
       </span>
