@@ -52,10 +52,21 @@ export function HeroWithBuddy({ buddy, children }: { buddy?: HeroBuddyData; chil
  * Buddys Spruch als kleine Sprechblase oben in der Hero-Karte (zeigt nach rechts
  * oben zu Buddy). `tone`: 'dark' = auf der dunklen Karte, 'light' = auf heller Karte.
  */
-export function BuddyLine({ line, tone, onClick }: { line: string; tone: 'dark' | 'light'; onClick?: () => void }) {
+export function BuddyLine({
+  line,
+  tone,
+  onClick,
+  long = false,
+}: {
+  line: string
+  tone: 'dark' | 'light'
+  onClick?: () => void
+  /** längere Texte (z. B. Tagesbriefing) bis 4 Zeilen */
+  long?: boolean
+}) {
   const look =
     tone === 'dark' ? 'bg-bg/10 text-bg/80 dark:bg-white/5 dark:text-cocoa-light' : 'bg-sand/80 text-cocoa-light'
-  const cls = `mb-3 mr-[5.5rem] line-clamp-2 w-fit rounded-2xl rounded-tr-md px-3 py-1.5 text-left text-[13px] font-medium leading-snug ${look}`
+  const cls = `mb-3 mr-[5.5rem] ${long ? 'line-clamp-4' : 'line-clamp-2'} w-fit rounded-2xl rounded-tr-md px-3 py-1.5 text-left text-[13px] font-medium leading-snug ${look}`
   if (onClick)
     return (
       <button type="button" onClick={onClick} className={`${cls} block transition active:scale-[0.98]`}>

@@ -1,3 +1,4 @@
+import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trophy } from 'lucide-react'
@@ -23,6 +24,7 @@ const km = (m: number) => (m / 1000).toLocaleString('de-DE', { maximumFractionDi
 
 /** Fortschritt → Ausdauer: Läufe, Radtouren & Co. von der Uhr. */
 export default function Cardio() {
+  const heroBuddy = useHeroBuddy('cardio')
   const { data: list = [], isLoading } = useHealthActivities(365)
   const [type, setType] = useState<ActivityType | 'all'>('all')
   const navigate = useNavigate()
@@ -68,6 +70,7 @@ export default function Cardio() {
       )}
 
       <Hero
+        buddy={heroBuddy}
         overline="Strecke · diese Woche"
         value={km(thisWeek.distance_m)}
         unit="km"

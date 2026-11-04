@@ -1,3 +1,4 @@
+import { useHasBackBar } from '../TopBar'
 import type { CSSProperties, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, User } from 'lucide-react'
@@ -44,8 +45,10 @@ export function TabHeader({
   action?: ReactNode
   style?: CSSProperties
 }) {
+  // Unter der Zurück-Zeile kein zweiter Statusleisten-Abstand (sonst große Lücke zwischen „Zurück“ und Titel)
+  const backBar = useHasBackBar()
   return (
-    <header className="space-y-1 pt-[env(safe-area-inset-top)]" style={style}>
+    <header className={`space-y-1 ${backBar ? '' : 'pt-[env(safe-area-inset-top)]'}`} style={style}>
       <div className="flex items-center justify-between gap-3">
         <p className="tabular min-w-0 truncate text-sm text-cocoa-light">{overline}</p>
         <HeaderActions />

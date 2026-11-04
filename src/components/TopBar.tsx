@@ -42,12 +42,24 @@ export function navInfo(pathname: string, search = ''): NavInfo {
  * Hauptseiten haben keine eigene Leiste: Buddy & Profil sitzen dort in der
  * Titelzeile (TabHeader), damit der Inhalt höher beginnt.
  */
+/** Elternseite für die Zurück-Zeile (null = Hauptseite ohne Zurück-Zeile). */
+function parentOf(pathname: string, search: string) {
+  // Profil-Unterseiten (?s=…) gehen zurück zur Profil-Übersicht
+  return pathname === '/profile' && search.includes('s=')
+    ? { to: '/profile', label: 'Profil' }
+    : navInfo(pathname, search).back
+}
+
+/** Zeigt die aktuelle Seite die Zurück-Zeile? Dann deckt die schon den Statusleisten-Abstand ab. */
+export function useHasBackBar(): boolean {
+  const { pathname, search } = useLocation()
+  return !!parentOf(pathname, search)
+}
+
 export function TopBar() {
   const navigate = useNavigate()
   const { pathname, search } = useLocation()
-  const nav = navInfo(pathname, search)
-  // Profil-Unterseiten (?s=…) gehen zurück zur Profil-Übersicht
-  const parent = pathname === '/profile' && search.includes('s=') ? { to: '/profile', label: 'Profil' } : nav.back
+  const parent = parentOf(pathname, search)
   if (!parent) return null
   // Zurück dorthin, wo man herkam (Verlauf) – sonst zur Elternseite
   const prev = previousNav(historyIndex(), { pathname, search })

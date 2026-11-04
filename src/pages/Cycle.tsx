@@ -1,9 +1,9 @@
+import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { useState } from 'react'
 import { Check, Droplet, Lock, Trash2, Watch } from 'lucide-react'
 import { ProgressHeader, SectionLabel } from '../components/progress/ProgressHeader'
 import { Group, GroupRow, Hero, HeroPill } from '../components/health/ui'
 import { InfoTip } from '../components/ui/InfoTip'
-import { BuddyTip } from '../components/buddy/BuddyTip'
 import { useCycleActions, useCycleLog, useCyclePeriods, useCycleState } from '../hooks/useCycle'
 import { localDate, shiftDate } from '../lib/day'
 import { daysBetween } from '../lib/schedule'
@@ -13,6 +13,7 @@ const dateDe = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('de-D
 
 /** Zyklus: Phase & Zyklustag, Periode mit einem Tipp eintragen, Symptome, Verlauf. */
 export default function Cycle() {
+  const heroBuddy = useHeroBuddy('cycle')
   const today = localDate()
   const { data: periods, isLoading } = useCyclePeriods()
   const state = useCycleState(today)
@@ -32,10 +33,9 @@ export default function Cycle() {
   return (
     <div className="space-y-5">
       <ProgressHeader title="Zyklus" subtitle="Nur für dich sichtbar" />
-      <BuddyTip page="cycle" />
 
       {state ? (
-        <Hero overline={PHASE_LABEL[state.phase]} value={`Tag ${state.day}`} index={1}>
+        <Hero buddy={heroBuddy} overline={PHASE_LABEL[state.phase]} value={`Tag ${state.day}`} index={1}>
           <p className="mt-1 text-sm text-bg/70 dark:text-cocoa-light">
             {state.onPeriod
               ? `Periode läuft · Ø ${state.periodLength} Tage`
@@ -51,7 +51,7 @@ export default function Cycle() {
           </div>
         </Hero>
       ) : (
-        <Hero overline="Zyklus" index={1}>
+        <Hero buddy={heroBuddy} overline="Zyklus" index={1}>
           <p className="mt-1 text-xl font-bold">Wann hat deine letzte Periode begonnen?</p>
           <p className="mt-1 text-sm text-bg/70 dark:text-cocoa-light">
             {isLoading ? 'Lädt …' : 'Ein Eintrag reicht – danach wird es mit jedem Zyklus genauer.'}

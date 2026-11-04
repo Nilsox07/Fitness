@@ -2,11 +2,9 @@ import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { CalendarDays, ChevronRight } from 'lucide-react'
 import { usePrefs } from '../lib/prefs'
-import { BuddyTip } from './buddy/BuddyTip'
-import type { TipPage } from '../lib/buddyTips'
 
 /**
- * Unterzeile der Fortschritt-Detailseiten: Zeitraum-Auswahl, „Verlauf“ und Buddy-Tipp.
+ * Unterzeile der Fortschritt-Detailseiten: Zeitraum-Auswahl und „Verlauf“ (Buddy sitzt auf der Hero-Karte).
  * Die Bereiche wählt man in der Übersicht (/progress) – keine Wisch-Leiste mehr.
  */
 export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
@@ -15,8 +13,7 @@ export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
 
   if (pathname === '/history') return null
   const onAnalytics = pathname === '/analytics'
-  const tipPage: TipPage | null =
-    pathname === '/cardio' ? 'cardio' : pathname === '/sleep' ? 'sleep' : pathname === '/vitals' ? 'vitals' : null
+  if (!onAnalytics && !extra) return null
 
   return (
     <div className="space-y-2">
@@ -34,7 +31,6 @@ export function ProgressSwitch({ extra }: { extra?: ReactNode } = {}) {
         </div>
       )}
       {!onAnalytics && extra}
-      {tipPage && <BuddyTip page={tipPage} />}
     </div>
   )
 }

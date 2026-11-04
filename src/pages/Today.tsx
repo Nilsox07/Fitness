@@ -18,7 +18,7 @@ import {
   type Modules,
   type WidgetId,
 } from '../lib/dashboard'
-import { BuddyTip } from '../components/buddy/BuddyTip'
+import { TodayHero } from '../components/today/TodayHero'
 
 export function useModules(): Modules {
   const { showNutrition, showSocial, hasWatch, hasCycle } = usePrefs()
@@ -57,13 +57,13 @@ export default function Today() {
   return (
     <div className="space-y-4">
       <TabHeader overline={dateLabel} title="Heute" style={enter(0)} />
-      <BuddyTip page="today" />
+      <TodayHero />
       <div className="grid grid-cols-2 gap-3">
         {layout.map((id, i) => (
           <div
             key={id}
             className={`empty:hidden ${widgetDef(id).size === 'full' ? 'col-span-2' : ''}`}
-            style={enter(i + 1)}
+            style={enter(i + 2)}
           >
             {renderWidget(id, t)}
           </div>

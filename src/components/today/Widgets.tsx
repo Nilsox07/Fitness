@@ -13,9 +13,7 @@ import {
   Flame,
   Footprints,
   HeartPulse,
-  Loader2,
   Plus,
-  Sparkles,
   Users,
   Watch,
 } from 'lucide-react'
@@ -35,8 +33,6 @@ import type { WidgetId } from '../../lib/dashboard'
 import { CardioPlanCard } from './CardioPlanCard'
 import { useCycleState } from '../../hooks/useCycle'
 import { PHASE_LABEL, trainingHint } from '../../lib/cycle'
-import { useBriefing } from '../buddy/useBriefing'
-import { PlusBadge } from '../premium/PlusBadge'
 
 const fmt = (n: number) => Math.round(n).toLocaleString('de-DE')
 
@@ -141,7 +137,6 @@ function ConnectWatch() {
 
 function ReadinessWidget({ t }: { t: TodaySummary }) {
   const navigate = useNavigate()
-  const brief = useBriefing()
   const r = t.readiness
   const color = 'rgb(var(--c-ruby))'
   return (
@@ -177,35 +172,6 @@ function ReadinessWidget({ t }: { t: TodaySummary }) {
           </div>
         )}
       </button>
-      {r && brief.available && (
-        <div className="relative mt-3 border-t border-white/10 pt-3 dark:border-sand-dark/40">
-          {brief.text ? (
-            <>
-              <p className="flex gap-2 text-sm leading-snug">
-                <Sparkles size={15} className="mt-0.5 shrink-0 text-brand" />
-                {brief.text}
-              </p>
-              {brief.locked && (
-                <button
-                  className="ml-[23px] mt-2 flex items-center gap-1.5 text-xs font-semibold text-bg/70 active:scale-95 dark:text-cocoa-light"
-                  onClick={() => void brief.load()}
-                >
-                  Persönliches KI-Briefing <PlusBadge />
-                </button>
-              )}
-            </>
-          ) : (
-            <button
-              className="flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand active:scale-95"
-              onClick={() => void brief.load()}
-              disabled={brief.busy}
-            >
-              {brief.busy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-              Buddy-Briefing für heute
-            </button>
-          )}
-        </div>
-      )}
     </section>
   )
 }

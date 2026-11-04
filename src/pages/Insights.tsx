@@ -1,5 +1,5 @@
+import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { enter } from '../components/home/motion'
-import { BuddyTip } from '../components/buddy/BuddyTip'
 import { ProgressHeader, SectionLabel } from '../components/progress/ProgressHeader'
 import { Hero, HeroPill } from '../components/health/ui'
 import { InsightList } from '../components/insights/InsightList'
@@ -9,6 +9,7 @@ import { INSIGHT_GROUPS } from '../lib/insights'
 
 /** Fortschritt → Erkenntnisse: alles, was deine Daten hergeben – gruppiert. */
 export default function Insights() {
+  const heroBuddy = useHeroBuddy('insights')
   const { hasWatch } = usePrefs()
   const { insights, loading } = useInsights()
   const hints = insights.filter((x) => x.tone === 'hint').length
@@ -22,9 +23,9 @@ export default function Insights() {
   return (
     <div className="space-y-5">
       <ProgressHeader title="Erkenntnisse" subtitle="Aus deinen Daten" />
-      <BuddyTip page="insights" />
 
       <Hero
+        buddy={heroBuddy}
         overline="Muster in deinen Daten"
         value={insights.length}
         unit={insights.length === 1 ? 'Erkenntnis' : 'Erkenntnisse'}

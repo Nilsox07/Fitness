@@ -1,3 +1,4 @@
+import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ChevronDown, Info } from 'lucide-react'
@@ -23,6 +24,7 @@ const clock = (iso: string) => new Date(iso).toLocaleTimeString('de-DE', { hour:
 
 /** Fortschritt → Schlaf & Erholung: Tagesform, jede Nacht im Detail, Verlauf. */
 export default function Sleep() {
+  const heroBuddy = useHeroBuddy('sleep')
   const t = useToday()
   const { data: nights = [], isLoading } = useHealthSleep(30)
   const { data: daily = [] } = useHealthDaily(30)
@@ -46,6 +48,7 @@ export default function Sleep() {
 
       {/* Tagesform – in Worten statt Punkten */}
       <Hero
+        buddy={heroBuddy}
         overline="Tagesform · heute"
         value={r ? r.score : '–'}
         unit={r ? '/ 100' : undefined}

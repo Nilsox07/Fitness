@@ -1,6 +1,7 @@
 // Gemeinsame Bausteine der Uhr-Seiten – exakt im Stil der übrigen App
 // (dunkle Hero-Karte wie „Volumen“ im Kraft-Fortschritt, gruppierte Listen, Rubin als einzige Akzentfarbe).
 
+import { BuddyLine, HeroWithBuddy, type HeroBuddyData } from '../home/HeroBuddy'
 import type { ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { enter } from '../home/motion'
@@ -13,6 +14,7 @@ export function Hero({
   right,
   children,
   index = 1,
+  buddy,
 }: {
   overline: ReactNode
   value?: ReactNode
@@ -20,30 +22,34 @@ export function Hero({
   right?: ReactNode
   children?: ReactNode
   index?: number
+  /** Buddy lugt über die Karte, sein Spruch steht oben (einheitlich in allen Tabs) */
+  buddy?: HeroBuddyData
 }) {
   return (
-    <section
-      className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none"
-      style={enter(index)}
-    >
-      <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
-      <div className="relative">
-        <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-            {overline}
-          </p>
-          {right}
-        </div>
-        {value != null && (
-          <p className="mt-1 flex items-baseline gap-1.5">
-            <span className="tabular text-5xl font-bold tracking-tight">{value}</span>
-            {unit && <span className="text-xl font-semibold text-bg/60 dark:text-cocoa-light">{unit}</span>}
-          </p>
-        )}
-        {children}
-      </div>
-    </section>
+    <div style={enter(index)}>
+      <HeroWithBuddy buddy={buddy}>
+        <section className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
+          <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
+          <div className="relative">
+            {buddy && <BuddyLine line={buddy.line} tone="dark" onClick={buddy.onLine} />}
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
+                {overline}
+              </p>
+              {right}
+            </div>
+            {value != null && (
+              <p className="mt-1 flex items-baseline gap-1.5">
+                <span className="tabular text-5xl font-bold tracking-tight">{value}</span>
+                {unit && <span className="text-xl font-semibold text-bg/60 dark:text-cocoa-light">{unit}</span>}
+              </p>
+            )}
+            {children}
+          </div>
+        </section>
+      </HeroWithBuddy>
+    </div>
   )
 }
 

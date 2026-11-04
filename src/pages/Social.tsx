@@ -51,7 +51,8 @@ import { frequencyStats, isoWeekKey, monthlyPrCount, totalVolume, weeklyVolume }
 import { rankForSessions } from '../lib/gamification'
 import { buddyLevelInfo } from '../lib/buddyLevel'
 import { seasonId, seasonXp } from '../lib/season'
-import { BuddyTip } from '../components/buddy/BuddyTip'
+import { useHeroBuddy } from '../components/home/useHeroBuddy'
+import { Hero, HeroPill } from '../components/health/ui'
 
 export default function Social() {
   const navigate = useNavigate()
@@ -242,6 +243,10 @@ export default function Social() {
     [mePerson.user_id, myStats.protein_week, myStats.protein_today, friends, today],
   )
   const weekLeft = daysLeftInWeek(today)
+  const heroBuddy = useHeroBuddy('social')
+  const ranked = [...standings.scores].sort((a, b) => b.total - a.total)
+  const myRank = ranked.findIndex((x) => x.user_id === mePerson.user_id) + 1
+  const activeToday = people.filter((u) => u.last_workout?.slice(0, 10) === today).length
   const openPerson = openId ? (people.find((u) => u.user_id === openId) ?? null) : null
 
   // Kurzfassung für den Gym-Treff-Knopf: wer heute wann geht
@@ -285,7 +290,23 @@ export default function Social() {
         }
       />
 
-      <BuddyTip page="social" />
+      {hasFriends ? (
+        <Hero
+          buddy={heroBuddy}
+          overline="Diese Woche"
+          value={team.done}
+          unit={team.done === 1 ? 'Training im Team' : 'Trainings im Team'}
+          index={1}
+        >
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <HeroPill value={friends.length} label={friends.length === 1 ? 'Freund' : 'Freunde'} />
+            <HeroPill value={myRank > 0 ? `#${myRank}` : '–'} label="dein Platz" />
+            <HeroPill value={activeToday} label="heute aktiv" />
+          </div>
+        </Hero>
+      ) : (
+        <InviteCard world="fitness" onAdd={() => setAddOpen(true)} buddy={heroBuddy} style={enter(1)} />
+      )}
 
       {hasFriends && (
         <button
@@ -313,9 +334,7 @@ export default function Social() {
         />
       </div>
 
-      {!hasFriends ? (
-        <InviteCard world="fitness" onAdd={() => setAddOpen(true)} style={enter(2)} />
-      ) : (
+      {!hasFriends ? null : (
         <section className="space-y-3" style={enter(2)}>
           <SectionTitle right={<span className="text-xs text-cocoa-muted">{daysLeftLabel(weekLeft)}</span>}>
             Diese Woche

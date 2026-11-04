@@ -357,6 +357,10 @@ export default function Nutrition() {
     setParams(next, { replace: true })
     const modes = ['photo', 'search', 'restaurant', 'aitext', 'recipe', 'plan', 'manual', 'menu'] as const
     if (aiMode && !gate.requirePlus()) return
+    if (addParam === 'scan') {
+      setScanning(true)
+      return
+    }
     if ((modes as readonly string[]).includes(addParam)) setAddMode(addParam as (typeof modes)[number])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addParam, gate.ready])

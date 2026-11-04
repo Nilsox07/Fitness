@@ -14,11 +14,12 @@ import {
   TrendingDown,
   TrendingUp,
   type LucideIcon,
+  Trophy,
 } from 'lucide-react'
+import { useBuddyLevel } from '../components/buddy/useBuddy'
 import { TabHeader } from '../components/ui/TabHeader'
-import { BuddyTip } from '../components/buddy/BuddyTip'
-import { BuddyFace } from '../components/buddy/BuddyFace'
-import { useBuddy, useBuddyLevel } from '../components/buddy/useBuddy'
+import { BuddyLine, HeroWithBuddy } from '../components/home/HeroBuddy'
+import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { enter } from '../components/home/motion'
 import { useToday } from '../hooks/useToday'
 import { useCycleState } from '../hooks/useCycle'
@@ -50,7 +51,7 @@ export default function Progress() {
   const { showNutrition, hasWatch, hasCycle } = usePrefs()
   const cycle = useCycleState()
   const t = useToday()
-  const buddy = useBuddy()
+  const heroBuddy = useHeroBuddy('progress')
   const level = useBuddyLevel()
   const { data: weights } = useBodyWeights()
   const goalLine = goalPathLine(useGoalPath())
@@ -109,41 +110,45 @@ export default function Progress() {
     <div className="space-y-4">
       <TabHeader overline="Deine Entwicklung" title="Fortschritt" />
 
-      {/* Woche: Ring + Serie + Level */}
-      <section
-        className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none"
-        style={enter(i++)}
-      >
-        <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
-        <div className="relative flex items-center gap-5">
-          <Ring pct={goalPct} size={104}>
-            <span className="tabular text-3xl font-bold leading-none">
-              {t.weekDone}
-              <span className="text-base text-bg/50 dark:text-cocoa-light">/{t.weekGoal}</span>
-            </span>
-            <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-              Woche
-            </span>
-          </Ring>
-          <div className="min-w-0 flex-1 space-y-3">
-            <div>
-              <p className="tabular text-2xl font-bold leading-none">{t.streakWeeks}</p>
-              <p className="text-xs text-bg/60 dark:text-cocoa-light">
-                {t.streakWeeks === 1 ? 'Woche Serie' : 'Wochen Serie'}
-              </p>
+      {/* Woche: Ring + Serie + Level – Buddy sitzt auf der Karte, sein Spruch oben */}
+      <div style={enter(i++)}>
+        <HeroWithBuddy buddy={heroBuddy}>
+          <section className="relative overflow-hidden rounded-3xl bg-cocoa p-5 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
+            <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
+            <div className="relative">
+              <BuddyLine line={heroBuddy.line} tone="dark" onClick={heroBuddy.onLine} />
             </div>
-            <button className="flex items-center gap-2 text-left" onClick={() => navigate('/badges')}>
-              <BuddyFace size={30} mood={buddy.mood} stage={buddy.stage} skin={buddy.skin} />
-              <span>
-                <span className="tabular block text-sm font-bold leading-none">Level {level.level}</span>
-                <span className="block text-[11px] text-bg/60 dark:text-cocoa-light">Erfolge ansehen</span>
-              </span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <BuddyTip page="progress" />
+            <div className="relative flex items-center gap-5">
+              <Ring pct={goalPct} size={104}>
+                <span className="tabular text-3xl font-bold leading-none">
+                  {t.weekDone}
+                  <span className="text-base text-bg/50 dark:text-cocoa-light">/{t.weekGoal}</span>
+                </span>
+                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
+                  Woche
+                </span>
+              </Ring>
+              <div className="min-w-0 flex-1 space-y-3">
+                <div>
+                  <p className="tabular text-2xl font-bold leading-none">{t.streakWeeks}</p>
+                  <p className="text-xs text-bg/60 dark:text-cocoa-light">
+                    {t.streakWeeks === 1 ? 'Woche Serie' : 'Wochen Serie'}
+                  </p>
+                </div>
+                <button className="flex items-center gap-2 text-left" onClick={() => navigate('/badges')}>
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-bg/10 dark:bg-white/5">
+                    <Trophy size={16} />
+                  </span>
+                  <span>
+                    <span className="tabular block text-sm font-bold leading-none">Level {level.level}</span>
+                    <span className="block text-[11px] text-bg/60 dark:text-cocoa-light">Erfolge ansehen</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </section>
+        </HeroWithBuddy>
+      </div>
 
       {/* Kraft – große Kachel */}
       <Tile

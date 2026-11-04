@@ -1,3 +1,4 @@
+import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { enter } from '../components/home/motion'
 import { ProgressHeader, SectionLabel } from '../components/progress/ProgressHeader'
 import { MetricCard, SeriesChart, StatusChip, TrendChart } from '../components/health/Charts'
@@ -16,6 +17,7 @@ const de = (v: number, d = 1) => v.toLocaleString('de-DE', { maximumFractionDigi
 
 /** Fortschritt → Herz & Körper: Puls, HRV, Sauerstoff, Atmung, VO₂max, Aktivität und Körperwerte. */
 export default function Vitals() {
+  const heroBuddy = useHeroBuddy('vitals')
   const { data: daily = [], isLoading } = useHealthDaily(60)
   const { data: settings } = useNutritionSettings()
   const asc = [...daily].sort((a, b) => (a.date < b.date ? -1 : 1))
@@ -81,7 +83,12 @@ export default function Vitals() {
       {daily.length === 0 && <p className="card text-sm text-cocoa-light">Noch keine Werte von deiner Uhr.</p>}
 
       {(hourly.length > 1 || rhrNow != null) && (
-        <Hero overline="Puls · heute" value={td?.hr_avg ?? rhrNow ?? '–'} unit={td?.hr_avg ? 'bpm Ø' : 'bpm Ruhe'}>
+        <Hero
+          buddy={heroBuddy}
+          overline="Puls · heute"
+          value={td?.hr_avg ?? rhrNow ?? '–'}
+          unit={td?.hr_avg ? 'bpm Ø' : 'bpm Ruhe'}
+        >
           {hourly.length > 1 && (
             <div className="mt-3">
               <SeriesChart data={hourly} height={90} dark xLabel={(h) => `${h} Uhr`} />
