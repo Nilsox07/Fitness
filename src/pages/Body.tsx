@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { Camera, Check, Lock, ScanLine, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import { useBodyScans, useDeleteBodyScan, usePhotoUrls } from '../hooks/useBodyScans'
@@ -40,6 +41,8 @@ function ago(days: number): string {
 
 /** Körper: Startfoto, Körperfett-Verlauf, Vorher/Nachher-Vergleich. */
 export default function Body() {
+  // aus dem Widget „Gewicht eintragen“: direkt ins Eingabefeld
+  const weighParam = new URLSearchParams(useLocation().search).has('weigh')
   const today = localDate()
   const { data: scans = [], isLoading } = useBodyScans()
   const { data: weights } = useBodyWeights()
@@ -173,7 +176,7 @@ export default function Body() {
       )}
 
       {/* Gewicht eintragen – auch ohne Ernährungs-Modul */}
-      <BodyWeightCard />
+      <BodyWeightCard focus={weighParam} />
 
       <MeasurementsSection />
 

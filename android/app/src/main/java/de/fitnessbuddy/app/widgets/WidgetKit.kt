@@ -57,6 +57,13 @@ internal object Req {
     const val QUESTS = 11
     const val SUPPLEMENTS = 12
     const val MODULES = 13
+    const val FOOD_PHOTO = 20
+    const val FOOD_VOICE = 21
+    const val FOOD_SCAN = 22
+    const val FOOD_SEARCH = 23
+    const val FOOD_MENU = 24
+    const val TRAIN_START = 25
+    const val WEIGHT = 26
 }
 
 /** 7:05 */
@@ -163,6 +170,17 @@ internal class Kit(val ctx: Context, val s: Snap) {
         )
         return v
     }
+
+    /**
+     * Aktions-Karte ohne Buddy: gleicher Verlauf wie die Buddy-Karte, nur ein leichter Schein oben
+     * rechts. Eine Bitmap für alle Größen-Varianten (wird beim Senden nur einmal übertragen).
+     */
+    fun actionArt(wDp: Float, hDp: Float): Bitmap = WidgetArt.card(
+        ctx, wDp, hDp, accent, accentDark, null,
+        glowX = wDp - 24f,
+        glowY = 8f,
+        glowR = minOf(wDp, hDp) * 0.7f,
+    )
 
     fun heroBar(v: RemoteViews, id: Int, wDp: Float, hDp: Float, pct: Float, color: Int = Color.WHITE) =
         v.setImageViewBitmap(id, WidgetArt.bar(ctx, wDp, hDp, pct, color, heroTrack))

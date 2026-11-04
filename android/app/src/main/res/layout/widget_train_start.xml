@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Training starten (2×2): nächstes Training groß, darunter ein großer Knopf -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    style="@style/WidgetFb.Hero">
+
+    <ImageView android:id="@+id/art" style="@style/WidgetFb.Art" />
+
+    <LinearLayout
+        android:id="@+id/content"
+        style="@style/WidgetFb.HeroContent"
+        android:paddingBottom="10dp">
+
+        <TextView
+            android:id="@+id/overline"
+            style="@style/WidgetFb.HeroOverline"
+            android:text="Training · Mi" />
+
+        <TextView
+            android:id="@+id/title"
+            style="@style/WidgetFb.HeroTitle"
+            android:layout_marginTop="4dp"
+            android:text="Oberkörper A" />
+
+        <TextView
+            android:id="@+id/hint"
+            style="@style/WidgetFb.HeroBody"
+            android:layout_marginTop="2dp"
+            android:text="Noch 1 Training offen" />
+
+        <FrameLayout style="@style/WidgetFb.Fill" />
+
+        <LinearLayout
+            android:id="@+id/btn"
+            style="@style/WidgetFb.PrimaryButton"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Training starten">
+
+            <ImageView
+                android:id="@+id/btn_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_widget_play"
+                android:tint="#9F1239" />
+
+            <TextView
+                android:id="@+id/btn_text"
+                style="@style/WidgetFb.PrimaryText"
+                android:text="Starten" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

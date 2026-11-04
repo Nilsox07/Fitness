@@ -171,6 +171,9 @@ einer App, aber nur das sichtbar, was man nutzt.
     App-Öffnen), Kalorien, Training, Tagesform, Schritte, Schlaf, Fasten (Live-Countdown), Quests, Supplemente.
     Alle in der gewählten App-Farbe (`accent`/`accentLight`/`onAccent` im Snapshot) und hell/dunkel; ohne Modul
     bzw. Uhr zeigen sie einen Hinweis. Den Buddy rendert `NativeSync` als PNG (`setBuddyImage`).
+  - Einzel-Widgets mit einer Aufgabe (`widgets/ActionWidgets.kt`): „Essen eintragen“ (Foto/Sagen/Scannen/Suchen →
+    `/nutrition?add=…`), „Training starten“ (→ `/`), „Gewicht eintragen“ (→ `/body?weigh=1`, Eingabefeld fokussiert).
+    Snapshot liefert dafür `weightKg`, `aiAvailable`, `trainedToday`.
   - `LiveActivityPlugin.kt` – laufende Benachrichtigung mit Countdown auf dem Sperrbildschirm
     (Satzpause automatisch, Fasten optional unter Bereiche); Android 16 hebt sie als Live-Update hervor
   - „Pause vorbei“-Benachrichtigung, Deep Links `fitnessbuddy://open/<pfad>`, Zurück-Taste

@@ -1,3 +1,5 @@
+import { useBodyWeights } from '../hooks/useBodyWeight'
+import { useAiGate } from '../hooks/usePremium'
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
@@ -49,6 +51,9 @@ export function NativeSync() {
 function NativeSyncInner() {
   useHealthSync()
   const t = useToday()
+  const { data: weights } = useBodyWeights()
+  const aiAvailable = useAiGate().enabled
+  const lastWeight = weights?.length ? Number(weights[weights.length - 1].weight_kg) : null
   const { showNutrition, hasWatch, showSocial } = usePrefs()
   const setWater = useSetWater()
   const qc = useQueryClient()
@@ -202,8 +207,25 @@ function NativeSyncInner() {
       supplementNext: next ? { name: next.supplement.name, time: next.slot } : null,
       supplementsDone: doses.filter((d) => d.taken).length,
       supplementsTotal: doses.length,
+      weightKg: lastWeight,
+      aiAvailable,
+      trainedToday: t.trainedToday,
     })
-  }, [t, showNutrition, hasWatch, showSocial, buddy, level, quests, supps, suppLog, fasting, fastingStart])
+  }, [
+    t,
+    showNutrition,
+    hasWatch,
+    showSocial,
+    buddy,
+    level,
+    quests,
+    supps,
+    suppLog,
+    fasting,
+    fastingStart,
+    lastWeight,
+    aiAvailable,
+  ])
 
   // Buddy als Bild für die Widgets (gleiches Aussehen wie in der App)
   const buddyRef = useRef<HTMLDivElement>(null)

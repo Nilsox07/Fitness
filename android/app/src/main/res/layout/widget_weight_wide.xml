@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gewicht breit (2×1): Waage, Text und Knopf – die ganze Karte öffnet das Eintragen -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    style="@style/WidgetFb.Card"
+    android:contentDescription="Gewicht eintragen">
+
+    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
+
+    <LinearLayout
+        android:id="@+id/content"
+        style="@style/WidgetFb.Content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="10dp">
+
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_widget_scale"
+            android:tint="#E11D48" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/value"
+                style="@style/WidgetFb.Number"
+                android:text="Gewicht"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/hint"
+                style="@style/WidgetFb.Muted"
+                android:layout_marginTop="2dp"
+                android:text="Kurz eintragen" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="44dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="6dp">
+
+            <ImageView
+                android:id="@+id/add_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_pill" />
+
+            <ImageView
+                android:id="@+id/add_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_widget_plus" />
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

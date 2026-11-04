@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Essen-Knopf „Scannen“ (Größe und Abstand legt das <include> fest) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/WidgetFb.Tile"
+    android:contentDescription="Barcode scannen">
+
+    <ImageView style="@style/WidgetFb.TileIcon" android:src="@drawable/ic_widget_barcode" />
+
+    <TextView style="@style/WidgetFb.TileLabel" android:text="Scannen" />
+</LinearLayout>

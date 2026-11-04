@@ -129,6 +129,24 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_supps_info" />
         </receiver>
+        <receiver android:name=".widgets.FoodLogWidget" android:exported="false" android:label="@string/widget_food_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_food_info" />
+        </receiver>
+        <receiver android:name=".widgets.TrainingStartWidget" android:exported="false" android:label="@string/widget_train_start_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_train_start_info" />
+        </receiver>
+        <receiver android:name=".widgets.WeightWidget" android:exported="false" android:label="@string/widget_weight_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_weight_info" />
+        </receiver>
         <receiver android:name=".widgets.WaterAddReceiver" android:exported="false" />
         <receiver android:name=".widgets.WidgetRefreshReceiver" android:exported="false" />
 

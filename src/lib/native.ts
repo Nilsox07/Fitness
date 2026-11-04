@@ -171,6 +171,11 @@ export interface WidgetSnapshot {
   restingHr?: number | null
   hrv?: number | null
   cardioWeekKm?: number | null
+  /** letztes Gewicht (Widget „Gewicht eintragen“) */
+  weightKg?: number | null
+  /** KI verfügbar? false blendet Foto/Sagen im Essen-Widget aus */
+  aiAvailable?: boolean
+  trainedToday?: boolean
 }
 
 interface AppWidgetsPlugin {

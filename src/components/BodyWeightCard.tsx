@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { Minus, Scale, TrendingDown, TrendingUp } from 'lucide-react'
 import { accentColor } from '../lib/cosmetics'
 import { Line, LineChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts'
@@ -11,7 +11,17 @@ function todayLocal(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export function BodyWeightCard() {
+/** `focus`: direkt zum Eintragen (z. B. aus dem Widget „Gewicht eintragen“). */
+export function BodyWeightCard({ focus = false }: { focus?: boolean } = {}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (!focus) return
+    const id = setTimeout(() => {
+      inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      inputRef.current?.focus()
+    }, 350)
+    return () => clearTimeout(id)
+  }, [focus])
   const { data: weights } = useBodyWeights()
   const upsert = useUpsertBodyWeight()
   const dark = useTheme().resolved === 'dark'
@@ -94,6 +104,7 @@ export function BodyWeightCard() {
       <div className="flex gap-2">
         <div className="relative min-w-0 flex-1">
           <input
+            ref={inputRef}
             className="input tabular rounded-2xl pr-10 text-base"
             inputMode="decimal"
             aria-label="Gewicht in kg"

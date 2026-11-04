@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Essen eintragen (4×1): vier große Knöpfe, ab ca. 96 dp Höhe mit Mahlzeit oben -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    style="@style/WidgetFb.Hero">
+
+    <ImageView android:id="@+id/art" style="@style/WidgetFb.Art" />
+
+    <include
+        android:id="@+id/empty"
+        layout="@layout/widget_empty_hero"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="6dp">
+
+        <include
+            layout="@layout/widget_food_header"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/food_photo"
+                layout="@layout/widget_tile_photo"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/food_voice"
+                layout="@layout/widget_tile_voice"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/food_scan"
+                layout="@layout/widget_tile_scan"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/food_search"
+                layout="@layout/widget_tile_search"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

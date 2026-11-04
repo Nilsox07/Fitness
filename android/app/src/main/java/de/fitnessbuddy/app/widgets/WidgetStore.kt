@@ -36,6 +36,9 @@ object WidgetStore {
         FastingWidget::class.java,
         QuestsWidget::class.java,
         SupplementsWidget::class.java,
+        FoodLogWidget::class.java,
+        TrainingStartWidget::class.java,
+        WeightWidget::class.java,
     )
 
     /** Tageswerte, die nach Mitternacht nicht mehr gelten. */
@@ -116,12 +119,15 @@ object WidgetStore {
         }
     }
 
-    /** Widgets zu einem Zeitpunkt neu zeichnen (z. B. Fastenende). Ungenau reicht, braucht keine Sonderrechte. */
-    fun scheduleRefresh(ctx: Context, atMillis: Long) {
+    /**
+     * Widgets zu einem Zeitpunkt neu zeichnen (z. B. Fastenende). Ungenau reicht, braucht keine Sonderrechte.
+     * Eigener [req] je Anlass, sonst ersetzt ein Wecker den anderen.
+     */
+    fun scheduleRefresh(ctx: Context, atMillis: Long, req: Int = REQ_REFRESH) {
         val am = ctx.getSystemService(AlarmManager::class.java) ?: return
         val pi = PendingIntent.getBroadcast(
             ctx,
-            REQ_REFRESH,
+            req,
             Intent(ctx, WidgetRefreshReceiver::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -129,6 +135,9 @@ object WidgetStore {
     }
 
     private const val REQ_REFRESH = 90
+
+    /** Wechsel der Mahlzeit im Widget „Essen eintragen“. */
+    internal const val REQ_REFRESH_MEAL = 91
 }
 
 /** Weckt die Widgets zum geplanten Zeitpunkt. */

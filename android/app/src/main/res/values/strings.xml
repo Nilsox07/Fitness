@@ -27,4 +27,11 @@
     <string name="widget_quests_desc">Deine Tagesquests &amp; dein Level</string>
     <string name="widget_supps_label">Supplemente</string>
     <string name="widget_supps_desc">Was du als Nächstes nehmen solltest</string>
+    <!-- Aktions-Widgets: ein Tipp, eine Sache -->
+    <string name="widget_food_label">Essen eintragen</string>
+    <string name="widget_food_desc">Foto, Sagen, Scannen oder Suchen – mit einem Tipp</string>
+    <string name="widget_train_start_label">Training starten</string>
+    <string name="widget_train_start_desc">Dein nächstes Training mit Start-Knopf</string>
+    <string name="widget_weight_label">Gewicht eintragen</string>
+    <string name="widget_weight_desc">Ein Tipp, und du trägst dein Gewicht ein</string>
 </resources>

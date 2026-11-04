@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Essen-Knopf „Sagen“ (Größe und Abstand legt das <include> fest) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/WidgetFb.Tile"
+    android:contentDescription="Essen per Sprache oder Text eintragen">
+
+    <ImageView style="@style/WidgetFb.TileIcon" android:src="@drawable/ic_widget_mic" />
+
+    <TextView style="@style/WidgetFb.TileLabel" android:text="Sagen" />
+</LinearLayout>

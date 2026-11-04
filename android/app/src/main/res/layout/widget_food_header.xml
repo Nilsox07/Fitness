@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kopfzeile der Essen-Widgets: Mahlzeit nach Uhrzeit, rechts kcal übrig (falls bekannt) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/header"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="6dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="8dp">
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/WidgetFb.HeroTitle"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:maxLines="1"
+        android:text="Frühstück eintragen"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/kcal"
+        style="@style/WidgetFb.HeroBody"
+        android:layout_marginStart="8dp"
+        android:text="1.240 kcal übrig"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+</LinearLayout>
