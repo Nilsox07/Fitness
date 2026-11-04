@@ -105,7 +105,7 @@ export default function Profile() {
   const [nameOpen, setNameOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [deleteMode, setDeleteMode] = useState<'delete' | 'revoke' | null>(null)
-  const { mode, setMode } = useTheme()
+  const { mode, setMode, resolved, darkStyle, setDarkStyle } = useTheme()
   const { showNutrition, hasWatch } = usePrefs()
   const { data: ai } = useAiStatus()
   const { data: allSets } = useAllSets()
@@ -190,6 +190,29 @@ export default function Profile() {
                   </button>
                 ))}
               </div>
+              {(mode === 'dark' || resolved === 'dark') && (
+                <>
+                  <p className="pt-1 text-xs text-cocoa-light">Dunkler Stil</p>
+                  <div className={`${SEG_TRACK} grid-cols-2`}>
+                    {(
+                      [
+                        ['black', 'Schwarz'],
+                        ['midnight', 'Mitternacht'],
+                      ] as const
+                    ).map(([v, label]) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setDarkStyle(v)}
+                        aria-pressed={darkStyle === v}
+                        className={segBtn(darkStyle === v)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </SubCard>
             <AppearanceSettings />
             <Group>

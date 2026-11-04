@@ -28,20 +28,32 @@
 /* Dark */
 .dark {
   color-scheme: dark;
+  /* Standard: neutrales Fast-Schwarz – die App-Farbe leuchtet mehr */
+  --c-bg: 10 10 11;
+  --c-cream: 22 22 24;
+  --c-sand-light: 30 30 33;
+  --c-sand: 38 38 42;
+  --c-sand-dark: 58 58 64;
+  --c-ruby: 225 29 72;
+  --c-ruby-dark: 190 18 60;
+  --c-ruby-light: 251 113 133;
+  --c-text: 236 236 240;
+  --c-text-muted: 161 161 170;
+  --c-text-dim: 113 113 122;
+  --c-success: var(--c-ruby);
+  --c-good: 34 197 94;
+  --c-gold: 245 184 61;
+}
+/* Wählbar: „Mitternacht“ – das frühere dunkle Blaugrau */
+.dark.midnight {
   --c-bg: 11 15 25;
   --c-cream: 22 29 43;
   --c-sand-light: 31 41 55;
   --c-sand: 35 46 68;
   --c-sand-dark: 52 65 85;
-  --c-ruby: 225 29 72;
-  --c-ruby-dark: 190 18 60;
-  --c-ruby-light: 251 113 133;
   --c-text: 229 233 240;
   --c-text-muted: 148 163 184;
   --c-text-dim: 100 116 139;
-  --c-success: var(--c-ruby);
-  --c-good: 34 197 94;
-  --c-gold: 245 184 61;
 }
 
 html,

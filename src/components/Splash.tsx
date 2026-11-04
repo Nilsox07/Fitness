@@ -46,7 +46,7 @@ export function Splash() {
       aria-hidden
       className="fixed inset-0 z-[100] grid place-items-center"
       style={{
-        background: 'rgb(11 15 25)',
+        background: 'rgb(10 10 11)',
         opacity: phase === 'out' ? 0 : 1,
         transition: 'opacity 320ms ease-out',
       }}

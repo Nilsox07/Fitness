@@ -149,6 +149,8 @@ einer App, aber nur das sichtbar, was man nutzt.
   lugt Buddy über die Hero-Karte und der Tipp steht in seiner Sprechblase, antippbar – `useHeroBuddy`)
   mit regelbasiertem Tipp aus `src/lib/buddyTips.ts` (getestet), „Frag Buddy“ öffnet den Chat mit passender
   Frage (`openBuddySheet(frage)`), auf Heute zusätzlich KI-„Tagesbriefing“ (`dailyBriefing` in `ai.ts`, 1×/Tag).
+- **Dunkelmodus:** Standard = neutrales Fast-Schwarz (`.dark` in `index.css`), wählbar „Mitternacht“ (früheres
+  Blaugrau, Klasse `.dark.midnight`) unter Profil → Aussehen (`theme_dark_style`, nur auf dem Gerät).
 - **Farben:** `success` = App-Farbe (erledigt, Fortschritt, Schalter). Nur echte Bewertungen („gut“) nutzen
   das neue Token `good` (grün). Rot nur für Fehler/Löschen, `gold` für Hinweise.
 - **Tiefe Auswertung** (alles, was Health Connect liefert, `HealthBridgePlugin.kt`): Aktivität im Detail

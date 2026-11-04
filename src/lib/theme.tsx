@@ -1,9 +1,16 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
 export type ThemeMode = 'system' | 'light' | 'dark'
+/** Dunkler Stil: neutrales Fast-Schwarz (Standard) oder das frühere Blaugrau */
+export type DarkStyle = 'black' | 'midnight'
 type Resolved = 'light' | 'dark'
 
 const STORAGE_KEY = 'theme'
+const STYLE_KEY = 'theme_dark_style'
+
+function applyDarkStyle(s: DarkStyle) {
+  document.documentElement.classList.toggle('midnight', s === 'midnight')
+}
 
 function systemPrefersDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -21,6 +28,8 @@ interface ThemeState {
   resolved: Resolved
   setMode: (m: ThemeMode) => void
   toggle: () => void
+  darkStyle: DarkStyle
+  setDarkStyle: (s: DarkStyle) => void
 }
 
 const ThemeContext = createContext<ThemeState>({
@@ -28,6 +37,8 @@ const ThemeContext = createContext<ThemeState>({
   resolved: 'light',
   setMode: () => {},
   toggle: () => {},
+  darkStyle: 'black',
+  setDarkStyle: () => {},
 })
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -35,6 +46,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     () => (localStorage.getItem(STORAGE_KEY) as ThemeMode) || 'system',
   )
   const [resolved, setResolved] = useState<Resolved>(() => applyTheme(mode))
+  const [darkStyle, setDarkStyleState] = useState<DarkStyle>(() => {
+    const s: DarkStyle = localStorage.getItem(STYLE_KEY) === 'midnight' ? 'midnight' : 'black'
+    applyDarkStyle(s)
+    return s
+  })
+  function setDarkStyle(s: DarkStyle) {
+    localStorage.setItem(STYLE_KEY, s)
+    applyDarkStyle(s)
+    setDarkStyleState(s)
+  }
 
   // Bei Moduswechsel anwenden
   useEffect(() => {
@@ -63,7 +84,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ mode, resolved, setMode, toggle }}>
+    <ThemeContext.Provider value={{ mode, resolved, setMode, toggle, darkStyle, setDarkStyle }}>
       {children}
     </ThemeContext.Provider>
   )
