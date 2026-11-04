@@ -117,6 +117,10 @@ einer App, aber nur das sichtbar, was man nutzt.
   für denselben Muskel davor (Hauptmuskel 1, Hilfsmuskel 0,5) → Schätzfaktor −1,5 %/Satz, max. −15 %. Leistung im
   Verlauf wird damit bereinigt; ist man heute deutlich vorbelasteter als letztes Mal, startet der Vorschlag
   niedriger. Übungs-Verlauf markiert solche Tage mit „vorbelastet“.
+- **Übung bearbeiten** (`ExerciseForm.tsx`): Abschnitte Übung (Muskel-Chips, Hilfsmuskeln eingeklappt), Ziel-Wdh.
+  (Kraft/Aufbau/Ausdauer/Eigene), Gewicht verstellen (Freie Gewichte: Schritt 1/2,5/5 kg; Maschine: leichteste/Abstand/
+  schwerste mit Live-Vorschau, unregelmäßige Stufen als Liste), Einseitig + Geräte-Notiz. Neue Übung ohne Verlauf
+  startet mit leerem Gewicht (kein pauschales 20 kg). Fasten-Einstellungen nur bei Intervallfasten sichtbar.
 - **Satz-Schema** (`src/lib/setScheme.ts`, `prefs.setScheme`): bekannte Übungen starten mit der Struktur vom
   letzten Mal (Anzahl Arbeitssätze, Drop, Aufwärmen), neue nach eigenem Schema (Standard 3 Sätze, Aufwärmen
   automatisch = erste Übung je Muskel, kein Drop). Einstellbar unter Profil → Einstellungen. Die KI prüft den

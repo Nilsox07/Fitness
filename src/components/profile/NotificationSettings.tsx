@@ -1,3 +1,4 @@
+import { useDietStyle } from '../../hooks/useNutrition'
 import { useEffect, useState } from 'react'
 import { Bell, BellRing, Check, Send } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
@@ -41,6 +42,8 @@ export function NotificationSettings() {
   const [msg, setMsg] = useState<string | null>(null)
   const shareCheat = useShareCheat()
   const { showNutrition, showSocial } = usePrefs()
+  // Essensfenster nur für Leute, die Intervallfasten machen
+  const fasting = useDietStyle().fasting !== 'none'
   // Gruppen ausgeblendeter Module nicht anbieten
   const groups = NOTIFY_GROUPS.filter((g) => (g !== 'Ernährung' || showNutrition) && (g !== 'Community' || showSocial))
 
@@ -155,7 +158,7 @@ export function NotificationSettings() {
           title={g}
           footer={g === 'Community' ? 'Eigene Cheat-Meals teilst du nur, wenn der zweite Schalter an ist.' : undefined}
         >
-          {NOTIFY_ITEMS.filter((i) => i.group === g).map((item) => {
+          {NOTIFY_ITEMS.filter((i) => i.group === g && (i.kind !== 'fasting' || fasting)).map((item) => {
             const s = prefs.notify[item.kind]
             return (
               <div key={item.kind} className="px-4 py-3">

@@ -1,3 +1,4 @@
+import { useDietStyle } from '../../hooks/useNutrition'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Droplet, Dumbbell, Lock, Users, Utensils, Watch } from 'lucide-react'
 import { usePrefs } from '../../lib/prefs'
@@ -75,6 +76,7 @@ function ModuleRow({
  * Erinnerungen). Die Smartwatch-Funktionen sind ohne Uhr gar nicht sichtbar.
  */
 export function ModuleSettings() {
+  const fasting = useDietStyle().fasting !== 'none'
   const { showNutrition, setShowNutrition, showSocial, setShowSocial, hasWatch, setHasWatch, hasCycle, setHasCycle } =
     usePrefs()
   const { data: settings } = useNutritionSettings()
@@ -267,12 +269,12 @@ export function ModuleSettings() {
         </section>
       )}
 
-      {native && showNutrition && (
+      {native && showNutrition && fasting && (
         <ModuleRow
           icon={<Lock size={19} />}
           tint="bg-sand text-cocoa-light"
-          title="Fasten auf dem Sperrbildschirm"
-          hint="Countdown bis zum Essensfenster dauerhaft anzeigen"
+          title="Intervallfasten auf dem Sperrbildschirm"
+          hint="Countdown bis dein Essensfenster öffnet bzw. schließt"
         >
           <Switch
             on={liveFasting}

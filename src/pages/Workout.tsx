@@ -170,7 +170,7 @@ function templateInputs(workoutId: string, ex: Exercise, base: number, startNo: 
 
 function baseFor(ex: Exercise, history: SetWithDate[], ctx?: ProgressionContext): number {
   const sug = progressionSuggestion(ex, history, ctx)
-  return sug.suggestedWeight > 0 ? sug.suggestedWeight : 20
+  return sug.suggestedWeight > 0 ? sug.suggestedWeight : 0 // neue Übung: Gewicht selbst eintragen statt pauschal 20 kg
 }
 
 /** Gespeicherte „KI hat den Aufwärmsatz geprüft"-Übungen je Training (übersteht Reload). */
@@ -299,7 +299,7 @@ export default function Workout() {
   const nextSetNumber = setsForExercise.reduce((max, s) => Math.max(max, s.set_number), 0) + 1
 
   // Arbeitsgewicht als Basis für Vorschläge
-  const workingBase = suggestion && suggestion.suggestedWeight > 0 ? suggestion.suggestedWeight : 20
+  const workingBase = suggestion && suggestion.suggestedWeight > 0 ? suggestion.suggestedWeight : 0
 
   // PR-Erkennung: neuer bester geschätzter 1RM einer Übung heute → Konfetti.
   const [prName, setPrName] = useState<string | null>(null)
