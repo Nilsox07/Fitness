@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  addLadderStep,
+  editLadderStep,
   expandWithAddons,
+  ladderText,
   generateLadder,
   ladderStep,
   parseLadder,
@@ -62,5 +65,24 @@ describe('expandWithAddons', () => {
   })
   it('lässt die Basis unverändert ohne Zusatzgewichte', () => {
     expect(expandWithAddons([4, 9, 13], [])).toEqual([4, 9, 13])
+  })
+})
+
+describe('Stufen korrigieren', () => {
+  const L = [5, 10, 15, 20, 25]
+  it('einzelne Stufe ändern ohne Rest', () => {
+    expect(editLadderStep(L, 2, 14, false)).toEqual([5, 10, 14, 20, 25])
+  })
+  it('unregelmäßiger Sprung: folgende Stufen verschieben sich mit', () => {
+    expect(editLadderStep(L, 2, 17.5, true)).toEqual([5, 10, 17.5, 22.5, 27.5])
+  })
+  it('bleibt sortiert, Doppelte und 0 fallen weg', () => {
+    expect(editLadderStep(L, 1, 20, false)).toEqual([5, 15, 20, 25])
+    expect(editLadderStep(L, 0, 0, false)).toEqual([10, 15, 20, 25])
+  })
+  it('Stufe ergänzen und als Text', () => {
+    expect(addLadderStep(L, 12.5)).toEqual([5, 10, 12.5, 15, 20, 25])
+    expect(ladderText([4.5, 9.1])).toBe('4.5 9.1')
+    expect(ladderText([])).toBeNull()
   })
 })

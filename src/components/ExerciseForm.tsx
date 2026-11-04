@@ -4,7 +4,7 @@ import type { ExerciseInput } from '../hooks/useExercises'
 import { suggestMuscles } from '../lib/ai'
 import { useAiGate } from '../hooks/usePremium'
 import { PlusBadge } from './premium/PlusBadge'
-import { generateLadder, parseLadder } from '../lib/weights'
+import { addLadderStep, editLadderStep, generateLadder, ladderText, parseLadder } from '../lib/weights'
 import { MUSCLE_GROUPS, type MuscleGroup } from '../types'
 
 export const EMPTY_EXERCISE: ExerciseInput = {
@@ -104,7 +104,6 @@ export function ExerciseForm({
     step: initial ? fmt(initial.step) : '',
     max: initial ? fmt(initial.max) : ladder.length ? fmt(ladder[ladder.length - 1]) : '',
   })
-  const [exact, setExact] = useState(ladder.length > 0 && !initial)
   const [customStep, setCustomStep] = useState(!STEP_PRESETS.includes(form.increment))
 
   function update(patch: Partial<ExerciseInput>) {
@@ -282,38 +281,16 @@ export function ExerciseForm({
           </>
         ) : (
           <>
-            {!exact ? (
-              <>
-                <span className="block pt-1 text-sm text-cocoa-light">Wie sind die Stufen an der Maschine?</span>
-                <div className="flex items-end gap-2">
-                  <TextNum label="leichteste" value={gen.start} onChange={(v) => updateGen({ ...gen, start: v })} />
-                  <TextNum label="Abstand" value={gen.step} onChange={(v) => updateGen({ ...gen, step: v })} />
-                  <TextNum label="schwerste" value={gen.max} onChange={(v) => updateGen({ ...gen, max: v })} />
-                </div>
-              </>
-            ) : (
-              <>
-                <span className="block pt-1 text-sm text-cocoa-light">Alle Stufen, mit Leerzeichen getrennt</span>
-                <input
-                  className="input"
-                  inputMode="decimal"
-                  placeholder="z. B. 4 9 13 18 22"
-                  value={form.weight_steps ?? ''}
-                  onChange={(e) => update({ weight_steps: e.target.value || null })}
-                />
-              </>
-            )}
-            <LadderPreview ladder={parseLadder(form.weight_steps)} />
-            <button
-              type="button"
-              className="text-xs font-semibold text-brand"
-              onClick={() => {
-                if (exact && gen.start && gen.step && gen.max) updateGen(gen)
-                setExact((v) => !v)
-              }}
-            >
-              {exact ? 'Gleichmäßige Stufen eingeben' : 'Abstände unregelmäßig? Stufen einzeln eintragen'}
-            </button>
+            <span className="block pt-1 text-sm text-cocoa-light">Wie sind die Stufen an der Maschine?</span>
+            <div className="flex items-end gap-2">
+              <TextNum label="leichteste" value={gen.start} onChange={(v) => updateGen({ ...gen, start: v })} />
+              <TextNum label="Abstand" value={gen.step} onChange={(v) => updateGen({ ...gen, step: v })} />
+              <TextNum label="schwerste" value={gen.max} onChange={(v) => updateGen({ ...gen, max: v })} />
+            </div>
+            <LadderEditor
+              ladder={parseLadder(form.weight_steps)}
+              onChange={(l) => update({ weight_steps: ladderText(l) })}
+            />
           </>
         )}
       </Block>
@@ -478,27 +455,98 @@ function TextNum({ label, value, onChange }: { label: string; value: string; onC
   )
 }
 
-/** Vorschau der Stufen – so sieht man sofort, ob es stimmt. */
-function LadderPreview({ ladder }: { ladder: number[] }) {
+/**
+ * Stufen der Maschine: Vorschau aller Werte, jede Stufe antippbar zum Korrigieren
+ * (unregelmäßiger Sprung → folgende Stufen verschieben sich mit), Stufen ergänzen/entfernen.
+ */
+function LadderEditor({ ladder, onChange }: { ladder: number[]; onChange: (l: number[]) => void }) {
+  const [sel, setSel] = useState<number | 'new' | null>(null)
+  const [val, setVal] = useState('')
+  const [shift, setShift] = useState(true)
+
   if (!ladder.length)
     return <p className="text-xs text-cocoa-muted">Trag die Werte ein – +/− springt dann genau auf diese Stufen.</p>
-  const shown = ladder.length > 10 ? [...ladder.slice(0, 6), null, ...ladder.slice(-2)] : ladder
+
+  function open(i: number | 'new') {
+    setSel(i)
+    setVal(i === 'new' ? '' : fmt(ladder[i]))
+  }
+  function apply() {
+    const v = num(val)
+    if (sel === 'new') onChange(addLadderStep(ladder, v))
+    else if (sel != null) onChange(editLadderStep(ladder, sel, v, shift))
+    setSel(null)
+  }
+
   return (
-    <div>
+    <div className="space-y-2">
       <div className="flex flex-wrap gap-1">
-        {shown.map((v, i) =>
-          v == null ? (
-            <span key={`gap-${i}`} className="px-1 text-xs text-cocoa-muted">
-              …
-            </span>
-          ) : (
-            <span key={i} className="tabular rounded-lg bg-sand px-2 py-0.5 text-xs font-semibold text-cocoa">
-              {fmt(v)}
-            </span>
-          ),
-        )}
+        {ladder.map((v, i) => (
+          <button
+            key={`${i}-${v}`}
+            type="button"
+            onClick={() => open(i)}
+            className={`tabular rounded-lg px-2 py-1 text-xs font-semibold transition active:scale-95 ${
+              sel === i ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa'
+            }`}
+          >
+            {fmt(v)}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => open('new')}
+          className={`rounded-lg px-2 py-1 text-xs font-semibold ${sel === 'new' ? 'bg-brand text-on-brand' : 'text-brand'}`}
+        >
+          + Stufe
+        </button>
       </div>
-      <p className="mt-1 text-[11px] text-cocoa-muted">{ladder.length} Stufen · +/− springt genau auf diese Werte</p>
+
+      {sel != null ? (
+        <div className="anim-fade space-y-2 rounded-xl bg-sand p-2.5">
+          <div className="flex items-center gap-2">
+            <input
+              autoFocus
+              className="input flex-1 text-center"
+              inputMode="decimal"
+              placeholder="kg"
+              value={val}
+              onChange={(e) => setVal(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && apply()}
+            />
+            <button type="button" className="btn-primary px-4 py-2 text-sm" onClick={apply}>
+              OK
+            </button>
+            {sel !== 'new' && (
+              <button
+                type="button"
+                className="rounded-xl px-2 py-2 text-sm font-semibold text-cocoa-muted"
+                onClick={() => {
+                  onChange(ladder.filter((_, i) => i !== sel))
+                  setSel(null)
+                }}
+              >
+                Entfernen
+              </button>
+            )}
+          </div>
+          {sel !== 'new' && sel < ladder.length - 1 && (
+            <label className="flex items-center gap-2 text-xs text-cocoa-light">
+              <input
+                type="checkbox"
+                checked={shift}
+                onChange={(e) => setShift(e.target.checked)}
+                className="accent-brand"
+              />
+              Folgende Stufen um den gleichen Wert mitverschieben
+            </label>
+          )}
+        </div>
+      ) : (
+        <p className="text-[11px] text-cocoa-muted">
+          {ladder.length} Stufen · Stimmt eine nicht? Antippen und korrigieren.
+        </p>
+      )}
     </div>
   )
 }

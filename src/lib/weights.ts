@@ -76,3 +76,29 @@ export function expandWithAddons(base: number[], addons: number[]): number[] {
   }
   return [...out].sort((x, y) => x - y)
 }
+
+/**
+ * Eine Stufe korrigieren (z. B. ein unregelmäßiger Sprung an der Maschine). `shiftRest`: alle
+ * folgenden Stufen um dieselbe Differenz mitverschieben – passt, wenn ab hier alles versetzt ist.
+ * Ergebnis bleibt sortiert und ohne Doppelte; 0 oder weniger entfernt die Stufe.
+ */
+export function editLadderStep(ladder: number[], index: number, value: number, shiftRest: boolean): number[] {
+  if (index < 0 || index >= ladder.length || !Number.isFinite(value)) return ladder
+  if (value <= 0) return ladder.filter((_, i) => i !== index)
+  const delta = value - ladder[index]
+  const next = ladder.map((v, i) => (i === index ? value : shiftRest && i > index ? v + delta : v))
+  return [...new Set(next.map(round2).filter((v) => v > 0))].sort((a, b) => a - b)
+}
+
+/** Stufe ergänzen (z. B. eine fehlende Zwischenstufe). */
+export function addLadderStep(ladder: number[], value: number): number[] {
+  if (!Number.isFinite(value) || value <= 0) return ladder
+  return [...new Set([...ladder, round2(value)])].sort((a, b) => a - b)
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100
+
+/** Leiter → Text fürs Speichern. */
+export function ladderText(ladder: number[]): string | null {
+  return ladder.length ? ladder.map((v) => String(round2(v))).join(' ') : null
+}
