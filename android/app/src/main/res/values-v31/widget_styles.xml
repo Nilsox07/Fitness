@@ -7,4 +7,11 @@
         <item name="android:background">@drawable/widget_card</item>
         <item name="android:clipToOutline">true</item>
     </style>
+
+    <style name="WidgetFb.Hero">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:background">@drawable/widget_hero</item>
+        <item name="android:clipToOutline">true</item>
+    </style>
 </resources>

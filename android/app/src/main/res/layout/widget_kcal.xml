@@ -1,83 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Kalorien (2×2): großer Ring mit „übrig“, Eiweiß darunter -->
+<!-- Kalorien (2×2), Buddy-Karte: übrig groß, Balken, Gegessen/Eiweiß -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
-    style="@style/WidgetFb.Card">
+    style="@style/WidgetFb.Hero">
 
-    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
+    <ImageView android:id="@+id/art" style="@style/WidgetFb.Art" />
 
     <include
         android:id="@+id/empty"
-        layout="@layout/widget_empty"
+        layout="@layout/widget_empty_hero"
         android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/content"
-        style="@style/WidgetFb.Content">
+        style="@style/WidgetFb.HeroContent">
+
+        <TextView
+            android:id="@+id/overline"
+            style="@style/WidgetFb.HeroOverline"
+            android:layout_marginEnd="54dp"
+            android:text="Kalorien · Mo" />
+
+        <FrameLayout style="@style/WidgetFb.Fill" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView android:id="@+id/dot" style="@style/WidgetFb.Dot" />
-
-            <TextView
-                android:id="@+id/overline"
-                style="@style/WidgetFb.Overline"
-                android:text="Kalorien" />
-        </LinearLayout>
-
-        <FrameLayout
-            style="@style/WidgetFb.Fill"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp">
-
-            <FrameLayout
-                android:layout_width="88dp"
-                android:layout_height="88dp"
-                android:layout_gravity="center">
-
-                <ImageView android:id="@+id/ring" style="@style/WidgetFb.Ring" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/kcal_left"
-                        style="@style/WidgetFb.Number"
-                        android:text="1.240"
-                        android:textSize="20sp" />
-
-                    <TextView
-                        android:id="@+id/kcal_label"
-                        style="@style/WidgetFb.Muted"
-                        android:layout_marginTop="1dp"
-                        android:text="kcal übrig"
-                        android:textSize="10sp" />
-                </LinearLayout>
-            </FrameLayout>
-        </FrameLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:gravity="bottom"
             android:orientation="horizontal">
 
             <TextView
-                style="@style/WidgetFb.Body"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:text="Eiweiß" />
+                android:id="@+id/kcal_left"
+                style="@style/WidgetFb.HeroNumber"
+                android:text="1.240" />
 
             <TextView
-                android:id="@+id/protein_val"
-                style="@style/WidgetFb.Value"
-                android:text="82 / 140 g" />
+                android:id="@+id/kcal_label"
+                style="@style/WidgetFb.HeroBody"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="3dp"
+                android:text="kcal übrig"
+                android:textStyle="bold" />
         </LinearLayout>
+
+        <ImageView
+            android:id="@+id/bar"
+            style="@style/WidgetFb.HeroBar"
+            android:layout_marginTop="8dp" />
+
+        <include layout="@layout/widget_hero_stats" />
     </LinearLayout>
+
+    <include
+        layout="@layout/widget_hero_buddy"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp" />
 </FrameLayout>

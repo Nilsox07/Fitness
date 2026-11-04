@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Buddy-Karte: Verlauf App-Farbe (unten links) → fast Schwarz (oben rechts).
+     Platzhalter für die Vorschau; zur Laufzeit liegt die gezeichnete Karte darüber. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="45"
+        android:centerColor="#5C0F24"
+        android:endColor="#120A12"
+        android:startColor="#E11D48"
+        android:type="linear" />
+    <corners android:radius="@dimen/widget_radius" />
+</shape>

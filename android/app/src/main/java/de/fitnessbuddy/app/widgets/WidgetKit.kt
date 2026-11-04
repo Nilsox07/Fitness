@@ -103,22 +103,116 @@ internal class Snap(private val j: JSONObject) {
     }
 }
 
+/**
+ * Maße einer Buddy-Karte in dp (muss zum Layout passen). [overlap] = so weit ragt Buddy oben
+ * über die Karte hinaus; [buddyTop]/[buddyEnd] = Abstand von Buddy zur Widget-Ecke.
+ */
+internal class HeroSpec(
+    val w: Float,
+    val h: Float,
+    val buddy: Float,
+    val overlap: Float = 0f,
+    val buddyTop: Float = 4f,
+    val buddyEnd: Float = 4f,
+) {
+    val cardH get() = h - overlap
+}
+
 /** Farben + Zeichen-Helfer für einen Durchlauf (ein Snapshot, ein Hell/Dunkel-Zustand). */
 internal class Kit(val ctx: Context, val s: Snap) {
     val night = (ctx.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
     val accent = s.color("accent") ?: DEFAULT_ACCENT
     val accentLight = s.color("accentLight") ?: WidgetArt.mix(accent, Color.WHITE, 0.35f)
+    val accentDark = WidgetArt.mix(accent, Color.BLACK, 0.16f)
     val onAccent = s.color("onAccent") ?: Color.WHITE
     val track = WidgetArt.alpha(accent, if (night) 0.22f else 0.15f)
-    val success = ctx.getColor(R.color.widget_success)
+
+    /** „Erledigt“ folgt der App-Farbe (wie in der App). */
+    val success = accent
     val gold = ctx.getColor(R.color.widget_gold)
+
+    /** Auf der dunklen Karte: Weiß als Füllung, Spur halb durchsichtig. */
+    private val heroTrack = WidgetArt.alpha(Color.WHITE, 0.18f)
+
+    /** Kurzer Wochentag für die Überzeile („TRAINING · MO“). */
+    val day: String = arrayOf("MO", "DI", "MI", "DO", "FR", "SA", "SO")[LocalDate.now().dayOfWeek.value - 1]
 
     private val glowBitmap: Bitmap by lazy { WidgetArt.glow(ctx, GLOW_DP, accent, night) }
 
-    /** Neue Ansicht mit Karte, Akzent-Schein und Akzent-Punkt vor dem Überschrift-Label. */
+    /** Neue Ansicht mit ruhiger Karte und Akzent-Schein (kleine Widgets). */
     fun views(layout: Int): RemoteViews = RemoteViews(ctx.packageName, layout).also { v ->
         v.setImageViewBitmap(R.id.glow, glowBitmap)
-        v.setInt(R.id.dot, "setColorFilter", accent)
+    }
+
+    /**
+     * Buddy-Karte: [fill] befüllt die Ansicht und gibt die große Hintergrund-Zahl zurück
+     * (null = keine). Danach wird die Karte passend dazu gezeichnet.
+     */
+    fun hero(layout: Int, spec: HeroSpec, fill: (RemoteViews) -> String?): RemoteViews {
+        val v = RemoteViews(ctx.packageName, layout)
+        buddy(v, spec.buddy)
+        val big = fill(v)
+        v.setImageViewBitmap(
+            R.id.art,
+            WidgetArt.card(
+                ctx, spec.w, spec.cardH, accent, accentDark, big,
+                glowX = spec.w - spec.buddyEnd - spec.buddy / 2,
+                glowY = spec.buddyTop - spec.overlap + spec.buddy / 2,
+                glowR = spec.buddy * 1.05f,
+            ),
+        )
+        return v
+    }
+
+    fun heroBar(v: RemoteViews, id: Int, wDp: Float, hDp: Float, pct: Float, color: Int = Color.WHITE) =
+        v.setImageViewBitmap(id, WidgetArt.bar(ctx, wDp, hDp, pct, color, heroTrack))
+
+    fun heroDots(v: RemoteViews, id: Int, count: Int, done: Int) =
+        v.setImageViewBitmap(id, WidgetArt.dots(ctx, count, done, Color.WHITE, heroTrack, 8f, 5f))
+
+    /** Weißer Knopf auf der Karte (Akzent-Fläche würde unten links im Verlauf verschwinden). */
+    fun heroPill(v: RemoteViews, bgId: Int, textId: Int) {
+        v.setInt(bgId, "setColorFilter", Color.WHITE)
+        v.setTextColor(textId, WidgetArt.mix(accent, Color.BLACK, 0.3f))
+    }
+
+    /**
+     * Überzeile („TRAINING · MI“). Der Wochentag kommt nur dazu, wenn er neben Buddy noch Platz hat
+     * ([endDp] = Abstand rechts im Layout); grob 7 dp je Großbuchstabe.
+     */
+    fun over(v: RemoteViews, title: String, spec: HeroSpec, endDp: Float = 54f) {
+        val full = "$title · $day"
+        v.setTextViewText(R.id.overline, if (full.length * 7f <= spec.w - 28f - endDp) full else title)
+    }
+
+    /** Bis zu drei Kennzahlen (Wert + Label); fehlende Spalten verschwinden, ohne Werte die ganze Zeile. */
+    fun stats(v: RemoteViews, items: List<Pair<String, String>>) {
+        val cols = listOf(
+            Triple(R.id.stat1, R.id.stat1_value, R.id.stat1_label),
+            Triple(R.id.stat2, R.id.stat2_value, R.id.stat2_label),
+            Triple(R.id.stat3, R.id.stat3_value, R.id.stat3_label),
+        )
+        cols.forEachIndexed { i, (col, value, label) ->
+            val st = items.getOrNull(i)
+            if (st == null) {
+                v.setViewVisibility(col, View.GONE)
+            } else {
+                v.setViewVisibility(col, View.VISIBLE)
+                v.setTextViewText(value, st.first)
+                v.setTextViewText(label, st.second)
+            }
+        }
+        if (items.isEmpty()) {
+            v.setViewVisibility(R.id.stats, View.GONE)
+            v.setViewVisibility(R.id.divider, View.GONE)
+        }
+    }
+
+    /** Goldenes Siegel unten rechts (Serie, alles geschafft). Platzhalter in der Kennzahlen-Zeile hält Abstand. */
+    fun seal(v: RemoteViews, value: String, label: String) {
+        v.setImageViewBitmap(R.id.seal, WidgetArt.seal(ctx, SEAL_DP, value, label))
+        v.setViewVisibility(R.id.seal, View.VISIBLE)
+        v.setViewVisibility(R.id.seal_space, View.VISIBLE)
     }
 
     fun ring(v: RemoteViews, id: Int, sizeDp: Float, pct: Float, color: Int = accent, light: Int = accentLight) =
@@ -136,9 +230,8 @@ internal class Kit(val ctx: Context, val s: Snap) {
         v.setTextColor(textId, onAccent)
     }
 
-    /** Buddy-Bild mit Lichthof; ohne Bild das Emoji. */
-    fun buddy(v: RemoteViews, haloDp: Float, buddyDp: Float) {
-        v.setImageViewBitmap(R.id.halo, WidgetArt.halo(ctx, haloDp, accent, night))
+    /** Buddy-Bild (der Lichtschein steckt in der Karte); ohne Bild das Emoji. */
+    fun buddy(v: RemoteViews, buddyDp: Float) {
         val img = WidgetArt.buddy(ctx, buddyDp)
         if (img != null) {
             v.setImageViewBitmap(R.id.buddy, img)
@@ -154,6 +247,7 @@ internal class Kit(val ctx: Context, val s: Snap) {
     /** Inhalt ausblenden und Hinweis zeigen. */
     fun empty(v: RemoteViews, title: String, hint: String? = null) {
         v.setViewVisibility(R.id.content, View.GONE)
+        v.setViewVisibility(R.id.seal, View.GONE)
         v.setViewVisibility(R.id.empty, View.VISIBLE)
         v.setTextViewText(R.id.empty_title, title)
         v.setTextViewText(R.id.empty_hint, hint ?: "")
@@ -188,6 +282,7 @@ internal class Kit(val ctx: Context, val s: Snap) {
     companion object {
         val DEFAULT_ACCENT = Color.parseColor("#E11D48")
         const val GLOW_DP = 170f
+        const val SEAL_DP = 54f
     }
 }
 
@@ -216,6 +311,16 @@ abstract class BaseWidget : AppWidgetProvider() {
      * Mehrere Layouts je Größe. Ab Android 12 wählt der Launcher selbst,
      * davor entscheiden wir anhand der gemeldeten Größe (Hochformat).
      */
+    /**
+     * Ungefähre Widget-Größe in dp (Hochformat: Mindestbreite × Höchsthöhe), begrenzt auf den
+     * Bereich der Layout-Variante. Ohne Angabe gilt [defW] × [defH].
+     */
+    internal fun dims(opts: Bundle, defW: Float, defH: Float, minW: Float = 0f, maxW: Float = Float.MAX_VALUE): SizeF {
+        val w = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).toFloat().takeIf { it > 0f } ?: defW
+        val h = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).toFloat().takeIf { it > 0f } ?: defH
+        return SizeF(w.coerceIn(minW, maxW), h.coerceIn(80f, 600f))
+    }
+
     internal fun sized(opts: Bundle, vararg variants: Pair<SizeF, () -> RemoteViews>): RemoteViews {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return RemoteViews(variants.associate { it.first to it.second() })

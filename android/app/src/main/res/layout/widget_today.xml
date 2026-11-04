@@ -1,150 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tagesübersicht (4×2): Kalorien-Ring, Eiweiß, Wasser mit +250 ml -->
+<!-- Tagesübersicht (4×2), Buddy-Karte: kcal übrig groß, Eiweiß, Wasser mit +250 ml -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
-    style="@style/WidgetFb.Card">
+    style="@style/WidgetFb.Hero">
 
-    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
+    <ImageView android:id="@+id/art" style="@style/WidgetFb.Art" />
 
     <include
         android:id="@+id/empty"
-        layout="@layout/widget_empty"
+        layout="@layout/widget_empty_hero"
         android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/content"
-        style="@style/WidgetFb.Content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        style="@style/WidgetFb.HeroContent">
 
-        <FrameLayout
-            android:layout_width="100dp"
-            android:layout_height="100dp">
+        <TextView
+            android:id="@+id/overline"
+            style="@style/WidgetFb.HeroOverline"
+            android:layout_marginEnd="92dp"
+            android:text="Ernährung · Mo" />
 
-            <ImageView android:id="@+id/ring" style="@style/WidgetFb.Ring" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/kcal_left"
-                    style="@style/WidgetFb.Number"
-                    android:text="1.240"
-                    android:textSize="22sp" />
-
-                <TextView
-                    android:id="@+id/kcal_label"
-                    style="@style/WidgetFb.Muted"
-                    android:layout_marginTop="2dp"
-                    android:text="kcal übrig"
-                    android:textSize="10sp" />
-            </LinearLayout>
-        </FrameLayout>
+        <FrameLayout style="@style/WidgetFb.Fill" />
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_marginEnd="92dp"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/kcal_left"
+                style="@style/WidgetFb.HeroNumber"
+                android:text="1.240" />
+
+            <TextView
+                android:id="@+id/kcal_label"
+                style="@style/WidgetFb.HeroBody"
+                android:layout_marginStart="5dp"
+                android:layout_marginBottom="3dp"
+                android:text="kcal übrig"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/bar"
+            style="@style/WidgetFb.HeroBar"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="92dp" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/widget_hero_line" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:id="@+id/stat1"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-                <ImageView android:id="@+id/dot" style="@style/WidgetFb.Dot" />
-
-                <TextView
-                    android:id="@+id/overline"
-                    style="@style/WidgetFb.Overline"
-                    android:text="Ernährung heute" />
+                <TextView android:id="@+id/stat1_value" style="@style/WidgetFb.HeroStatValue" android:text="82/140 g" />
+                <TextView android:id="@+id/stat1_label" style="@style/WidgetFb.HeroStatLabel" android:text="Eiweiß" />
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:id="@+id/stat2"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="horizontal">
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-                <TextView
-                    style="@style/WidgetFb.Body"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:text="Eiweiß" />
-
-                <TextView
-                    android:id="@+id/protein_val"
-                    style="@style/WidgetFb.Value"
-                    android:text="82 / 140 g" />
+                <TextView android:id="@+id/stat2_value" style="@style/WidgetFb.HeroStatValue" android:text="1,25/2,5 l" />
+                <TextView android:id="@+id/stat2_label" style="@style/WidgetFb.HeroStatLabel" android:text="Wasser" />
             </LinearLayout>
-
-            <ImageView
-                android:id="@+id/protein_bar"
-                style="@style/WidgetFb.Bar"
-                android:layout_marginTop="5dp" />
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:id="@+id/stat3"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:gravity="bottom"
-                android:orientation="horizontal">
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            style="@style/WidgetFb.Body"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:text="Wasser" />
-
-                        <TextView
-                            android:id="@+id/water_val"
-                            style="@style/WidgetFb.Value"
-                            android:text="1,25 / 2,5 l" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:id="@+id/water_bar"
-                        style="@style/WidgetFb.Bar"
-                        android:layout_marginTop="5dp" />
-                </LinearLayout>
-
-                <FrameLayout
-                    android:id="@+id/water_add"
-                    android:layout_width="76dp"
-                    android:layout_height="32dp"
-                    android:layout_marginStart="12dp"
-                    android:contentDescription="250 ml Wasser eintragen">
-
-                    <ImageView
-                        android:id="@+id/water_add_bg"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:importantForAccessibility="no"
-                        android:scaleType="fitXY"
-                        android:src="@drawable/widget_pill" />
-
-                    <TextView
-                        android:id="@+id/water_add_text"
-                        style="@style/WidgetFb.PillText"
-                        android:text="+250 ml" />
-                </FrameLayout>
+                <TextView android:id="@+id/stat3_value" style="@style/WidgetFb.HeroStatValue" android:text="960" />
+                <TextView android:id="@+id/stat3_label" style="@style/WidgetFb.HeroStatLabel" android:text="Gegessen" />
             </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/water_add"
+                android:layout_width="76dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="8dp"
+                android:contentDescription="250 ml Wasser eintragen">
+
+                <ImageView
+                    android:id="@+id/water_add_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_pill"
+                    android:tint="#FFFFFF" />
+
+                <TextView
+                    android:id="@+id/water_add_text"
+                    style="@style/WidgetFb.PillText"
+                    android:text="+250 ml"
+                    android:textColor="#9F1239" />
+            </FrameLayout>
         </LinearLayout>
     </LinearLayout>
+
+    <include
+        layout="@layout/widget_hero_buddy"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp" />
 </FrameLayout>

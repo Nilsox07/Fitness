@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Buddy oben rechts auf der Karte; Größe und Abstand legt das <include> fest (passend zu HeroSpec) -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/buddy_box"
+    android:layout_width="64dp"
+    android:layout_height="64dp"
+    android:layout_gravity="top|end"
+    android:layout_marginTop="4dp"
+    android:layout_marginEnd="4dp">
+
+    <ImageView
+        android:id="@+id/buddy"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="Buddy"
+        android:scaleType="fitCenter"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/buddy_emoji"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:autoSizeMaxTextSize="80sp"
+        android:autoSizeMinTextSize="20sp"
+        android:autoSizeTextType="uniform"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:padding="6dp"
+        android:text="🐤" />
+</FrameLayout>

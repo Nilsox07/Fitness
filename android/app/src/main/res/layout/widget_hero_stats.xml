@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trennlinie + bis zu drei Kennzahlen (Wert + Label) für die Buddy-Karte -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="10dp"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@drawable/widget_hero_line" />
+
+    <LinearLayout
+        android:id="@+id/stats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/stat1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView android:id="@+id/stat1_value" style="@style/WidgetFb.HeroStatValue" android:text="2/3" />
+            <TextView android:id="@+id/stat1_label" style="@style/WidgetFb.HeroStatLabel" android:text="Woche" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/stat2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView android:id="@+id/stat2_value" style="@style/WidgetFb.HeroStatValue" android:text="5 Wo." />
+            <TextView android:id="@+id/stat2_label" style="@style/WidgetFb.HeroStatLabel" android:text="Serie" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/stat3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView android:id="@+id/stat3_value" style="@style/WidgetFb.HeroStatValue" />
+            <TextView android:id="@+id/stat3_label" style="@style/WidgetFb.HeroStatLabel" />
+        </LinearLayout>
+
+        <!-- Platz fürs goldene Siegel unten rechts -->
+        <FrameLayout
+            android:id="@+id/seal_space"
+            android:layout_width="48dp"
+            android:layout_height="1dp"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

@@ -26,14 +26,6 @@
         <item name="android:orientation">vertical</item>
     </style>
 
-    <style name="WidgetFb.Dot">
-        <item name="android:layout_width">6dp</item>
-        <item name="android:layout_height">6dp</item>
-        <item name="android:layout_marginEnd">6dp</item>
-        <item name="android:src">@drawable/widget_dot</item>
-        <item name="android:importantForAccessibility">no</item>
-    </style>
-
     <style name="WidgetFb.Overline">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
@@ -70,15 +62,6 @@
         <item name="android:maxLines">1</item>
     </style>
 
-    <style name="WidgetFb.Body">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/widget_text2</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:maxLines">1</item>
-        <item name="android:ellipsize">end</item>
-    </style>
-
     <style name="WidgetFb.Value">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
@@ -98,36 +81,13 @@
         <item name="android:ellipsize">end</item>
     </style>
 
-    <!-- Fortschritts-Balken (Bitmap, Platzhalter fürs Vorschaubild) -->
-    <style name="WidgetFb.Bar">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">6dp</item>
-        <item name="android:scaleType">fitXY</item>
-        <item name="android:src">@drawable/widget_bar_preview</item>
-        <item name="android:importantForAccessibility">no</item>
-    </style>
-
+    <!-- Fortschritts-Ring (Bitmap, Platzhalter fürs Vorschaubild) -->
     <style name="WidgetFb.Ring">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">match_parent</item>
         <item name="android:scaleType">fitCenter</item>
         <item name="android:src">@drawable/widget_ring_preview</item>
         <item name="android:importantForAccessibility">no</item>
-    </style>
-
-    <style name="WidgetFb.Bubble">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:background">@drawable/widget_bubble</item>
-        <item name="android:paddingStart">10dp</item>
-        <item name="android:paddingEnd">10dp</item>
-        <item name="android:paddingTop">7dp</item>
-        <item name="android:paddingBottom">7dp</item>
-        <item name="android:textColor">@color/widget_text</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:lineSpacingMultiplier">1.05</item>
-        <item name="android:ellipsize">end</item>
-        <item name="android:maxLines">3</item>
     </style>
 
     <style name="WidgetFb.PillText">
@@ -144,5 +104,121 @@
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">0dp</item>
         <item name="android:layout_weight">1</item>
+    </style>
+
+    <!-- ======== Buddy-Karte (wie die Teilen-Bilder): immer dunkel, Texte weiß ======== -->
+
+    <style name="WidgetFb.Hero">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:background">@drawable/widget_hero</item>
+    </style>
+
+    <!-- Gezeichnete Karte (Verlauf, Lichtschein, große Zahl) aus WidgetArt.card -->
+    <style name="WidgetFb.Art">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:scaleType">centerCrop</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <style name="WidgetFb.HeroContent">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:padding">14dp</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <style name="WidgetFb.HeroOverline">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/hero_text2</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.12</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="WidgetFb.HeroTitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/hero_text</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:fontFamily">sans-serif-black</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:lineSpacingMultiplier">0.92</item>
+    </style>
+
+    <style name="WidgetFb.HeroNumber">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/hero_text</item>
+        <item name="android:textSize">32sp</item>
+        <item name="android:fontFamily">sans-serif-black</item>
+        <item name="android:letterSpacing">-0.03</item>
+        <item name="android:fontFeatureSettings">tnum</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <style name="WidgetFb.HeroBody">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/hero_text2</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="WidgetFb.HeroStatValue">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">20dp</item>
+        <item name="android:textColor">@color/hero_text</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFeatureSettings">tnum</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:gravity">bottom|start</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:autoSizeTextType">uniform</item>
+        <item name="android:autoSizeMinTextSize">10sp</item>
+        <item name="android:autoSizeMaxTextSize">15sp</item>
+    </style>
+
+    <style name="WidgetFb.HeroStatLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:textColor">@color/hero_muted</item>
+        <item name="android:textSize">8.5sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="WidgetFb.HeroBar">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">5dp</item>
+        <item name="android:scaleType">fitXY</item>
+        <item name="android:src">@drawable/widget_hero_bar_preview</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <!-- Goldenes Siegel unten rechts (Bitmap aus WidgetArt.seal) -->
+    <style name="WidgetFb.Seal">
+        <item name="android:layout_width">54dp</item>
+        <item name="android:layout_height">54dp</item>
+        <item name="android:layout_gravity">bottom|end</item>
+        <item name="android:layout_marginEnd">6dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:visibility">gone</item>
+        <item name="android:importantForAccessibility">no</item>
     </style>
 </resources>

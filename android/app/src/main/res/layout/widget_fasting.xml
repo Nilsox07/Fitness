@@ -1,97 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fasten (2×2): Phase, Live-Countdown, Ring -->
+<!-- Fasten (2×2), Buddy-Karte: Phase, Live-Countdown, Balken -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
-    style="@style/WidgetFb.Card">
+    style="@style/WidgetFb.Hero">
 
-    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
+    <ImageView android:id="@+id/art" style="@style/WidgetFb.Art" />
 
     <include
         android:id="@+id/empty"
-        layout="@layout/widget_empty"
+        layout="@layout/widget_empty_hero"
         android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/content"
-        style="@style/WidgetFb.Content">
+        style="@style/WidgetFb.HeroContent">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView android:id="@+id/dot" style="@style/WidgetFb.Dot" />
-
-                    <TextView
-                        android:id="@+id/overline"
-                        style="@style/WidgetFb.Overline"
-                        android:text="Fasten" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/phase"
-                    style="@style/WidgetFb.Title"
-                    android:layout_marginTop="4dp"
-                    android:text="Fastenzeit"
-                    android:textSize="15sp" />
-            </LinearLayout>
-
-            <FrameLayout
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="6dp">
-
-                <ImageView android:id="@+id/ring" style="@style/WidgetFb.Ring" />
-
-                <TextView
-                    android:id="@+id/pct"
-                    style="@style/WidgetFb.Value"
-                    android:layout_gravity="center"
-                    android:text="62"
-                    android:textSize="11sp" />
-            </FrameLayout>
-        </LinearLayout>
+        <TextView
+            android:id="@+id/overline"
+            style="@style/WidgetFb.HeroOverline"
+            android:layout_marginEnd="54dp"
+            android:text="Fasten · Mo" />
 
         <FrameLayout style="@style/WidgetFb.Fill" />
 
+        <TextView
+            android:id="@+id/phase"
+            style="@style/WidgetFb.HeroTitle"
+            android:maxLines="1"
+            android:text="Fastenzeit"
+            android:textSize="15sp" />
+
         <Chronometer
             android:id="@+id/countdown"
-            style="@style/WidgetFb.Number"
+            style="@style/WidgetFb.HeroNumber"
             android:layout_width="match_parent"
-            android:layout_height="34dp"
-            android:autoSizeMaxTextSize="30sp"
+            android:layout_height="36dp"
+            android:autoSizeMaxTextSize="32sp"
             android:autoSizeMinTextSize="14sp"
             android:autoSizeTextType="uniform"
             android:gravity="center_vertical" />
 
         <TextView
             android:id="@+id/done"
-            style="@style/WidgetFb.Number"
+            style="@style/WidgetFb.HeroNumber"
             android:layout_width="match_parent"
-            android:layout_height="34dp"
-            android:autoSizeMaxTextSize="24sp"
+            android:layout_height="36dp"
+            android:autoSizeMaxTextSize="28sp"
             android:autoSizeMinTextSize="14sp"
             android:autoSizeTextType="uniform"
             android:gravity="center_vertical"
-            android:textColor="@color/widget_success"
             android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/until"
-            style="@style/WidgetFb.Muted"
-            android:layout_marginTop="2dp"
-            android:text="noch · bis 12:00 Uhr" />
+        <ImageView
+            android:id="@+id/bar"
+            style="@style/WidgetFb.HeroBar"
+            android:layout_marginTop="6dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/until"
+                style="@style/WidgetFb.HeroBody"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="noch · bis 12:00 Uhr" />
+
+            <TextView
+                android:id="@+id/pct"
+                style="@style/WidgetFb.HeroBody"
+                android:fontFeatureSettings="tnum"
+                android:text="62%"
+                android:textColor="@color/hero_text"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
+
+    <include
+        layout="@layout/widget_hero_buddy"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp" />
 </FrameLayout>

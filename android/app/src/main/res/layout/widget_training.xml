@@ -1,79 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Training (2×2): nächstes Training, Serie, Wochenziel als Punkte -->
+<!-- Training (2×2), Buddy-Karte: nächstes Training, Wochenziel, Serie (Siegel ab 2 Wochen) -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
-    style="@style/WidgetFb.Card">
+    style="@style/WidgetFb.Hero">
 
-    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
+    <ImageView android:id="@+id/art" style="@style/WidgetFb.Art" />
 
     <include
         android:id="@+id/empty"
-        layout="@layout/widget_empty"
+        layout="@layout/widget_empty_hero"
         android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/content"
-        style="@style/WidgetFb.Content">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView android:id="@+id/dot" style="@style/WidgetFb.Dot" />
-
-            <TextView
-                android:id="@+id/overline"
-                style="@style/WidgetFb.Overline"
-                android:text="Training heute" />
-        </LinearLayout>
+        style="@style/WidgetFb.HeroContent">
 
         <TextView
-            android:id="@+id/next"
-            style="@style/WidgetFb.Title"
-            android:layout_marginTop="6dp"
-            android:text="Oberkörper A"
-            android:textSize="18sp" />
+            android:id="@+id/overline"
+            style="@style/WidgetFb.HeroOverline"
+            android:layout_marginEnd="54dp"
+            android:text="Training · Mo" />
 
         <FrameLayout style="@style/WidgetFb.Fill" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/flame"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="4dp"
-                android:text="🔥"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/streak"
-                style="@style/WidgetFb.Value"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:text="5 Wochen Serie" />
-        </LinearLayout>
-
-        <ImageView
-            android:id="@+id/dots"
-            android:layout_width="match_parent"
-            android:layout_height="10dp"
-            android:layout_marginTop="8dp"
-            android:importantForAccessibility="no"
-            android:scaleType="fitStart"
-            android:src="@drawable/widget_dots_preview" />
+        <TextView
+            android:id="@+id/next"
+            style="@style/WidgetFb.HeroTitle"
+            android:text="Oberkörper A" />
 
         <TextView
             android:id="@+id/week"
-            style="@style/WidgetFb.Muted"
-            android:layout_marginTop="5dp"
-            android:text="2 von 3 diese Woche" />
+            style="@style/WidgetFb.HeroBody"
+            android:layout_marginTop="2dp"
+            android:text="Noch 1 Einheit diese Woche" />
+
+        <include layout="@layout/widget_hero_stats" />
     </LinearLayout>
+
+    <include
+        layout="@layout/widget_hero_buddy"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp" />
+
+    <ImageView android:id="@+id/seal" style="@style/WidgetFb.Seal" />
 </FrameLayout>

@@ -13,6 +13,7 @@ import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.SweepGradient
+import android.graphics.Typeface
 import de.fitnessbuddy.app.R
 import java.io.File
 import kotlin.math.max
@@ -20,7 +21,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * Zeichnet Ringe, Balken, Punkte und den Akzent-Schein als kleine Bitmaps.
+ * Zeichnet Ringe, Balken, Punkte, den Akzent-Schein und die Buddy-Karte als Bitmaps.
  * RemoteViews können Fortschrittsanzeigen erst ab Android 12 einfärben –
  * so sieht es überall gleich aus und trägt die Akzentfarbe der App.
  */
@@ -134,24 +135,6 @@ internal object WidgetArt {
         return b
     }
 
-    /** Runder Lichthof hinter dem Buddy. */
-    fun halo(ctx: Context, sizeDp: Float, color: Int, night: Boolean): Bitmap {
-        val sc = scale(ctx, sizeDp, sizeDp)
-        val s = sizeDp * sc
-        val (b, c) = canvas(s, s)
-        val peak = if (night) 0.45f else 0.28f
-        val p = paint().apply {
-            shader = RadialGradient(
-                s / 2, s / 2, s / 2,
-                intArrayOf(alpha(color, peak), alpha(color, peak * 0.4f), alpha(color, 0f)),
-                floatArrayOf(0f, 0.55f, 1f),
-                Shader.TileMode.CLAMP,
-            )
-        }
-        c.drawCircle(s / 2, s / 2, s / 2, p)
-        return b
-    }
-
     /** Wasserglas, von unten mit Akzent gefüllt. */
     fun glass(ctx: Context, wDp: Float, hDp: Float, pct: Float, color: Int, light: Int, track: Int): Bitmap {
         val sc = scale(ctx, wDp, hDp)
@@ -185,6 +168,144 @@ internal object WidgetArt {
             c.drawRect(0f, top, w, top + max(1f, sc), p)
             c.restore()
         }
+        return b
+    }
+
+    // ------------------------------------------------------------ Buddy-Karte
+
+    /** Längste Seite der Karten-Bitmap (größer als MAX_PX, weil sie das ganze Widget füllt). */
+    private const val CARD_PX = 560f
+
+    /** Fast Schwarz mit einem Hauch Akzent (oben rechts, dort steht Buddy). */
+    private val DEEP = Color.parseColor("#120A12")
+    private val NEAR_BLACK = Color.parseColor("#0B0B0C")
+    val GOLD = Color.parseColor("#F5B83D")
+    private val GOLD_INK = Color.parseColor("#3B2606")
+
+    private val BLACK_FACE: Typeface by lazy { Typeface.create("sans-serif-black", Typeface.NORMAL) }
+    private val BOLD_FACE: Typeface by lazy { Typeface.create("sans-serif", Typeface.BOLD) }
+
+    /**
+     * Hintergrund der Buddy-Karte (wie die Teilen-Bilder): Verlauf App-Farbe (unten links) →
+     * dunkel → fast Schwarz (oben rechts), weißer Lichtschein hinter Buddy, riesige
+     * angeschnittene Zahl, feine Körnung. Maße in dp, [glowX]/[glowY] = Mitte von Buddy.
+     */
+    fun card(
+        ctx: Context,
+        wDp: Float,
+        hDp: Float,
+        accent: Int,
+        accentDark: Int,
+        big: String?,
+        glowX: Float,
+        glowY: Float,
+        glowR: Float,
+    ): Bitmap {
+        val sc = min(ctx.resources.displayMetrics.density, CARD_PX / max(wDp, hDp).coerceAtLeast(1f))
+        val w = wDp * sc
+        val h = hDp * sc
+        val (b, c) = canvas(w, h)
+        val radius = ctx.resources.getDimension(R.dimen.widget_radius) / ctx.resources.displayMetrics.density * sc
+        val shape = Path().apply { addRoundRect(RectF(0f, 0f, w, h), radius, radius, Path.Direction.CW) }
+        c.save()
+        c.clipPath(shape)
+
+        val p = paint()
+        p.shader = LinearGradient(
+            0f, h, w, 0f,
+            intArrayOf(accent, accentDark, DEEP, NEAR_BLACK),
+            floatArrayOf(0f, 0.4f, 0.8f, 1f),
+            Shader.TileMode.CLAMP,
+        )
+        c.drawRect(0f, 0f, w, h, p)
+
+        val gx = glowX * sc
+        val gy = glowY * sc
+        val gr = max(glowR * sc, 1f)
+        p.shader = RadialGradient(gx, gy, gr, intArrayOf(alpha(Color.WHITE, 0.16f), alpha(Color.WHITE, 0f)), null, Shader.TileMode.CLAMP)
+        c.drawRect(0f, 0f, w, h, p)
+        p.shader = null
+
+        // Riesige Zahl im Hintergrund, unten links angeschnitten
+        if (!big.isNullOrBlank()) {
+            p.color = alpha(Color.WHITE, 0.08f)
+            p.typeface = BLACK_FACE
+            p.textSize = h * 0.8f
+            p.letterSpacing = -0.04f
+            c.drawText(big, -p.textSize * 0.05f, h + p.textSize * 0.16f, p)
+        }
+        c.restore()
+
+        grain(b, 7)
+
+        // Hauchfeine Kante, damit die Karte auch auf dunklem Hintergrund steht
+        p.reset()
+        p.isAntiAlias = true
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = max(1f, sc * 0.75f)
+        p.color = alpha(Color.WHITE, 0.07f)
+        val inset = p.strokeWidth / 2
+        c.drawRoundRect(RectF(inset, inset, w - inset, h - inset), radius - inset, radius - inset, p)
+        return b
+    }
+
+    /** Feine, gleichbleibende Körnung (fester Zufall, damit das Widget nicht flackert). */
+    private fun grain(b: Bitmap, amount: Int) {
+        val n = b.width * b.height
+        val px = IntArray(n)
+        b.getPixels(px, 0, b.width, 0, 0, b.width, b.height)
+        val rnd = java.util.Random(42)
+        for (i in 0 until n) {
+            val c = px[i]
+            val a = c ushr 24
+            if (a == 0) continue
+            val d = rnd.nextInt(amount * 2 + 1) - amount
+            val r = ((c shr 16 and 0xFF) + d).coerceIn(0, 255)
+            val g = ((c shr 8 and 0xFF) + d).coerceIn(0, 255)
+            val bl = ((c and 0xFF) + d).coerceIn(0, 255)
+            px[i] = (a shl 24) or (r shl 16) or (g shl 8) or bl
+        }
+        b.setPixels(px, 0, b.width, 0, 0, b.width, b.height)
+    }
+
+    /** Goldenes Siegel (Serie, Rekord, alles geschafft) – leicht schräg, gezackter Rand. */
+    fun seal(ctx: Context, sizeDp: Float, value: String, label: String): Bitmap {
+        val sc = scale(ctx, sizeDp, sizeDp)
+        val s = sizeDp * sc
+        val (b, c) = canvas(s, s)
+        val cx = s / 2
+        val r = s * 0.44f
+        c.rotate(-12f, cx, cx)
+        val p = paint().apply {
+            color = GOLD
+            setShadowLayer(s * 0.03f, 0f, s * 0.015f, alpha(Color.BLACK, 0.3f))
+        }
+        val spikes = 22
+        val path = Path()
+        for (i in 0..spikes * 2) {
+            val a = i / (spikes * 2f) * Math.PI * 2
+            val rr = if (i % 2 == 0) r else r * 0.9f
+            val x = cx + kotlin.math.cos(a).toFloat() * rr
+            val y = cx + kotlin.math.sin(a).toFloat() * rr
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        c.drawPath(path, p)
+        p.clearShadowLayer()
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = max(1f, s * 0.016f)
+        p.color = alpha(Color.WHITE, 0.55f)
+        c.drawCircle(cx, cx, r * 0.76f, p)
+        p.style = Paint.Style.FILL
+        p.color = GOLD_INK
+        p.textAlign = Paint.Align.CENTER
+        p.typeface = BLACK_FACE
+        p.textSize = r * (if (value.length > 2) 0.56f else 0.72f)
+        c.drawText(value, cx, cx + r * 0.16f, p)
+        p.typeface = BOLD_FACE
+        p.textSize = r * 0.2f
+        p.letterSpacing = 0.1f
+        c.drawText(label.uppercase(), cx, cx + r * 0.5f, p)
         return b
     }
 

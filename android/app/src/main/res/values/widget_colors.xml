@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget-Farben (hell). Akzent kommt zur Laufzeit aus der App. -->
+<!-- Widget-Farben (hell). Akzent kommt zur Laufzeit aus der App, "erledigt" folgt ihm. -->
 <resources>
     <color name="widget_card">#FFFFFF</color>
-    <color name="widget_stroke">#140B0F19</color>
-    <color name="widget_text">#0B0F19</color>
-    <color name="widget_text2">#5B6472</color>
-    <color name="widget_muted">#8A92A0</color>
-    <color name="widget_sand">#EEF0F4</color>
-    <color name="widget_success">#16A34A</color>
+    <color name="widget_stroke">#14000000</color>
+    <color name="widget_text">#18181B</color>
+    <color name="widget_text2">#52525B</color>
+    <color name="widget_muted">#71717A</color>
+    <color name="widget_sand">#F1F1F3</color>
     <color name="widget_gold">#D97706</color>
+
+    <!-- Buddy-Karte: immer dunkel (Hero-Karte), daher ohne Nacht-Variante -->
+    <color name="hero_text">#FFFFFF</color>
+    <color name="hero_text2">#B8FFFFFF</color>
+    <color name="hero_muted">#A6FFFFFF</color>
+    <color name="hero_line">#29FFFFFF</color>
+    <color name="hero_gold">#F5B83D</color>
 </resources>

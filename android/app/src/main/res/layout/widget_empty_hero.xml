@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hinweis statt Inhalt auf der Buddy-Karte (unten links, Buddy bleibt oben rechts) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="bottom|start"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <TextView
+        android:id="@+id/empty_title"
+        style="@style/WidgetFb.HeroTitle"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/empty_hint"
+        style="@style/WidgetFb.HeroBody"
+        android:layout_width="match_parent"
+        android:layout_marginTop="4dp"
+        android:maxLines="2" />
+</LinearLayout>

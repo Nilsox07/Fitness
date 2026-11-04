@@ -1,6 +1,31 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, ChevronLeft, Droplet, Dumbbell, HeartPulse, Info, Users, Utensils, Watch } from 'lucide-react'
+import {
+  Activity,
+  Armchair,
+  Bandage,
+  Bike,
+  Check,
+  ChevronLeft,
+  Droplet,
+  Dumbbell,
+  Flame,
+  Footprints,
+  Hammer,
+  HeartPulse,
+  House,
+  Info,
+  ShieldCheck,
+  Sprout,
+  Timer,
+  Trees,
+  TrendingUp,
+  Trophy,
+  Users,
+  Utensils,
+  Watch,
+  type LucideIcon,
+} from 'lucide-react'
 import { MyBuddy } from '../buddy/MyBuddy'
 import { Hero } from '../health/ui'
 import type { BuddyMood } from '../../lib/buddyMood'
@@ -48,6 +73,34 @@ import {
 } from '../../lib/onboarding'
 import type { Sex } from '../../types'
 
+/** Symbole statt Emojis – neutral wie im Rest der App. */
+const OB_ICON: Record<string, LucideIcon> = {
+  muscle: Dumbbell,
+  lose: Flame,
+  fit: HeartPulse,
+  strength: Trophy,
+  endurance: Activity,
+  gym: Dumbbell,
+  home: House,
+  outdoor: Trees,
+  sitting: Armchair,
+  mixed: Footprints,
+  active: Hammer,
+  run: Activity,
+  bike: Bike,
+  walk: Footprints,
+  any: Timer,
+  none: Dumbbell,
+  new: Sprout,
+  some: TrendingUp,
+  pro: Trophy,
+  no: ShieldCheck,
+  yes: Bandage,
+}
+function obIcon(id: string) {
+  const I = OB_ICON[id] ?? Dumbbell
+  return <I size={20} />
+}
 export const OPEN_ONBOARDING_EVENT = 'open-onboarding'
 
 /** Nur die Plan-Fragen öffnen (Profil/Pläne → „Plan neu erstellen“) – ohne Begrüßung und Einrichtung. */
@@ -317,7 +370,7 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
               setNotifyAsk('done')
             }}
           >
-            Erinnerungen erlauben 🔔
+            Erinnerungen erlauben
           </button>
         )}
       </Screen>
@@ -350,7 +403,7 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
         </button>
       </div>
 
-      <div key={step} className="anim-fade flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-2 pt-6">
+      <div key={step} className="anim-fade -mx-1 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-1 pb-2 pt-6">
         {step === 'hello' && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
             <MyBuddy size={150} mood="happy" />
@@ -370,7 +423,7 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
                 set('goal', v)
                 if (a.cardio) set('cardioPerWeek', suggestCardioPerWeek(v))
               }}
-              items={GOALS.map((g) => ({ id: g.id, label: g.label, icon: g.emoji }))}
+              items={GOALS.map((g) => ({ id: g.id, label: g.label, icon: obIcon(g.id) }))}
             />
           </>
         )}
@@ -382,9 +435,9 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
               value={a.experience}
               onChange={(v: Experience) => set('experience', v)}
               items={[
-                { id: 'new', label: 'Neu dabei', sub: 'Noch nie oder lange her', icon: '🌱' },
-                { id: 'some', label: 'Etwas Erfahrung', sub: 'Unter einem Jahr', icon: '👍' },
-                { id: 'pro', label: 'Fortgeschritten', sub: 'Über ein Jahr regelmäßig', icon: '🏆' },
+                { id: 'new', label: 'Neu dabei', sub: 'Noch nie oder lange her', icon: obIcon('new') },
+                { id: 'some', label: 'Etwas Erfahrung', sub: 'Unter einem Jahr', icon: obIcon('some') },
+                { id: 'pro', label: 'Fortgeschritten', sub: 'Über ein Jahr regelmäßig', icon: obIcon('pro') },
               ]}
             />
           </>
@@ -397,7 +450,7 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
               {PLACES.map((p) => (
                 <CheckCard
                   key={p.id}
-                  icon={p.emoji}
+                  icon={obIcon(p.id)}
                   label={p.label}
                   on={a.places.includes(p.id)}
                   onClick={() => setA((x) => togglePlace(x, p.id))}
@@ -484,8 +537,8 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
                 else setA((x) => ({ ...x, cardio: v, cardioPerWeek: x.cardioPerWeek || suggestCardioPerWeek(x.goal) }))
               }}
               items={[
-                ...CARDIO_KINDS.map((c) => ({ id: c.id as CardioKind | 'none', label: c.label, icon: c.emoji })),
-                { id: 'none', label: 'Nein, nur Kraft', icon: '✋' },
+                ...CARDIO_KINDS.map((c) => ({ id: c.id as CardioKind | 'none', label: c.label, icon: obIcon(c.id) })),
+                { id: 'none', label: 'Nein, nur Kraft', icon: obIcon('none') },
               ]}
             />
             {a.cardio && (
@@ -521,14 +574,11 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
                     role="radio"
                     aria-checked={on}
                     onClick={() => set('focus', f.id as Focus)}
-                    className={`flex items-center gap-2.5 rounded-2xl px-3 py-3 text-left transition active:scale-[0.99] ${
+                    className={`min-w-0 rounded-2xl px-3 py-3.5 text-center transition active:scale-[0.99] ${
                       on ? 'bg-brand/10 ring-2 ring-brand' : 'bg-cream'
                     }`}
                   >
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sand text-lg">
-                      {f.emoji}
-                    </span>
-                    <span className="text-[15px] font-semibold">{f.label}</span>
+                    <span className="block truncate text-[15px] font-semibold">{f.label}</span>
                   </button>
                 )
               })}
@@ -544,8 +594,8 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
               value={a.limits ? 'yes' : 'no'}
               onChange={(v: 'yes' | 'no') => set('limits', v === 'yes')}
               items={[
-                { id: 'no', label: 'Nein', icon: '👍' },
-                { id: 'yes', label: 'Ja', sub: 'Dein Plan wird leichter', icon: '🩹' },
+                { id: 'no', label: 'Nein', icon: obIcon('no') },
+                { id: 'yes', label: 'Ja', sub: 'Dein Plan wird leichter', icon: obIcon('yes') },
               ]}
             />
             {a.limits && (
@@ -570,7 +620,7 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
             <Options
               value={a.daily}
               onChange={(v: Daily) => set('daily', v)}
-              items={DAILY.map((d) => ({ id: d.id, label: d.label, sub: d.sub, icon: d.emoji }))}
+              items={DAILY.map((d) => ({ id: d.id, label: d.label, sub: d.sub, icon: obIcon(d.id) }))}
             />
             <p className="text-center text-sm text-cocoa-light">Ohne Sport – für dein Kalorienziel.</p>
           </>
@@ -728,7 +778,7 @@ function LimitsHint({ note }: { note?: string }) {
 }
 
 /** Mehrfachauswahl als große Karte. */
-function CheckCard({ icon, label, on, onClick }: { icon: string; label: string; on: boolean; onClick: () => void }) {
+function CheckCard({ icon, label, on, onClick }: { icon: ReactNode; label: string; on: boolean; onClick: () => void }) {
   return (
     <button
       role="checkbox"
@@ -738,7 +788,7 @@ function CheckCard({ icon, label, on, onClick }: { icon: string; label: string; 
         on ? 'bg-brand/10 ring-2 ring-brand' : 'bg-cream'
       }`}
     >
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sand text-xl">{icon}</span>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sand text-cocoa-light">{icon}</span>
       <span className="min-w-0 flex-1 text-[16px] font-semibold">{label}</span>
       <span
         className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg ${
@@ -770,7 +820,7 @@ function Options<T extends string>({
 }: {
   value: T
   onChange: (v: T) => void
-  items: { id: T; label: string; sub?: string; icon: string }[]
+  items: { id: T; label: string; sub?: string; icon: ReactNode }[]
 }) {
   return (
     <div className="space-y-2" role="radiogroup">
@@ -786,7 +836,9 @@ function Options<T extends string>({
               on ? 'bg-brand/10 ring-2 ring-brand' : 'bg-cream'
             }`}
           >
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sand text-xl">{it.icon}</span>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sand text-cocoa-light">
+              {it.icon}
+            </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[16px] font-semibold">{it.label}</span>
               {it.sub && <span className="block text-sm text-cocoa-light">{it.sub}</span>}

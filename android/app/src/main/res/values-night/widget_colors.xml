@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget-Farben (dunkel) -->
+<!-- Widget-Farben (dunkel, neutrale Grautöne wie die App) -->
 <resources>
     <color name="widget_card">#151517</color>
     <color name="widget_stroke">#1FFFFFFF</color>
-    <color name="widget_text">#E5E9F0</color>
-    <color name="widget_text2">#B6BFCD</color>
+    <color name="widget_text">#F4F4F5</color>
+    <color name="widget_text2">#D4D4D8</color>
     <color name="widget_muted">#A1A1AA</color>
-    <color name="widget_sand">#242428</color>
-    <color name="widget_success">#22C55E</color>
+    <color name="widget_sand">#1E1E21</color>
     <color name="widget_gold">#F5B83D</color>
 </resources>

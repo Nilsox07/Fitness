@@ -1,67 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Supplemente (2×2): als Nächstes, Uhrzeit, Fortschritt -->
+<!-- Supplemente (2×2), Buddy-Karte: als Nächstes, Uhrzeit, heute genommen -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
-    style="@style/WidgetFb.Card">
+    style="@style/WidgetFb.Hero">
 
-    <ImageView android:id="@+id/glow" style="@style/WidgetFb.Glow" />
+    <ImageView android:id="@+id/art" style="@style/WidgetFb.Art" />
 
     <include
         android:id="@+id/empty"
-        layout="@layout/widget_empty"
+        layout="@layout/widget_empty_hero"
         android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/content"
-        style="@style/WidgetFb.Content">
+        style="@style/WidgetFb.HeroContent">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+        <TextView
+            android:id="@+id/overline"
+            style="@style/WidgetFb.HeroOverline"
+            android:layout_marginEnd="54dp"
+            android:text="Supplemente" />
 
-            <ImageView android:id="@+id/dot" style="@style/WidgetFb.Dot" />
-
-            <TextView
-                android:id="@+id/overline"
-                style="@style/WidgetFb.Overline"
-                android:text="Supplemente" />
-        </LinearLayout>
+        <FrameLayout style="@style/WidgetFb.Fill" />
 
         <TextView
             android:id="@+id/next_label"
-            style="@style/WidgetFb.Muted"
-            android:layout_marginTop="8dp"
+            style="@style/WidgetFb.HeroBody"
             android:text="Als Nächstes" />
 
         <TextView
             android:id="@+id/name"
-            style="@style/WidgetFb.Title"
+            style="@style/WidgetFb.HeroTitle"
             android:layout_marginTop="1dp"
             android:text="Vitamin D3" />
 
         <TextView
             android:id="@+id/time"
-            style="@style/WidgetFb.Value"
-            android:layout_marginTop="2dp"
+            style="@style/WidgetFb.HeroBody"
+            android:layout_marginTop="1dp"
             android:text="um 08:00 Uhr"
-            android:textColor="#E11D48" />
-
-        <FrameLayout style="@style/WidgetFb.Fill" />
+            android:textColor="@color/hero_text"
+            android:textStyle="bold" />
 
         <ImageView
             android:id="@+id/dots"
             android:layout_width="match_parent"
-            android:layout_height="10dp"
+            android:layout_height="8dp"
+            android:layout_marginTop="10dp"
             android:importantForAccessibility="no"
             android:scaleType="fitStart"
-            android:src="@drawable/widget_dots_preview" />
+            android:src="@drawable/widget_hero_dots_preview" />
 
         <TextView
             android:id="@+id/progress"
-            style="@style/WidgetFb.Muted"
+            style="@style/WidgetFb.HeroBody"
             android:layout_marginTop="5dp"
             android:text="2 von 3 genommen" />
     </LinearLayout>
+
+    <include
+        layout="@layout/widget_hero_buddy"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp" />
 </FrameLayout>
