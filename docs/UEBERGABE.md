@@ -24,14 +24,9 @@ Die festen Regeln stehen in [`CLAUDE.md`](../CLAUDE.md).
 
 ### Migrationen
 
-`0001`–`0035` sind ausgeführt. **`0036_ai_calls.sql` (KI-Limits), `0037_health.sql` (Uhr-Daten) und
-`0038_health_details.sql` (Verläufe, Schlafphasen, Vitalwerte) müssen noch im Supabase-SQL-Editor laufen.** Bis dahin zählt der Server keine KI-Aufrufe und die Uhr-Seiten bleiben
-leer – Fehler gibt es keine.
-Ebenfalls noch offen: `0039_cycle.sql` (Zyklus), `0040_feedback_events.sql` (Feedback + anonyme Statistik, enthält
-Auswerte-SQL als Kommentar), `0041_measurements.sql` (Körpermaße), `0042_meals_stock.sql` (gespeicherte Mahlzeiten,
-Supplement-Vorrat), `0043_health_more.sql` (mehr Health-Connect-Felder). Dazu `0045_food_micros.sql` (Vitamine je Eintrag). Danach immer `0044_grants.sql` (Data-API-Rechte für
-neue Tabellen, seit 30.10.2026 nötig). Ohne sie bleiben die neuen Teile leer bzw.
-ausgeblendet.
+`0001`–`0035` und `0037`, `0039`–`0045` sind ausgeführt (Stand 04.11.2026). Nicht bestätigt: `0036_ai_calls.sql`
+(KI-Limits) und `0038_health_details.sql` (Verläufe, Schlafphasen, Vitalwerte) – ggf. nachholen, danach `0044_grants.sql`
+erneut ausführen. Regel für neue Migrationen: Tabellen immer mit GRANTs anlegen (siehe CLAUDE.md).
 
 ### Umgebungsvariablen (Vercel, nie ins Git)
 
