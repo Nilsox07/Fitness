@@ -28,6 +28,7 @@ import {
   type ExerciseInput,
 } from "../hooks/useExercises";
 import { useAllSets } from "../hooks/useWorkouts";
+import { fatigueByDate, muscleMap } from "../lib/fatigue";
 import { useAiStatus } from "../hooks/useAi";
 import { useTheme } from "../lib/theme";
 import { dayLabel } from "../lib/day";
@@ -211,9 +212,15 @@ export default function ExerciseDetail() {
       .map((x) => x.row);
   }, [period, sessions, chartData]);
 
+  // Vorermüdung je Tag (welche Übungen für denselben Muskel kamen davor?)
+  const fatigue = useMemo(
+    () => (exercise ? fatigueByDate(allSets ?? [], exercise.id, muscleMap(exercises ?? [])) : new Map<string, number>()),
+    [allSets, exercises, exercise],
+  );
+
   const suggestion = useMemo(
-    () => (exercise ? progressionSuggestion(exercise, sets) : null),
-    [exercise, sets],
+    () => (exercise ? progressionSuggestion(exercise, sets, { fatigue }) : null),
+    [exercise, sets, fatigue],
   );
 
   // Verlauf: alle Sätze (inkl. Aufwärmen) je Tag, neueste zuerst
@@ -599,6 +606,14 @@ export default function ExerciseDetail() {
                       {h.isPr && (
                         <span className="rounded-full bg-gold/15 px-1.5 py-px text-[10px] font-bold uppercase tracking-wide text-gold">
                           Rekord
+                        </span>
+                      )}
+                      {(fatigue.get(h.date) ?? 0) >= 3 && (
+                        <span
+                          className="rounded-full bg-sand px-1.5 py-px text-[10px] font-semibold text-cocoa-muted"
+                          title="Vorher schon Sätze für denselben Muskel – weniger Wdh. sind normal und zählen fair"
+                        >
+                          vorbelastet
                         </span>
                       )}
                     </span>

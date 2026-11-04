@@ -1,3 +1,4 @@
+import { FATIGUE_NOTICE, fatigueFactor } from './fatigue'
 import type { Exercise, MuscleGroup, SetType, SetWithDate, WorkoutSet } from '../types'
 import { localDate } from './day'
 
@@ -476,24 +477,42 @@ export interface ProgressionSuggestion {
 }
 
 /** Mindestdauer eines Plateaus in Tagen (kurze Schwankungen sind normal). */
-export const PLATEAU_MIN_DAYS = 21
+export const PLATEAU_MIN_DAYS = 28
+
+const daysApart = (a: string, b: string) => (Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400000
 
 /**
- * Plateau = die letzten 3 Sessions übertreffen die beste Leistung der Sessions
- * davor nicht (geschätztes 1RM, 1 % Toleranz) und der Zeitraum umfasst mind.
- * 3 Wochen. Braucht mind. 4 Sessions.
+ * Plateau = die letzten 4 Sessions übertreffen die beste Leistung davor nicht
+ * (geschätztes 1RM, 1 % Toleranz) über mind. 4 Wochen. Folge: Gewicht HALTEN
+ * (kein Zurücksetzen – dafür gibt es keinen Beleg), nur Hinweis.
  */
 export function isPlateau(sessions: Pick<SessionSummary, 'date' | 'bestEstimated1RM'>[]): boolean {
-  if (sessions.length < 4) return false
-  const recent = sessions.slice(-3)
-  const before = sessions.slice(-9, -3)
+  if (sessions.length < 5) return false
+  const recent = sessions.slice(-4)
+  const before = sessions.slice(-10, -4)
   const best = Math.max(...before.map((s) => s.bestEstimated1RM))
   if (!(best > 0)) return false
   const noProgress = recent.every((s) => s.bestEstimated1RM <= best * 1.01)
-  const from = sessions[sessions.length - 4].date
-  const to = sessions[sessions.length - 1].date
-  const days = (Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86400000
-  return noProgress && days >= PLATEAU_MIN_DAYS
+  return noProgress && daysApart(sessions[sessions.length - 5].date, sessions[sessions.length - 1].date) >= PLATEAU_MIN_DAYS
+}
+
+/**
+ * Echter Rücksetzer = die Leistung sinkt zweimal hintereinander (je > 1 %)
+ * und insgesamt um mind. 4 %. Nur dann geht das Gewicht runter.
+ */
+export function isRegression(sessions: Pick<SessionSummary, 'bestEstimated1RM'>[]): boolean {
+  if (sessions.length < 3) return false
+  const [a, b, c] = sessions.slice(-3).map((s) => s.bestEstimated1RM)
+  if (!(a > 0)) return false
+  return b < a * 0.99 && c < b * 0.99 && c <= a * 0.96
+}
+
+/** Kontext für den Vorschlag: Vorermüdung je Tag (Sätze) und heute. */
+export interface ProgressionContext {
+  /** Vorermüdung dieser Übung je Datum (harte Sätze für denselben Muskel davor) */
+  fatigue?: Map<string, number>
+  /** Vorermüdung heute (null = unbekannt / kein Training) */
+  todayFatigue?: number | null
 }
 
 /**
@@ -507,6 +526,44 @@ export function isPlateau(sessions: Pick<SessionSummary, 'date' | 'bestEstimated
 export function progressionSuggestion(
   exercise: Pick<Exercise, 'target_rep_min' | 'target_rep_max' | 'increment'>,
   allSets: SetWithDate[],
+  ctx: ProgressionContext = {},
+): ProgressionSuggestion {
+  const base = progressionCore(exercise, allSets, ctx)
+  return adjustForToday(base, exercise.increment, allSets, ctx)
+}
+
+/** Heute mehr/weniger vorbelastet als beim letzten Mal? Dann den Vorschlag anpassen. */
+function adjustForToday(
+  sug: ProgressionSuggestion,
+  increment: number,
+  allSets: SetWithDate[],
+  ctx: ProgressionContext,
+): ProgressionSuggestion {
+  if (ctx.todayFatigue == null || !ctx.fatigue || sug.suggestedWeight <= 0 || sug.action === 'start') return sug
+  const working = onlyWorking(allSets)
+  const lastDate = working.reduce((d, s) => (s.date > d ? s.date : d), '')
+  if (!lastDate) return sug
+  const ratio = fatigueFactor(ctx.todayFatigue) / fatigueFactor(ctx.fatigue.get(lastDate) ?? 0)
+  const sets = (n: number) => `${String(n).replace('.', ',')} ${n === 1 ? 'Satz' : 'Sätze'}`
+  if (ratio < 1 - FATIGUE_NOTICE) {
+    const step = increment > 0 ? increment : 2.5
+    const w = Math.max(step, Math.floor((sug.suggestedWeight * ratio) / step) * step)
+    const weight = Math.min(round1(w), round1(sug.suggestedWeight - step))
+    return {
+      ...sug,
+      suggestedWeight: weight > 0 ? weight : sug.suggestedWeight,
+      reason: `${sug.reason} Heute schon ${sets(ctx.todayFatigue)} für den Muskel davor – starte mit ~${weight} kg.`,
+    }
+  }
+  if (ratio > 1 + FATIGUE_NOTICE)
+    return { ...sug, reason: `${sug.reason} Heute bist du frischer als letztes Mal – da geht eher mehr.` }
+  return sug
+}
+
+function progressionCore(
+  exercise: Pick<Exercise, 'target_rep_min' | 'target_rep_max' | 'increment'>,
+  allSets: SetWithDate[],
+  ctx: ProgressionContext,
 ): ProgressionSuggestion {
   // Nur Arbeitssätze bestimmen die Empfehlung
   const sessions = summarizeSessions(onlyWorking(allSets))
@@ -527,11 +584,14 @@ export function progressionSuggestion(
   const reachedFailure = workingSets.some((s) => s.to_failure)
   const { target_rep_min, target_rep_max, increment } = exercise
 
-  // Plateau: In den letzten 3 Sessions keine bessere Leistung (geschätztes 1RM,
-  // berücksichtigt also auch mehr Wdh. beim gleichen Gewicht) als die Bestleistung
-  // davor – und das über mind. 3 Wochen. Mehr Wdh. bei gleichem Gewicht sind bei
-  // Double Progression Fortschritt und lösen keinen Deload aus.
-  const stalled = isPlateau(sessions)
+  // Leistung je Session, bereinigt um Vorermüdung (Butterfly nach Schrägbank zählt fair).
+  const adjusted = sessions.map((s) => ({
+    ...s,
+    bestEstimated1RM: s.bestEstimated1RM / fatigueFactor(ctx.fatigue?.get(s.date) ?? 0),
+  }))
+  // Rücksetzer (Leistung sinkt 2× in Folge) → Gewicht runter. Plateau → nur halten.
+  const regressed = isRegression(adjusted)
+  const stalled = !regressed && isPlateau(adjusted)
 
   if (minReps >= target_rep_max) {
     // Wie viel höher? Aus geschätztem 1RM das Gewicht ableiten, das dich wieder
@@ -554,12 +614,20 @@ export function progressionSuggestion(
     }
   }
 
-  if (stalled) {
+  if (regressed) {
     const deloaded = round1(topWeight * 0.9)
     return {
       action: 'deload',
       suggestedWeight: deloaded,
-      reason: `Seit 3 Trainings (über ${PLATEAU_MIN_DAYS / 7}+ Wochen) keine Steigerung. Setz das Gewicht auf ~${deloaded} kg zurück und arbeite dich wieder hoch – und check Schlaf, Eiweiß und Pausenzeiten.`,
+      reason: `Deine Leistung ist zweimal in Folge gesunken. Geh auf ~${deloaded} kg und arbeite dich wieder hoch – check Schlaf, Eiweiß und Pausen.`,
+    }
+  }
+
+  if (stalled && minReps >= target_rep_min) {
+    return {
+      action: 'hold',
+      suggestedWeight: topWeight,
+      reason: `Seit ${PLATEAU_MIN_DAYS / 7}+ Wochen gleich bei ${topWeight} kg – bleib dran: eine Wdh. oder ein Satz mehr. Schlaf, Eiweiß und Pausen helfen mit.`,
     }
   }
 

@@ -116,6 +116,12 @@ einer App, aber nur das sichtbar, was man nutzt.
   liest zusätzlich Wasser, Ernährung, Achtsamkeit und Krafteinheiten anderer Apps; Waagen-Gewichte nur an Tagen
   ohne eigenen Eintrag (`source: 'health'`), Wasser nur nach oben angeglichen. Play Console: Health-Apps-Erklärung
   um `READ_HYDRATION`, `READ_NUTRITION`, `READ_MINDFULNESS` ergänzen.
+- **Gewichts-Vorschlag** (`progressionSuggestion` in `analytics.ts`, Double Progression): Stillstand im Wdh.-Bereich
+  = Gewicht halten (Plateau-Hinweis erst nach 4 Trainings/4 Wochen, kein Zurücksetzen). Runter (−10 %) nur bei echtem
+  Rücksetzer: Leistung sinkt zweimal in Folge, insgesamt ≥ 4 %. **Vorermüdung** (`src/lib/fatigue.ts`): harte Sätze
+  für denselben Muskel davor (Hauptmuskel 1, Hilfsmuskel 0,5) → Schätzfaktor −1,5 %/Satz, max. −15 %. Leistung im
+  Verlauf wird damit bereinigt; ist man heute deutlich vorbelasteter als letztes Mal, startet der Vorschlag
+  niedriger. Übungs-Verlauf markiert solche Tage mit „vorbelastet“.
 - **Satz-Schema** (`src/lib/setScheme.ts`, `prefs.setScheme`): bekannte Übungen starten mit der Struktur vom
   letzten Mal (Anzahl Arbeitssätze, Drop, Aufwärmen), neue nach eigenem Schema (Standard 3 Sätze, Aufwärmen
   automatisch = erste Übung je Muskel, kein Drop). Einstellbar unter Profil → Einstellungen. Die KI prüft den

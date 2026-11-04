@@ -25,8 +25,10 @@ import {
   sessionDates,
   setBest1RM,
   progressionSuggestion,
+  type ProgressionContext,
   totalVolume,
 } from '../lib/analytics'
+import { fatigueByDate, muscleMap, preFatigueSets } from '../lib/fatigue'
 import { trainingDay } from '../lib/day'
 import { workoutShare, type ShareContent } from '../lib/shareCard'
 import { lastSessionTypes, planSetTypes } from '../lib/setScheme'
@@ -166,8 +168,8 @@ function templateInputs(workoutId: string, ex: Exercise, base: number, startNo: 
   })
 }
 
-function baseFor(ex: Exercise, history: SetWithDate[]): number {
-  const sug = progressionSuggestion(ex, history)
+function baseFor(ex: Exercise, history: SetWithDate[], ctx?: ProgressionContext): number {
+  const sug = progressionSuggestion(ex, history, ctx)
   return sug.suggestedWeight > 0 ? sug.suggestedWeight : 20
 }
 
@@ -279,10 +281,17 @@ export default function Workout() {
     return allSets.filter((s) => s.exercise_id === exerciseId && s.date !== today)
   }, [allSets, exerciseId, today])
 
+  // Vorermüdung: welche Übungen kamen heute/früher davor? (Butterfly nach Schrägbank ist schwächer)
+  const muscles = useMemo(() => muscleMap(exercises ?? []), [exercises])
+  const fatigueCtx = (exId: string): ProgressionContext => ({
+    fatigue: fatigueByDate(allSets ?? [], exId, muscles),
+    todayFatigue: preFatigueSets(workoutSets ?? [], exId, muscles),
+  })
   const suggestion = useMemo(() => {
     if (!selectedExercise) return null
-    return progressionSuggestion(selectedExercise, history)
-  }, [selectedExercise, history])
+    return progressionSuggestion(selectedExercise, history, fatigueCtx(selectedExercise.id))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedExercise, history, allSets, muscles, workoutSets])
 
   const setsForExercise = (workoutSets ?? [])
     .filter((s) => s.exercise_id === exerciseId)
@@ -630,7 +639,7 @@ export default function Workout() {
     const existing = (workoutSets ?? []).filter((s) => s.exercise_id === id)
     if (existing.length > 0) return
     const hist = (allSets ?? []).filter((s) => s.exercise_id === id && s.date !== today)
-    addSets.mutate(templateInputs(todaysWorkout.id, ex, baseFor(ex, hist), 1, typesFor(ex)))
+    addSets.mutate(templateInputs(todaysWorkout.id, ex, baseFor(ex, hist, fatigueCtx(ex.id)), 1, typesFor(ex)))
   }
 
   function addTemplate() {

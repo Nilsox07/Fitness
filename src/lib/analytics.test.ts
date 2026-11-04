@@ -247,16 +247,41 @@ describe('progressionSuggestion (Double Progression)', () => {
     expect(s.suggestedWeight).toBe(50)
   })
 
-  it('empfiehlt Deload erst bei echtem Plateau (3 Sessions ohne Steigerung, ≥ 3 Wochen)', () => {
-    const sets = [
-      mkSet('2026-01-01', 9, 50, 1),
-      mkSet('2026-01-08', 9, 50, 1),
-      mkSet('2026-01-15', 9, 50, 1),
-      mkSet('2026-01-22', 9, 50, 1),
-    ]
+  it('Plateau im Wdh.-Bereich: Gewicht halten statt zurücksetzen', () => {
+    const sets = ['01', '08', '15', '22', '29'].map((d) => mkSet(`2026-01-${d}`, 9, 50, 1))
+    const s = progressionSuggestion(ex, sets)
+    expect(s.action).toBe('hold')
+    expect(s.suggestedWeight).toBe(50)
+    expect(s.reason).toContain('Wochen gleich')
+  })
+
+  it('Deload nur bei echtem Rücksetzer (Leistung sinkt 2× in Folge)', () => {
+    const sets = [mkSet('2026-01-01', 10, 50, 1), mkSet('2026-01-08', 9, 50, 1), mkSet('2026-01-15', 7, 50, 1)]
     const s = progressionSuggestion(ex, sets)
     expect(s.action).toBe('deload')
     expect(s.suggestedWeight).toBe(45)
+  })
+
+  it('weniger Wdh. wegen Vorermüdung sind kein Rücksetzer', () => {
+    const sets = [mkSet('2026-01-01', 10, 50, 1), mkSet('2026-01-08', 9, 50, 1), mkSet('2026-01-15', 8, 50, 1)]
+    // an den späteren Tagen kam die Übung nach 6 bzw. 10 Sätzen für denselben Muskel
+    const fatigue = new Map([
+      ['2026-01-01', 0],
+      ['2026-01-08', 6],
+      ['2026-01-15', 10],
+    ])
+    expect(progressionSuggestion(ex, sets).action).toBe('deload')
+    expect(progressionSuggestion(ex, sets, { fatigue }).action).toBe('hold')
+  })
+
+  it('heute vorbelastet → Startgewicht etwas niedriger, mit Hinweis', () => {
+    const sets = [mkSet('2026-01-10', 10, 50, 1)]
+    const fatigue = new Map([['2026-01-10', 0]])
+    const s = progressionSuggestion(ex, sets, { fatigue, todayFatigue: 8 })
+    expect(s.suggestedWeight).toBeLessThan(50)
+    expect(s.reason).toContain('davor')
+    // kaum Unterschied → nichts ändern
+    expect(progressionSuggestion(ex, sets, { fatigue, todayFatigue: 2 }).suggestedWeight).toBe(50)
   })
 
   it('kein Deload, wenn die Wdh. beim gleichen Gewicht steigen (Double Progression)', () => {
