@@ -6,6 +6,7 @@ import { fmtInt } from '../../lib/nutritionHome'
 import { DEFAULT_FIBER_TARGET, NUTRIENT_REFERENCE, type Nutrients } from '../../lib/nutrition'
 import { Ring } from './Ring'
 import { MyBuddy } from '../buddy/MyBuddy'
+import { BuddyLine, HeroWithBuddy, type HeroBuddyData } from '../home/HeroBuddy'
 
 type Targets = { kcal: number; protein: number; carbs: number; fat: number; fiber?: number }
 
@@ -25,6 +26,7 @@ export function HeroCard({
   bonus = TRAINING_BONUS,
   onSetup,
   pins = { sugar: false, salt: false },
+  buddy,
   style,
 }: {
   totals: Nutrients
@@ -36,6 +38,8 @@ export function HeroCard({
   onSetup: () => void
   /** Zucker/Salz immer zeigen statt hinter „Mehr“ */
   pins?: { sugar: boolean; salt: boolean }
+  /** Buddy lugt über die Karte, sein Spruch steht oben in der Karte (wie im Training) */
+  buddy?: HeroBuddyData
   style?: CSSProperties
 }) {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -67,89 +71,97 @@ export function HeroCard({
   }
 
   return (
-    <section
-      className="relative space-y-4 overflow-hidden rounded-3xl bg-cocoa p-4 pt-5 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none"
-      style={style}
-    >
-      {/* dezenter Brand-Schimmer wie beim Training */}
-      <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
-      <div className="relative flex items-center justify-between gap-2">
-        <Side label="Gegessen" value={fmtInt(eatenAnim)} />
-        <Ring
-          size={168}
-          stroke={12}
-          progress={eatenAnim / targets.kcal}
-          transition={false}
-          trackClass="stroke-bg/15 dark:stroke-sand-dark/45"
-        >
-          <div className="flex flex-col items-center leading-none">
-            <span className={`tabular text-[2.5rem] font-bold tracking-tight ${over ? 'text-gold' : ''}`}>
-              {fmtInt(leftAnim)}
-            </span>
-            <span className={`mt-1.5 text-xs font-medium ${over ? 'text-gold' : 'text-bg/60 dark:text-cocoa-light'}`}>
-              kcal {over ? 'drüber' : 'übrig'}
-            </span>
-          </div>
-        </Ring>
-        <Side
-          label="Ziel"
-          value={fmtInt(targets.kcal)}
-          hint={trained && bonus > 0 ? `inkl. Training +${bonus}` : undefined}
-        />
-      </div>
-
-      <div className="relative grid grid-cols-2 gap-x-4 gap-y-3">
-        <Macro label="Eiweiß" value={totals.protein} target={targets.protein} bar="bg-brand" successWhenDone />
-        <Macro label="Kohlenhydrate" value={totals.carbs} target={targets.carbs} bar="bg-brand/60" />
-        <Macro label="Fett" value={totals.fat} target={targets.fat} bar="bg-bg/70 dark:bg-cocoa-light" />
-        <Macro
-          label="Ballaststoffe"
-          value={totals.fiber}
-          target={targets.fiber ?? DEFAULT_FIBER_TARGET}
-          bar="bg-brand/40"
-          successWhenDone
-        />
-      </div>
-
-      {pinned.length > 0 && (
-        <div className="relative grid grid-cols-2 gap-x-4 gap-y-3">
-          {pinned.map((k) => (
-            <Macro
-              key={k}
-              label={EXTRA[k].label}
-              value={totals[k]}
-              target={NUTRIENT_REFERENCE[k]}
-              digits={EXTRA[k].digits}
-              bar="bg-bg/40 dark:bg-cocoa-muted"
-              limit
+    <div style={style}>
+      <HeroWithBuddy buddy={buddy}>
+        <section className="relative space-y-4 overflow-hidden rounded-3xl bg-cocoa p-4 pt-5 text-bg shadow-lg shadow-black/10 dark:bg-sand-light dark:text-cocoa dark:shadow-none">
+          {buddy && (
+            <div className="relative -mb-2">
+              <BuddyLine line={buddy.line} tone="dark" onClick={buddy.onLine} />
+            </div>
+          )}
+          {/* dezenter Brand-Schimmer wie beim Training */}
+          <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
+          <div className="relative flex items-center justify-between gap-2">
+            <Side label="Gegessen" value={fmtInt(eatenAnim)} />
+            <Ring
+              size={168}
+              stroke={12}
+              progress={eatenAnim / targets.kcal}
+              transition={false}
+              trackClass="stroke-bg/15 dark:stroke-sand-dark/45"
+            >
+              <div className="flex flex-col items-center leading-none">
+                <span className={`tabular text-[2.5rem] font-bold tracking-tight ${over ? 'text-gold' : ''}`}>
+                  {fmtInt(leftAnim)}
+                </span>
+                <span
+                  className={`mt-1.5 text-xs font-medium ${over ? 'text-gold' : 'text-bg/60 dark:text-cocoa-light'}`}
+                >
+                  kcal {over ? 'drüber' : 'übrig'}
+                </span>
+              </div>
+            </Ring>
+            <Side
+              label="Ziel"
+              value={fmtInt(targets.kcal)}
+              hint={trained && bonus > 0 ? `inkl. Training +${bonus}` : undefined}
             />
-          ))}
-        </div>
-      )}
-
-      <div className="relative border-t border-bg/10 pt-2 dark:border-sand-dark/40">
-        <button
-          className="flex w-full items-center justify-between py-1 text-sm text-bg/60 dark:text-cocoa-light"
-          onClick={() => setMoreOpen((o) => !o)}
-          aria-expanded={moreOpen}
-        >
-          Mehr Nährwerte
-          <ChevronDown size={16} className={`transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`} />
-        </button>
-        {moreOpen && (
-          <div
-            className={`anim-fade tabular mt-2 grid gap-2 rounded-xl bg-bg/10 p-2 text-center text-[11px] text-bg/60 dark:bg-white/5 dark:text-cocoa-light ${
-              hidden.length === 3 ? 'grid-cols-3' : hidden.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
-            }`}
-          >
-            {hidden.map((k) => (
-              <Micro key={k} label={EXTRA[k].label} value={totals[k]} />
-            ))}
           </div>
-        )}
-      </div>
-    </section>
+
+          <div className="relative grid grid-cols-2 gap-x-4 gap-y-3">
+            <Macro label="Eiweiß" value={totals.protein} target={targets.protein} bar="bg-brand" successWhenDone />
+            <Macro label="Kohlenhydrate" value={totals.carbs} target={targets.carbs} bar="bg-brand/60" />
+            <Macro label="Fett" value={totals.fat} target={targets.fat} bar="bg-bg/70 dark:bg-cocoa-light" />
+            <Macro
+              label="Ballaststoffe"
+              value={totals.fiber}
+              target={targets.fiber ?? DEFAULT_FIBER_TARGET}
+              bar="bg-brand/40"
+              successWhenDone
+            />
+          </div>
+
+          {pinned.length > 0 && (
+            <div className="relative grid grid-cols-2 gap-x-4 gap-y-3">
+              {pinned.map((k) => (
+                <Macro
+                  key={k}
+                  label={EXTRA[k].label}
+                  value={totals[k]}
+                  target={NUTRIENT_REFERENCE[k]}
+                  digits={EXTRA[k].digits}
+                  bar="bg-bg/40 dark:bg-cocoa-muted"
+                  limit
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="relative border-t border-bg/10 pt-2 dark:border-sand-dark/40">
+            <button
+              className="flex w-full items-center justify-between py-1 text-sm text-bg/60 dark:text-cocoa-light"
+              onClick={() => setMoreOpen((o) => !o)}
+              aria-expanded={moreOpen}
+            >
+              Mehr Nährwerte
+              <ChevronDown size={16} className={`transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {moreOpen && (
+              <div
+                className={`anim-fade tabular mt-2 grid gap-2 rounded-xl bg-bg/10 p-2 text-center text-[11px] text-bg/60 dark:bg-white/5 dark:text-cocoa-light ${
+                  hidden.length === 3 ? 'grid-cols-3' : hidden.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
+                }`}
+              >
+                {hidden.map((k) => (
+                  <Micro key={k} label={EXTRA[k].label} value={totals[k]} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </HeroWithBuddy>
+    </div>
   )
 }
 

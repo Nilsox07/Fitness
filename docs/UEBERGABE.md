@@ -145,8 +145,8 @@ einer App, aber nur das sichtbar, was man nutzt.
   Einträge + Stichwörter in `src/lib/searchIndex.ts`, Module beachten). Profil gruppiert: Ich ·
   Personalisieren · Buddy · Mitteilungen & Geräte · Konto & Daten. Deep Links für die Suche:
   `/nutrition?add=photo|search|restaurant|…`, `/today?edit=1`, `/profile?s=appearance|goal|…`.
-- **Buddy begleitet überall:** `BuddyTip` (Karte oben auf Heute, Ernährung, Fortschritt, Community; im Training
-  steht der Tipp in Buddys Sprechblase der Hero-Karte, antippbar)
+- **Buddy begleitet überall:** `BuddyTip` (Karte oben auf Heute, Fortschritt, Community; in Training und Ernährung
+  lugt Buddy über die Hero-Karte und der Tipp steht in seiner Sprechblase, antippbar – `useHeroBuddy`)
   mit regelbasiertem Tipp aus `src/lib/buddyTips.ts` (getestet), „Frag Buddy“ öffnet den Chat mit passender
   Frage (`openBuddySheet(frage)`), auf Heute zusätzlich KI-„Tagesbriefing“ (`dailyBriefing` in `ai.ts`, 1×/Tag).
 - **Farben:** `success` = App-Farbe (erledigt, Fortschritt, Schalter). Nur echte Bewertungen („gut“) nutzen

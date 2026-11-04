@@ -93,6 +93,7 @@ import { RecentFoods } from '../components/nutrition-home/RecentFoods'
 import { lastMealCopy, recentFoods, repeatEntry } from '../lib/recentFoods'
 import { scaleMicros } from '../lib/micros'
 import { MicroCard } from '../components/nutrition-home/MicroCard'
+import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { MealCard } from '../components/nutrition-home/MealCard'
 import { SaveMealSheet, SavedMealChips } from '../components/nutrition-home/SavedMeals'
 import { entriesFromSaved, type SavedMeal } from '../lib/savedMeals'
@@ -125,7 +126,6 @@ import {
   type Chain,
   type Combo,
 } from '../lib/fastfood'
-import { BuddyTip } from '../components/buddy/BuddyTip'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
 function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
@@ -386,6 +386,8 @@ export default function Nutrition() {
   const { data: settings } = useNutritionSettings()
   const diet = useDietStyle()
   const [homeCards] = useHomeCards()
+  // Buddy auf der großen Karte, Seiten-Tipp in seiner Sprechblase (wie im Training)
+  const heroBuddy = useHeroBuddy('nutrition')
   const { data: supplements } = useSupplements()
   const dietLabel = dietShortLabel(diet)
   const { data: entries } = useFoodEntries(today)
@@ -1110,7 +1112,6 @@ export default function Nutrition() {
             </button>
           }
         />
-        {isToday && <BuddyTip page="nutrition" />}
 
         {waterNote && (
           <div className="anim-fade rounded-full bg-brand/10 px-4 py-2 text-center text-sm font-semibold text-brand">
@@ -1150,6 +1151,7 @@ export default function Nutrition() {
           trained={trainedToday}
           bonus={kcalBonus}
           onSetup={openSetup}
+          buddy={isToday ? heroBuddy : undefined}
           style={stagger(1)}
         />
 

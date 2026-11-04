@@ -20,7 +20,7 @@ import {
 } from '../../lib/home'
 import { MUSCLE_GROUPS, type MuscleGroup, type PlanWithExercises } from '../../types'
 import { HomeHeader } from './HomeHeader'
-import { useBuddy } from '../buddy/useBuddy'
+import { useHeroBuddy } from './useHeroBuddy'
 import { WeekStrip } from './WeekStrip'
 import { NextWorkoutCard } from './NextWorkoutCard'
 import { RecoveryCard, type MuscleState } from './RecoveryCard'
@@ -35,10 +35,6 @@ import { CustomizeHome } from './CustomizeHome'
 import { useHomeCards } from '../../lib/homeCards'
 import { usePrefs } from '../../lib/prefs'
 import { ClipboardList, Dumbbell, Timer } from 'lucide-react'
-import { isTipHidden, usePageTip } from '../buddy/BuddyTip'
-import { openBuddySheet } from '../buddy/BuddySheet'
-import { useNavigate } from 'react-router-dom'
-import { useAiGate } from '../../hooks/usePremium'
 import { CardioPlanCard } from '../today/CardioPlanCard'
 
 const SKIP_MUSCLES = new Set<MuscleGroup>(['Sonstige', 'Ganzkörper'])
@@ -76,21 +72,7 @@ export function HomeStart({
   const { data: plans } = usePlans()
   const { data: profile } = useMyProfile()
   const { data: streakState } = useStreakState()
-  const buddy = useBuddy()
-  // Ein Buddy-Spruch statt zwei: ein passender Seiten-Tipp (z. B. „Tagesform niedrig“) ersetzt den
-  // allgemeinen Spruch in der Sprechblase oben; Antippen = Aktion bzw. „Frag Buddy“.
-  const { tip, day: tipDay } = usePageTip('training')
-  const navigate = useNavigate()
-  const gate = useAiGate()
-  const useTip = !!tip && tip.key !== 'train-tip' && !isTipHidden(tip.key, tipDay)
-  const tipAction = !tip
-    ? undefined
-    : tip.action
-      ? () => navigate(tip.action!.to)
-      : tip.ask && (gate.canUse || gate.locked)
-        ? () => gate.requirePlus() && openBuddySheet(tip.ask)
-        : undefined
-  const heroBuddy = useTip ? { ...buddy, line: tip.text, mood: tip.mood, onLine: tipAction } : buddy
+  const heroBuddy = useHeroBuddy('training', ['train-tip'])
   const rhythm = useTrainingRhythm(today)
 
   const dates = useMemo(() => sessionDates(allSets ?? []), [allSets])
