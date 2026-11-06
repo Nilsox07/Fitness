@@ -121,6 +121,15 @@ einer App, aber nur das sichtbar, was man nutzt.
   (Kraft/Aufbau/Ausdauer/Eigene), Gewicht verstellen (Freie Gewichte: Schritt 1/2,5/5 kg; Maschine: leichteste/Abstand/
   schwerste mit Live-Vorschau, unregelmäßige Stufen als Liste), Einseitig + Geräte-Notiz. Neue Übung ohne Verlauf
   startet mit leerem Gewicht (kein pauschales 20 kg). Fasten-Einstellungen nur bei Intervallfasten sichtbar.
+- **Übungs-Bibliothek** (`public/exercise-library.json`, Version 3): 848 Übungen (683 + 165 neue `X_…`), je mit
+  präziser Ausführung (`steps_de`), „Darauf achten“ (`cues_de`) und häufigen Fehlern (`mistakes_de`, Anzeige `Cues` in
+  `ExerciseHowTo.tsx`). Animationen (`src/lib/figure/`) decken 99 % ab (114 Figuren). Rezepte: 166 in `recipeCatalog.ts`.
+- **Erinnerungstexte** gemeinsam für App und Web-Push in `api/_reminderCopy.js` (+ `.d.ts`): echte Zahlen, kleine
+  nächste Schritte, kein schlechtes Gewissen, keine bestimmten Lebensmittel, täglich wechselnde Varianten.
+- **Maschinen-Gewichte:** `weight_steps` = „Grundstufen | Zusatzgewichte“ (z. B. „5 10 15 | 2.5 5 7.5“), je ein
+  Zusatzgewicht pro Stufe (`withAddons`); einzelne Stufen im Formular antippbar (Rest verschiebt sich mit).
+- **Tagesform** (`ReadinessFactors.tsx`): Faktoren als Balken (hebt/senkt) mit Bereichs-Balken; Wochenleiste
+  `ui/WeekPicker.tsx` (gemeinsam mit Ernährung).
 - **Satz-Schema** (`src/lib/setScheme.ts`, `prefs.setScheme`): bekannte Übungen starten mit der Struktur vom
   letzten Mal (Anzahl Arbeitssätze, Drop, Aufwärmen), neue nach eigenem Schema (Standard 3 Sätze, Aufwärmen
   automatisch = erste Übung je Muskel, kein Drop). Einstellbar unter Profil → Einstellungen. Die KI prüft den

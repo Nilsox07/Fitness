@@ -128,17 +128,22 @@ export function solvePose(p: PoseSpec): Skeleton {
   const torsoA = p.torso
   const upperA = p.torso + (p.bend ?? 0)
   const headA = upperA + (p.head ?? 0)
-  const waist = add(hip, mul(dir3(torsoA), LEN.lowerTorso))
-  const spineTop = add(waist, mul(dir3(upperA), LEN.upperTorso))
-  const shoulderC = add(spineTop, mul(dir3(upperA), -5))
-  const neckBase = add(spineTop, mul(dir3(upperA), 2))
-  const headC = add(neckBase, mul(dir3(headA), LEN.neck + LEN.headR - 2))
+  // Seitneigung (lean): Rumpf und Kopf kippen aus der Sagittalebene, das Becken bleibt gerade.
+  const lean = p.lean ?? 0
+  const upperD = dir3(upperA, lean)
+  const waist = add(hip, mul(dir3(torsoA, lean), LEN.lowerTorso))
+  const spineTop = add(waist, mul(upperD, LEN.upperTorso))
+  // Schulterheben (shrug): Schultergelenke wandern Richtung Hals.
+  const shoulderC = add(spineTop, mul(upperD, -5 + (p.shrug ?? 0)))
+  const neckBase = add(spineTop, mul(upperD, 2))
+  const headC = add(neckBase, mul(dir3(headA, lean), LEN.neck + LEN.headR - 2))
 
-  // Schulterlinie: z-Achse, gedreht um die Rumpfachse (twist) Richtung Brust.
+  // Schulterlinie: Seitachse ⟂ Rumpf, gedreht um die Rumpfachse (twist) Richtung Brust.
   const tw = rad(p.twist ?? 0)
   const chestN = dir3(upperA + 90)
+  const latAx = norm(sub([0, 0, 1], mul(upperD, upperD[2])))
   const shoulderOff: Vec3 = add(
-    mul([0, 0, 1], Math.cos(tw) * LEN.shoulderHalf),
+    mul(latAx, Math.cos(tw) * LEN.shoulderHalf),
     mul(chestN, Math.sin(tw) * LEN.shoulderHalf),
   )
   const shNear = add(shoulderC, shoulderOff)
@@ -209,6 +214,8 @@ export function lerpPose(a: PoseSpec, b: PoseSpec, t: number): PoseSpec {
     torso: lerp(a.torso, b.torso, t),
     bend: lerpOpt(a.bend, b.bend, t),
     twist: lerpOpt(a.twist, b.twist, t),
+    lean: lerpOpt(a.lean, b.lean, t),
+    shrug: lerpOpt(a.shrug, b.shrug, t),
     head: lerpOpt(a.head, b.head, t),
     arm: lerpLimb(a.arm, b.arm, t),
     armFar: a.armFar || b.armFar ? lerpLimb(a.armFar ?? a.arm, b.armFar ?? b.arm, t) : undefined,

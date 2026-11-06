@@ -6,7 +6,7 @@
  * Zielpunkte (TargetLimb) halten Hände/Füße fest, die Gelenke folgen per IK.
  */
 import { ANKLE_H, FLOOR, LEN, STAND_HIP_Y, cycle, hipFromAnkle, rad, solvePose, swing } from './rig'
-import type { FigureDef, LimbSpec, PoseSpec, Vec2 } from './types'
+import type { FigureDef, LimbSpec, PoseSpec, PropSpec, TimelineKey, Vec2 } from './types'
 
 // ---------------------------------------------------------------------------
 // Bausteine
@@ -183,7 +183,13 @@ export const dips: FigureDef = {
 
 const ST_HIP: Vec2 = [200, HIP]
 const ST_SH = shoulder(ST_HIP, -90)
-const standing = (arm: LimbSpec, extra: Partial<PoseSpec> = {}): PoseSpec => ({ hip: ST_HIP, torso: -90, arm, leg: STAND, ...extra })
+const standing = (arm: LimbSpec, extra: Partial<PoseSpec> = {}): PoseSpec => ({
+  hip: ST_HIP,
+  torso: -90,
+  arm,
+  leg: STAND,
+  ...extra,
+})
 
 export const ohpBarbell: FigureDef = {
   zoom: 0.84,
@@ -346,7 +352,10 @@ export const oneArmRow: FigureDef = {
   },
   timeline: loop('down', 'up', 'ab'),
   peak: 'up',
-  props: [{ kind: 'bench', x: 110, w: 180, top: 207 }, { kind: 'dumbbell', one: true }],
+  props: [
+    { kind: 'bench', x: 110, w: 180, top: 207 },
+    { kind: 'dumbbell', one: true },
+  ],
 }
 
 // Kabelrudern sitzend
@@ -394,7 +403,13 @@ const RDL_T = -24
 export const romanianDeadlift: FigureDef = {
   poses: {
     top: { hip: DL_HIP1, torso: -88, arm: { to: add(shoulder(DL_HIP1, -88), 4, 79), z: 24 }, leg: planted(DL_ANKLE) },
-    hinge: { hip: RDL_HIP, torso: RDL_T, head: -16, arm: { to: add(shoulder(RDL_HIP, RDL_T), 3, 79), z: 24 }, leg: planted(DL_ANKLE) },
+    hinge: {
+      hip: RDL_HIP,
+      torso: RDL_T,
+      head: -16,
+      arm: { to: add(shoulder(RDL_HIP, RDL_T), 3, 79), z: 24 },
+      leg: planted(DL_ANKLE),
+    },
   },
   timeline: loop('top', 'hinge', 'ba'),
   peak: 'hinge',
@@ -422,7 +437,12 @@ export const backSquat: FigureDef = {
 }
 
 const gbBot: Vec2 = [170, 204]
-const gobletArm = (hip: Vec2, torso: number): LimbSpec => ({ to: onTorso(hip, torso, 48, 17), z: 8, pole: 90, splay: 20 })
+const gobletArm = (hip: Vec2, torso: number): LimbSpec => ({
+  to: onTorso(hip, torso, 48, 17),
+  z: 8,
+  pole: 90,
+  splay: 20,
+})
 export const gobletSquat: FigureDef = {
   poses: {
     top: { hip: sqTop, torso: -88, arm: gobletArm(sqTop, -88), leg: planted(SQ_ANKLE) },
@@ -505,15 +525,34 @@ export const legPress: FigureDef = {
 }
 
 // Ausfallschritte (Körpergewicht, Hände an der Hüfte).
-const handsOnHips = (hip: Vec2, torso: number): LimbSpec => ({ to: onTorso(hip, torso, 6, 2), z: 22, pole: 180, splay: 60 })
+const handsOnHips = (hip: Vec2, torso: number): LimbSpec => ({
+  to: onTorso(hip, torso, 6, 2),
+  z: 22,
+  pole: 180,
+  splay: 60,
+})
 const LU_FRONT = 252
 const LU_BACK = ankleOnToes(150, 42)
 const luTop: Vec2 = [198, 160]
 const luBot: Vec2 = [194, 205]
 export const lunge: FigureDef = {
   poses: {
-    top: { hip: luTop, torso: -90, arm: handsOnHips(luTop, -90), leg: planted(LU_FRONT), legFar: { to: LU_BACK, pole: 0 }, footFar: 42 },
-    bottom: { hip: luBot, torso: -88, arm: handsOnHips(luBot, -88), leg: planted(LU_FRONT), legFar: { to: LU_BACK, pole: 100 }, footFar: 42 },
+    top: {
+      hip: luTop,
+      torso: -90,
+      arm: handsOnHips(luTop, -90),
+      leg: planted(LU_FRONT),
+      legFar: { to: LU_BACK, pole: 0 },
+      footFar: 42,
+    },
+    bottom: {
+      hip: luBot,
+      torso: -88,
+      arm: handsOnHips(luBot, -88),
+      leg: planted(LU_FRONT),
+      legFar: { to: LU_BACK, pole: 100 },
+      footFar: 42,
+    },
   },
   timeline: loop('top', 'bottom', 'ba'),
   peak: 'bottom',
@@ -525,8 +564,23 @@ const bssTop: Vec2 = [196, 160]
 const bssBot: Vec2 = [180, 198]
 export const bulgarianSplitSquat: FigureDef = {
   poses: {
-    top: { hip: bssTop, torso: -86, arm: { a: [92, 90] }, leg: planted(244), legFar: { to: BSS_BACK, pole: 30 }, footFar: 196 },
-    bottom: { hip: bssBot, torso: -80, head: -8, arm: { a: [94, 92] }, leg: planted(244), legFar: { to: BSS_BACK, pole: 110 }, footFar: 200 },
+    top: {
+      hip: bssTop,
+      torso: -86,
+      arm: { a: [92, 90] },
+      leg: planted(244),
+      legFar: { to: BSS_BACK, pole: 30 },
+      footFar: 196,
+    },
+    bottom: {
+      hip: bssBot,
+      torso: -80,
+      head: -8,
+      arm: { a: [94, 92] },
+      leg: planted(244),
+      legFar: { to: BSS_BACK, pole: 110 },
+      footFar: 200,
+    },
   },
   timeline: loop('top', 'bottom', 'ba'),
   peak: 'bottom',
@@ -553,7 +607,10 @@ export const hipThrust: FigureDef = {
   },
   timeline: loop('down', 'up', 'ab'),
   peak: 'up',
-  props: [{ kind: 'bench', x: 56, w: 96, top: 196 }, { kind: 'barbell', plate: 30 }],
+  props: [
+    { kind: 'bench', x: 56, w: 96, top: 196 },
+    { kind: 'barbell', plate: 30 },
+  ],
 }
 
 // Glute Bridge: Schultern am Boden.
@@ -665,7 +722,10 @@ export const skullCrusher: FigureDef = {
   },
   timeline: loop('top', 'bottom', 'ba'),
   peak: 'bottom',
-  props: [{ kind: 'bench', x: 140, w: 160 }, { kind: 'barbell', plate: 22 }],
+  props: [
+    { kind: 'bench', x: 140, w: 160 },
+    { kind: 'barbell', plate: 22 },
+  ],
 }
 
 export const overheadTriceps: FigureDef = {
@@ -675,7 +735,10 @@ export const overheadTriceps: FigureDef = {
   },
   timeline: loop('down', 'up', 'ab'),
   peak: 'down',
-  props: [{ kind: 'seat', x: 150, w: 70, top: 203 }, { kind: 'dumbbell', one: true }],
+  props: [
+    { kind: 'seat', x: 150, w: 70, top: 203 },
+    { kind: 'dumbbell', one: true },
+  ],
 }
 
 export const tricepsKickback: FigureDef = {
@@ -848,8 +911,26 @@ const HK_HIP: Vec2 = [200, HIP - 4]
 export const highKnees: FigureDef = {
   duration: 760,
   poses: {
-    a: { hip: HK_HIP, torso: -86, arm: { a: [124, 44] }, armFar: { a: [52, -36] }, leg: { a: [-6, 84] }, legFar: { a: [92, 94] }, foot: -4, footFar: 20 },
-    b: { hip: HK_HIP, torso: -86, arm: { a: [52, -36] }, armFar: { a: [124, 44] }, leg: { a: [92, 94] }, legFar: { a: [-6, 84] }, foot: 20, footFar: -4 },
+    a: {
+      hip: HK_HIP,
+      torso: -86,
+      arm: { a: [124, 44] },
+      armFar: { a: [52, -36] },
+      leg: { a: [-6, 84] },
+      legFar: { a: [92, 94] },
+      foot: -4,
+      footFar: 20,
+    },
+    b: {
+      hip: HK_HIP,
+      torso: -86,
+      arm: { a: [52, -36] },
+      armFar: { a: [124, 44] },
+      leg: { a: [92, 94] },
+      legFar: { a: [-6, 84] },
+      foot: 20,
+      footFar: -4,
+    },
   },
   timeline: swing('a', 'b'),
   peak: 'a',
@@ -886,10 +967,1193 @@ const GK_T = -12
 const GK_HAND: Vec2 = [shoulder(GK_HIP, GK_T)[0] + 2, HAND_FLOOR]
 export const gluteKickback: FigureDef = {
   poses: {
-    down: { hip: GK_HIP, torso: GK_T, head: -8, arm: { to: GK_HAND, z: 18 }, leg: { a: [92, 180] }, legFar: { a: [90, 180] }, foot: 180, footFar: 180 },
-    up: { hip: GK_HIP, torso: GK_T, head: -8, arm: { to: GK_HAND, z: 18 }, leg: { a: [192, 268] }, legFar: { a: [90, 180] }, foot: 180, footFar: 180 },
+    down: {
+      hip: GK_HIP,
+      torso: GK_T,
+      head: -8,
+      arm: { to: GK_HAND, z: 18 },
+      leg: { a: [92, 180] },
+      legFar: { a: [90, 180] },
+      foot: 180,
+      footFar: 180,
+    },
+    up: {
+      hip: GK_HIP,
+      torso: GK_T,
+      head: -8,
+      arm: { to: GK_HAND, z: 18 },
+      leg: { a: [192, 268] },
+      legFar: { a: [90, 180] },
+      foot: 180,
+      footFar: 180,
+    },
   },
   timeline: loop('down', 'up', 'ab'),
   peak: 'up',
   props: [{ kind: 'mat', x: 70, w: 240 }],
+}
+
+// ===========================================================================
+// Erweiterung: weitere Bewegungsmuster
+// ===========================================================================
+
+/** Zyklus mit Zwischenpose (für Kreisbahnen, z. B. Knie als Drehpunkt): A → M → B → M → A. */
+function via(a: string, m: string, b: string, concentric: 'ab' | 'ba'): TimelineKey[] {
+  const ab = concentric === 'ab'
+  return [
+    { at: 0, pose: a },
+    { at: 0.08, pose: a },
+    { at: 0.27, pose: m, c: ab },
+    { at: 0.45, pose: b, c: ab },
+    { at: 0.55, pose: b },
+    { at: 0.73, pose: m, c: !ab },
+    { at: 0.92, pose: a, c: !ab },
+    { at: 1, pose: a },
+  ]
+}
+// --- Brust / Druck -----------------------------------------------------------
+
+// Pullover: auf der Bank, gestreckte Arme vom Brustkorb nach hinten über den Kopf.
+export const pullover: FigureDef = {
+  mirror: true,
+  poses: {
+    top: lying({ a: [-94, -98] }),
+    back: lying({ a: [-186, -196] }),
+  },
+  timeline: loop('top', 'back', 'ba'),
+  peak: 'back',
+  props: [
+    { kind: 'bench', x: 140, w: 160 },
+    { kind: 'dumbbell', one: true },
+  ],
+}
+
+// Stehendes Drücken nach vorn (Kabel-Brustpresse, Medizinball-Stoß, Landmine).
+const SP_STAND: Vec2 = [196, HIP + 4]
+const SP_SH = shoulder(SP_STAND, -86)
+const standPress = (arm: LimbSpec): PoseSpec => ({
+  hip: SP_STAND,
+  torso: -86,
+  arm,
+  leg: planted(216),
+  legFar: planted(178),
+})
+export const standingPress: FigureDef = {
+  poses: {
+    chest: standPress({ to: add(SP_SH, 16, 10), z: 24, pole: 170, splay: 50 }),
+    out: standPress({ to: add(SP_SH, 80, 6), z: 14, pole: 120, splay: 40 }),
+  },
+  timeline: loop('chest', 'out', 'ab'),
+  peak: 'out',
+  props: [{ kind: 'cable', from: [96, 92], column: 80, handle: 'handle', hand: 'both', layer: 'far' }],
+}
+export const chestPass: FigureDef = { ...standingPress, duration: 2000, props: [{ kind: 'ball', r: 14, dx: 8 }] }
+
+// --- Schultern -----------------------------------------------------------------
+
+// Aufrechtes Rudern: Stange vom Oberschenkel zur Brust, Ellbogen führen hoch.
+export const uprightRow: FigureDef = {
+  poses: {
+    down: standing({ to: add(ST_SH, 8, 76), z: 12, pole: 180, splay: 40 }),
+    up: standing({ to: add(ST_SH, 16, 0), z: 12, pole: -110, splay: 70 }, { head: -4 }),
+  },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [{ kind: 'barbell', plate: 22 }],
+}
+
+// Shrugs: Frontansicht, Schultern heben die hängenden Arme.
+const SH_LEGS: LimbSpec = { a: [90, 90], out: [3, 3] }
+export const shrug: FigureDef = {
+  view: 'front',
+  poses: {
+    down: { hip: ST_HIP, torso: -90, arm: { a: [90, 90], out: [9, 6] }, leg: SH_LEGS },
+    up: { hip: ST_HIP, torso: -90, shrug: 10, head: 4, arm: { a: [90, 90], out: [9, 6] }, leg: SH_LEGS },
+  },
+  timeline: loop('down', 'up', 'ab', [0.08, 0.16]),
+  peak: 'up',
+  props: [{ kind: 'dumbbell' }],
+}
+
+// Außenrotation: Oberarm am Körper, Unterarm dreht nach außen (Frontansicht).
+const ER_ARM_FAR: LimbSpec = { a: [90, 90], out: [7, 9] }
+export const externalRotation: FigureDef = {
+  view: 'front',
+  poses: {
+    in: { hip: ST_HIP, torso: -90, arm: { a: [90, 0], out: [5, -62] }, armFar: ER_ARM_FAR, leg: SH_LEGS },
+    out: { hip: ST_HIP, torso: -90, arm: { a: [90, 0], out: [5, 72] }, armFar: ER_ARM_FAR, leg: SH_LEGS },
+  },
+  timeline: loop('in', 'out', 'ab'),
+  peak: 'out',
+  props: [{ kind: 'dumbbell', one: true }],
+}
+
+// Battle Ropes: halbe Kniebeuge, Arme schlagen abwechselnd Wellen.
+const BR_HIP: Vec2 = [184, 166]
+const brPose = (near: Vec2, far: Vec2): PoseSpec => ({
+  hip: BR_HIP,
+  torso: -72,
+  head: -6,
+  arm: { a: near },
+  armFar: { a: far },
+  leg: planted(212),
+  legFar: planted(196),
+})
+export const battlingRopes: FigureDef = {
+  duration: 700,
+  poses: {
+    a: brPose([30, -6], [72, 40]),
+    b: brPose([72, 40], [30, -6]),
+  },
+  timeline: swing('a', 'b'),
+  peak: 'a',
+  props: [{ kind: 'cable', from: [372, 250], hand: 'both' }],
+}
+
+// Handstand-Liegestütz: Überkopfdrücken kopfüber (Hände fest am Boden).
+const HS_HAND: Vec2 = [200, 40]
+const hsPose = (shDist: number): PoseSpec => {
+  const sh: Vec2 = [HS_HAND[0] - 2, HS_HAND[1] + shDist]
+  return {
+    hip: [sh[0], sh[1] + SHOULDER_S],
+    torso: -90,
+    head: -6,
+    arm: { to: HS_HAND, z: 26, pole: 0, splay: 40 },
+    leg: { a: [90, 90] },
+    legFar: { a: [92, 92] },
+  }
+}
+export const handstandPushUp: FigureDef = {
+  zoom: 0.86,
+  roll: { deg: 180, cx: 200, cy: (HS_HAND[1] + HAND_FLOOR) / 2 },
+  shadowX: 200,
+  poses: {
+    top: hsPose(80),
+    bottom: hsPose(44),
+  },
+  timeline: loop('top', 'bottom', 'ba'),
+  peak: 'bottom',
+}
+
+// --- Olympisch / Ganzkörper ---------------------------------------------------------
+
+// Frontablage: Hände vor den Schultern, Ellbogen vorn.
+const rackArm = (hip: Vec2, torso: number): LimbSpec => ({
+  to: onTorso(hip, torso, SHOULDER_S + 4, 15),
+  z: 22,
+  pole: -10,
+  splay: 25,
+})
+const overArm = (hip: Vec2, torso: number): LimbSpec => ({
+  to: at(shoulder(hip, torso), -94, 80),
+  z: 30,
+  pole: 180,
+  splay: 40,
+})
+const EXT_HIP: Vec2 = [200, HIP - 1]
+const CATCH_HIP: Vec2 = [186, 178]
+const FS_BOT: Vec2 = [170, 202]
+const OL = {
+  floor: { hip: DL_HIP0, torso: DL_T0, head: -22, arm: { to: DL_BAR0, z: 24 }, leg: planted(DL_ANKLE) } as PoseSpec,
+  ext: {
+    hip: EXT_HIP,
+    torso: -94,
+    head: -6,
+    shrug: 6,
+    arm: { to: add(shoulder(EXT_HIP, -94), 4, 73), z: 24 },
+    leg: planted(DL_ANKLE),
+  } as PoseSpec,
+  rack: { hip: DL_HIP1, torso: -88, arm: rackArm(DL_HIP1, -88), leg: planted(DL_ANKLE) } as PoseSpec,
+  catch: { hip: CATCH_HIP, torso: -74, head: -6, arm: rackArm(CATCH_HIP, -74), leg: planted(DL_ANKLE) } as PoseSpec,
+  over: { hip: DL_HIP1, torso: -88, arm: overArm(DL_HIP1, -88), leg: planted(DL_ANKLE) } as PoseSpec,
+  overCatch: { hip: CATCH_HIP, torso: -78, head: -4, arm: overArm(CATCH_HIP, -78), leg: planted(DL_ANKLE) } as PoseSpec,
+  frontBot: { hip: FS_BOT, torso: -66, head: -8, arm: rackArm(FS_BOT, -66), leg: planted(DL_ANKLE) } as PoseSpec,
+  overBot: { hip: FS_BOT, torso: -70, head: -4, arm: overArm(FS_BOT, -70), leg: planted(DL_ANKLE) } as PoseSpec,
+}
+export const clean: FigureDef = {
+  zoom: 0.94,
+  duration: 3000,
+  poses: { floor: OL.floor, ext: OL.ext, catch: OL.catch, rack: OL.rack },
+  timeline: [
+    { at: 0, pose: 'floor' },
+    { at: 0.08, pose: 'floor' },
+    { at: 0.28, pose: 'ext', c: true },
+    { at: 0.38, pose: 'catch', c: true },
+    { at: 0.52, pose: 'rack', c: true },
+    { at: 0.64, pose: 'rack' },
+    { at: 0.92, pose: 'floor' },
+    { at: 1, pose: 'floor' },
+  ],
+  peak: 'catch',
+  props: [{ kind: 'barbell' }],
+}
+export const cleanPress: FigureDef = {
+  zoom: 0.84,
+  duration: 4200,
+  poses: { floor: OL.floor, ext: OL.ext, catch: OL.catch, rack: OL.rack, over: OL.over },
+  timeline: [
+    { at: 0, pose: 'floor' },
+    { at: 0.06, pose: 'floor' },
+    { at: 0.2, pose: 'ext', c: true },
+    { at: 0.28, pose: 'catch', c: true },
+    { at: 0.38, pose: 'rack', c: true },
+    { at: 0.44, pose: 'rack' },
+    { at: 0.58, pose: 'over', c: true },
+    { at: 0.64, pose: 'over' },
+    { at: 0.76, pose: 'rack' },
+    { at: 0.94, pose: 'floor' },
+    { at: 1, pose: 'floor' },
+  ],
+  peak: 'over',
+  props: [{ kind: 'barbell' }],
+}
+export const snatch: FigureDef = {
+  zoom: 0.84,
+  duration: 3200,
+  poses: { floor: OL.floor, ext: OL.ext, catch: OL.overCatch, over: OL.over },
+  timeline: [
+    { at: 0, pose: 'floor' },
+    { at: 0.08, pose: 'floor' },
+    { at: 0.26, pose: 'ext', c: true },
+    { at: 0.38, pose: 'catch', c: true },
+    { at: 0.52, pose: 'over', c: true },
+    { at: 0.62, pose: 'over' },
+    { at: 0.92, pose: 'floor' },
+    { at: 1, pose: 'floor' },
+  ],
+  peak: 'catch',
+  props: [{ kind: 'barbell' }],
+}
+export const thruster: FigureDef = {
+  zoom: 0.84,
+  poses: { bottom: OL.frontBot, over: OL.over },
+  timeline: loop('bottom', 'over', 'ab'),
+  peak: 'bottom',
+  props: [{ kind: 'barbell' }],
+}
+export const frontSquat: FigureDef = {
+  poses: { top: OL.rack, bottom: OL.frontBot },
+  timeline: loop('top', 'bottom', 'ba'),
+  peak: 'bottom',
+  props: [{ kind: 'barbell' }],
+}
+export const overheadSquat: FigureDef = {
+  zoom: 0.84,
+  poses: { top: OL.over, bottom: OL.overBot },
+  timeline: loop('top', 'bottom', 'ba'),
+  peak: 'bottom',
+  props: [{ kind: 'barbell' }],
+}
+
+// --- Beine ---------------------------------------------------------------------
+
+// Kniebeuge mit hängenden Kurzhanteln.
+export const dbSquat: FigureDef = {
+  poses: {
+    top: { hip: sqTop, torso: -88, arm: { a: [90, 90] }, leg: planted(SQ_ANKLE) },
+    bottom: { hip: gbBot, torso: -62, head: -12, arm: { a: [94, 92] }, leg: planted(SQ_ANKLE) },
+  },
+  timeline: loop('top', 'bottom', 'ba'),
+  peak: 'bottom',
+  props: [{ kind: 'dumbbell' }],
+}
+
+// Pistol Squat: einbeinig, freies Bein gestreckt nach vorn.
+const PS_ANKLE = 196
+export const pistolSquat: FigureDef = {
+  poses: {
+    top: {
+      hip: [PS_ANKLE - 4, HIP + 1],
+      torso: -88,
+      arm: { a: [40, 30] },
+      leg: planted(PS_ANKLE),
+      legFar: { a: [70, 80] },
+      footFar: -10,
+    },
+    bottom: {
+      hip: [PS_ANKLE - 34, 208],
+      torso: -50,
+      head: -16,
+      arm: { a: [-6, -6] },
+      leg: planted(PS_ANKLE, -40),
+      legFar: { a: [-6, -4] },
+      footFar: -94,
+    },
+  },
+  timeline: loop('top', 'bottom', 'ba'),
+  peak: 'bottom',
+}
+
+// Step-up: vorderer Fuß auf der Box, Körper steigt hinauf.
+const STEP_H = 52
+const STEP_ANK: Vec2 = [250, FLOOR - STEP_H - ANKLE_H]
+export const stepUp: FigureDef = {
+  zoom: 0.86,
+  poses: {
+    down: {
+      hip: [206, HIP + 6],
+      torso: -84,
+      arm: { a: [90, 90] },
+      leg: { to: STEP_ANK, pole: -40 },
+      legFar: { to: [176, AY] },
+    },
+    up: {
+      hip: [STEP_ANK[0] - 6, STEP_ANK[1] - 107],
+      torso: -88,
+      arm: { a: [90, 90] },
+      leg: { to: STEP_ANK },
+      legFar: { to: [STEP_ANK[0] - 12, STEP_ANK[1] - 30], pole: -10 },
+    },
+  },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [{ kind: 'box', x: 222, w: 74, h: STEP_H }, { kind: 'dumbbell' }],
+}
+
+// Seitlicher Ausfallschritt (Frontansicht): Hüfte wandert über das gebeugte Bein.
+function sideLungeLegs(): { stand: PoseSpec; lunge: PoseSpec } {
+  const nearT = { a: 30, o: 40 }
+  const nearS = { a: 95, o: 10 }
+  const c = (d: number) => Math.cos(rad(d))
+  const s = (d: number) => Math.sin(rad(d))
+  const h = LEN.thigh * c(nearT.o) * s(nearT.a) + LEN.shin * c(nearS.o) * s(nearS.a)
+  const oFar = (Math.acos(h / (LEN.thigh + LEN.shin)) * 180) / Math.PI
+  const zNear = LEN.hipHalf + LEN.thigh * s(nearT.o) + LEN.shin * s(nearS.o)
+  const zFar = LEN.hipHalf + (LEN.thigh + LEN.shin) * s(oFar)
+  const mid = (zNear - zFar) / 2
+  const half = (zNear + zFar) / 2
+  const oStand = (Math.asin((half - LEN.hipHalf) / (LEN.thigh + LEN.shin)) * 180) / Math.PI
+  const hand = (hip: Vec2): LimbSpec => ({ to: [hip[0] + 34, hip[1] - 44], zw: 0, splay: 20 })
+  const standHip: Vec2 = [200 + mid, AY - (LEN.thigh + LEN.shin) * c(oStand)]
+  const lungeHip: Vec2 = [200, AY - h]
+  return {
+    stand: {
+      hip: standHip,
+      torso: -90,
+      arm: hand(standHip),
+      leg: { a: [90, 90], out: [oStand, oStand] },
+      legFar: { a: [90, 90], out: [oStand, oStand] },
+    },
+    lunge: {
+      hip: lungeHip,
+      torso: -80,
+      lean: 10,
+      arm: hand(lungeHip),
+      leg: { a: [nearT.a, nearS.a], out: [nearT.o, nearS.o] },
+      legFar: { a: [90, 90], out: [oFar, oFar] },
+    },
+  }
+}
+const SL = sideLungeLegs()
+export const sideLunge: FigureDef = {
+  view: 'front',
+  poses: { stand: SL.stand, lunge: SL.lunge },
+  timeline: loop('stand', 'lunge', 'ba'),
+  peak: 'lunge',
+}
+
+// Abduktoren-/Adduktorenmaschine (Frontansicht, sitzend).
+const AB_HIP: Vec2 = [200, 196]
+const abPose = (o: number): PoseSpec => ({
+  hip: AB_HIP,
+  torso: -90,
+  arm: { a: [84, 96], out: [26, 14] },
+  leg: { a: [6, 90], out: [o, 4] },
+})
+const abProps: PropSpec[] = [{ kind: 'seat', x: 172, w: 56, top: 206, back: 100 }]
+export const hipAbduction: FigureDef = {
+  view: 'front',
+  poses: { closed: abPose(10), open: abPose(46) },
+  timeline: loop('closed', 'open', 'ab'),
+  peak: 'open',
+  props: abProps,
+}
+export const hipAdduction: FigureDef = { ...hipAbduction, timeline: loop('open', 'closed', 'ab'), peak: 'closed' }
+
+// Wadenheben sitzend: Knie unter dem Polster, Ferse hebt.
+const SCR_HIP: Vec2 = [170, 194]
+const scrPose = (footA: number): PoseSpec => {
+  const ankle = ankleOnToes(244, footA)
+  const knee: Vec2 = [ankle[0] - 2, ankle[1] - LEN.shin]
+  return {
+    hip: SCR_HIP,
+    torso: -86,
+    arm: { to: add(knee, -6, -10), z: 20, pole: 90 },
+    leg: { to: ankle, pole: -60 },
+    foot: footA,
+  }
+}
+export const seatedCalfRaise: FigureDef = {
+  poses: { down: scrPose(-6), up: scrPose(32) },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [
+    { kind: 'seat', x: 124, w: 80, top: 204 },
+    { kind: 'dumbbell', one: true },
+  ],
+}
+
+// Good Morning: Langhantel im Nacken, Hüfte schiebt nach hinten.
+const GM_HIP: Vec2 = [164, 156]
+export const goodMorning: FigureDef = {
+  poses: {
+    top: { hip: sqTop, torso: -88, arm: { to: backBar(sqTop, -88) }, leg: planted(SQ_ANKLE) },
+    hinge: { hip: GM_HIP, torso: -14, head: -24, arm: { to: backBar(GM_HIP, -14) }, leg: planted(SQ_ANKLE) },
+  },
+  timeline: loop('top', 'hinge', 'ba'),
+  peak: 'hinge',
+  props: [{ kind: 'barbell' }],
+}
+
+// Rückenstrecker an der 45°-Bank: Beine fest, Rumpf beugt um die Hüfte.
+const BE_HIP: Vec2 = [214, 148]
+const BE_LEG = 135
+const BE_ANK = at(BE_HIP, BE_LEG, LEN.thigh + LEN.shin)
+const bePose = (torso: number, bend = 0): PoseSpec => ({
+  hip: BE_HIP,
+  torso,
+  bend,
+  head: bend ? 10 : -6,
+  arm: { to: onTorso(BE_HIP, torso, 46, 17, bend), z: 10, pole: torso + 120, splay: 50 },
+  leg: { a: [BE_LEG, BE_LEG] },
+  foot: BE_LEG - 90 + 10,
+})
+const BE_PADN = at([0, 0], BE_LEG - 90, 15)
+export const backExtension: FigureDef = {
+  poses: { down: bePose(70, 10), up: bePose(-48) },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [
+    {
+      kind: 'pad',
+      from: add(at(BE_HIP, BE_LEG, 4), BE_PADN[0], BE_PADN[1]),
+      to: add(at(BE_HIP, BE_LEG, 50), BE_PADN[0], BE_PADN[1]),
+      w: 14,
+      post: 196,
+    },
+    { kind: 'pad', from: add(BE_ANK, 10, 12), to: add(BE_ANK, 18, 4), w: 11 },
+  ],
+}
+
+// Reverse Hyperextension: bäuchlings auf hoher Bank, Beine schwingen nach hinten hoch.
+const RH_HIP: Vec2 = [160, 136]
+const rhPose = (legA: number): PoseSpec => ({
+  hip: RH_HIP,
+  torso: -2,
+  head: -10,
+  arm: { to: [262, 152], z: 22, pole: 60 },
+  leg: { a: [legA, legA] },
+  foot: legA - 80,
+})
+export const reverseHyper: FigureDef = {
+  poses: { down: rhPose(96), up: rhPose(182) },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [{ kind: 'pad', from: [160, 149], to: [276, 149], w: 15, post: 250 }],
+}
+
+// Kniend (Knie am Boden, Unterschenkel nach hinten): Oberschenkelwinkel → Hüfte.
+const KNEE_X = 196
+const KNEE: Vec2 = [KNEE_X, FLOOR - 8]
+const kneelHip = (thighA: number, knee: Vec2 = KNEE): Vec2 => at(knee, thighA + 180, LEN.thigh)
+
+// Nordic Curl / Glute-Ham-Raise: Körper kippt als Linie um die Knie nach vorn.
+const nordicPose = (thighA: number, arm: Vec2): PoseSpec => ({
+  hip: kneelHip(thighA),
+  torso: thighA - 180,
+  head: -6,
+  arm: { a: arm },
+  leg: { a: [thighA, 180] },
+  foot: 92,
+})
+export const nordicCurl: FigureDef = {
+  duration: 3600,
+  poses: {
+    top: nordicPose(90, [92, 20]),
+    mid: nordicPose(116, [80, 30]),
+    low: nordicPose(142, [64, 46]),
+  },
+  timeline: via('top', 'mid', 'low', 'ba'),
+  peak: 'low',
+  props: [
+    { kind: 'mat', x: 90, w: 240 },
+    { kind: 'pad', from: [KNEE_X - 52, FLOOR - 22], to: [KNEE_X - 40, FLOOR - 22], w: 10 },
+  ],
+}
+
+// Rudern auf der Schrägbank (bäuchlings, Brust auf dem Polster).
+const CSR_HIP: Vec2 = [176, 184]
+const CSR_T = -38
+const CSR_SH = shoulder(CSR_HIP, CSR_T)
+const csrPose = (arm: LimbSpec): PoseSpec => ({
+  hip: CSR_HIP,
+  torso: CSR_T,
+  head: -6,
+  arm,
+  leg: { to: [106, AY], pole: 40 },
+  legFar: { to: [114, AY], pole: 40 },
+})
+const CSR_N = at([0, 0], CSR_T + 90, 17)
+export const chestSupportedRow: FigureDef = {
+  poses: {
+    down: csrPose({ to: add(CSR_SH, 6, 78), z: 26 }),
+    up: csrPose({ to: onTorso(CSR_HIP, CSR_T, 24, 22), z: 28, pole: -150, splay: 25 }),
+  },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [
+    {
+      kind: 'pad',
+      from: add(at(CSR_HIP, CSR_T, 6), CSR_N[0], CSR_N[1]),
+      to: add(at(CSR_HIP, CSR_T, 56), CSR_N[0], CSR_N[1]),
+      w: 15,
+      post: 200,
+    },
+    { kind: 'dumbbell' },
+  ],
+}
+
+// Überzüge am Kabel (gestreckte Arme von oben zu den Oberschenkeln).
+const SAP_HIP: Vec2 = [190, HIP + 2]
+export const straightArmPulldown: FigureDef = {
+  poses: {
+    up: standing({ a: [-34, -38] }, { hip: SAP_HIP, torso: -72, head: -6, leg: planted(212) }),
+    down: standing({ a: [84, 82] }, { hip: SAP_HIP, torso: -72, head: -6, leg: planted(212) }),
+  },
+  timeline: loop('up', 'down', 'ab'),
+  peak: 'down',
+  props: [{ kind: 'cable', from: [300, 34], column: 330, handle: 'bar' }],
+}
+
+// Inverted Row: rücklings unter der Stange, Körper gestreckt (Kopf links → gespiegelt).
+const IR_ANKLE: Vec2 = [302, AY - 2]
+const IR_TOP = 34
+const irShoulder = (ang: number) => at(IR_ANKLE, 180 + ang, LEN.thigh + LEN.shin + SHOULDER_S)
+// Stange knapp über der Brust in der oberen Position.
+const IR_BAR: Vec2 = at(irShoulder(IR_TOP), 270 + IR_TOP, 26)
+function irPose(dist: number): PoseSpec {
+  // Körperwinkel (unterhalb der oberen Position) so wählen, dass die Schulter `dist` unter der Stange liegt.
+  let lo = 0
+  let hi = IR_TOP
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2
+    const sh = irShoulder(m)
+    if (Math.hypot(sh[0] - IR_BAR[0], sh[1] - IR_BAR[1]) > dist) lo = m
+    else hi = m
+  }
+  const ang = (lo + hi) / 2
+  const hip = at(IR_ANKLE, 180 + ang, LEN.thigh + LEN.shin)
+  return {
+    hip,
+    torso: 180 + ang,
+    head: 8,
+    arm: { to: IR_BAR, z: 30, pole: 90, splay: 50 },
+    leg: { a: [ang, ang] },
+    foot: ang - 80,
+  }
+}
+export const invertedRow: FigureDef = {
+  mirror: true,
+  poses: { hang: irPose(78), top: irPose(27) },
+  timeline: loop('hang', 'top', 'ab'),
+  peak: 'top',
+  props: [{ kind: 'pullupBar', x: IR_BAR[0], y: IR_BAR[1], post: -40 }],
+}
+
+// --- Arme ----------------------------------------------------------------------
+
+// Scott-Curls: Oberarme liegen schräg auf dem Polster.
+const PC_HIP: Vec2 = [168, 196]
+const PC_T = -82
+const PC_SH = shoulder(PC_HIP, PC_T)
+const PC_UA = 48
+const PC_ELB = at(PC_SH, PC_UA, LEN.upperArm)
+const PC_N = at([0, 0], PC_UA + 90, 9)
+const pcPose = (fore: number): PoseSpec => ({
+  hip: PC_HIP,
+  torso: PC_T,
+  head: 8,
+  arm: { a: [PC_UA, fore] },
+  leg: planted(234, -20),
+})
+export const preacherCurl: FigureDef = {
+  poses: { down: pcPose(78), up: pcPose(-70) },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [
+    { kind: 'seat', x: 128, w: 70, top: 206 },
+    {
+      kind: 'pad',
+      from: add(at(PC_SH, PC_UA, 12), PC_N[0], PC_N[1]),
+      to: add(PC_ELB, PC_N[0] + 2, PC_N[1] + 4),
+      w: 15,
+      post: 222,
+    },
+    { kind: 'barbell', plate: 22 },
+  ],
+}
+
+// Konzentrationscurl: sitzend vorgebeugt, Ellbogen am Oberschenkel.
+const CC_HIP: Vec2 = [168, 196]
+const CC_T = -52
+const ccPose = (a: Vec2): PoseSpec => ({
+  hip: CC_HIP,
+  torso: CC_T,
+  head: -14,
+  arm: { a },
+  armFar: { to: [236, 196], z: 26, pole: 60 },
+  leg: planted(244, -20),
+  legFar: planted(236, -20),
+})
+export const concentrationCurl: FigureDef = {
+  poses: { down: ccPose([96, 92]), up: ccPose([98, -56]) },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [
+    { kind: 'seat', x: 120, w: 76, top: 206 },
+    { kind: 'dumbbell', one: true },
+  ],
+}
+
+// Schrägbank-Curls: Rücken an der Lehne (60°), Arme hängen hinter dem Körper.
+const IC_T = 236
+const icBase = (a: Vec2): PoseSpec => ({
+  hip: INC_HIP,
+  torso: IC_T,
+  head: 2,
+  arm: { a },
+  leg: { to: [326, AY], pole: -60 },
+  legFar: { to: [316, AY], pole: -60 },
+})
+export const inclineCurl: FigureDef = {
+  mirror: true,
+  poses: { down: icBase([92, 90]), up: icBase([94, -58]) },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [{ kind: 'incline', x: 250, angle: 56 }, { kind: 'dumbbell' }],
+}
+
+// Bankdips: Hände hinter dem Körper auf der Bank, Fersen am Boden.
+const BD_HAND: Vec2 = [150, 206]
+const bdPose = (sh: Vec2, torso: number): PoseSpec => ({
+  hip: at(sh, torso + 180, SHOULDER_S),
+  torso,
+  head: 2,
+  arm: { to: BD_HAND, z: 22, pole: 180, splay: 10 },
+  leg: { to: [236, AY], pole: -90 },
+  foot: -30,
+})
+export const benchDips: FigureDef = {
+  poses: {
+    top: bdPose(add(BD_HAND, 6, -79), -86),
+    bottom: bdPose(add(BD_HAND, 14, -42), -80),
+  },
+  timeline: loop('top', 'bottom', 'ba'),
+  peak: 'bottom',
+  props: [{ kind: 'bench', x: 60, w: 100, top: 210 }],
+}
+
+// Handgelenkcurls: Unterarme auf den Oberschenkeln, nur die Hand bewegt sich.
+const WC_HIP: Vec2 = [168, 196]
+const wcPose = (handY: number): PoseSpec => ({
+  hip: WC_HIP,
+  torso: -62,
+  head: -12,
+  arm: { to: [246, handY], z: 16, pole: 100, splay: 10 },
+  leg: planted(240, -20),
+})
+export const wristCurl: FigureDef = {
+  duration: 2400,
+  poses: { down: wcPose(204), up: wcPose(184) },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [
+    { kind: 'seat', x: 118, w: 80, top: 206 },
+    { kind: 'barbell', plate: 18 },
+  ],
+}
+
+// --- Rumpf ---------------------------------------------------------------------
+
+// Kabel-Crunch kniend: Seil am Kopf, Rumpf rollt ein.
+const CCR_HIP = kneelHip(90)
+function cableCrunchPose(torso: number, bend: number): PoseSpec {
+  const h = headOf(CCR_HIP, torso, bend, 10)
+  const hand = at(at(h.c, h.a + 90, 13), h.a, 2)
+  return {
+    hip: CCR_HIP,
+    torso,
+    bend,
+    head: 10,
+    arm: { to: hand, z: 10, pole: torso + bend + 90, splay: 30 },
+    leg: { a: [90, 180] },
+    foot: 92,
+  }
+}
+export const cableCrunch: FigureDef = {
+  poses: { up: cableCrunchPose(-62, 0), down: cableCrunchPose(-34, 44) },
+  timeline: loop('up', 'down', 'ab'),
+  peak: 'down',
+  props: [
+    { kind: 'mat', x: 100, w: 220 },
+    { kind: 'cable', from: [262, 34], column: 330, handle: 'rope' },
+  ],
+}
+
+// Rückenlage auf der Matte (Kopf links): Hüftmitte am Boden.
+const SUP_HIP: Vec2 = [214, FLOOR - 13]
+const SUP_SH: Vec2 = at(SUP_HIP, 180, SHOULDER_S)
+
+// Reverse Crunch: Knie zur Brust, Becken rollt ein.
+function revCrunchPose(lift: number, legs: Vec2): PoseSpec {
+  const hip: Vec2 = [SUP_HIP[0] - lift * 0.5, SUP_HIP[1] - lift]
+  const torso = (Math.atan2(SUP_SH[1] - hip[1], SUP_SH[0] - hip[0]) * 180) / Math.PI
+  return { hip, torso, head: 6, arm: { a: [2, 0] }, leg: { a: legs } }
+}
+export const reverseCrunch: FigureDef = {
+  poses: { down: revCrunchPose(0, [-74, 6]), up: revCrunchPose(14, [-128, -40]) },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [{ kind: 'mat', x: 70, w: 250 }],
+}
+
+// Beinheben liegend: gestreckte Beine bis senkrecht.
+const supLegs = (a: number, far = a, extra: Partial<PoseSpec> = {}): PoseSpec => ({
+  hip: SUP_HIP,
+  torso: 180,
+  head: 6,
+  arm: { a: [2, 0] },
+  leg: { a: [a, a] },
+  legFar: { a: [far, far] },
+  ...extra,
+})
+export const lyingLegRaise: FigureDef = {
+  poses: { down: supLegs(-8), up: supLegs(-88) },
+  timeline: loop('down', 'up', 'ab'),
+  peak: 'up',
+  props: [{ kind: 'mat', x: 70, w: 270 }],
+}
+export const flutterKick: FigureDef = {
+  duration: 900,
+  poses: { a: supLegs(-14, -34, { bend: 10, head: 14 }), b: supLegs(-34, -14, { bend: 10, head: 14 }) },
+  timeline: swing('a', 'b'),
+  peak: 'a',
+  props: [{ kind: 'mat', x: 70, w: 270 }],
+}
+
+// Dead Bug: Arme senkrecht, Beine 90/90; Gegenarm und -bein strecken sich.
+const dbugPose = (armN: number, armF: number, legN: Vec2, legF: Vec2): PoseSpec => ({
+  hip: SUP_HIP,
+  torso: 180,
+  head: 8,
+  arm: { a: [armN, armN] },
+  armFar: { a: [armF, armF] },
+  leg: { a: legN },
+  legFar: { a: legF },
+})
+const DB_LEG: Vec2 = [-90, 0]
+export const deadBug: FigureDef = {
+  duration: 3600,
+  poses: {
+    rest: dbugPose(-90, -90, DB_LEG, DB_LEG),
+    a: dbugPose(-176, -90, DB_LEG, [-10, -10]),
+    b: dbugPose(-90, -176, [-10, -10], DB_LEG),
+  },
+  timeline: [
+    { at: 0, pose: 'rest' },
+    { at: 0.22, pose: 'a' },
+    { at: 0.28, pose: 'a' },
+    { at: 0.5, pose: 'rest', c: true },
+    { at: 0.72, pose: 'b' },
+    { at: 0.78, pose: 'b' },
+    { at: 1, pose: 'rest', c: true },
+  ],
+  peak: 'a',
+  props: [{ kind: 'mat', x: 70, w: 270 }],
+}
+
+// Rollout (Ab-Roller) kniend.
+const roPose = (thighA: number, torso: number, hand: Vec2, head = -8): PoseSpec => ({
+  hip: kneelHip(thighA, [150, FLOOR - 8]),
+  torso,
+  head,
+  arm: { to: hand, z: 14, pole: 0 },
+  leg: { a: [thighA, 180] },
+  foot: 92,
+})
+export const abRollout: FigureDef = {
+  poses: {
+    in: roPose(104, -24, [222, FLOOR - 11], -14),
+    mid: roPose(132, -14, [270, FLOOR - 11]),
+    out: roPose(160, -6, [330, FLOOR - 11]),
+  },
+  timeline: via('in', 'mid', 'out', 'ba'),
+  peak: 'out',
+  props: [
+    { kind: 'mat', x: 80, w: 280 },
+    { kind: 'dumbbell', one: true },
+  ],
+}
+
+// Seitbeugen (Frontansicht) mit Kurzhantel.
+const sbPose = (lean: number): PoseSpec => ({
+  hip: ST_HIP,
+  torso: -90,
+  lean,
+  arm: { a: [90, 90], out: [6, 4] },
+  armFar: { to: [ST_HIP[0], ST_HIP[1] - 4], zw: -16, pole: 0, splay: 90 },
+  leg: SH_LEGS,
+})
+export const sideBend: FigureDef = {
+  view: 'front',
+  poses: { up: sbPose(-6), down: sbPose(24) },
+  timeline: loop('up', 'down', 'ba'),
+  peak: 'down',
+  props: [{ kind: 'dumbbell', one: true }],
+}
+
+// Pallof Press: Kabel kommt von der Seite, Hände drücken vor die Brust und halten.
+export const pallofPress: FigureDef = {
+  poses: {
+    chest: standing(
+      { to: add(ST_SH, 16, 18), z: 4, pole: 150, splay: 50 },
+      { leg: planted(214), legFar: planted(186) },
+    ),
+    out: standing({ to: add(ST_SH, 74, 16), z: 4, pole: 100, splay: 30 }, { leg: planted(214), legFar: planted(186) }),
+  },
+  timeline: loop('chest', 'out', 'ab', [0.08, 0.26]),
+  peak: 'out',
+  props: [{ kind: 'cable', from: [184, 104], column: 176, handle: 'handle', layer: 'far' }],
+}
+
+// Holzhacker (Frontansicht): Hände diagonal von oben außen nach unten innen.
+const WC_LEGS: LimbSpec = { a: [90, 90], out: [10, 10] }
+const wcHip: Vec2 = [200, HIP + 3]
+export const woodChop: FigureDef = {
+  view: 'front',
+  poses: {
+    high: { hip: wcHip, torso: -90, twist: 20, head: -4, arm: { to: [228, 54], zw: 50, splay: 20 }, leg: WC_LEGS },
+    low: {
+      hip: wcHip,
+      torso: -84,
+      twist: -30,
+      head: 6,
+      lean: -8,
+      arm: { to: [222, 152], zw: -34, splay: 20 },
+      leg: WC_LEGS,
+    },
+  },
+  timeline: loop('high', 'low', 'ab'),
+  peak: 'low',
+  props: [{ kind: 'cable', from: [330, 34], handle: 'handle' }],
+}
+
+// Ball Slam: Ball über Kopf, kraftvoll vor die Füße schmettern.
+const BS_HINGE: Vec2 = [172, 166]
+export const ballSlam: FigureDef = {
+  zoom: 0.86,
+  duration: 1800,
+  poses: {
+    over: { hip: [200, HIP - 2], torso: -92, head: -6, arm: { a: [-96, -100] }, leg: planted(210), foot: 0 },
+    slam: { hip: BS_HINGE, torso: -30, head: -20, arm: { a: [70, 80] }, leg: planted(210, -30) },
+  },
+  timeline: [
+    { at: 0, pose: 'over' },
+    { at: 0.2, pose: 'over' },
+    { at: 0.38, pose: 'slam', c: true },
+    { at: 0.5, pose: 'slam' },
+    { at: 0.9, pose: 'over' },
+    { at: 1, pose: 'over' },
+  ],
+  peak: 'slam',
+  props: [{ kind: 'ball', r: 15 }],
+}
+
+// Box Jump: aus der Hocke auf die Box springen.
+const BJ_BOX = 60
+const BJ_BOT = hipFromAnkle([170, AY], 18, 112)
+const BJ_LAND = hipFromAnkle([262, AY - BJ_BOX], 18, 112)
+export const boxJump: FigureDef = {
+  duration: 2600,
+  poses: {
+    bottom: { hip: BJ_BOT, torso: -50, head: -16, arm: { a: [110, 70] }, leg: { a: [18, 112] }, foot: 0 },
+    air: { hip: [222, 118], torso: -70, head: -6, arm: { a: [-40, -60] }, leg: { a: [10, 100] }, foot: 10 },
+    land: { hip: BJ_LAND, torso: -54, head: -14, arm: { a: [20, 0] }, leg: { a: [18, 112] }, foot: 0 },
+    top: { hip: [258, HIP - BJ_BOX], torso: -88, arm: { a: [92, 90] }, leg: { a: [92, 92] }, foot: 0 },
+    step: { hip: [200, HIP - 12], torso: -88, arm: { a: [92, 90] }, leg: { a: [86, 92] }, foot: 0 },
+  },
+  timeline: [
+    { at: 0, pose: 'bottom' },
+    { at: 0.08, pose: 'bottom' },
+    { at: 0.22, pose: 'air', c: true },
+    { at: 0.34, pose: 'land' },
+    { at: 0.5, pose: 'top', c: true },
+    { at: 0.6, pose: 'top' },
+    { at: 0.76, pose: 'step' },
+    { at: 0.92, pose: 'bottom' },
+    { at: 1, pose: 'bottom' },
+  ],
+  peak: 'air',
+  props: [{ kind: 'box', x: 226, w: 86, h: BJ_BOX }],
+}
+
+// Klappmesser (V-Up): Arme und Beine treffen sich über der Hüfte.
+const VU_HIP: Vec2 = [206, FLOOR - 13]
+export const vUp: FigureDef = {
+  poses: {
+    flat: { hip: VU_HIP, torso: 180, head: 4, arm: { a: [182, 182] }, leg: { a: [-4, -4] } },
+    v: { hip: VU_HIP, torso: 234, head: 18, arm: { a: [298, 300] }, leg: { a: [-50, -50] } },
+  },
+  timeline: loop('flat', 'v', 'ab'),
+  peak: 'v',
+  props: [{ kind: 'mat', x: 60, w: 280 }],
+}
+
+// Windmühle (Frontansicht): Kettlebell über Kopf, Rumpf neigt zur Gegenseite.
+const WM_LEGS: LimbSpec = { a: [90, 90], out: [12, 12] }
+export const windmill: FigureDef = {
+  view: 'front',
+  zoom: 0.86,
+  poses: {
+    up: {
+      hip: ST_HIP,
+      torso: -90,
+      arm: { a: [-90, -90], out: [4, 4] },
+      armFar: { a: [90, 90], out: [8, 8] },
+      leg: WM_LEGS,
+    },
+    down: {
+      hip: ST_HIP,
+      torso: -64,
+      lean: -40,
+      head: 10,
+      arm: { a: [-90, -90], out: [-2, -2] },
+      armFar: { a: [90, 90], out: [-20, -20] },
+      leg: WM_LEGS,
+    },
+  },
+  timeline: loop('up', 'down', 'ba'),
+  peak: 'down',
+  props: [{ kind: 'kettlebell', along: true }],
+}
+
+// Nacken: sitzend, Kopf beugt und streckt gegen den Widerstand der Hände.
+function neckPose(head: number): PoseSpec {
+  const h = headOf(SEAT_HIP, -90, 0, head)
+  return seated({ to: at(at(h.c, h.a + 90, 12), h.a, 4), z: 8, pole: -40, splay: 60 }, { head })
+}
+export const neck: FigureDef = {
+  duration: 3000,
+  poses: { back: neckPose(-24), fwd: neckPose(26) },
+  timeline: loop('back', 'fwd', 'ab'),
+  peak: 'fwd',
+  props: [{ kind: 'seat', x: 150, w: 70, top: 203 }],
+}
+
+// --- Halten, Tragen, Mobilität ----------------------------------------------------
+
+const hold = (): TimelineKey[] => [
+  { at: 0, pose: 'a' },
+  { at: 0.5, pose: 'b', c: true },
+  { at: 1, pose: 'a', c: true },
+]
+
+// Farmer Walk: Gehen mit schweren Kurzhanteln.
+const FW_HIP: Vec2 = [200, AY - 105]
+const fwPose = (near: Vec2, far: Vec2, fn: number, ff: number): PoseSpec => ({
+  hip: FW_HIP,
+  torso: -90,
+  arm: { a: [90, 90] },
+  leg: { a: near },
+  legFar: { a: far },
+  foot: fn,
+  footFar: ff,
+})
+export const farmerWalk: FigureDef = {
+  duration: 1100,
+  poses: { a: fwPose([72, 96], [108, 100], -4, 22), b: fwPose([108, 100], [72, 96], 22, -4) },
+  timeline: swing('a', 'b'),
+  peak: 'a',
+  props: [{ kind: 'dumbbell' }],
+}
+
+// Passives Hängen an der Stange.
+export const deadHang: FigureDef = {
+  duration: 3600,
+  poses: {
+    a: hangPose(add(BAR, -2, 79), -92, { a: [96, 164] }, { legFar: { a: [92, 168] } }),
+    b: hangPose(add(BAR, -2, 79), -91, { a: [95, 165] }, { legFar: { a: [91, 168] }, head: 3 }),
+  },
+  timeline: hold(),
+  peak: 'a',
+  props: [{ kind: 'pullupBar', x: BAR[0], y: BAR[1] }],
+}
+
+// Hollow Body Hold: Rückenlage, Arme über Kopf, Beine knapp über dem Boden.
+const hollowPose = (legs: number, bend: number): PoseSpec => ({
+  hip: SUP_HIP,
+  torso: 180,
+  bend,
+  head: 12,
+  arm: { a: [192, 192] },
+  leg: { a: [legs, legs] },
+})
+export const hollowHold: FigureDef = {
+  duration: 3600,
+  poses: { a: hollowPose(-14, 20), b: hollowPose(-16, 22) },
+  timeline: hold(),
+  peak: 'a',
+  props: [{ kind: 'mat', x: 50, w: 300 }],
+}
+
+// Bird Dog: Vierfüßlerstand, Gegenarm und -bein strecken.
+const GK_SH = shoulder(GK_HIP, GK_T)
+const GK_REACH: Vec2 = add(GK_SH, 80, -6)
+const KNEEL_LEG: LimbSpec = { a: [92, 180] }
+const bdPoseQ = (armN: Vec2, armF: Vec2, legN: LimbSpec, legF: LimbSpec): PoseSpec => ({
+  hip: GK_HIP,
+  torso: GK_T,
+  head: -8,
+  arm: { to: armN, z: 18 },
+  armFar: { to: armF, z: 18 },
+  leg: legN,
+  legFar: legF,
+  foot: 180,
+  footFar: 180,
+})
+export const birdDog: FigureDef = {
+  duration: 4000,
+  poses: {
+    rest: bdPoseQ(GK_HAND, GK_HAND, KNEEL_LEG, { a: [90, 180] }),
+    a: bdPoseQ(GK_HAND, GK_REACH, { a: [184, 184] }, { a: [90, 180] }),
+    b: bdPoseQ(GK_REACH, GK_HAND, KNEEL_LEG, { a: [184, 184] }),
+  },
+  timeline: [
+    { at: 0, pose: 'rest' },
+    { at: 0.2, pose: 'a', c: true },
+    { at: 0.3, pose: 'a' },
+    { at: 0.5, pose: 'rest' },
+    { at: 0.7, pose: 'b', c: true },
+    { at: 0.8, pose: 'b' },
+    { at: 1, pose: 'rest' },
+  ],
+  peak: 'a',
+  props: [{ kind: 'mat', x: 70, w: 240 }],
+}
+
+// Katze-Kuh: Wirbelsäule rundet und streckt sich im Vierfüßlerstand.
+const ccQ = (bend: number, head: number): PoseSpec => ({
+  hip: GK_HIP,
+  torso: GK_T,
+  bend,
+  head,
+  arm: { to: GK_HAND, z: 18 },
+  leg: KNEEL_LEG,
+  legFar: { a: [90, 180] },
+  foot: 180,
+  footFar: 180,
+})
+export const catCow: FigureDef = {
+  duration: 4000,
+  poses: { cat: ccQ(18, 24), cow: ccQ(-16, -26) },
+  timeline: loop('cat', 'cow', 'ab', [0.1, 0.14]),
+  peak: 'cat',
+  props: [{ kind: 'mat', x: 70, w: 240 }],
+}
+
+// Tiefe Hocke halten (Hände vor der Brust, Ellbogen drücken die Knie).
+const DSQ_HIP: Vec2 = [174, 214]
+const dsqPose = (t: number): PoseSpec => ({
+  hip: DSQ_HIP,
+  torso: t,
+  head: -10,
+  arm: { to: onTorso(DSQ_HIP, t, 48, 22), z: 4, pole: 70, splay: 70 },
+  leg: planted(SQ_ANKLE),
+})
+export const deepSquatHold: FigureDef = {
+  duration: 3600,
+  poses: { a: dsqPose(-66), b: dsqPose(-70) },
+  timeline: hold(),
+  peak: 'a',
+}
+
+// Dehnung im Halbkniestand (Hüftbeuger/Couch-Stretch): Hüfte schiebt nach vorn.
+const LS_KNEE: Vec2 = [150, FLOOR - 8]
+const lsPose = (thighA: number): PoseSpec => {
+  const hip = kneelHip(thighA, LS_KNEE)
+  return {
+    hip,
+    torso: -90,
+    arm: handsOnHips(hip, -90),
+    leg: { to: [252, AY], pole: -40 },
+    legFar: { a: [thighA, 180] },
+    footFar: 92,
+  }
+}
+export const lungeStretch: FigureDef = {
+  duration: 4000,
+  poses: { back: lsPose(98), fwd: lsPose(124) },
+  timeline: loop('back', 'fwd', 'ab', [0.1, 0.22]),
+  peak: 'fwd',
+  props: [{ kind: 'mat', x: 90, w: 220 }],
+}
+
+// Schlitten schieben: Körper schräg, Arme an den Stangen, Beine treiben.
+const SLD_HIP: Vec2 = [170, AY - 88.5]
+const SLD_GRIP: Vec2 = [264, 150]
+const sldPose = (near: Vec2, far: Vec2): PoseSpec => ({
+  hip: SLD_HIP,
+  torso: -38,
+  head: -10,
+  arm: { to: SLD_GRIP, z: 22 },
+  leg: { a: near },
+  legFar: { a: far },
+  foot: 10,
+  footFar: 30,
+})
+export const sledPush: FigureDef = {
+  duration: 1200,
+  poses: { a: sldPose([40, 110], [125, 125]), b: sldPose([125, 125], [40, 110]) },
+  timeline: swing('a', 'b'),
+  peak: 'a',
+  props: [
+    { kind: 'pad', from: [268, 146], to: [268, 228], w: 8 },
+    { kind: 'box', x: 262, w: 76, h: 36 },
+  ],
+}
+
+// Seilspringen / Pogo-Sprünge: kleine Sprünge auf den Fußballen.
+export const jumpRope: FigureDef = {
+  duration: 600,
+  poses: {
+    ground: { hip: [200, HIP + 2], torso: -88, arm: { a: [80, 30] }, leg: { a: [86, 94] }, foot: 8 },
+    air: { hip: [200, HIP - 12], torso: -89, arm: { a: [84, 34] }, leg: { a: [90, 92] }, foot: 42 },
+  },
+  timeline: swing('ground', 'air'),
+  peak: 'air',
+}
+
+// Wall Slides / Dislocates (Frontansicht): Arme von „Torpfosten“ nach oben.
+export const wallSlide: FigureDef = {
+  view: 'front',
+  zoom: 0.9,
+  poses: {
+    w: { hip: ST_HIP, torso: -90, arm: { a: [90, 90], out: [92, 180] }, leg: SH_LEGS },
+    y: { hip: ST_HIP, torso: -90, arm: { a: [90, 90], out: [152, 168] }, leg: SH_LEGS },
+  },
+  timeline: loop('w', 'y', 'ab'),
+  peak: 'y',
+}
+
+// Reverse Nordic: kniend, Körper kippt als Linie nach hinten.
+export const reverseNordic: FigureDef = {
+  duration: 3600,
+  poses: {
+    top: nordicPose(90, [30, 10]),
+    mid: nordicPose(76, [24, 6]),
+    low: nordicPose(62, [18, 2]),
+  },
+  timeline: via('top', 'mid', 'low', 'ba'),
+  peak: 'low',
+  props: [{ kind: 'mat', x: 90, w: 240 }],
 }

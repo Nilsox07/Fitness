@@ -23,7 +23,18 @@ function segLens(sk: Skeleton) {
     dist3(sk.waist, sk.spineTop),
   ]
 }
-const EXPECTED = [LEN.upperArm, LEN.forearm, LEN.upperArm, LEN.forearm, LEN.thigh, LEN.shin, LEN.thigh, LEN.shin, LEN.lowerTorso, LEN.upperTorso]
+const EXPECTED = [
+  LEN.upperArm,
+  LEN.forearm,
+  LEN.upperArm,
+  LEN.forearm,
+  LEN.thigh,
+  LEN.shin,
+  LEN.thigh,
+  LEN.shin,
+  LEN.lowerTorso,
+  LEN.upperTorso,
+]
 
 describe('Figuren-Rig', () => {
   it('hält alle Segmentlängen in jedem interpolierten Frame konstant', () => {
@@ -86,8 +97,8 @@ describe('Figuren-Rig', () => {
 })
 
 describe('Figuren-Katalog', () => {
-  it('hat ca. 50 Übungen mit eindeutigen IDs', () => {
-    expect(FIGURES.length).toBeGreaterThanOrEqual(45)
+  it('hat ca. 100 Bewegungsmuster mit eindeutigen IDs', () => {
+    expect(FIGURES.length).toBeGreaterThanOrEqual(100)
     expect(new Set(FIGURES.map((f) => f.id)).size).toBe(FIGURES.length)
   })
 
@@ -163,6 +174,30 @@ describe('Figuren-Katalog', () => {
   it('jeder deutsche Katalogname wird aufgelöst', () => {
     for (const e of FIGURES) expect(figureForName(e.name)?.id).toBe(e.id)
     expect(getFigure('bench-press')?.name).toBe('Bankdrücken (Langhantel)')
+  })
+
+  it('deckt (fast) die ganze Bibliothek mit Figuren ab', () => {
+    const covered = lib.exercises.filter((e) => figureForLibraryId(e.id) ?? figureForName(e.name_de))
+    expect(covered.length / lib.exercises.length).toBeGreaterThanOrEqual(0.95)
+  })
+
+  it('ordnet neue Bewegungsmuster der passenden Figur zu', () => {
+    const cases: [string, string][] = [
+      ['Barbell_Shrug', 'shrug'],
+      ['Upright_Barbell_Row', 'upright-row'],
+      ['Good_Morning', 'good-morning'],
+      ['Front_Barbell_Squat', 'front-squat'],
+      ['Preacher_Curl', 'preacher-curl'],
+      ['Seated_Calf_Raise', 'seated-calf-raise'],
+      ['Thigh_Abductor', 'hip-abduction'],
+      ['Thigh_Adductor', 'hip-adduction'],
+      ['Cable_Crunch', 'cable-crunch'],
+      ['Hyperextensions_Back_Extensions', 'back-extension'],
+      ['Straight-Arm_Pulldown', 'straight-arm-pulldown'],
+      ['Power_Clean', 'clean'],
+      ['Wide-Grip_Lat_Pulldown', 'lat-pulldown'],
+    ]
+    for (const [id, fig] of cases) if (libIds.has(id)) expect(figureForLibraryId(id)?.id, id).toBe(fig)
   })
 
   it('deckt die kuratierten Schnell-Workout-Übungen gut ab', () => {

@@ -405,14 +405,15 @@ function drawProp(p: PropSpec, s: Sk2, o: LayerOut) {
       const top = p.top ?? 200
       const len = p.len ?? 112
       const hinge: P2 = [p.x, top + 8]
-      const d = fromAngle(180 + p.angle)
+      const k = p.flip ? -1 : 1
+      const d = p.flip ? fromAngle(-p.angle) : fromAngle(180 + p.angle)
       const end = vadd(hinge, d, len)
       o.back +=
-        line([p.x + 4, top + 10], [p.x + 4, FLOOR], 8, C.frame) +
-        line(vadd(hinge, d, len * 0.65), [vadd(hinge, d, len * 0.65)[0] + 6, FLOOR], 7, C.frame) +
-        line([p.x - 14, FLOOR - 1], [p.x + 22, FLOOR - 1], 6, C.frame) +
+        line([p.x + 4 * k, top + 10], [p.x + 4 * k, FLOOR], 8, C.frame) +
+        line(vadd(hinge, d, len * 0.65), [vadd(hinge, d, len * 0.65)[0] + 6 * k, FLOOR], 7, C.frame) +
+        line([p.x - 14 * k, FLOOR - 1], [p.x + 22 * k, FLOOR - 1], 6, C.frame) +
         line(hinge, end, 16, C.equip) +
-        line(hinge, [p.x + 46, top + 8], 16, C.equip)
+        line(hinge, [p.x + 46 * k, top + 8], 16, C.equip)
       break
     }
     case 'rack': {
@@ -437,7 +438,11 @@ function drawProp(p: PropSpec, s: Sk2, o: LayerOut) {
         // Neutralgriff: Hantelachse quer zum Unterarm, Scheiben oben/unten sichtbar.
         const d = unit(l.mid, l.end)
         const ax: P2 = [-d[1], d[0]]
-        return line(vadd(g, ax, -12), vadd(g, ax, 12), 4, C.metal) + capsule(vadd(g, ax, -14), vadd(g, ax, -9), 7.5, 7.5, C.equip) + capsule(vadd(g, ax, 9), vadd(g, ax, 14), 7.5, 7.5, C.equip)
+        return (
+          line(vadd(g, ax, -12), vadd(g, ax, 12), 4, C.metal) +
+          capsule(vadd(g, ax, -14), vadd(g, ax, -9), 7.5, 7.5, C.equip) +
+          capsule(vadd(g, ax, 9), vadd(g, ax, 14), 7.5, 7.5, C.equip)
+        )
       }
       o.nearGrip += db(grip(s, 'near'), s.armNear)
       if (!p.one) o.farGrip += db(grip(s, 'far'), s.armFar)
@@ -487,8 +492,7 @@ function drawProp(p: PropSpec, s: Sk2, o: LayerOut) {
     }
     case 'dipBars': {
       o.back +=
-        line([p.x1 + 12, p.y], [p.x1 + 6, FLOOR], 7, C.frame) +
-        line([p.x2 - 12, p.y], [p.x2 - 6, FLOOR], 7, C.frame)
+        line([p.x1 + 12, p.y], [p.x1 + 6, FLOOR], 7, C.frame) + line([p.x2 - 12, p.y], [p.x2 - 6, FLOOR], 7, C.frame)
       o.mid += line([p.x1, p.y], [p.x2, p.y], 8, C.equip)
       break
     }
@@ -503,7 +507,10 @@ function drawProp(p: PropSpec, s: Sk2, o: LayerOut) {
         line([p.seat[0] - 18, FLOOR - 1], [p.seat[0] + 18, FLOOR - 1], 6, C.frame) +
         rect(p.seat[0] - 26, p.seat[1], 52, 13, 6.5, C.equip) +
         line(p.pulley, g, 2.2, C.line)
-      if (p.pad) o.front += line([p.pad[0] - 9, p.pad[1]], [p.pad[0] + 9, p.pad[1]], 13, C.equip) + line([p.pad[0], p.pad[1]], [p.x - 4, p.pad[1] + 8], 5, C.frame)
+      if (p.pad)
+        o.front +=
+          line([p.pad[0] - 9, p.pad[1]], [p.pad[0] + 9, p.pad[1]], 13, C.equip) +
+          line([p.pad[0], p.pad[1]], [p.x - 4, p.pad[1] + 8], 5, C.frame)
       o.nearGrip += line(vadd(g, [-6, 0]), vadd(g, [6, 0]), 6, C.equip)
       break
     }
@@ -524,7 +531,9 @@ function drawProp(p: PropSpec, s: Sk2, o: LayerOut) {
         line([p.seat[0] - 40, FLOOR - 1], [railB[0] + 20, FLOOR - 1], 6, C.frame) +
         line(p.seat, vadd(p.seat, [36, -4]), 15, C.equip) +
         line(vadd(p.seat, [-6, -4]), vadd(p.seat, fromAngle(180 + p.back), 80), 15, C.equip)
-      o.front += line(vadd(plateC, n, -36), vadd(plateC, n, 36), 9, C.equip) + line(vadd(plateC, tdir, 6), vadd(plateC, tdir, 22), 6, C.equip)
+      o.front +=
+        line(vadd(plateC, n, -36), vadd(plateC, n, 36), 9, C.equip) +
+        line(vadd(plateC, tdir, 6), vadd(plateC, tdir, 22), 6, C.equip)
       break
     }
     case 'legExtension': {
@@ -561,11 +570,12 @@ function drawProp(p: PropSpec, s: Sk2, o: LayerOut) {
       break
     }
     case 'box': {
-      o.back += rect(p.x, FLOOR - p.h, p.w, p.h, 6, C.frame) + rect(p.x, FLOOR - p.h, p.w, 7, 3.5, C.equip, ' opacity=".55"')
+      o.back +=
+        rect(p.x, FLOOR - p.h, p.w, p.h, 6, C.frame) + rect(p.x, FLOOR - p.h, p.w, 7, 3.5, C.equip, ' opacity=".55"')
       break
     }
     case 'band': {
-      const from = p.foot ? soleCenter(s) : p.anchor ?? [s.hip[0], FLOOR]
+      const from = p.foot ? soleCenter(s) : (p.anchor ?? [s.hip[0], FLOOR])
       if (p.anchor) o.back += circle(p.anchor, 5, C.equip)
       o.mid += line(from, grip(s, 'near'), 4, C.band)
       break
@@ -587,6 +597,20 @@ function drawProp(p: PropSpec, s: Sk2, o: LayerOut) {
       o.back += rect(p.x, FLOOR - p.h, 40, p.h, 4, C.equip)
       break
     }
+    case 'pad': {
+      if (p.post !== undefined) {
+        o.back +=
+          line([p.post, Math.max(p.from[1], p.to[1])], [p.post, FLOOR], 8, C.frame) +
+          line([p.post - 18, FLOOR - 1], [p.post + 18, FLOOR - 1], 6, C.frame)
+      }
+      o.back += line(p.from, p.to, p.w ?? 14, C.equip)
+      break
+    }
+    case 'ball': {
+      const g = vlerp(grip(s, 'near'), grip(s, 'far'), 0.5)
+      o.nearGrip += circle(vadd(g, [p.dx ?? 0, p.dy ?? 0]), p.r ?? 13, C.equip)
+      break
+    }
   }
 }
 
@@ -599,7 +623,12 @@ export interface RenderOptions {
   secondary: MuscleRegion[]
 }
 
-export function renderFigure(def: FigureDef, frame: Frame, muscles: RenderOptions, opts: { floor?: boolean } = {}): string {
+export function renderFigure(
+  def: FigureDef,
+  frame: Frame,
+  muscles: RenderOptions,
+  opts: { floor?: boolean } = {},
+): string {
   const front = def.view === 'front'
   const sk = solvePose(frame.pose)
   const s = proj(sk, projector(def, frame.pose.hip[0]), front)
@@ -661,7 +690,8 @@ export function renderFigure(def: FigureDef, frame: Frame, muscles: RenderOption
   let content = props.back + body + props.front
   if (def.roll) content = `<g transform="rotate(${def.roll.deg} ${def.roll.cx} ${def.roll.cy})">${content}</g>`
   content = shadow + content
-  if (def.zoom && def.zoom !== 1) content = `<g transform="translate(200 ${FLOOR}) scale(${def.zoom}) translate(-200 ${-FLOOR})">${content}</g>`
+  if (def.zoom && def.zoom !== 1)
+    content = `<g transform="translate(200 ${FLOOR}) scale(${def.zoom}) translate(-200 ${-FLOOR})">${content}</g>`
   if (def.mirror) {
     ground = `<g transform="translate(${400} 0) scale(-1 1)">${ground}</g>`
     content = `<g transform="translate(${400} 0) scale(-1 1)">${content}</g>`

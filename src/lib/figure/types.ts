@@ -65,6 +65,10 @@ export interface PoseSpec {
   bend?: number
   /** Rotation des Schultergürtels (+ = nahe Schulter nach vorn). */
   twist?: number
+  /** Seitneigung des Rumpfs aus der Sagittalebene (Grad, + = zur nahen Seite; v. a. Frontansicht). */
+  lean?: number
+  /** Schultern heben (px entlang der Wirbelsäule, z. B. Shrugs). */
+  shrug?: number
   /** Kopfneigung relativ zum oberen Rumpf (+ = Kinn zur Brust). */
   head?: number
   arm: LimbSpec
@@ -88,12 +92,27 @@ export type PropLayer = 'back' | 'far' | 'mid' | 'front'
 
 export type PropSpec =
   | { kind: 'bench'; x: number; w: number; top?: number }
-  | { kind: 'incline'; x: number; angle: number; top?: number; len?: number }
+  | {
+      kind: 'incline'
+      x: number
+      angle: number
+      top?: number
+      len?: number
+      /** Lehne steigt nach vorn (+x) statt nach hinten. */ flip?: boolean
+    }
   | { kind: 'rack'; x: number; y: number }
   | { kind: 'barbell'; plate?: number; hand?: 'near' | 'far' }
   | { kind: 'dumbbell'; one?: boolean; style?: 'end' | 'hammer' }
   | { kind: 'kettlebell'; hand?: 'near' | 'far'; along?: boolean }
-  | { kind: 'cable'; from: Vec2; column?: number; stackTop?: number; handle?: 'bar' | 'rope' | 'handle'; hand?: 'near' | 'far' | 'both'; layer?: PropLayer }
+  | {
+      kind: 'cable'
+      from: Vec2
+      column?: number
+      stackTop?: number
+      handle?: 'bar' | 'rope' | 'handle'
+      hand?: 'near' | 'far' | 'both'
+      layer?: PropLayer
+    }
   | { kind: 'pullupBar'; x: number; y: number; post?: number }
   | { kind: 'dipBars'; y: number; x1: number; x2: number }
   | { kind: 'latMachine'; x: number; seat: Vec2; pulley: Vec2; pad?: Vec2 }
@@ -106,6 +125,10 @@ export type PropSpec =
   | { kind: 'wall'; x: number }
   | { kind: 'seat'; x: number; w: number; top: number; back?: number }
   | { kind: 'calfBlock'; x: number; h: number }
+  /** Polster/Auflage als dicke Linie (optional mit Stütze zum Boden bei `post`). */
+  | { kind: 'pad'; from: Vec2; to: Vec2; w?: number; post?: number }
+  /** Ball (Medizinball) bzw. Scheibe zwischen den Händen. */
+  | { kind: 'ball'; r?: number; dx?: number; dy?: number }
 
 export interface FigureDef {
   view?: 'side' | 'front'
