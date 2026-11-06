@@ -6,9 +6,11 @@ import {
   dailyLoad,
   fitnessAge,
   intensityMinutes,
+  loadByDay,
   loadRatio,
   mergeIntake,
   pairedDiff,
+  readinessOn,
   sleepByWeekday,
   sleepDebt,
   stepsTrend,
@@ -481,5 +483,35 @@ describe('buildInsights: Fitnessalter-Grenze', () => {
     expect(fa.title).toBe('Fitnessalter unter 20')
     expect(fa.value).toBe('Top-Wert für dein Alter')
     expect(fa.tone).toBe('good')
+  })
+})
+
+describe('Tagesform für frühere Tage', () => {
+  it('Belastung je Tag: Ausdauer-Load und Kraftsätze', () => {
+    const m = loadByDay(
+      [act({ started_at: '2026-11-01T08:00:00Z', duration_s: 3600, avg_hr: 150 })],
+      ['2026-11-01', '2026-11-01', '2026-10-31'],
+    )
+    expect(m.get('2026-11-01')!.sets).toBe(2)
+    expect(m.get('2026-11-01')!.cardio).toBeGreaterThan(0)
+    expect(m.get('2026-10-31')).toEqual({ cardio: 0, sets: 1 })
+  })
+
+  it('rechnet aus Schlaf, HRV und Belastung der Vortage – ohne Uhr-Werte null', () => {
+    const daily = lastDays(15).map((d) => day(d, { hrv_ms: 60, resting_hr: 55 }))
+    const n = night(TODAY, 300)
+    const load = new Map([[shiftDate(TODAY, -1), { cardio: 0, sets: 30 }]])
+    const r = readinessOn(TODAY, daily, n, load)!
+    expect(r.factors.map((f) => f.key)).toEqual(expect.arrayContaining(['sleep', 'hrv', 'rhr', 'strength']))
+    expect(r.factors.find((f) => f.key === 'sleep')!.range!.value).toBe(5)
+    expect(readinessOn('2026-01-01', [], null, new Map())).toBeNull()
+  })
+})
+
+describe('Erkenntnisse mit Grafik', () => {
+  it('Schlafschuld zeigt Ø-Schlaf gegen den Bedarf, Belastung die Skala mit Idealbereich', () => {
+    const sleep = lastDays(7).map((d) => night(d, 360))
+    const debt = buildInsights({ today: TODAY, hasWatch: true, sleep }).find((x) => x.id === 'sleep-debt')!
+    expect(debt.viz).toEqual({ kind: 'meter', value: 6, max: 10, lo: 8 })
   })
 })

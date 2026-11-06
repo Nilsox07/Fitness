@@ -188,8 +188,19 @@ export interface ReadinessFactor {
   status: FactorStatus
   /** ein Satz in Alltagssprache, was das bedeutet */
   text: string
-  /** Beitrag zur Tagesform (intern, wird nicht angezeigt) */
+  /** Beitrag zur Tagesform in Punkten (+ hebt, − senkt) */
   effect: number
+  /** Einordnung für die Skala: Wert, Skala min–max und Normal-/Zielbereich lo–hi */
+  range?: ScaleRange
+}
+
+/** Wert auf einer Skala mit hinterlegtem Normal- bzw. Zielbereich (für Balken-Anzeigen). */
+export interface ScaleRange {
+  value: number
+  min: number
+  max: number
+  lo: number
+  hi: number
 }
 
 export interface Readiness {
@@ -245,6 +256,7 @@ export function readiness(i: ReadinessInput): Readiness | null {
             ? 'Etwas kurz, aber okay'
             : 'Zu wenig Schlaf – Körper ist noch müde',
       effect: e,
+      range: { value: i.sleepMin / 60, min: 4, max: 10, lo: (need * 0.9) / 60, hi: Math.max(9, need / 60 + 0.5) },
     })
   }
   if (i.hrv != null && i.hrvBaseline) {
@@ -264,6 +276,13 @@ export function readiness(i: ReadinessInput): Readiness | null {
             ? 'Im normalen Bereich'
             : 'Deutlich unter deinem Schnitt – Körper ist im Stress',
       effect: e,
+      range: {
+        value: i.hrv,
+        min: i.hrvBaseline * 0.6,
+        max: i.hrvBaseline * 1.4,
+        lo: i.hrvBaseline * 0.9,
+        hi: i.hrvBaseline * 1.1,
+      },
     })
   }
   if (i.restingHr != null && i.restingHrBaseline) {
@@ -283,6 +302,13 @@ export function readiness(i: ReadinessInput): Readiness | null {
             ? 'Niedriger als sonst – sehr gut'
             : 'Im normalen Bereich',
       effect: e,
+      range: {
+        value: i.restingHr,
+        min: i.restingHrBaseline - 10,
+        max: i.restingHrBaseline + 10,
+        lo: i.restingHrBaseline - 3,
+        hi: i.restingHrBaseline + 3,
+      },
     })
   }
   if (i.sleepMin != null && i.deepMin != null && i.sleepMin >= 180) {
@@ -295,6 +321,7 @@ export function readiness(i: ReadinessInput): Readiness | null {
       status: statusOf(e),
       text: e > 0 ? 'Viel erholsamer Schlaf' : e < 0 ? 'Wenig Tiefschlaf – weniger erholt' : 'Im normalen Bereich',
       effect: e,
+      range: { value: i.deepMin, min: 0, max: 150, lo: 60, hi: 120 },
     })
   }
   const cardio = i.cardioLoad ?? i.loadYesterday
@@ -344,6 +371,7 @@ export function readiness(i: ReadinessInput): Readiness | null {
       status: 'schwach',
       text: 'Zu wenig getrunken – heute früh nachholen',
       effect: -3,
+      range: { value: i.waterRatioYesterday * 100, min: 0, max: 120, lo: 90, hi: 120 },
     })
   }
   if (i.kcalBalanceYesterday != null && i.kcalBalanceYesterday < -700) {
@@ -368,6 +396,7 @@ export function readiness(i: ReadinessInput): Readiness | null {
       status: statusOf(e),
       text: e > 0 ? 'Ziel erreicht – gut für die Muskeln' : e < 0 ? 'Zu wenig für gute Erholung' : 'Fast geschafft',
       effect: e,
+      range: { value: pct, min: 0, max: 130, lo: 95, hi: 130 },
     })
   }
 
@@ -600,7 +629,7 @@ export interface SleepScore {
   efficiency: number | null
   /** false: Uhr liefert keine Schlafphasen → kein aussagekräftiger Score, nur die Dauer */
   detailed: boolean
-  parts: { label: string; value: string; status: FactorStatus; hint: string }[]
+  parts: { label: string; value: string; status: FactorStatus; hint: string; range?: ScaleRange }[]
 }
 
 /** Schlaf-Score 0–100: Dauer, Tief- & REM-Anteil, Effizienz, Unterbrechungen. */
@@ -622,6 +651,7 @@ export function sleepScore(n: HealthSleep, needMin = 480): SleepScore {
     value: hoursText(asleep),
     status: asleep >= needMin * 0.9 ? 'gut' : asleep >= needMin * 0.75 ? 'normal' : 'schwach',
     hint: '7–9 h sind ideal',
+    range: { value: asleep / 60, min: 4, max: 10, lo: (needMin * 0.9) / 60, hi: Math.max(9, needMin / 60 + 0.5) },
   })
   if (p.deep != null) {
     score += clamp(p.deep / 18, 0, 1) * 15
@@ -630,6 +660,7 @@ export function sleepScore(n: HealthSleep, needMin = 480): SleepScore {
       value: `${p.deep} %`,
       status: p.deep >= 13 ? 'gut' : p.deep >= 9 ? 'normal' : 'schwach',
       hint: 'körperliche Erholung · normal 13–23 %',
+      range: { value: p.deep, min: 0, max: 35, lo: 13, hi: 23 },
     })
   } else score += 10
   if (p.rem != null) {
@@ -639,6 +670,7 @@ export function sleepScore(n: HealthSleep, needMin = 480): SleepScore {
       value: `${p.rem} %`,
       status: p.rem >= 18 ? 'gut' : p.rem >= 13 ? 'normal' : 'schwach',
       hint: 'Kopf & Gedächtnis · normal 20–25 %',
+      range: { value: p.rem, min: 0, max: 35, lo: 20, hi: 25 },
     })
   } else score += 10
   if (efficiency != null) {
@@ -648,6 +680,7 @@ export function sleepScore(n: HealthSleep, needMin = 480): SleepScore {
       value: `${efficiency} %`,
       status: efficiency >= 88 ? 'gut' : efficiency >= 80 ? 'normal' : 'schwach',
       hint: 'Anteil der Bettzeit im Schlaf',
+      range: { value: efficiency, min: 60, max: 100, lo: 88, hi: 100 },
     })
   }
   const aw = n.awakenings ?? null
@@ -658,6 +691,7 @@ export function sleepScore(n: HealthSleep, needMin = 480): SleepScore {
       value: `${aw}×`,
       status: aw <= 2 ? 'gut' : aw <= 5 ? 'normal' : 'schwach',
       hint: 'kurzes Aufwachen ist normal',
+      range: { value: aw, min: 0, max: 10, lo: 0, hi: 2 },
     })
   if (n.latency_min != null)
     parts.push({
@@ -665,6 +699,7 @@ export function sleepScore(n: HealthSleep, needMin = 480): SleepScore {
       value: `${n.latency_min} min`,
       status: n.latency_min <= 20 ? 'gut' : n.latency_min <= 40 ? 'normal' : 'schwach',
       hint: 'unter 20 min ist gut',
+      range: { value: n.latency_min, min: 0, max: 60, lo: 0, hi: 20 },
     })
 
   const s = Math.round(clamp(score, 0, 100))

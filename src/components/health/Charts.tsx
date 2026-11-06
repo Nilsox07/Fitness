@@ -1,12 +1,15 @@
 // Leichte SVG-Diagramme für die Uhr-Auswertungen – im Stil der App: Rubin als
 // Linienfarbe (in Abstufungen statt bunt), gedämpfte Achsen, hell und dunkel.
 
-import { useId, type ReactNode } from 'react'
-import { STAGE, ZONES, type FactorStatus, type Normal } from '../../lib/health'
+import { useId, useState, type PointerEvent, type ReactNode } from 'react'
+import { STAGE, ZONES, type FactorStatus, type Normal, type ScaleRange } from '../../lib/health'
 
 const W = 340
 
-/** Linien-Diagramm einer Zeitreihe [[x, y], …] mit Achsenbeschriftung. */
+/**
+ * Linien-Diagramm einer Zeitreihe [[x, y], …] mit Achsenbeschriftung (Einheit an der y-Achse,
+ * Anfang/Mitte/Ende an der x-Achse). Antippen oder Darüberfahren zeigt den Wert an der Stelle.
+ */
 export function SeriesChart({
   data,
   height = 120,
@@ -14,6 +17,9 @@ export function SeriesChart({
   colorFor,
   xLabel = (x) => String(x),
   yLabel = (y) => String(Math.round(y)),
+  tipX,
+  unit,
+  label,
   invert = false,
   band,
   fill = true,
@@ -26,6 +32,12 @@ export function SeriesChart({
   colorFor?: (y: number) => string
   xLabel?: (x: number) => string
   yLabel?: (y: number) => string
+  /** x-Wert im Tooltip (Standard: wie die Achse) */
+  tipX?: (x: number) => string
+  /** Einheit der y-Werte, z. B. „bpm“ – steht an der Achse und im Tooltip */
+  unit?: string
+  /** Name für Screenreader */
+  label?: string
   /** true: kleine Werte oben (z. B. Tempo min/km) */
   invert?: boolean
   /** hinterlegter Normalbereich */
@@ -35,6 +47,7 @@ export function SeriesChart({
   dark?: boolean
 }) {
   const id = useId().replace(/:/g, '')
+  const [hover, setHover] = useState<number | null>(null)
   if (data.length < 2) return null
   const xs = data.map((d) => d[0])
   const ys = data.map((d) => d[1])
@@ -45,7 +58,7 @@ export function SeriesChart({
   hi += pad
   const x0 = Math.min(...xs)
   const x1 = Math.max(...xs)
-  const L = 30
+  const L = unit ? 28 + unit.length * 5.5 : 30
   const B = 18
   const px = (x: number) => L + ((x - x0) / (x1 - x0 || 1)) * (W - L - 4)
   const py = (y: number) => {
@@ -55,73 +68,131 @@ export function SeriesChart({
   const pts = data.map(([x, y]) => `${px(x).toFixed(1)},${py(y).toFixed(1)}`)
   const yTop = invert ? lo + pad : hi - pad
   const yBot = invert ? hi - pad : lo + pad
-  const axis = dark ? 'fill-white/45 dark:fill-cocoa-muted' : 'fill-cocoa-muted'
+  const axis = dark ? 'fill-white/55 dark:fill-cocoa-muted' : 'fill-cocoa-muted'
+  const xm = data[Math.floor(data.length / 2)][0]
+  const onMove = (e: PointerEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const sx = ((e.clientX - r.left) / (r.width || 1)) * W
+    let best = 0
+    for (let k = 1; k < data.length; k++) if (Math.abs(px(data[k][0]) - sx) < Math.abs(px(data[best][0]) - sx)) best = k
+    setHover(best)
+  }
+  const h = hover != null ? data[hover] : null
+  const hx = h ? px(h[0]) : 0
   return (
-    <svg viewBox={`0 0 ${W} ${height}`} className="w-full" role="img">
-      <defs>
-        <linearGradient id={`g${id}`} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" style={{ stopColor: color, stopOpacity: 0.3 }} />
-          <stop offset="1" style={{ stopColor: color, stopOpacity: 0 }} />
-        </linearGradient>
-      </defs>
-      {band && (
-        <rect
-          x={L}
-          width={W - L - 4}
-          y={Math.min(py(band.lo), py(band.hi))}
-          height={Math.abs(py(band.lo) - py(band.hi))}
-          className={dark ? 'fill-white/10' : 'fill-sand-dark/40'}
-        />
-      )}
-      {[yTop, yBot].map((v, i) => (
-        <g key={i}>
-          <line
-            x1={L}
-            x2={W - 4}
-            y1={py(v)}
-            y2={py(v)}
-            className={dark ? 'stroke-white/15' : 'stroke-sand-dark/60'}
-            strokeDasharray="3 4"
+    <div className="relative">
+      <svg
+        viewBox={`0 0 ${W} ${height}`}
+        className="w-full touch-pan-y"
+        role="img"
+        aria-label={label ?? (unit ? `Verlauf in ${unit}` : 'Verlauf')}
+        onPointerMove={onMove}
+        onPointerDown={onMove}
+        onPointerLeave={() => setHover(null)}
+      >
+        <defs>
+          <linearGradient id={`g${id}`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" style={{ stopColor: color, stopOpacity: 0.3 }} />
+            <stop offset="1" style={{ stopColor: color, stopOpacity: 0 }} />
+          </linearGradient>
+        </defs>
+        {band && (
+          <rect
+            x={L}
+            width={W - L - 4}
+            y={Math.min(py(band.lo), py(band.hi))}
+            height={Math.abs(py(band.lo) - py(band.hi))}
+            className={dark ? 'fill-white/10' : 'fill-sand-dark/40'}
           />
-          <text x={L - 4} y={py(v) + 3} textAnchor="end" className={`${axis} text-[9px]`}>
-            {yLabel(v)}
-          </text>
-        </g>
-      ))}
-      {fill && !colorFor && (
-        <polygon points={`${px(x0)},${height - B} ${pts.join(' ')} ${px(x1)},${height - B}`} fill={`url(#g${id})`} />
-      )}
-      {colorFor ? (
-        data
-          .slice(1)
-          .map(([x, y], i) => (
+        )}
+        {[yTop, yBot].map((v, i) => (
+          <g key={i}>
             <line
-              key={i}
-              x1={px(data[i][0])}
-              y1={py(data[i][1])}
-              x2={px(x)}
-              y2={py(y)}
-              style={{ stroke: colorFor((y + data[i][1]) / 2) }}
-              strokeWidth={2.4}
-              strokeLinecap="round"
+              x1={L}
+              x2={W - 4}
+              y1={py(v)}
+              y2={py(v)}
+              className={dark ? 'stroke-white/15' : 'stroke-sand-dark/60'}
+              strokeDasharray="3 4"
             />
-          ))
-      ) : (
-        <polyline
-          points={pts.join(' ')}
-          fill="none"
-          style={{ stroke: color }}
-          strokeWidth={2.4}
-          strokeLinejoin="round"
-        />
+            <text x={L - 4} y={py(v) + 3} textAnchor="end" className={`${axis} text-[9px]`}>
+              {yLabel(v)}
+              {unit ? ` ${unit}` : ''}
+            </text>
+          </g>
+        ))}
+        {fill && !colorFor && (
+          <polygon points={`${px(x0)},${height - B} ${pts.join(' ')} ${px(x1)},${height - B}`} fill={`url(#g${id})`} />
+        )}
+        {colorFor ? (
+          data
+            .slice(1)
+            .map(([x, y], i) => (
+              <line
+                key={i}
+                x1={px(data[i][0])}
+                y1={py(data[i][1])}
+                x2={px(x)}
+                y2={py(y)}
+                style={{ stroke: colorFor((y + data[i][1]) / 2) }}
+                strokeWidth={2.4}
+                strokeLinecap="round"
+              />
+            ))
+        ) : (
+          <polyline
+            points={pts.join(' ')}
+            fill="none"
+            style={{ stroke: color }}
+            strokeWidth={2.4}
+            strokeLinejoin="round"
+          />
+        )}
+        <text x={L} y={height - 4} className={`${axis} text-[9px]`}>
+          {xLabel(x0)}
+        </text>
+        {data.length > 4 && (
+          <text x={px(xm)} y={height - 4} textAnchor="middle" className={`${axis} text-[9px]`}>
+            {xLabel(xm)}
+          </text>
+        )}
+        <text x={W - 4} y={height - 4} textAnchor="end" className={`${axis} text-[9px]`}>
+          {xLabel(x1)}
+        </text>
+        {h && (
+          <g pointerEvents="none">
+            <line
+              x1={hx}
+              x2={hx}
+              y1={4}
+              y2={height - B}
+              className={dark ? 'stroke-white/40 dark:stroke-cocoa-muted' : 'stroke-cocoa-muted'}
+              strokeWidth={1}
+            />
+            <circle
+              cx={hx}
+              cy={py(h[1])}
+              r={4}
+              style={{ fill: colorFor ? colorFor(h[1]) : color }}
+              className={dark ? 'stroke-cocoa dark:stroke-sand-light' : 'stroke-cream'}
+              strokeWidth={2}
+            />
+          </g>
+        )}
+      </svg>
+      {h && (
+        <div
+          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-cocoa px-2 py-1 text-[11px] font-semibold text-bg shadow-md dark:bg-sand-dark dark:text-cocoa"
+          style={{ left: `${Math.min(85, Math.max(15, (hx / W) * 100))}%` }}
+        >
+          <span className="tabular">
+            {yLabel(h[1])}
+            {unit ? ` ${unit}` : ''}
+          </span>
+          <span className="ml-1.5 font-normal opacity-70">{(tipX ?? xLabel)(h[0])}</span>
+        </div>
       )}
-      <text x={L} y={height - 4} className={`${axis} text-[9px]`}>
-        {xLabel(x0)}
-      </text>
-      <text x={W - 4} y={height - 4} textAnchor="end" className={`${axis} text-[9px]`}>
-        {xLabel(x1)}
-      </text>
-    </svg>
+    </div>
   )
 }
 
@@ -277,14 +348,131 @@ export function TrendChart({
         color={color}
         height={110}
         xLabel={fmt}
-        yLabel={(y) => `${y.toFixed(decimals)}`}
+        yLabel={(y) => y.toLocaleString('de-DE', { maximumFractionDigits: decimals, minimumFractionDigits: decimals })}
+        unit={unit || undefined}
         band={normal ? { lo: normal.lo, hi: normal.hi } : null}
       />
       {normal && (
-        <p className="text-[11px] text-cocoa-muted">
-          Hinterlegt: dein Normalbereich ({normal.lo.toFixed(decimals)}–{normal.hi.toFixed(decimals)} {unit})
+        <p className="flex items-center gap-1.5 text-[11px] text-cocoa-muted">
+          <span className="inline-block h-2.5 w-4 rounded-sm bg-sand-dark/60" aria-hidden />
+          Dein Normalbereich {de(normal.lo, decimals)}–{de(normal.hi, decimals)} {unit}
         </p>
       )}
     </>
+  )
+}
+
+const de = (v: number, d = 0) => v.toLocaleString('de-DE', { maximumFractionDigits: d, minimumFractionDigits: d })
+
+/**
+ * Wert auf einer Skala: Spur min–max, hinterlegter Normal-/Zielbereich, Punkt für den Wert.
+ * `dark` für die dunkle Hero-Karte.
+ */
+export function RangeBar({
+  range,
+  status,
+  dark = false,
+  className = '',
+}: {
+  range: ScaleRange
+  status?: FactorStatus
+  dark?: boolean
+  className?: string
+}) {
+  const span = range.max - range.min || 1
+  const pos = (v: number) => Math.min(100, Math.max(0, ((v - range.min) / span) * 100))
+  const lo = pos(range.lo)
+  const hi = pos(range.hi)
+  const at = pos(range.value)
+  const dot = status === 'gut' ? 'bg-good' : status === 'schwach' ? 'bg-gold' : 'bg-brand'
+  return (
+    <span className={`relative block h-3 ${className}`} aria-hidden>
+      <span
+        className={`absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full ${dark ? 'bg-white/10' : 'bg-sand dark:bg-sand-dark/60'}`}
+      />
+      <span
+        className={`absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full ${dark ? 'bg-white/25' : 'bg-sand-dark dark:bg-cocoa-muted/50'}`}
+        style={{ left: `${lo}%`, width: `${Math.max(2, hi - lo)}%` }}
+      />
+      <span
+        className={`absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ${dot} ${
+          dark ? 'ring-cocoa dark:ring-sand-light' : 'ring-cream'
+        }`}
+        style={{ left: `${at}%` }}
+      />
+    </span>
+  )
+}
+
+/**
+ * Beitrag zur Tagesform als Balken von der Mitte aus: nach rechts (grün) hebt, nach links (gold) senkt.
+ * `scale` = größter Betrag, auf den alle Balken einer Liste bezogen werden.
+ */
+export function ImpactBar({ effect, scale }: { effect: number; scale: number }) {
+  const w = Math.min(50, (Math.abs(effect) / (scale || 1)) * 50)
+  return (
+    <span className="relative block h-4 w-full" aria-hidden>
+      <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-sand-dark" />
+      {effect === 0 ? (
+        <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cocoa-muted" />
+      ) : (
+        <span
+          className={`absolute top-1/2 h-2.5 -translate-y-1/2 ${
+            effect > 0 ? 'left-1/2 rounded-r-full bg-good' : 'right-1/2 rounded-l-full bg-gold'
+          }`}
+          style={{ width: `${Math.max(4, w)}%` }}
+        />
+      )}
+    </span>
+  )
+}
+
+/** Belastungs-Skala leicht → sehr hoch mit Markierung (Stufen wie loadLabel). */
+export function LoadGauge({ load }: { load: number }) {
+  const MAX = 220
+  const steps = [
+    { to: 40, label: 'leicht' },
+    { to: 90, label: 'mittel' },
+    { to: 160, label: 'hoch' },
+    { to: MAX, label: 'sehr hoch' },
+  ]
+  const at = Math.min(100, (load / MAX) * 100)
+  let from = 0
+  return (
+    <div aria-hidden>
+      <div className="relative">
+        <div className="flex h-2.5 gap-0.5">
+          {steps.map((s, i) => {
+            const w = ((s.to - from) / MAX) * 100
+            from = s.to
+            return (
+              <span
+                key={s.label}
+                className="h-full first:rounded-l-full last:rounded-r-full"
+                style={{ width: `${w}%`, background: `rgb(var(--c-ruby) / ${0.2 + i * 0.25})` }}
+              />
+            )
+          })}
+        </div>
+        <span
+          className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cocoa ring-2 ring-cream"
+          style={{ left: `${at}%` }}
+        />
+      </div>
+      <div className="mt-1 flex text-[10px] text-cocoa-muted">
+        {(() => {
+          let f = 0
+          return steps.map((s) => {
+            const w = ((s.to - f) / MAX) * 100
+            f = s.to
+            return (
+              <span key={s.label} className="truncate text-center" style={{ width: `${w}%` }}>
+                {s.label}
+              </span>
+            )
+          })
+        })()}
+      </div>
+    </div>
   )
 }

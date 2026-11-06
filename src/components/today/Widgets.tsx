@@ -28,6 +28,7 @@ import { ACTIVITY_EMOJI, ACTIVITY_LABEL, durationText, hoursText, kmText, paceTe
 import { shortName } from '../community/communityUtils'
 import { QuestStrip } from '../buddy/QuestStrip'
 import { SupplementCard } from '../nutrition-home/SupplementCard'
+import { FactorChips } from '../health/ReadinessFactors'
 import { BodyWeightCard } from '../BodyWeightCard'
 import type { WidgetId } from '../../lib/dashboard'
 import { CardioPlanCard } from './CardioPlanCard'
@@ -157,12 +158,7 @@ function ReadinessWidget({ t }: { t: TodaySummary }) {
             </Ring>
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-semibold leading-snug">{r.advice}</p>
-              <p className="mt-1 text-xs text-bg/60 dark:text-cocoa-light">
-                {r.factors
-                  .slice(0, 3)
-                  .map((f) => f.label)
-                  .join(' · ')}
-              </p>
+              <FactorChips r={r} />
             </div>
           </div>
         ) : (

@@ -93,6 +93,11 @@ export function BodyWeightCard({ focus = false }: { focus?: boolean } = {}) {
                     fontSize: 12,
                   }}
                   labelStyle={{ color: dark ? '#E5E9F0' : '#0B0F19' }}
+                  formatter={(v: number) => [`${fmtKg(v)} kg`, 'Gewicht']}
+                  labelFormatter={(_, p) => {
+                    const d = (p?.[0]?.payload as { date?: string } | undefined)?.date
+                    return d ? `${Number(d.slice(8))}.${Number(d.slice(5, 7))}.` : ''
+                  }}
                 />
                 <Line type="monotone" dataKey="kg" stroke={accentColor()} strokeWidth={2} dot={false} />
               </LineChart>

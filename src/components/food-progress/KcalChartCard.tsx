@@ -67,18 +67,25 @@ export function KcalChartCard({
             )}
           </ComposedChart>
         </ResponsiveContainer>
-        {showTarget && (
-          <div className="flex items-center justify-center gap-3 pb-1 text-[10px] text-cocoa-muted">
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-sm bg-brand" />
-              Gegessen
-            </span>
+        <div className="flex items-center justify-center gap-3 pb-1 text-[10px] text-cocoa-muted">
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-sm bg-brand" />
+            Gegessen
+          </span>
+          {showTarget && (
             <span className="flex items-center gap-1">
               <span className="w-3 border-t-[1.5px] border-dashed border-cocoa-muted" />
               Ziel
             </span>
-          </div>
-        )}
+          )}
+          {data.some((d) => d.today) && (
+            <span className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-sm bg-brand/35" />
+              heute (läuft)
+            </span>
+          )}
+          <span>in kcal</span>
+        </div>
       </div>
     </section>
   )

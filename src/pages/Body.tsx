@@ -13,6 +13,7 @@ import { SectionTitle } from '../components/food-progress/ui'
 import { localDate } from '../lib/day'
 import { daysBetween } from '../components/social/format'
 import { InfoTip } from '../components/ui/InfoTip'
+import { TrendChart } from '../components/health/Charts'
 import {
   PHOTO_INTERVAL_DAYS,
   bfCategory,
@@ -68,6 +69,12 @@ export default function Body() {
   const proteinSuggest = comp ? proteinFromLean(comp.leanKg) : null
   const proteinDiff = proteinSuggest !== null && settings ? proteinSuggest - settings.protein_target : 0
 
+  // Körperfett-Verlauf: je Tag die letzte Messung
+  const bfPoints = [
+    ...new Map(
+      sorted.map((s) => [s.date, bfMid(s)] as const).filter((p): p is readonly [string, number] => p[1] != null),
+    ).entries(),
+  ]
   const a = withPhoto.find((s) => s.id === pair.a) ?? withPhoto[0]
   const b = withPhoto.find((s) => s.id === pair.b) ?? withPhoto[withPhoto.length - 1]
 
@@ -196,8 +203,16 @@ export default function Body() {
                 <div className="tabular text-xl font-bold">{comp.leanKg.toLocaleString('de-DE')} kg</div>
               </div>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-sand">
-              <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, mid!)}%` }} />
+            <div className="flex h-5 gap-0.5 overflow-hidden rounded-full text-[10px] font-semibold" aria-hidden>
+              <div
+                className="flex items-center rounded-l-full bg-brand pl-2 text-on-brand"
+                style={{ width: `${Math.min(100, mid!)}%` }}
+              >
+                <span className="tabular truncate">{Math.round(mid!)} %</span>
+              </div>
+              <div className="flex flex-1 items-center justify-end rounded-r-full bg-sand pr-2 text-cocoa-light">
+                <span className="tabular truncate">{Math.round(100 - mid!)} % fettfrei</span>
+              </div>
             </div>
             <p className="text-xs leading-snug text-cocoa-light">
               Grundumsatz nach fettfreier Masse: ca.{' '}
@@ -264,6 +279,12 @@ export default function Body() {
           <SectionTitle right={`${sorted.length} ${sorted.length === 1 ? 'Messung' : 'Messungen'}`}>
             Verlauf
           </SectionTitle>
+          {bfPoints.length >= 2 && (
+            <div className="card mb-2 space-y-1">
+              <h3 className="text-xs font-semibold text-cocoa-muted">Körperfett (Mitte der Schätzung)</h3>
+              <TrendChart points={bfPoints} unit="%" decimals={0} />
+            </div>
+          )}
           <div className="divide-y divide-sand-dark/50 overflow-hidden rounded-2xl bg-cream">
             {[...sorted].reverse().map((s: BodyScan) => (
               <div key={s.id} className="flex items-center gap-3 p-3">

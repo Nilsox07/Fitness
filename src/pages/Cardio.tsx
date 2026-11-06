@@ -87,20 +87,29 @@ export default function Cardio() {
           )
         }
       >
-        <div className="mt-3 flex h-16 items-end gap-1.5" aria-label="Kilometer pro Woche">
+        <div className="mt-3 flex items-end gap-1.5" role="img" aria-label="Kilometer pro Woche, letzte 8 Wochen">
           {weeks.map((w, i) => (
-            <div
-              key={w.from}
-              className="flex-1 rounded-md"
-              style={{ height: `${Math.max(4, (w.km / maxKm) * 64)}px`, background: ruby(i === 7 ? 1 : 0.35) }}
-              title={`${w.km.toFixed(1)} km`}
-            />
+            <div key={w.from} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
+              <span
+                className={`tabular text-[9px] font-semibold ${i === 7 ? 'text-bg dark:text-cocoa' : 'text-bg/55 dark:text-cocoa-muted'}`}
+              >
+                {w.km > 0 ? w.km.toLocaleString('de-DE', { maximumFractionDigits: w.km >= 10 ? 0 : 1 }) : ''}
+              </span>
+              <div
+                className="w-full rounded-md"
+                style={{ height: `${Math.max(4, (w.km / maxKm) * 56)}px`, background: ruby(i === 7 ? 1 : 0.35) }}
+              />
+            </div>
           ))}
         </div>
-        <div className="mt-1.5 flex justify-between text-[10px] text-bg/45 dark:text-cocoa-muted">
-          <span>vor 8 Wochen</span>
-          <span>diese Woche</span>
+        <div className="mt-1 flex gap-1.5 text-[9px] text-bg/50 dark:text-cocoa-muted" aria-hidden>
+          {weeks.map((w, i) => (
+            <span key={w.from} className="tabular flex-1 text-center">
+              {i === 7 ? 'jetzt' : i % 2 === 1 ? `${Number(w.from.slice(8))}.${Number(w.from.slice(5, 7))}.` : ''}
+            </span>
+          ))}
         </div>
+        <p className="mt-0.5 text-right text-[9px] text-bg/45 dark:text-cocoa-muted">km pro Woche</p>
         <div className="mt-4 grid grid-cols-3 gap-2">
           <HeroPill value={thisWeek.count} label={thisWeek.count === 1 ? 'Einheit' : 'Einheiten'} />
           <HeroPill value={durationText(thisWeek.duration_s)} label="Zeit" />

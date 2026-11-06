@@ -2,7 +2,7 @@
 // Jede Karte erscheint nur, wenn die Daten dafür reichen – sonst fehlt sie einfach.
 // Reine Logik, getestet in insights.test.ts.
 
-import { activityLoad, baseline, hoursText, readiness } from './health'
+import { activityLoad, baseline, hoursText, readiness, type Readiness } from './health'
 import { shiftDate } from './day'
 import type { HealthActivity, HealthDaily, HealthSleep } from '../types'
 
@@ -39,7 +39,17 @@ export interface Insight {
   tone: InsightTone
   /** höher = wichtiger (Reihenfolge in der Übersicht) */
   priority: number
+  /** kleine Grafik unter dem Wert (optional) */
+  viz?: InsightViz
 }
+
+/**
+ * meter: Wert auf einer Skala 0–max, optional mit Ziel-/Idealbereich lo–hi.
+ * compare: zwei Werte nebeneinander (z. B. „jetzt“ gegen „Schnitt“), gleiche Einheit.
+ */
+export type InsightViz =
+  | { kind: 'meter'; value: number; max: number; lo?: number; hi?: number }
+  | { kind: 'compare'; unit: string; a: { label: string; value: number }; b: { label: string; value: number } }
 
 export const INSIGHT_GROUPS: { key: InsightGroup; label: string }[] = [
   { key: 'load', label: 'Belastung' },
@@ -116,6 +126,10 @@ export function loadRatio(load: ReadonlyMap<string, number>, today: string): Loa
 }
 
 function loadInsight(r: LoadRatio): Insight {
+  return { ...loadInsightBase(r), viz: { kind: 'meter', value: r.ratio, max: 2, lo: 0.8, hi: 1.3 } }
+}
+
+function loadInsightBase(r: LoadRatio): Insight {
   const value = `${de(r.ratio, 1)}× dein 4-Wochen-Schnitt`
   const info =
     'Verglichen wird deine Belastung der letzten 7 Tage (Ausdauer: Dauer × Puls, Kraft: Arbeitssätze) mit deinem Schnitt der letzten 4 Wochen. 0,8–1,3 ist ideal. Über 1,5 steigt das Verletzungsrisiko, unter 0,8 baut die Form langsam ab.'
@@ -264,6 +278,21 @@ export function vitalTrend(
 }
 
 function rhrInsight(t: VitalTrend): Insight {
+  return { ...rhrInsightBase(t), viz: vitalViz(t, 'bpm') }
+}
+
+function hrvInsight(t: VitalTrend): Insight {
+  return { ...hrvInsightBase(t), viz: vitalViz(t, 'ms') }
+}
+
+const vitalViz = (t: VitalTrend, unit: string): InsightViz => ({
+  kind: 'compare',
+  unit,
+  a: { label: '30 Tage', value: Math.round(t.recent) },
+  b: { label: 'Basis', value: Math.round(t.base) },
+})
+
+function rhrInsightBase(t: VitalTrend): Insight {
   const value = `Ø ${de(t.recent)} bpm · ${signed(Math.round(t.diff))} zur Basis`
   const info =
     'Dein Ruhepuls der letzten 30 Tage im Vergleich zu den 60 Tagen davor. Sinkt er, wird dein Herz fitter. Steigt er länger, können Stress, wenig Schlaf, Überlastung oder ein Infekt dahinterstecken.'
@@ -301,7 +330,7 @@ function rhrInsight(t: VitalTrend): Insight {
   }
 }
 
-function hrvInsight(t: VitalTrend): Insight {
+function hrvInsightBase(t: VitalTrend): Insight {
   const value = `Ø ${de(t.recent)} ms · ${signed(Math.round(t.pct))} % zur Basis`
   const info =
     'Deine Herzratenvariabilität (HRV) der letzten 30 Tage im Vergleich zu den 60 Tagen davor. Steigt sie, verkraftest du Training und Alltag besser. Sinkt sie über Wochen, fehlt meist Erholung. Vergleiche nur mit dir selbst.'
@@ -591,24 +620,53 @@ export function readinessHistory(
 ): Map<string, number> {
   const out = new Map<string, number>()
   const sleepBy = new Map(sleep.map((s) => [s.date, s]))
-  const dayBy = new Map(daily.map((d) => [d.date, d]))
   for (const date of dates) {
-    const s = sleepBy.get(date)
-    const d = dayBy.get(date)
-    const y = load.get(shiftDate(date, -1))
-    const b = load.get(shiftDate(date, -2))
-    const r = readiness({
-      sleepMin: s?.asleep_min ?? null,
-      sleepNeedMin: needMin,
-      deepMin: s?.deep_min ?? null,
-      hrv: d?.hrv_ms ?? null,
-      hrvBaseline: baseline(daily, 'hrv_ms', date),
-      restingHr: d?.resting_hr ?? null,
-      restingHrBaseline: baseline(daily, 'resting_hr', date),
-      cardioLoad: (y?.cardio ?? 0) + (b?.cardio ?? 0) / 2,
-      strengthSets: (y?.sets ?? 0) + (b?.sets ?? 0) / 2,
-    })
+    const r = readinessOn(date, daily, sleepBy.get(date) ?? null, load, needMin)
     if (r) out.set(date, r.score)
+  }
+  return out
+}
+
+/** Tagesform eines (vergangenen) Tages nur aus Uhr- und Trainingsdaten – null ohne Uhr-Werte. */
+export function readinessOn(
+  date: string,
+  daily: readonly HealthDaily[],
+  night: HealthSleep | null,
+  load: ReadonlyMap<string, { cardio: number; sets: number }>,
+  needMin = 480,
+): Readiness | null {
+  const d = daily.find((x) => x.date === date)
+  const y = load.get(shiftDate(date, -1))
+  const b = load.get(shiftDate(date, -2))
+  return readiness({
+    sleepMin: night?.asleep_min ?? null,
+    sleepNeedMin: needMin,
+    deepMin: night?.deep_min ?? null,
+    hrv: d?.hrv_ms ?? null,
+    hrvBaseline: baseline(daily, 'hrv_ms', date),
+    restingHr: d?.resting_hr ?? null,
+    restingHrBaseline: baseline(daily, 'resting_hr', date),
+    cardioLoad: (y?.cardio ?? 0) + (b?.cardio ?? 0) / 2,
+    strengthSets: (y?.sets ?? 0) + (b?.sets ?? 0) / 2,
+  })
+}
+
+/** Belastung je Tag: Ausdauer-Load (Dauer × Puls) und Anzahl Kraft-Arbeitssätze. */
+export function loadByDay(
+  acts: readonly HealthActivity[],
+  setDates: readonly string[],
+  maxHr = 190,
+): Map<string, { cardio: number; sets: number }> {
+  const out = new Map<string, { cardio: number; sets: number }>()
+  for (const a of acts) {
+    const e = out.get(actDate(a)) ?? { cardio: 0, sets: 0 }
+    e.cardio += activityLoad(a, maxHr)
+    out.set(actDate(a), e)
+  }
+  for (const d of setDates) {
+    const e = out.get(d) ?? { cardio: 0, sets: 0 }
+    e.sets += 1
+    out.set(d, e)
   }
   return out
 }
@@ -719,6 +777,7 @@ export function buildInsights(i: InsightInput): Insight[] {
               info: 'Summe aus dem, was dir in den letzten 7 Nächten zu deinem Schlafbedarf gefehlt hat. Lange Nächte gleichen kurze aus. Abbauen geht am besten mit etwas früher ins Bett über mehrere Tage.',
               tone: 'hint',
               priority: debt.debtMin > 180 ? 85 : 65,
+              viz: { kind: 'meter', value: debt.avgMin / 60, max: Math.max(10, need / 60 + 1), lo: need / 60 },
             }
           : {
               id: 'sleep-debt',
@@ -729,6 +788,7 @@ export function buildInsights(i: InsightInput): Insight[] {
               info: 'Du hast in den letzten 7 Nächten im Schnitt so viel geschlafen, wie du brauchst. Genau dann erholen sich Muskeln und Kopf am besten.',
               tone: 'good',
               priority: 30,
+              viz: { kind: 'meter', value: debt.avgMin / 60, max: Math.max(10, need / 60 + 1), lo: need / 60 },
             },
       )
     }
@@ -794,6 +854,7 @@ export function buildInsights(i: InsightInput): Insight[] {
         info: `Die WHO empfiehlt pro Woche mind. 150 Minuten moderate oder 75 Minuten intensive Bewegung. Gezählt wird ab ${Math.round(MODERATE_FROM * 100)} % deines Maximalpulses, ab ${Math.round(VIGOROUS_FROM * 100)} % doppelt. Krafttraining kommt zusätzlich dazu (2× pro Woche).`,
         tone: done ? 'good' : 'neutral',
         priority: done ? 30 : 35,
+        viz: { kind: 'meter', value: im.total, max: Math.max(WHO_MINUTES * 1.5, im.total), lo: WHO_MINUTES },
       })
     }
     const st = stepsTrend(daily, today)
@@ -808,23 +869,19 @@ export function buildInsights(i: InsightInput): Insight[] {
         info: 'Deine Schritte der letzten 7 Tage im Vergleich zum Schnitt der 3 Wochen davor. Alltagsbewegung verbraucht oft mehr Energie als das Training – sinkt sie, sinkt auch dein Verbrauch.',
         tone: st.pct >= 10 ? 'good' : st.pct <= -10 ? 'hint' : 'neutral',
         priority: st.pct <= -10 ? 50 : st.pct >= 10 ? 30 : 10,
+        viz: {
+          kind: 'compare',
+          unit: 'Schritte',
+          a: { label: '7 Tage', value: st.recent },
+          b: { label: 'davor', value: st.before },
+        },
       })
     }
 
     // Zusammenhang: kurze Nächte → Tagesform am Morgen danach
-    const loadByDay = new Map<string, { cardio: number; sets: number }>()
-    for (const a of acts) {
-      const e = loadByDay.get(actDate(a)) ?? { cardio: 0, sets: 0 }
-      e.cardio += activityLoad(a, maxHr)
-      loadByDay.set(actDate(a), e)
-    }
-    for (const d of sets) {
-      const e = loadByDay.get(d) ?? { cardio: 0, sets: 0 }
-      e.sets += 1
-      loadByDay.set(d, e)
-    }
+    const loadMap = loadByDay(acts, sets, maxHr)
     const sleepDates = sleep.filter((s) => inWindow(s.date, shiftDate(today, -59), today)).map((s) => s.date)
-    const scores = readinessHistory(daily, sleep, loadByDay, sleepDates, need)
+    const scores = readinessHistory(daily, sleep, loadMap, sleepDates, need)
     const pairs = sleep
       .filter((s) => scores.has(s.date))
       .map((s) => ({
@@ -842,6 +899,12 @@ export function buildInsights(i: InsightInput): Insight[] {
         info: `Verglichen werden deine Tagesform-Werte nach Nächten unter 6 Stunden (Ø ${Math.round(pd.yes)}) mit denen nach mindestens 7 Stunden (Ø ${Math.round(pd.no)}), ${pd.n} Tage aus den letzten 60 Tagen. Schlaf ist der größte Hebel für deine Erholung.`,
         tone: 'hint',
         priority: 45,
+        viz: {
+          kind: 'compare',
+          unit: 'Punkte',
+          a: { label: '< 6 h', value: Math.round(pd.yes) },
+          b: { label: '≥ 7 h', value: Math.round(pd.no) },
+        },
       })
     }
     // Zusammenhang: kurze Nächte → HRV am Morgen danach (unabhängig von der Tagesform-Formel)
@@ -865,6 +928,12 @@ export function buildInsights(i: InsightInput): Insight[] {
         info: `Deine HRV am Morgen nach Nächten unter 6 Stunden (Ø ${Math.round(hp.yes)} ms) im Vergleich zu Nächten ab 7 Stunden (Ø ${Math.round(hp.no)} ms), ${hp.n} Tage aus den letzten 60 Tagen. Eine niedrigere HRV zeigt: Der Körper ist weniger erholt.`,
         tone: 'hint',
         priority: 40,
+        viz: {
+          kind: 'compare',
+          unit: 'ms',
+          a: { label: '< 6 h', value: Math.round(hp.yes) },
+          b: { label: '≥ 7 h', value: Math.round(hp.no) },
+        },
       })
     }
   }
@@ -884,6 +953,12 @@ export function buildInsights(i: InsightInput): Insight[] {
       info: `Berechnet aus deinem Essen und deinem Gewichtsverlauf der letzten ${tdee.days} Tage (${tdee.loggedDays} erfasste Tage, ${tdee.weighIns} Wiegungen): Ø gegessen minus Gewichtsänderung × 7700 kcal/kg.${watch ? ` Deine Uhr schätzt ${de(watch)} kcal – Uhren liegen oft daneben.` : ''} Je vollständiger du erfasst, desto genauer.`,
       tone: 'neutral',
       priority: 55,
+      viz: {
+        kind: 'compare',
+        unit: 'kcal',
+        a: { label: 'gegessen', value: Math.round(tdee.avgIntake) },
+        b: { label: 'Verbrauch', value: Math.round(tdee.tdee) },
+      },
     })
   } else if (watch) {
     out.push({

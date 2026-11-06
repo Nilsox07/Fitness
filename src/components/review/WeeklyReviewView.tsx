@@ -22,6 +22,7 @@ function Tile({
   value,
   sub,
   tone = 'neutral',
+  progress,
   style,
 }: {
   icon: ReactNode
@@ -29,6 +30,8 @@ function Tile({
   value: string
   sub?: string
   tone?: Tone
+  /** Anteil am Ziel (0–1+) als schmaler Balken */
+  progress?: number | null
   style?: CSSProperties
 }) {
   return (
@@ -38,7 +41,15 @@ function Tile({
         {label}
       </div>
       <div className={`tabular mt-1 text-2xl font-bold tracking-tight ${TONE[tone]}`}>{value}</div>
-      {sub && <div className="tabular text-xs text-cocoa-light">{sub}</div>}
+      {progress != null && (
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-sand" aria-hidden>
+          <div
+            className={`h-full rounded-full ${progress >= 1 ? 'bg-success' : 'bg-brand/70'}`}
+            style={{ width: `${Math.min(100, Math.max(3, progress * 100))}%` }}
+          />
+        </div>
+      )}
+      {sub && <div className="tabular mt-1 text-xs text-cocoa-light">{sub}</div>}
     </div>
   )
 }
@@ -55,6 +66,7 @@ function StatTiles({ s, start }: { s: ReviewStats; start: number }) {
       value={`${s.sessions}/${s.sessionGoal}`}
       sub={goalHit ? 'Ziel geschafft' : `${s.sessionGoal - s.sessions} fehlten`}
       tone={goalHit ? 'good' : 'ok'}
+      progress={s.sessionGoal > 0 ? s.sessions / s.sessionGoal : null}
     />,
   )
   tiles.push(
@@ -77,6 +89,7 @@ function StatTiles({ s, start }: { s: ReviewStats; start: number }) {
         value={fmt(s.avgKcal)}
         sub={diff == null ? `${s.daysLogged} Tage erfasst` : `${diff > 0 ? '+' : ''}${fmt(diff)} zum Ziel`}
         tone={diff == null ? 'neutral' : Math.abs(diff) <= 150 ? 'good' : 'ok'}
+        progress={s.kcalTarget ? Math.min(0.99, s.avgKcal / s.kcalTarget) : null}
       />,
     )
   }
@@ -90,6 +103,7 @@ function StatTiles({ s, start }: { s: ReviewStats; start: number }) {
         value={`${fmt(s.avgProtein)} g`}
         sub={s.proteinTarget ? `Ziel ${fmt(s.proteinTarget)} g` : undefined}
         tone={s.proteinTarget ? (ok ? 'good' : 'ok') : 'neutral'}
+        progress={s.proteinTarget ? s.avgProtein / s.proteinTarget : null}
       />,
     )
   }

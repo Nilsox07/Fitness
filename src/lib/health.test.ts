@@ -162,3 +162,16 @@ describe('agoText', () => {
     expect(agoText('2026-10-30T12:00:00Z', now)).toBe('vor 1 Tag')
   })
 })
+
+describe('Tagesform-Skalen', () => {
+  it('Faktoren liefern Wert und Normalbereich für die Balken', () => {
+    const r = readiness({ sleepMin: 420, hrv: 50, hrvBaseline: 60, restingHr: 58, restingHrBaseline: 52 })!
+    const hrv = r.factors.find((f) => f.key === 'hrv')!.range!
+    expect(hrv.value).toBe(50)
+    expect(hrv.lo).toBeLessThan(60)
+    expect(hrv.hi).toBeGreaterThan(60)
+    const rhr = r.factors.find((f) => f.key === 'rhr')!.range!
+    expect(rhr.value).toBeGreaterThan(rhr.hi)
+    expect(r.factors.find((f) => f.key === 'sleep')!.range!.value).toBe(7)
+  })
+})

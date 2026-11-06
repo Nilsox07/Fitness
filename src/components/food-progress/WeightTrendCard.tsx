@@ -122,6 +122,19 @@ export function WeightTrendCard({ style }: { style?: CSSProperties }) {
             </ComposedChart>
           </ResponsiveContainer>
         )}
+        {w.data.length >= 2 && (
+          <div className="flex items-center justify-center gap-3 text-[10px] text-cocoa-muted">
+            <span className="flex items-center gap-1">
+              <span className="w-3 border-t-2 border-brand" />
+              Trend
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-cocoa-muted" />
+              Gewogen
+            </span>
+            <span>in kg</span>
+          </div>
+        )}
         <CycleWaterNote />
         <InfoTip
           className="text-[11px] text-cocoa-muted"

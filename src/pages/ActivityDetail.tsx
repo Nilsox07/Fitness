@@ -2,7 +2,7 @@ import { useMemo, type ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { Activity, Flame, Gauge, HeartPulse, Mountain, Timer, Zap } from 'lucide-react'
 import { enter } from '../components/home/motion'
-import { MetricCard, SeriesChart, ZoneBars } from '../components/health/Charts'
+import { LoadGauge, MetricCard, SeriesChart, ZoneBars } from '../components/health/Charts'
 import { Hero, HeroPill, Stat, ruby } from '../components/health/ui'
 import { SectionLabel } from '../components/progress/ProgressHeader'
 import { useHealthActivities } from '../hooks/useHealth'
@@ -150,6 +150,7 @@ export default function ActivityDetail() {
       )}
 
       <MetricCard title="Belastung" value={derived.load} sub={loadLabel(derived.load)}>
+        <LoadGauge load={derived.load} />
         <p className="text-sm text-cocoa-light">
           Empfohlene Erholung: ca. <b>{recoveryHours(derived.load)} Stunden</b> bis zur nächsten harten Einheit.
           {a.hr_series && mainZone > 0 && ` Meistens in Zone ${mainZone} (${ZONES[mainZone - 1].info}).`}
@@ -162,7 +163,14 @@ export default function ActivityDetail() {
           value={a.avg_hr ? `Ø ${a.avg_hr}` : undefined}
           sub={a.max_hr ? `max. ${a.max_hr} bpm` : undefined}
         >
-          <SeriesChart data={a.hr_series} colorFor={zoneColor} height={130} xLabel={fmtTime} />
+          <SeriesChart
+            data={a.hr_series}
+            colorFor={zoneColor}
+            height={130}
+            unit="bpm"
+            label="Puls im Verlauf"
+            xLabel={fmtTime}
+          />
           <h3 className="pt-1 text-xs font-semibold text-cocoa-muted">Zeit in Pulszonen (Max-Puls {maxHr})</h3>
           <ZoneBars times={derived.zones} />
         </MetricCard>
@@ -175,6 +183,8 @@ export default function ActivityDetail() {
             color={ruby()}
             height={120}
             invert={!isRide}
+            unit={isRide ? 'km/h' : '/km'}
+            label={isRide ? 'Geschwindigkeit im Verlauf' : 'Pace im Verlauf'}
             xLabel={fmtTime}
             yLabel={(y) => (isRide ? `${Math.round(y)}` : mmss(y))}
           />
@@ -191,8 +201,10 @@ export default function ActivityDetail() {
             data={derived.elevation}
             color={ruby(0.8)}
             height={100}
+            unit="m"
+            label="Höhenprofil"
             xLabel={(x) => `${x.toLocaleString('de-DE', { maximumFractionDigits: 1 })} km`}
-            yLabel={(y) => `${Math.round(y)} m`}
+            yLabel={(y) => `${Math.round(y)}`}
           />
         </MetricCard>
       )}
@@ -203,6 +215,8 @@ export default function ActivityDetail() {
             data={a.power_series}
             color={ruby(0.8)}
             height={110}
+            unit="W"
+            label="Leistung im Verlauf"
             xLabel={fmtTime}
             yLabel={(y) => `${Math.round(y)}`}
           />
@@ -213,9 +227,9 @@ export default function ActivityDetail() {
         <MetricCard title="Kilometer">
           <div className="grid grid-cols-[2rem_1fr_3.5rem_3rem] gap-x-2 gap-y-1 text-sm">
             <span className="text-[11px] text-cocoa-muted">km</span>
-            <span className="text-[11px] text-cocoa-muted">{isRide ? 'Zeit' : 'Pace'}</span>
-            <span className="text-right text-[11px] text-cocoa-muted">Puls</span>
-            <span className="text-right text-[11px] text-cocoa-muted">Höhe</span>
+            <span className="text-[11px] text-cocoa-muted">{isRide ? 'Zeit' : 'Pace /km'}</span>
+            <span className="text-right text-[11px] text-cocoa-muted">Ø bpm</span>
+            <span className="text-right text-[11px] text-cocoa-muted">Höhe m</span>
             {derived.splits.map((s) => {
               const pace = s.seconds / (s.meters / 1000)
               const best = s.seconds === fastest
@@ -244,15 +258,30 @@ export default function ActivityDetail() {
 
       {derived.splits.length === 0 && a.laps && a.laps.length > 1 && (
         <MetricCard title="Runden">
-          {a.laps.map((l, i) => (
-            <div key={i} className="flex justify-between text-sm">
-              <span>Runde {i + 1}</span>
-              <span className="tabular text-cocoa-light">
-                {fmtTime(l.end_s - l.start_s)}
-                {l.length_m ? ` · ${kmText(l.length_m)}` : ''}
-              </span>
-            </div>
-          ))}
+          {(() => {
+            const laps = a.laps!.map((l) => l.end_s - l.start_s)
+            const longest = Math.max(1, ...laps)
+            const best = Math.min(...laps)
+            return (
+              <div className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-x-2 gap-y-1.5 text-sm">
+                {a.laps!.map((l, i) => (
+                  <div key={i} className="contents">
+                    <span className="text-cocoa-light">Runde {i + 1}</span>
+                    <span className="h-2 overflow-hidden rounded-full bg-sand-dark/40">
+                      <span
+                        className={`block h-full rounded-full ${laps[i] === best ? 'bg-brand' : 'bg-brand/40'}`}
+                        style={{ width: `${(laps[i] / longest) * 100}%` }}
+                      />
+                    </span>
+                    <span className="tabular text-right">
+                      {fmtTime(laps[i])}
+                      {l.length_m ? <span className="text-cocoa-muted"> · {kmText(l.length_m)}</span> : null}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
         </MetricCard>
       )}
     </div>

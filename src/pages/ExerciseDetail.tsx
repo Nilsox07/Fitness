@@ -497,7 +497,7 @@ export default function ExerciseDetail() {
               <LineChart data={periodChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
                 <XAxis dataKey="date" tick={axisStyle} tickLine={false} axisLine={{ stroke: chart.grid }} />
-                <YAxis tick={axisStyle} width={40} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
+                <YAxis tick={axisStyle} width={54} tickLine={false} axisLine={false} domain={["auto", "auto"]} tickFormatter={(v: number) => num(v, 0)} unit=" kg" />
                 <Tooltip
                   contentStyle={{
                     background: chart.tipBg,
