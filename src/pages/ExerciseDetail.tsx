@@ -48,7 +48,7 @@ import {
   exerciseToInput,
 } from "../components/ExerciseForm";
 import type { SetWithDate } from "../types";
-import { Steps } from "../components/library/ExerciseHowTo";
+import { Cues, Steps } from "../components/library/ExerciseHowTo";
 import { ExerciseAnimation } from "../components/library/ExerciseAnimation";
 import { figureForExercise, figureForLibraryId } from "../lib/figure/catalog";
 import { GroupLabel, GroupList } from "../components/ui/GroupList";
@@ -574,6 +574,7 @@ export default function ExerciseDetail() {
             {stepsOpen && (
               <div className="anim-fade px-4 py-3.5">
                 <Steps steps={howTo.steps_de} />
+                <Cues cues={howTo.cues_de} mistakes={howTo.mistakes_de} />
               </div>
             )}
           </GroupList>

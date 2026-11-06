@@ -28,6 +28,10 @@ export interface LibraryExercise {
   /** Relative Pfade der beiden Animations-Frames (z. B. "Barbell_Squat/0.jpg"). */
   images: string[]
   steps_de: string[]
+  /** Feingefühl: worauf achten, was vorstellen (Muskelgefühl, Gelenkstellung, Tempo) */
+  cues_de?: string[]
+  /** Häufige Fehler */
+  mistakes_de?: string[]
   /** Für Training zu Hause geeignet (Körpergewicht, Band, Kurzhantel, Kettlebell …). */
   home: boolean
 }

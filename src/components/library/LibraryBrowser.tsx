@@ -13,7 +13,7 @@ import {
 import type { Exercise, MuscleGroup } from '../../types'
 import { figureForLibraryId } from '../../lib/figure/catalog'
 import { ExerciseAnimation } from './ExerciseAnimation'
-import { Steps } from './ExerciseHowTo'
+import { Cues, Steps } from './ExerciseHowTo'
 import { useAddFromLibrary, useLibrary, useLibraryLinks } from './useLibrary'
 
 const PAGE = 40
@@ -188,6 +188,7 @@ export function LibraryBrowser({
         <section className="space-y-2">
           <h3 className="font-semibold">Ausführung</h3>
           <Steps steps={selected.steps_de} />
+          <Cues cues={selected.cues_de} mistakes={selected.mistakes_de} />
         </section>
 
         <p className="text-xs text-cocoa-light">
