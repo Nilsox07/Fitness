@@ -4,6 +4,8 @@ import {
   editLadderStep,
   expandWithAddons,
   ladderText,
+  splitLadder,
+  withAddons,
   generateLadder,
   ladderStep,
   parseLadder,
@@ -59,9 +61,7 @@ describe('subsetSums', () => {
 
 describe('expandWithAddons', () => {
   it('verfeinert die Basis-Leiter mit Zusatzgewichten', () => {
-    expect(expandWithAddons([13, 18], [2.5, 5])).toEqual([
-      13, 15.5, 18, 20.5, 23, 25.5,
-    ])
+    expect(expandWithAddons([13, 18], [2.5, 5])).toEqual([13, 15.5, 18, 20.5, 23, 25.5])
   })
   it('lässt die Basis unverändert ohne Zusatzgewichte', () => {
     expect(expandWithAddons([4, 9, 13], [])).toEqual([4, 9, 13])
@@ -84,5 +84,17 @@ describe('Stufen korrigieren', () => {
     expect(addLadderStep(L, 12.5)).toEqual([5, 10, 12.5, 15, 20, 25])
     expect(ladderText([4.5, 9.1])).toBe('4.5 9.1')
     expect(ladderText([])).toBeNull()
+  })
+})
+
+describe('Zusatzgewichte an der Maschine', () => {
+  it('je ein Zusatzgewicht pro Stufe (keine Kombinationen)', () => {
+    expect(withAddons([5, 10], [2.5, 5, 7.5])).toEqual([5, 7.5, 10, 12.5, 15, 17.5])
+  })
+  it('Text mit Strich: Grundstufen | Zusatzgewichte', () => {
+    expect(splitLadder('5 10 | 2,5 5')).toEqual({ base: [5, 10], addons: [2.5, 5] })
+    expect(parseLadder('5 10 | 2,5')).toEqual([5, 7.5, 10, 12.5])
+    expect(ladderText([5, 10], [2.5])).toBe('5 10 | 2.5')
+    expect(parseLadder('4 9 13')).toEqual([4, 9, 13])
   })
 })

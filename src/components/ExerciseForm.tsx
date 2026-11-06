@@ -4,7 +4,7 @@ import type { ExerciseInput } from '../hooks/useExercises'
 import { suggestMuscles } from '../lib/ai'
 import { useAiGate } from '../hooks/usePremium'
 import { PlusBadge } from './premium/PlusBadge'
-import { addLadderStep, editLadderStep, generateLadder, ladderText, parseLadder } from '../lib/weights'
+import { addLadderStep, editLadderStep, generateLadder, ladderText, splitLadder, withAddons } from '../lib/weights'
 import { MUSCLE_GROUPS, type MuscleGroup } from '../types'
 
 export const EMPTY_EXERCISE: ExerciseInput = {
@@ -96,7 +96,7 @@ export function ExerciseForm({
   const preset = REP_PRESETS.find((p) => p.min === form.target_rep_min && p.max === form.target_rep_max)
   const [customReps, setCustomReps] = useState(!preset)
 
-  const ladder = parseLadder(form.weight_steps)
+  const ladder = splitLadder(form.weight_steps).base
   const [mode, setMode] = useState<'even' | 'steps'>(ladder.length ? 'steps' : 'even')
   const initial = evenLadder(ladder)
   const [gen, setGen] = useState({
@@ -113,7 +113,7 @@ export function ExerciseForm({
   function updateGen(next: typeof gen) {
     setGen(next)
     const steps = generateLadder(num(next.start), [num(next.step)], num(next.max))
-    update({ weight_steps: steps.length ? steps.map(fmtPlain).join(' ') : null })
+    update({ weight_steps: ladderText(steps, splitLadder(form.weight_steps).addons) })
   }
 
   function toggleSecondary(g: MuscleGroup) {
@@ -288,8 +288,13 @@ export function ExerciseForm({
               <TextNum label="schwerste" value={gen.max} onChange={(v) => updateGen({ ...gen, max: v })} />
             </div>
             <LadderEditor
-              ladder={parseLadder(form.weight_steps)}
-              onChange={(l) => update({ weight_steps: ladderText(l) })}
+              ladder={splitLadder(form.weight_steps).base}
+              onChange={(l) => update({ weight_steps: ladderText(l, splitLadder(form.weight_steps).addons) })}
+            />
+            <AddonPicker
+              base={splitLadder(form.weight_steps).base}
+              addons={splitLadder(form.weight_steps).addons}
+              onChange={(a) => update({ weight_steps: ladderText(splitLadder(form.weight_steps).base, a) })}
             />
           </>
         )}
@@ -326,8 +331,6 @@ export function ExerciseForm({
     </div>
   )
 }
-
-const fmtPlain = (n: number) => String(Math.round(n * 100) / 100)
 
 function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -545,6 +548,88 @@ function LadderEditor({ ladder, onChange }: { ladder: number[]; onChange: (l: nu
       ) : (
         <p className="text-[11px] text-cocoa-muted">
           {ladder.length} Stufen · Stimmt eine nicht? Antippen und korrigieren.
+        </p>
+      )}
+    </div>
+  )
+}
+
+const ADDON_PRESETS = [1.25, 2.5, 5, 7.5]
+
+/**
+ * Zusatzgewichte: Viele Maschinen haben ein kleines Zusatzgewicht (z. B. 2,5 / 5 / 7,5 kg), das man auf
+ * jede Stufe legen kann. Der Nutzer wählt, was seine Maschine hat – +/− springt dann auch auf diese Zwischenwerte.
+ */
+function AddonPicker({
+  base,
+  addons,
+  onChange,
+}: {
+  base: number[]
+  addons: number[]
+  onChange: (a: number[]) => void
+}) {
+  const [custom, setCustom] = useState('')
+  const options = [...new Set([...ADDON_PRESETS, ...addons])].sort((a, b) => a - b)
+  const toggle = (v: number) =>
+    onChange(addons.includes(v) ? addons.filter((x) => x !== v) : [...addons, v].sort((a, b) => a - b))
+  const total = withAddons(base, addons).length
+
+  return (
+    <div className="space-y-2 border-t border-sand-dark/40 pt-3">
+      <span className="block text-sm text-cocoa-light">Zusatzgewicht zum Draufstecken?</span>
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          aria-pressed={addons.length === 0}
+          onClick={() => onChange([])}
+          className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+            addons.length === 0 ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa-light'
+          }`}
+        >
+          Keins
+        </button>
+        {options.map((v) => (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={addons.includes(v)}
+            onClick={() => toggle(v)}
+            className={`tabular rounded-full px-3 py-1.5 text-sm font-medium ${
+              addons.includes(v) ? 'bg-brand text-on-brand' : 'bg-sand text-cocoa-light'
+            }`}
+          >
+            +{fmt(v)} kg
+          </button>
+        ))}
+        <input
+          className="input w-20 py-1 text-center text-sm"
+          inputMode="decimal"
+          placeholder="+ kg"
+          value={custom}
+          onChange={(e) => setCustom(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return
+            const v = num(custom)
+            if (v > 0 && !addons.includes(v)) onChange([...addons, v].sort((a, b) => a - b))
+            setCustom('')
+          }}
+          onBlur={() => {
+            const v = num(custom)
+            if (v > 0 && !addons.includes(v)) onChange([...addons, v].sort((a, b) => a - b))
+            setCustom('')
+          }}
+          aria-label="Eigenes Zusatzgewicht in kg"
+        />
+      </div>
+      {addons.length > 0 && base.length > 0 && (
+        <p className="text-[11px] text-cocoa-muted">
+          Je ein Zusatzgewicht pro Stufe · {total} wählbare Gewichte, z. B.{' '}
+          {withAddons(base, addons)
+            .slice(0, 6)
+            .map((v) => fmt(v))
+            .join(' · ')}
+          …
         </p>
       )}
     </div>

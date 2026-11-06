@@ -3,14 +3,38 @@
 
 const round1 = (n: number) => Math.round(n * 10) / 10
 
-/** Text → sortierte, eindeutige Gewichtsliste. Leer bei ungültig. */
-export function parseLadder(text: string | null | undefined): number[] {
-  if (!text) return []
+function parseNums(text: string): number[] {
   const nums = text
     .split(/[\s;]+/)
     .map((t) => parseFloat(t.trim().replace(',', '.')))
     .filter((n) => Number.isFinite(n) && n > 0)
   return [...new Set(nums)].sort((a, b) => a - b)
+}
+
+/**
+ * Gespeicherter Text → Grundstufen + Zusatzgewichte. Format: „5 10 15 | 2.5 5 7.5“ – rechts vom
+ * Strich die Zusatzgewichte, von denen man an der Maschine EINES auf eine Stufe legen kann.
+ */
+export function splitLadder(text: string | null | undefined): { base: number[]; addons: number[] } {
+  if (!text) return { base: [], addons: [] }
+  const [b, a = ''] = text.split('|')
+  return { base: parseNums(b), addons: parseNums(a) }
+}
+
+/** Grundstufen + je ein Zusatzgewicht obendrauf (oder keins) → alle wählbaren Gewichte. */
+export function withAddons(base: number[], addons: number[]): number[] {
+  const out = new Set<number>()
+  for (const b of base) {
+    out.add(round1(b))
+    for (const a of addons) out.add(round1(b + a))
+  }
+  return [...out].sort((x, y) => x - y)
+}
+
+/** Text → sortierte, eindeutige Liste aller wählbaren Gewichte (inkl. Zusatzgewichte). Leer bei ungültig. */
+export function parseLadder(text: string | null | undefined): number[] {
+  const { base, addons } = splitLadder(text)
+  return addons.length ? withAddons(base, addons) : base
 }
 
 /** Nächstgelegenes Gewicht auf der Leiter. */
@@ -98,7 +122,9 @@ export function addLadderStep(ladder: number[], value: number): number[] {
 
 const round2 = (n: number) => Math.round(n * 100) / 100
 
-/** Leiter → Text fürs Speichern. */
-export function ladderText(ladder: number[]): string | null {
-  return ladder.length ? ladder.map((v) => String(round2(v))).join(' ') : null
+/** Grundstufen (+ Zusatzgewichte) → Text fürs Speichern. */
+export function ladderText(ladder: number[], addons: number[] = []): string | null {
+  if (!ladder.length) return null
+  const base = ladder.map((v) => String(round2(v))).join(' ')
+  return addons.length ? `${base} | ${addons.map((v) => String(round2(v))).join(' ')}` : base
 }
