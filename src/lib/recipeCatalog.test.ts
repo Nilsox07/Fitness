@@ -5,11 +5,13 @@ const count = (pred: (r: CatalogRecipe) => boolean) => RECIPE_CATALOG.filter(pre
 const formulaKcal = (r: CatalogRecipe) => 4 * r.protein + 4 * r.carbs + 9 * r.fat + 2 * r.fiber
 
 describe('RECIPE_CATALOG', () => {
-  it('hat 48 Rezepte mit eindeutigen, stabilen IDs', () => {
-    expect(RECIPE_CATALOG).toHaveLength(48)
+  it('hat mindestens 160 Rezepte mit eindeutigen, stabilen IDs und Titeln', () => {
+    expect(RECIPE_CATALOG.length).toBeGreaterThanOrEqual(160)
     const ids = RECIPE_CATALOG.map((r) => r.id)
     expect(new Set(ids).size).toBe(ids.length)
-    for (const id of ids) expect(id).toMatch(/^c-[a-z0-9-]+$/)
+    for (const id of ids) expect(id).toMatch(/^c-[a-z0-9]+(-[a-z0-9]+)*$/)
+    const titles = RECIPE_CATALOG.map((r) => r.title.toLowerCase())
+    expect(new Set(titles).size).toBe(titles.length)
   })
 
   it('hat vollständige Rezeptdaten', () => {
@@ -19,7 +21,21 @@ describe('RECIPE_CATALOG', () => {
       expect(r.steps.length, r.id).toBeGreaterThanOrEqual(2)
       expect(r.steps.length, r.id).toBeLessThanOrEqual(6)
       expect(r.servings, r.id).toBeGreaterThan(0)
-      expect(r.minutes, r.id).toBeLessThanOrEqual(30)
+      expect(r.minutes, r.id).toBeLessThanOrEqual(45)
+      expect(new Set(r.meal).size, r.id).toBe(r.meal.length)
+    }
+    // Alltagstauglich: der Großteil ist in höchstens 30 Minuten fertig.
+    expect(count((r) => r.minutes <= 30) / RECIPE_CATALOG.length).toBeGreaterThanOrEqual(0.9)
+  })
+
+  it('hat plausible Nährwerte', () => {
+    for (const r of RECIPE_CATALOG) {
+      expect(r.kcal, r.id).toBeGreaterThanOrEqual(100)
+      expect(r.kcal, r.id).toBeLessThanOrEqual(1000)
+      expect(r.sugar, r.id).toBeLessThanOrEqual(r.carbs)
+      expect(r.sat_fat, r.id).toBeLessThanOrEqual(r.fat)
+      expect(r.salt, r.id).toBeGreaterThanOrEqual(0)
+      expect(r.salt, r.id).toBeLessThanOrEqual(4)
     }
   })
 
@@ -37,6 +53,31 @@ describe('RECIPE_CATALOG', () => {
       if (r.macros.includes('high_protein')) {
         expect(r.protein >= 30 || (4 * r.protein) / r.kcal >= 0.25, r.id).toBe(true)
       }
+      if (r.macros.includes('low_fat')) expect((9 * r.fat) / r.kcal, r.id).toBeLessThanOrEqual(0.2)
+    }
+  })
+
+  it('vegane Rezepte enthalten keine tierischen Zutaten', () => {
+    const animal =
+      /\b(Quark|Magerquark|Skyr|Hüttenkäse|Feta|Parmesan|Mozzarella|Gouda|Halloumi|Frischkäse|Käse|Butter|Kochsahne|Sahne|Milch|Kefir|Honig|Ei(?:er)?|Whey\S*|Hähnchen\S*|Pute\S*|Rind\S*|Schweine\S*|Kochschinken|Lachs\S*|Räucherlachs|Thunfisch|Garnelen|Kabeljau\S*|Seelachs\S*|Forelle\S*)\b|(Natur|griechischer )[Jj]oghurt/
+    for (const r of RECIPE_CATALOG.filter((x) => x.restrictions.includes('vegan'))) {
+      for (const ing of r.ingredients) expect(ing, r.id).not.toMatch(animal)
+    }
+  })
+
+  it('vegetarische Rezepte enthalten kein Fleisch und keinen Fisch', () => {
+    const meatFish =
+      /(Hähnchen|Pute|Rinder|Rindfleisch|Schwein|Schinken|Speck|Hack|Lachs|Thunfisch|Garnelen|Kabeljau|Seelachs|Forelle)/
+    for (const r of RECIPE_CATALOG.filter((x) => x.restrictions.includes('vegetarian'))) {
+      for (const ing of r.ingredients) expect(ing, r.id).not.toMatch(meatFish)
+    }
+  })
+
+  it('unverarbeitete Rezepte enthalten keine stark verarbeiteten Produkte', () => {
+    const processed =
+      /(Proteinpulver|Sojasauce|Tortilla|Gemüsebrühe|Kochschinken|Aufschnitt|Räucher|Schokolade|Gnocchi|Panko|Reiswaffel|Seitan|Zucker\b)/
+    for (const r of RECIPE_CATALOG.filter((x) => x.restrictions.includes('unprocessed'))) {
+      for (const ing of r.ingredients) expect(ing, r.id).not.toMatch(processed)
     }
   })
 
@@ -48,20 +89,22 @@ describe('RECIPE_CATALOG', () => {
   })
 
   it('deckt Mahlzeiten und Ernährungsweisen ausreichend ab', () => {
-    expect(count((r) => r.meal.includes('breakfast'))).toBeGreaterThanOrEqual(12)
-    expect(count((r) => r.meal.includes('lunch') || r.meal.includes('dinner'))).toBeGreaterThanOrEqual(24)
-    expect(count((r) => r.meal.includes('dinner') && r.minutes <= 15)).toBeGreaterThanOrEqual(8)
-    expect(count((r) => r.meal.includes('snack'))).toBeGreaterThanOrEqual(12)
-    expect(count((r) => r.restrictions.includes('vegan'))).toBeGreaterThanOrEqual(12)
-    expect(count((r) => r.restrictions.includes('vegetarian'))).toBeGreaterThanOrEqual(20)
+    expect(count((r) => r.meal.includes('breakfast'))).toBeGreaterThanOrEqual(40)
+    expect(count((r) => r.meal.includes('lunch') || r.meal.includes('dinner'))).toBeGreaterThanOrEqual(90)
+    expect(count((r) => r.meal.includes('dinner') && r.minutes <= 15)).toBeGreaterThanOrEqual(20)
+    expect(count((r) => r.meal.includes('snack'))).toBeGreaterThanOrEqual(40)
+    expect(count((r) => r.restrictions.includes('vegan'))).toBeGreaterThanOrEqual(35)
+    expect(count((r) => r.restrictions.includes('vegetarian'))).toBeGreaterThanOrEqual(80)
     expect(
       count((r) => r.restrictions.includes('pescetarian') && !r.restrictions.includes('vegetarian')),
-    ).toBeGreaterThanOrEqual(6)
-    expect(count((r) => r.restrictions.includes('unprocessed'))).toBeGreaterThanOrEqual(14)
-    expect(count((r) => r.macros.includes('keto'))).toBeGreaterThanOrEqual(8)
-    expect(count((r) => r.macros.includes('low_carb'))).toBeGreaterThanOrEqual(14)
-    expect(count((r) => r.macros.includes('high_protein'))).toBeGreaterThanOrEqual(20)
-    expect(count((r) => r.macros.includes('mediterranean'))).toBeGreaterThanOrEqual(8)
+    ).toBeGreaterThanOrEqual(18)
+    expect(count((r) => !r.restrictions.includes('pescetarian'))).toBeGreaterThanOrEqual(35)
+    expect(count((r) => r.restrictions.includes('unprocessed'))).toBeGreaterThanOrEqual(80)
+    expect(count((r) => r.macros.includes('keto'))).toBeGreaterThanOrEqual(12)
+    expect(count((r) => r.macros.includes('low_carb'))).toBeGreaterThanOrEqual(30)
+    expect(count((r) => r.macros.includes('high_protein'))).toBeGreaterThanOrEqual(80)
+    expect(count((r) => r.macros.includes('mediterranean'))).toBeGreaterThanOrEqual(35)
+    expect(count((r) => r.macros.includes('low_fat'))).toBeGreaterThanOrEqual(20)
   })
 
   it('bietet leichte und deftige Kalorienstufen', () => {
