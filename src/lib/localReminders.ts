@@ -4,6 +4,7 @@
 // Reine Logik – getestet in localReminders.test.ts.
 
 import type { NotifyKind, NotifyPrefs } from './notify'
+import { daySeed, reminderCopy, type ReminderCtx as CopyCtx, type ReminderKind } from '../../api/_reminderCopy.js'
 
 export interface ReminderCtx {
   now: Date
@@ -69,8 +70,6 @@ function at(day: Date, hhmm: string, offsetMin = 0): Date {
 /** 0 = Mo … 6 = So */
 const weekday = (d: Date) => (d.getDay() + 6) % 7
 
-const fmt = (n: number) => Math.round(n).toLocaleString('de-DE')
-
 export function planReminders(c: ReminderCtx): Reminder[] {
   const out: Reminder[] = []
   const n = c.notify
@@ -95,99 +94,74 @@ export function planReminders(c: ReminderCtx): Reminder[] {
   for (const off of [0, 1] as const) {
     const day = off === 0 ? today : tomorrow
     const isToday = off === 0
+    const seed = daySeed(day)
+    /** Gemeinsame Formulierungen (wie Web-Push): Titel + Text je Art */
+    const text = (k: ReminderKind, ctx: CopyCtx = {}, extra = 0) => reminderCopy(k, ctx, seed + extra)!
 
     // ---------- Ernährung ----------
     if (c.showNutrition) {
-      const meal = (kind: 'breakfast' | 'lunch' | 'dinner', title: string, body: string) => {
+      const meal = (kind: 'breakfast' | 'lunch' | 'dinner') => {
         const s = n[kind]
         if (!s.on || !s.time || (isToday && c.meals[kind])) return
-        add(kind, off, 0, at(day, s.time), title, body, '/nutrition?add=menu')
+        const t = text(kind, { kcalLeft: isToday ? c.kcalLeft : 0 })
+        add(kind, off, 0, at(day, s.time), t.title, t.body, '/nutrition?add=menu')
       }
-      meal('breakfast', 'Frühstück eintragen? 🍳', 'Ein Foto reicht – den Rest mache ich.')
-      meal('lunch', 'Was gab’s mittags? 🥗', 'Kurz eintragen, dann passt der Tag.')
-      meal(
-        'dinner',
-        'Abendessen 🍽️',
-        isToday && c.kcalLeft > 0 ? `Du hast noch ${fmt(c.kcalLeft)} kcal übrig.` : 'Kurz eintragen nicht vergessen.',
-      )
+      meal('breakfast')
+      meal('lunch')
+      meal('dinner')
 
-      if (n.water.on && n.water.time && (!isToday || c.waterMl < c.waterTarget / 2))
-        add(
-          'water',
-          off,
-          0,
-          at(day, n.water.time),
-          'Zeit für ein Glas Wasser 💧',
-          'Ein großes Glas jetzt?',
-          '/nutrition',
-        )
+      if (n.water.on && n.water.time && (!isToday || c.waterMl < c.waterTarget / 2)) {
+        const t = text('water', { drankL: isToday ? c.waterMl / 1000 : 0, targetL: c.waterTarget / 1000 })
+        add('water', off, 0, at(day, n.water.time), t.title, t.body, '/nutrition')
+      }
 
       const proteinLeft = c.proteinTarget - c.proteinEaten
-      if (n.protein.on && n.protein.time && c.proteinTarget > 0 && (!isToday || proteinLeft > c.proteinTarget / 4))
-        add(
-          'protein',
-          off,
-          0,
-          at(day, n.protein.time),
-          'Eiweiß fehlt noch 💪',
-          isToday ? `Noch ${fmt(proteinLeft)} g offen – Skyr oder Shake?` : 'Denk an dein Eiweißziel.',
-          '/nutrition',
-        )
+      if (n.protein.on && n.protein.time && c.proteinTarget > 0 && (!isToday || proteinLeft > c.proteinTarget / 4)) {
+        const t = text('protein', { missing: isToday ? proteinLeft : c.proteinTarget })
+        add('protein', off, 0, at(day, n.protein.time), t.title, t.body, '/nutrition')
+      }
 
       if (n.fasting.on && c.fasting) {
-        add('fasting', off, 0, at(day, c.fasting.open), 'Essensfenster offen 🍴', 'Guten Appetit!', '/nutrition')
-        add(
-          'fasting',
-          off,
-          1,
-          at(day, c.fasting.close, -30),
-          'Noch 30 Minuten 🕒',
-          'Dann schließt dein Essensfenster.',
-          '/nutrition',
-        )
+        const o = text('fasting_open', { end: c.fasting.close })
+        add('fasting', off, 0, at(day, c.fasting.open), o.title, o.body, '/nutrition')
+        const cl = text('fasting_close')
+        add('fasting', off, 1, at(day, c.fasting.close, -30), cl.title, cl.body, '/nutrition')
       }
 
       if (n.supplements.on)
         c.supplements
           .filter((s) => s.dayOffset === off && !s.taken)
           .slice(0, 9)
-          .forEach((s, i) =>
-            add('supplements', off, i, at(day, s.time), `${s.name} 💊`, 'Zeit für dein Supplement.', '/nutrition'),
-          )
+          .forEach((s, i) => {
+            const t = text('supplement', { name: s.name })
+            add('supplements', off, i, at(day, s.time), t.title, t.body, '/nutrition')
+          })
     }
 
     // ---------- Training ----------
     const planned = c.trainingDays.includes(ymd(day))
-    if (n.workout.on && n.workout.time && planned && !(isToday && c.trainedToday))
-      add(
-        'workout',
-        off,
-        0,
-        at(day, n.workout.time),
-        'Heute ist Trainingstag 🏋️',
-        isToday && c.nextWorkout ? `${c.nextWorkout} wartet auf dich.` : 'Dein Plan wartet auf dich.',
-        '/',
-      )
+    if (n.workout.on && n.workout.time && planned && !(isToday && c.trainedToday)) {
+      const t = text('workout', { plan: isToday ? c.nextWorkout : null })
+      add('workout', off, 0, at(day, n.workout.time), t.title, t.body, '/')
+    }
 
     // Sanft, ohne Schuldgefühle: nach 3+ Tagen Pause einmal erinnern
     const pause = c.daysSinceTraining == null ? null : c.daysSinceTraining + off
-    if (n.streak.on && n.streak.time && pause != null && pause >= 3 && !(isToday && c.trainedToday) && !planned)
-      add('streak', off, 0, at(day, n.streak.time), 'Lust auf Bewegung? 🙂', 'Schon 15 Minuten zählen.', '/')
+    if (n.streak.on && n.streak.time && pause != null && pause >= 3 && !(isToday && c.trainedToday) && !planned) {
+      const t = text('streak', { days: pause })
+      add('streak', off, 0, at(day, n.streak.time), t.title, t.body, '/')
+    }
 
     // ---------- Fortschritt ----------
-    if (n.weigh.on && n.weigh.time && (n.weigh.days ?? [0]).includes(weekday(day)))
-      add('weigh', off, 0, at(day, n.weigh.time), 'Kurz auf die Waage ⚖️', 'Morgens, vor dem Frühstück.', '/body')
+    if (n.weigh.on && n.weigh.time && (n.weigh.days ?? [0]).includes(weekday(day))) {
+      const t = text('weigh')
+      add('weigh', off, 0, at(day, n.weigh.time), t.title, t.body, '/body?weigh=1')
+    }
 
-    if (n.review.on && n.review.time && weekday(day) === 0)
-      add(
-        'review',
-        off,
-        0,
-        at(day, n.review.time),
-        'Dein Wochenfazit ist da 📊',
-        'Schau, wie deine Woche lief.',
-        '/profile?s=review',
-      )
+    if (n.review.on && n.review.time && weekday(day) === 0) {
+      const t = text('review')
+      add('review', off, 0, at(day, n.review.time), t.title, t.body, '/profile?s=review')
+    }
   }
 
   return out.sort((a, b) => a.at.getTime() - b.at.getTime())

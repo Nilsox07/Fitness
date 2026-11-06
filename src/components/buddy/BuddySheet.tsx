@@ -59,7 +59,7 @@ export function buddyTips(i: {
     : { icon: Zap, text: 'Schon 20 Minuten zählen – Hauptsache anfangen.', to: '/' }
   if (i.mood === 'hungry' && i.proteinLeft > 0) {
     return [
-      { icon: Sandwich, text: `Noch ${i.proteinLeft} g Eiweiß: Skyr, Thunfisch, Shake`, to: '/nutrition' },
+      { icon: Sandwich, text: `Noch ${i.proteinLeft} g Eiweiß bis zum Ziel`, to: '/nutrition' },
       { icon: Droplets, text: 'Ein großes Glas Wasser dazu.' },
     ]
   }

@@ -210,7 +210,7 @@ export function expectedShare(hour: number): number {
 /** Eiweiß-Idee passend zur offenen Menge. */
 export function proteinIdea(left: number): string {
   if (left > 60) return 'plan eine eiweißreiche Hauptmahlzeit ein (Hähnchen, Tofu, Fisch)'
-  if (left > 25) return 'z. B. 250 g Skyr oder ein Shake'
+  if (left > 25) return 'z. B. Joghurt, Quark, Eier oder Hülsenfrüchte'
   return 'ein Glas Milch oder ein paar Nüsse reichen'
 }
 
@@ -432,7 +432,7 @@ export function mealVerdictText(
   if (pShare < 0.12 && kcal >= 400)
     return ctx.goal === 'lose'
       ? `Viel Energie, wenig Eiweiß (${fmt(t.protein)} g) – dazu eine Eiweißquelle hilft.`
-      : `Wenig Eiweiß (${fmt(t.protein)} g) – ein Skyr oder Shake gleicht das aus.`
+      : `Wenig Eiweiß (${fmt(t.protein)} g) – eine Eiweißquelle dazu gleicht das aus.`
   if ((t.fiber ?? 0) >= 8) return `Ballaststoffreich (${fmt(t.fiber ?? 0)} g) – hält lange satt.`
   if (left != null && left >= 0) return `Passt ins Budget – danach noch ${fmt(left - kcal)} kcal frei.`
   return `${fmt(kcal)} kcal mit ${fmt(t.protein)} g Eiweiß.`

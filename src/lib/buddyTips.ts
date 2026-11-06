@@ -252,7 +252,7 @@ function nutritionProtein(proteinLeft: number, kcalLeft: number): Tip {
   return {
     key: 'food-protein',
     mood: 'hungry',
-    text: `Noch ${fmt(proteinLeft)} g Eiweiß offen – Skyr oder Shake?`,
+    text: `Noch ${fmt(proteinLeft)} g Eiweiß offen – plan die nächste Mahlzeit eiweißreich.`,
     ask: `Ich brauche heute noch ${fmt(proteinLeft)} g Eiweiß und habe ${fmt(Math.max(0, kcalLeft))} kcal übrig. Was soll ich essen?`,
   }
 }

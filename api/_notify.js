@@ -2,6 +2,7 @@
 // /api/cron/reminders alle 15 Minuten aufgerufen. Die Einstellungen liegen in
 // profiles.prefs.notify (+ prefs.tz), gepflegt unter Profil → Benachrichtigungen.
 
+import { reminderCopy } from './_reminderCopy.js'
 /** Standard je Art. time = lokale Uhrzeit „HH:MM“, days = Wochentage (0 = Mo … 6 = So). */
 export const NOTIFY_DEFAULTS = {
   breakfast: { on: false, time: '09:30' },
@@ -140,124 +141,28 @@ export function fastingDue(fasting, fastingStart, local) {
   return null
 }
 
-const pick = (arr, seed) => arr[Math.abs(seed) % arr.length]
-
-/** Text je Art. ctx enthält die nötigen Zahlen (nur was die Art braucht). */
+/** Text je Art (Formulierungen in _reminderCopy.js, gemeinsam mit der App) + Ziel-Seite/Aktionen. */
 export function message(kind, ctx = {}, seed = 0) {
-  switch (kind) {
-    case 'breakfast':
-      return {
-        title: 'Buddy: Frühstück schon drin? 🥣',
-        body: 'Kurz eintragen – dann passt der Rest vom Tag.',
-        url: '/nutrition',
-      }
-    case 'lunch':
-      return {
-        title: 'Buddy: Mittagspause? 🍽️',
-        body: pick(
-          [
-            'Trag dein Mittagessen ein, solange du noch weißt, was es war.',
-            'Foto vom Teller reicht – den Rest mache ich.',
+  const copy = reminderCopy(kind, ctx, seed)
+  if (!copy) return null
+  const url =
+    kind === 'workout' || kind === 'streak'
+      ? '/'
+      : kind === 'weigh' || kind === 'body'
+        ? '/body'
+        : kind === 'review'
+          ? '/profile?s=review'
+          : '/nutrition'
+  const extra =
+    kind === 'water'
+      ? {
+          actions: [
+            { action: 'water250', title: '+250 ml', url: '/nutrition?addwater=250' },
+            { action: 'water500', title: '+500 ml', url: '/nutrition?addwater=500' },
           ],
-          seed,
-        ),
-        url: '/nutrition',
-      }
-    case 'dinner':
-      return {
-        title: 'Buddy: Was gab’s zum Abendessen? 🍝',
-        body:
-          ctx.kcalLeft > 0
-            ? `Noch ${ctx.kcalLeft} kcal übrig heute – trag dein Abendessen ein.`
-            : 'Trag dein Abendessen ein, dann ist der Tag komplett.',
-        url: '/nutrition',
-      }
-    case 'water':
-      return {
-        title: 'Buddy: Trinkpause! 💧',
-        body: `Erst ${ctx.drankL} von ${ctx.targetL} l – ein großes Glas jetzt?`,
-        url: '/nutrition',
-        actions: [
-          { action: 'water250', title: '+250 ml', url: '/nutrition?addwater=250' },
-          { action: 'water500', title: '+500 ml', url: '/nutrition?addwater=500' },
-        ],
-      }
-    case 'protein':
-      return {
-        title: 'Buddy: Eiweiß fehlt noch 💪',
-        body: `Noch ${ctx.missing} g bis zu deinem Ziel – Skyr, Quark oder ein Shake?`,
-        url: '/nutrition',
-      }
-    case 'fasting_open':
-      return {
-        title: 'Essensfenster ist offen 🍳',
-        body: `Bis ${ctx.end} darfst du essen. Guten Appetit!`,
-        url: '/nutrition',
-      }
-    case 'fasting_close':
-      return {
-        title: 'Noch 30 Minuten Essensfenster ⏳',
-        body: 'Letzte Gelegenheit für eine eiweißreiche Mahlzeit.',
-        url: '/nutrition',
-      }
-    case 'workout':
-      return {
-        title: 'Buddy: Heute ist Trainingstag 🏋️',
-        body: ctx.plan
-          ? `${ctx.plan} steht an. Ich hab schon die Schuhe an!`
-          : 'Laut deinem Rhythmus ist heute Gym angesagt. Los geht’s!',
-        url: '/',
-      }
-    case 'streak':
-      return ctx.danger
-        ? {
-            title: 'Buddy: Unsere Serie wackelt! 🔥',
-            body: pick(
-              [
-                'Nur noch ein Training diese Woche und die Serie hält. Heute?',
-                'Keine Zeit? Ein 10-Minuten-Home-Workout zählt auch.',
-              ],
-              seed,
-            ),
-            url: '/',
-          }
-        : {
-            title: 'Buddy vermisst das Gym 😴',
-            body: pick(
-              [
-                `${ctx.days} Tage ohne Training – gehen wir heute?`,
-                `Schon ${ctx.days} Tage Pause. Komm, nur eine kurze Einheit!`,
-              ],
-              seed,
-            ),
-            url: '/',
-          }
-    case 'supplement':
-      return {
-        title: `💊 Zeit für ${ctx.name}`,
-        body: ctx.dose ? `${ctx.dose} – kurz abhaken, wenn erledigt.` : 'Kurz abhaken, wenn erledigt.',
-        url: '/nutrition',
-        actions: [{ action: 'taken', title: '✓ Genommen', url: `/nutrition?supp=${ctx.id}&slot=${ctx.slot}` }],
-      }
-    case 'weigh':
-      return {
-        title: 'Kurz auf die Waage ⚖️',
-        body: 'Morgens nüchtern wiegen – dann wird die Trendkurve genau.',
-        url: '/body',
-      }
-    case 'review':
-      return {
-        title: 'Dein Wochenfazit ist da ✨',
-        body: 'Buddy hat deine Woche ausgewertet – schau rein.',
-        url: '/profile?s=review',
-      }
-    case 'body':
-      return {
-        title: 'Zeit für ein Vergleichsfoto 📸',
-        body: 'Dein letztes Körperfoto ist über 8 Wochen alt – jetzt sieht man Unterschiede.',
-        url: '/body',
-      }
-    default:
-      return null
-  }
+        }
+      : kind === 'supplement'
+        ? { actions: [{ action: 'taken', title: 'Genommen', url: `/nutrition?supp=${ctx.id}&slot=${ctx.slot}` }] }
+        : {}
+  return { ...copy, url, ...extra }
 }

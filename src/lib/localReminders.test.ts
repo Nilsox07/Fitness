@@ -27,23 +27,34 @@ const base: ReminderCtx = {
   fasting: null,
 }
 
-const kinds = (r: ReturnType<typeof planReminders>) => r.map((x) => x.title)
+// Art über den festen ID-Bereich (die Texte wechseln täglich)
+type R = ReturnType<typeof planReminders>[number]
+const isKind = (base: number) => (x: R) => x.id >= base && x.id < base + 20
+const LUNCH = isKind(8020)
+const BREAKFAST = isKind(8000)
+const WORKOUT = isKind(8300)
+const supps = (r: R[]) => r.filter((x) => x.id >= 8200 && x.id < 8300)
 
 describe('Lokale Erinnerungen', () => {
   it('plant nur Zukünftiges und nur, was noch fehlt', () => {
     const r = planReminders(base)
     expect(r.every((x) => x.at > now)).toBe(true)
     // Mittag 13:30 heute fehlt noch → ja; Frühstück heute ist schon da und vorbei
-    expect(r.some((x) => x.title.startsWith('Was gab’s mittags') && x.at.getDate() === 28)).toBe(true)
-    expect(r.some((x) => x.title.startsWith('Frühstück') && x.at.getDate() === 28)).toBe(false)
+    expect(r.some((x) => LUNCH(x) && x.at.getDate() === 28)).toBe(true)
+    expect(r.some((x) => BREAKFAST(x) && x.at.getDate() === 28)).toBe(false)
     // Vitamin D heute 18:00 ja, Kreatin heute 08:00 ist vorbei
-    expect(r.filter((x) => x.title.startsWith('Kreatin')).map((x) => x.at.getDate())).toEqual([29])
+    expect(
+      supps(r)
+        .filter((x) => x.title.includes('Kreatin'))
+        .map((x) => x.at.getDate()),
+    ).toEqual([29])
+    expect(supps(r).some((x) => x.title.includes('Vitamin D') && x.at.getDate() === 28)).toBe(true)
   })
 
   it('Trainingstag nur an geplanten Tagen und nicht nach dem Training', () => {
-    expect(kinds(planReminders(base)).filter((t) => t.startsWith('Heute ist Trainingstag'))).toHaveLength(1)
+    expect(planReminders(base).filter((x) => WORKOUT(x) && x.at.getDate() === 28)).toHaveLength(1)
     expect(
-      kinds(planReminders({ ...base, trainedToday: true })).filter((t) => t.startsWith('Heute ist Trainingstag')),
+      planReminders({ ...base, trainedToday: true }).filter((x) => WORKOUT(x) && x.at.getDate() === 28),
     ).toHaveLength(0)
   })
 
@@ -66,5 +77,14 @@ describe('Lokale Erinnerungen', () => {
     const ids = r.map((x) => x.id)
     expect(new Set(ids).size).toBe(ids.length)
     expect(ids.every((i) => i >= 8000 && i <= 8499)).toBe(true)
+  })
+})
+
+describe('Formulierungen', () => {
+  it('nennen echte Zahlen und schreiben keine bestimmten Lebensmittel vor', () => {
+    const r = planReminders({ ...base, notify: { ...NOTIFY_DEFAULTS, protein: { on: true, time: '16:00' } } })
+    const p = r.find((x) => x.id >= 8080 && x.id < 8100 && x.at.getDate() === 28)!
+    expect(p.title).toContain('110 g')
+    expect(r.every((x) => !/Skyr|Shake/.test(x.title + x.body))).toBe(true)
   })
 })
