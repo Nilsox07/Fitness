@@ -3,7 +3,7 @@
 import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { enter } from '../components/home/motion'
 import { ProgressHeader, SectionLabel } from '../components/progress/ProgressHeader'
-import { Hero, HeroPill } from '../components/health/ui'
+import { Hero } from '../components/health/ui'
 import { JournalCheckIn } from '../components/journal/JournalCheckIn'
 import { HabitImpactList, impactLine } from '../components/journal/HabitImpactList'
 import { InfoTip } from '../components/ui/InfoTip'
@@ -11,7 +11,9 @@ import { useJournal } from '../hooks/useJournal'
 import { useJournalImpacts } from '../hooks/useRecovery'
 import { useUserPrefs } from '../hooks/usePrefsSync'
 import { usePrefs } from '../lib/prefs'
-import { localDate } from '../lib/day'
+import { localDate, shiftDate } from '../lib/day'
+
+const WD = ['M', 'D', 'M', 'D', 'F', 'S', 'S']
 import { JOURNAL_HABITS, MIN_TOTAL, habitLabel, journalStreak, trackedHabits } from '../lib/journal'
 
 export default function Journal() {
@@ -22,6 +24,7 @@ export default function Journal() {
   const { impacts } = useJournalImpacts()
   const today = localDate()
   const streak = journalStreak(entries, today)
+  const days = Array.from({ length: 14 }, (_, i) => shiftDate(today, i - 13))
   const tracked = trackedHabits(prefs.journalHabits)
   const found = impacts.filter((h) => h.status === 'ready' && h.main)
   const top = found[0]
@@ -50,10 +53,31 @@ export default function Journal() {
               ? `Noch ${MIN_TOTAL - logged} Tage eintragen – dann siehst du, was dich beeinflusst.`
               : 'Bisher kein deutlicher Einfluss – trag weiter ein.'}
         </p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <HeroPill value={logged} label="Tage eingetragen" />
-          <HeroPill value={found.length} label={found.length === 1 ? 'Einfluss gefunden' : 'Einflüsse gefunden'} />
+        {/* Letzte 14 Tage: Höhe = wie ausgeruht, Punkt = Gewohnheiten eingetragen */}
+        <div className="mt-4 flex h-16 items-end gap-1" role="img" aria-label="Journal der letzten 14 Tage">
+          {days.map((d) => {
+            const e = entries.find((x) => x.date === d)
+            const has = !!e && (e.tags.length > 0 || e.feel != null)
+            return (
+              <div key={d} className="flex flex-1 flex-col items-center gap-1">
+                <div className="flex h-11 w-full items-end">
+                  <div
+                    className={`w-full rounded-md ${
+                      e?.feel ? 'bg-brand' : has ? 'bg-brand/40' : 'bg-bg/10 dark:bg-white/10'
+                    } ${d === today ? 'ring-2 ring-bg/40 dark:ring-white/30' : ''}`}
+                    style={{ height: e?.feel ? `${(e.feel / 5) * 100}%` : has ? '20%' : '10%' }}
+                  />
+                </div>
+                <span className="text-[9px] text-bg/50 dark:text-cocoa-muted">
+                  {WD[(new Date(d + 'T12:00:00').getDay() + 6) % 7]}
+                </span>
+              </div>
+            )
+          })}
         </div>
+        <p className="mt-2 text-[11px] text-bg/60 dark:text-cocoa-light">
+          {logged} Tage eingetragen · {found.length} {found.length === 1 ? 'Einfluss' : 'Einflüsse'} gefunden
+        </p>
       </Hero>
 
       <section style={enter(2)}>

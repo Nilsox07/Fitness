@@ -6,11 +6,12 @@ import { Check } from 'lucide-react'
 import { useJournal, useSaveJournal } from '../../hooks/useJournal'
 import { useUserPrefs } from '../../hooks/usePrefsSync'
 import { localDate, shiftDate } from '../../lib/day'
+import { FEEL_ICON, habitIcon } from './habitIcons'
 import { FEEL_LABEL, defaultJournalDay, habitLabel, trackedHabits, type JournalEntry } from '../../lib/journal'
 
-const chip = (on: boolean) =>
-  `rounded-full px-3 py-2 text-sm font-semibold transition active:scale-95 ${
-    on ? 'bg-brand text-white' : 'bg-sand text-cocoa-light'
+const tile = (on: boolean) =>
+  `flex min-h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-2xl px-1.5 py-2 text-center transition active:scale-95 ${
+    on ? 'bg-brand text-white shadow-sm shadow-brand/30' : 'bg-sand text-cocoa-light'
   }`
 
 export function JournalCheckIn({ compact = false }: { compact?: boolean }) {
@@ -47,12 +48,15 @@ export function JournalCheckIn({ compact = false }: { compact?: boolean }) {
               role="radio"
               aria-checked={feel === v}
               onClick={() => write(today, { feel: feel === v ? null : v })}
-              className={`flex flex-col items-center rounded-xl py-2 transition active:scale-95 ${
+              className={`flex flex-col items-center rounded-2xl py-2.5 transition active:scale-95 ${
                 feel === v ? 'bg-brand text-white' : 'bg-sand text-cocoa-light'
               }`}
             >
-              <span className="tabular text-base font-bold leading-none">{v}</span>
-              <span className="mt-1 text-[10px] font-semibold leading-none">{FEEL_LABEL[v]}</span>
+              {(() => {
+                const Icon = FEEL_ICON[v]
+                return <Icon size={22} strokeWidth={feel === v ? 2.4 : 1.8} />
+              })()}
+              <span className="mt-1.5 text-[10px] font-semibold leading-none">{FEEL_LABEL[v]}</span>
             </button>
           ))}
         </div>
@@ -77,23 +81,24 @@ export function JournalCheckIn({ compact = false }: { compact?: boolean }) {
             ))}
           </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {habits.map((id) => (
-            <button
-              key={id}
-              onClick={() => toggle(id)}
-              aria-pressed={!!cur?.tags.includes(id)}
-              className={chip(!!cur?.tags.includes(id))}
-            >
-              {habitLabel(id)}
-            </button>
-          ))}
+        <div className="grid grid-cols-3 gap-1.5">
+          {habits.map((id) => {
+            const on = !!cur?.tags.includes(id)
+            const Icon = habitIcon(id)
+            return (
+              <button key={id} onClick={() => toggle(id)} aria-pressed={on} className={tile(on)}>
+                <Icon size={20} strokeWidth={on ? 2.3 : 1.8} />
+                <span className="line-clamp-2 text-[11px] font-semibold leading-tight">{habitLabel(id)}</span>
+              </button>
+            )
+          })}
           <button
             onClick={() => write(day, { tags: [] })}
             aria-pressed={!!cur && cur.tags.length === 0}
-            className={chip(!!cur && cur.tags.length === 0)}
+            className={tile(!!cur && cur.tags.length === 0)}
           >
-            Nichts davon
+            <Check size={20} />
+            <span className="text-[11px] font-semibold leading-tight">Nichts davon</span>
           </button>
         </div>
         {!compact && cur && (
