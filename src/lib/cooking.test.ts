@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ingredientKeywords,
+  ingredientsInStep,
   fmtDurationShort,
   fmtQty,
   fmtTimer,
@@ -72,5 +74,31 @@ describe('Nachkochen: Zeiten', () => {
     expect(fmtDurationShort(30)).toBe('30 Sek')
     expect(fmtDurationShort(600)).toBe('10 Min')
     expect(fmtDurationShort(5400)).toBe('1 Std 30 Min')
+  })
+})
+
+describe('Zutaten im Schritt', () => {
+  const ing = [
+    '60 g Haferflocken',
+    '150 g Magerquark',
+    '100 ml Milch (1,5 %)',
+    '100 g Beerenmischung (TK)',
+    '1 Prise Zimt',
+    '2 EL Olivenöl',
+  ]
+  it('findet Zutaten auch über Wortteile', () => {
+    expect(ingredientsInStep('Haferflocken, Quark, Milch und Zimt verrühren.', ing)).toEqual([
+      '60 g Haferflocken',
+      '150 g Magerquark',
+      '100 ml Milch (1,5 %)',
+      '1 Prise Zimt',
+    ])
+    expect(ingredientsInStep('Beeren darübergeben und kalt stellen.', ing)).toEqual(['100 g Beerenmischung (TK)'])
+    expect(ingredientsInStep('Öl in der Pfanne erhitzen.', ing)).toEqual([])
+    expect(ingredientsInStep('Das Olivenöl erhitzen.', ing)).toEqual(['2 EL Olivenöl'])
+  })
+  it('Kernwörter ohne Menge und Einheit', () => {
+    expect(ingredientKeywords('150 g Magerquark (0,2 %)')).toEqual(['magerquark'])
+    expect(ingredientKeywords('2 Zehen Knoblauch, gehackt')).toEqual(['knoblauch'])
   })
 })

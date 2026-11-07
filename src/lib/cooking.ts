@@ -105,3 +105,43 @@ export function fmtDurationShort(sec: number): string {
   if (h === 0) return `${m} Min`
   return m ? `${h} Std ${m} Min` : `${h} Std`
 }
+
+const UNITS = new Set(
+  'g kg mg ml l cl dl el tl msp prise prisen stück stk dose dosen bund zehe zehen scheibe scheiben handvoll becher pck packung päckchen glas tasse tassen spritzer schuss kugel kugeln blatt blätter stange stangen'.split(
+    ' ',
+  ),
+)
+const FILLER = new Set(
+  'frisch frische frischer gehackt gehackte gewürfelt gerieben geriebener natur klein kleine große groß optional nach geschmack etwas'.split(
+    ' ',
+  ),
+)
+const stem = (w: string) => w.toLowerCase().replace(/(en|er|e|n|s)$/, '')
+const words = (t: string) =>
+  t
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, ' ')
+    .split(/[^a-zäöüß]+/)
+    .filter((w) => w.length >= 3)
+
+/** Kernwörter einer Zutat ohne Menge/Einheit/Füllwörter: „150 g Magerquark (0,2 %)“ → [„magerquark“]. */
+export function ingredientKeywords(text: string): string[] {
+  const rest = text.replace(LEADING, '').trim()
+  return words(rest).filter((w) => !UNITS.has(w) && !FILLER.has(w) && w.length >= 4)
+}
+
+/**
+ * Welche Zutaten kommen in diesem Schritt vor? Erkennt auch Wortteile (Schritt „Quark“ ↔ Zutat
+ * „Magerquark“, „Beeren“ ↔ „Beerenmischung“). Gibt die (skalierten) Zutaten-Texte in Rezept-Reihenfolge zurück.
+ */
+export function ingredientsInStep(step: string, ingredients: readonly string[]): string[] {
+  const sw = words(step)
+    .filter((w) => w.length >= 4)
+    .map(stem)
+  return ingredients.filter((ing) =>
+    ingredientKeywords(ing).some((k) => {
+      const ks = stem(k)
+      return sw.some((w) => w.length >= 4 && (ks.includes(w) || w.includes(ks)))
+    }),
+  )
+}

@@ -3,7 +3,14 @@ import { createPortal } from 'react-dom'
 import { Check, ChefHat, ChevronLeft, Heart, Loader2, ShoppingBasket, Timer, X } from 'lucide-react'
 import { useBackClose } from '../../lib/backStack'
 import { cancelCookTimer, haptic, scheduleCookTimer } from '../../lib/native'
-import { fmtDurationShort, fmtTimer, parseStepDuration, portionFactor, scaleIngredient } from '../../lib/cooking'
+import {
+  fmtDurationShort,
+  fmtTimer,
+  ingredientsInStep,
+  parseStepDuration,
+  portionFactor,
+  scaleIngredient,
+} from '../../lib/cooking'
 import { addToShoppingList } from '../../lib/shoppingExtras'
 import { MEALS, MEAL_LABEL, type Meal, type SavedRecipe } from '../../types'
 import { fmtPortions, recipeTotals } from './recipeUtils'
@@ -109,6 +116,8 @@ export function CookMode({
   )
   const stepText = recipe.steps[stepIdx] ?? ''
   const stepSec = parseStepDuration(stepText)
+  // Zutaten dieses Schritts mit Menge (passend zur gewählten Portionenzahl)
+  const stepIngredients = useMemo(() => ingredientsInStep(stepText, ingredients), [stepText, ingredients])
 
   const pos = stages.indexOf(stage)
   const next = () => setStage(stages[Math.min(stages.length - 1, pos + 1)])
@@ -300,6 +309,18 @@ export function CookMode({
               {stepIdx + 1} von {recipe.steps.length}
             </p>
             <p className="text-2xl font-semibold leading-snug">{stepText}</p>
+            {stepIngredients.length > 0 && (
+              <div>
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">Dafür</p>
+                <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
+                  {stepIngredients.map((it) => (
+                    <li key={it} className="px-4 py-2.5 text-[15px]">
+                      <IngredientLine text={it} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {stepSec && !(timer && timer.step === stepIdx) && (
               <button
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand/10 py-3.5 font-semibold text-brand transition active:scale-[0.98]"
@@ -404,5 +425,17 @@ export function CookMode({
       </div>
     </div>,
     document.body,
+  )
+}
+
+/** Menge fett, Rest normal: „**150 g** Magerquark“. */
+function IngredientLine({ text }: { text: string }) {
+  const m = /^\s*([\d½¼¾⅓⅔⅛.,/–-]+\s*(?:[a-zA-ZäöüÄÖÜ.]{1,8}\b)?)\s*(.*)$/.exec(text)
+  if (!m || !/\d|[½¼¾⅓⅔⅛]/.test(m[1])) return <span>{text}</span>
+  return (
+    <span>
+      <span className="tabular font-semibold text-cocoa">{m[1].trim()}</span>{' '}
+      <span className="text-cocoa-light">{m[2]}</span>
+    </span>
   )
 }
