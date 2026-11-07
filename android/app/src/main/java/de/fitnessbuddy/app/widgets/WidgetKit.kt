@@ -64,6 +64,9 @@ internal object Req {
     const val FOOD_MENU = 24
     const val TRAIN_START = 25
     const val WEIGHT = 26
+    const val OUTDOOR = 27
+    const val OUTDOOR_CLOCK = 28
+    const val CARDIO = 29
 }
 
 /** 7:05 */
@@ -140,6 +143,8 @@ internal class Kit(val ctx: Context, val s: Snap) {
 
     /** Auf der dunklen Karte: Weiß als Füllung, Spur halb durchsichtig. */
     private val heroTrack = WidgetArt.alpha(Color.WHITE, 0.18f)
+    val heroTrackColor get() = heroTrack
+    val heroGold = ctx.getColor(R.color.hero_gold)
 
     /** Kurzer Wochentag für die Überzeile („TRAINING · MO“). */
     val day: String = arrayOf("MO", "DI", "MI", "DO", "FR", "SA", "SO")[LocalDate.now().dayOfWeek.value - 1]

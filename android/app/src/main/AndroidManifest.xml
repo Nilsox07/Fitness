@@ -141,6 +141,18 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_train_start_info" />
         </receiver>
+        <receiver android:name=".widgets.OutdoorWidget" android:exported="false" android:label="@string/widget_outdoor_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_outdoor_info" />
+        </receiver>
+        <receiver android:name=".widgets.CardioWidget" android:exported="false" android:label="@string/widget_cardio_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_cardio_info" />
+        </receiver>
         <receiver android:name=".widgets.WeightWidget" android:exported="false" android:label="@string/widget_weight_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -172,6 +184,8 @@
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Ungefährer Ort nur für das Wetter-Widget (auf Wunsch, in der App ausgelöst) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.VIBRATE" />

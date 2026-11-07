@@ -17,6 +17,10 @@
     <string name="widget_training_desc">Nächstes Training, Serie &amp; Wochenziel</string>
     <string name="widget_readiness_label">Tagesform</string>
     <string name="widget_readiness_desc">Tagesform, Schlaf &amp; Schritte von der Uhr</string>
+    <string name="widget_outdoor_label">Laufwetter</string>
+    <string name="widget_outdoor_desc">Uhrzeit, Wetter, beste Zeit zum Laufen oder Radfahren und was du anziehst</string>
+    <string name="widget_cardio_label">Ausdauer-Woche</string>
+    <string name="widget_cardio_desc">Kilometer dieser Woche, letzte Einheit und dein Ausdauer-Plan</string>
     <string name="widget_steps_label">Schritte</string>
     <string name="widget_steps_desc">Schritte heute gegen dein Ziel (mit Uhr)</string>
     <string name="widget_sleep_label">Schlaf</string>

@@ -10,6 +10,7 @@ import { DAY_CUTOFF_H } from '../../lib/day'
 import { fmtLiters } from '../../lib/nutritionHome'
 import { MEALS, MEAL_LABEL } from '../../types'
 import { Toggle } from './ui'
+import { WeatherLocation } from './WeatherLocation'
 import type { SetScheme, WarmupMode } from '../../lib/setScheme'
 
 const REST_DEFAULT = 120
@@ -255,6 +256,8 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
           }
         />
       </Section>
+
+      <WeatherLocation />
 
       {showNutrition && (
         <Section title="Ernährung">

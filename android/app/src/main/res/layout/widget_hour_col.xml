@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Eine Stunde im Outdoor-Widget: Uhrzeit, Symbol, Temperatur, Regen-Balken -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/col"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingTop="4dp"
+    android:paddingBottom="5dp">
+
+    <TextView
+        android:id="@+id/h_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="15"
+        android:textColor="@color/hero_text2"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/h_icon"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginTop="2dp"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/h_temp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:fontFeatureSettings="tnum"
+        android:text="9°"
+        android:textColor="@color/hero_text"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/h_rain"
+        android:layout_width="22dp"
+        android:layout_height="3dp"
+        android:layout_marginTop="3dp"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY" />
+</LinearLayout>

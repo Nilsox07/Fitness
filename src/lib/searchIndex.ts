@@ -338,6 +338,14 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     needs: 'watch',
   },
   {
+    id: 'weather-widget',
+    label: 'Laufwetter-Widget',
+    sub: 'Ort für Wetter auf dem Homescreen',
+    section: 'Einstellungen',
+    to: '/profile?s=settings',
+    keywords: 'wetter laufwetter radwetter widget homescreen uhrzeit standort ort regen temperatur',
+  },
+  {
     id: 'journal',
     label: 'Journal',
     sub: 'Gewohnheiten & was deinen Schlaf beeinflusst',

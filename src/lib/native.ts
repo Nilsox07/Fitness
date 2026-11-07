@@ -8,6 +8,7 @@
 
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import type { ActivityType } from '../types'
+import type { CardioSnap } from './outdoorWidget'
 
 export const isNative = (): boolean => Capacitor.isNativePlatform()
 
@@ -176,6 +177,10 @@ export interface WidgetSnapshot {
   /** KI verfügbar? false blendet Foto/Sagen im Essen-Widget aus */
   aiAvailable?: boolean
   trainedToday?: boolean
+  /** Ort fürs Wetter-Widget (≈ 1 km gerundet, nur auf dem Gerät) */
+  weather?: { lat: number; lon: number } | null
+  /** Ausdauer-Woche + Sportart (Widgets „Laufwetter“ und „Ausdauer-Woche“) */
+  cardio?: CardioSnap | null
 }
 
 interface AppWidgetsPlugin {

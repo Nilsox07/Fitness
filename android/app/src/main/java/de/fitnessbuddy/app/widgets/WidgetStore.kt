@@ -39,6 +39,8 @@ object WidgetStore {
         FoodLogWidget::class.java,
         TrainingStartWidget::class.java,
         WeightWidget::class.java,
+        OutdoorWidget::class.java,
+        CardioWidget::class.java,
     )
 
     /** Tageswerte, die nach Mitternacht nicht mehr gelten. */

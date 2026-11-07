@@ -1,9 +1,10 @@
 import { useBodyWeights } from '../hooks/useBodyWeight'
 import { useAiGate } from '../hooks/usePremium'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { useHealthSync } from '../hooks/useHealth'
+import { useHealthActivities, useHealthSync } from '../hooks/useHealth'
+import { WEATHER_LOC_EVENT, cardioSnapshot, getWeatherLoc } from '../lib/outdoorWidget'
 import { useToday } from '../hooks/useToday'
 import { useSetWater } from '../hooks/useWater'
 import { usePrefs } from '../lib/prefs'
@@ -154,6 +155,13 @@ function NativeSyncInner() {
   const level = useBuddyLevel()
   const quests = useQuests()
   const { data: supps = [] } = useSupplements()
+  const { data: cardioActs } = useHealthActivities(30)
+  const [weatherLoc, setLoc] = useState(getWeatherLoc)
+  useEffect(() => {
+    const on = () => setLoc(getWeatherLoc())
+    window.addEventListener(WEATHER_LOC_EVENT, on)
+    return () => window.removeEventListener(WEATHER_LOC_EVENT, on)
+  }, [])
   const { data: suppLog = [] } = useSupplementLog(t.day)
   useEffect(() => {
     if (t.loading) return
@@ -215,6 +223,16 @@ function NativeSyncInner() {
       weightKg: lastWeight,
       aiAvailable,
       trainedToday: t.trainedToday,
+      weather: weatherLoc,
+      cardio:
+        hasWatch || prefs.cardioPlan
+          ? cardioSnapshot({
+              acts: hasWatch ? (cardioActs ?? []) : [],
+              today: t.day,
+              plan: prefs.cardioPlan,
+              cardioDone: prefs.cardioDone,
+            })
+          : null,
     })
   }, [
     t,
@@ -230,6 +248,10 @@ function NativeSyncInner() {
     fastingStart,
     lastWeight,
     aiAvailable,
+    weatherLoc,
+    cardioActs,
+    prefs.cardioPlan,
+    prefs.cardioDone,
   ])
 
   // Buddy als Bild für die Widgets (gleiches Aussehen wie in der App)

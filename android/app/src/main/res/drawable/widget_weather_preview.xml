@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vorschau-Symbol (Sonne), bis das Widget gezeichnet ist -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="#F5B83D" />
+    <size android:width="20dp" android:height="20dp" />
+</shape>

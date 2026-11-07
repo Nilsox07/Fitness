@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Laufwetter (2×2): Uhrzeit, Wetter jetzt, Einschätzung + Kleidung -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    style="@style/WidgetFb.Hero">
+
+    <ImageView android:id="@+id/art" style="@style/WidgetFb.Art" />
+
+    <LinearLayout
+        android:id="@+id/content"
+        style="@style/WidgetFb.HeroContent"
+        android:paddingBottom="12dp">
+
+        <TextClock
+            android:id="@+id/clock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-black"
+            android:format12Hour="h:mm"
+            android:format24Hour="H:mm"
+            android:includeFontPadding="false"
+            android:letterSpacing="-0.03"
+            android:textColor="@color/hero_text"
+            android:textSize="34sp" />
+
+        <TextClock
+            android:id="@+id/date"
+            style="@style/WidgetFb.HeroBody"
+            android:textSize="11sp"
+            android:format12Hour="EEE, d. MMM"
+            android:format24Hour="EEE, d. MMM" />
+
+        <FrameLayout style="@style/WidgetFb.Fill" />
+
+        <LinearLayout
+            android:id="@+id/now_box"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/icon"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="4dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_weather_preview" />
+
+            <TextView
+                android:id="@+id/temp"
+                style="@style/WidgetFb.HeroNumber"
+                android:textSize="24sp"
+                android:text="8°" />
+
+            <TextView
+                android:id="@+id/feel"
+                style="@style/WidgetFb.HeroBody"
+                android:layout_marginStart="6dp"
+                android:textSize="10sp"
+                android:text="gefühlt 5°" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/headline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Top Laufwetter"
+            android:textColor="@color/hero_text"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tip"
+            style="@style/WidgetFb.HeroBody"
+            android:textSize="11sp"
+            android:text="Langarm + Tights" />
+    </LinearLayout>
+</FrameLayout>

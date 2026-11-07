@@ -147,6 +147,13 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Homescreen-Widgets „Laufwetter“ & „Ausdauer-Woche“** (`widgets/OutdoorWidgets.kt`): Laufwetter = TextClock
+  (Uhr antippen → Wecker), Datum, Wetter jetzt, Einschätzung + Kleidungstipp je Sportart (Plan bzw. häufigste
+  Aktivität), beste Stunde bei Tageslicht, ab 4×3 die nächsten Stunden. Logik rein in `Outdoor.kt` (JUnit
+  `OutdoorTest`), Wetter von Bright Sky/DWD (`WeatherRepo.kt`, ohne Schlüssel, alle 30 min, Cache).
+  Ort: Profil → Einstellungen → „Wetter-Widget“ (ungefährer Standort, auf ~1 km gerundet, nur lokal
+  `weather_loc`). Ausdauer-Woche: km je Tag, letzte Einheit, Plan-Zeile (`src/lib/outdoorWidget.ts`).
+  RemoteViews: keine nackten `<View>` verwenden (Trenner als FrameLayout).
 - **Ohne Uhr:** Vitamine waren nie an die Uhr gebunden, kommen aber nur über Foto/Beschreiben/Barcode – MicroCard
   erklärt das, Mahlzeit-Analyse zeigt die Top-Nährstoffe (`MealMicros`). Belastungs-Insight läuft auch nur aus
   Kraftsätzen. Das Modul heißt „Uhr & Health Connect“ (auch Handy-Schritte). Tagesform bleibt Uhr-only (braucht
