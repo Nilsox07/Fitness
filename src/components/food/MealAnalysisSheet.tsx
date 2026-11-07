@@ -1,3 +1,4 @@
+import { MealMicros } from '../nutrition-home/MicroCard'
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Loader2, RotateCcw, Sparkles, TriangleAlert, UtensilsCrossed, X } from 'lucide-react'
@@ -412,6 +413,7 @@ function ReadyBody({
               </div>
               <MacroBar protein={totals.protein} carbs={totals.carbs} fat={totals.fat} />
               <FiberBar fiber={totals.fiber} target={fiberGoal} />
+              <MealMicros items={values} />
             </Section>
 
             <Section title="Für deinen Tag">

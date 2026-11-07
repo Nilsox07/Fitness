@@ -717,11 +717,11 @@ export function buildInsights(i: InsightInput): Insight[] {
   const need = i.sleepNeedMin ?? 480
   const maxHr = i.maxHr ?? 190
 
-  if (i.hasWatch) {
-    // Belastung
-    const lr = loadRatio(dailyLoad(acts, sets, maxHr), today)
-    if (lr) out.push(loadInsight(lr))
+  // Belastung: klappt auch ohne Uhr (nur aus den Kraftsätzen), mit Uhr zusätzlich Ausdauer
+  const lr = loadRatio(dailyLoad(i.hasWatch ? acts : [], sets, maxHr), today)
+  if (lr) out.push(loadInsight(lr))
 
+  if (i.hasWatch) {
     // Herz
     const vo2 = vo2Trend(daily, today)
     if (vo2) {

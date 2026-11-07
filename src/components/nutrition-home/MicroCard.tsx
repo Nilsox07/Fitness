@@ -2,7 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { InfoTip } from '../ui/InfoTip'
 import type { FoodEntry, Sex } from '../../types'
-import { MICRO_INFO, fmtMicro, lowest, microDay } from '../../lib/micros'
+import { MICRO_INFO, fmtMicro, lowest, microDay, type Micros } from '../../lib/micros'
 
 /**
  * Vitamine & Mineralstoffe des Tages (geschätzt): eine Zeile mit dem Knappsten,
@@ -11,7 +11,21 @@ import { MICRO_INFO, fmtMicro, lowest, microDay } from '../../lib/micros'
 export function MicroCard({ entries, sex, style }: { entries: FoodEntry[]; sex: Sex | null; style?: CSSProperties }) {
   const [open, setOpen] = useState(false)
   const day = useMemo(() => microDay(entries, sex), [entries, sex])
-  if (!day) return null
+  if (!day) {
+    if (!entries.length) return null
+    // Einträge da, aber ohne Vitamin-Daten (z. B. manuell oder ältere Einträge) – kurz erklären statt verstecken
+    return (
+      <section className="card px-4 py-3" style={style}>
+        <InfoTip
+          className="text-sm"
+          info="Vitamine und Mineralstoffe schätzt Buddy, wenn du per Foto oder „Beschreiben“ einträgst. Bei Barcode-Produkten zählen die Angaben der Packung, falls vorhanden. Manuelle und ältere Einträge haben keine Vitamin-Daten."
+        >
+          <span className="font-semibold">Vitamine & Mineralstoffe</span>
+          <span className="block text-xs text-cocoa-muted">Kommen mit Foto, Beschreiben oder Barcode</span>
+        </InfoTip>
+      </section>
+    )
+  }
   const low = lowest(day)
   const partial = day.coverage < 0.6
 
@@ -77,5 +91,45 @@ export function MicroCard({ entries, sex, style }: { entries: FoodEntry[]; sex: 
         </div>
       )}
     </section>
+  )
+}
+
+/** Vitamine einer Mahlzeit (Analyse): die vier stärksten als kleine Balken, Anteil am Tagesbedarf. */
+export function MealMicros({
+  items,
+  sex = null,
+}: {
+  items: { kcal: number; micros?: Micros | null }[]
+  sex?: Sex | null
+}) {
+  const day = microDay(items, sex)
+  if (!day) return null
+  const top = [...day.rows]
+    .filter((r) => r.share >= 0.08)
+    .sort((a, b) => b.share - a.share)
+    .slice(0, 4)
+  if (!top.length) return null
+  return (
+    <div>
+      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
+        Vitamine & Mineralstoffe · vom Tagesbedarf
+      </p>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        {top.map((r) => (
+          <div key={r.key}>
+            <div className="flex items-baseline justify-between text-xs">
+              <span className="font-medium text-cocoa">{r.label}</span>
+              <span className="tabular text-cocoa-muted">{Math.round(r.share * 100)} %</span>
+            </div>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sand">
+              <div
+                className={`h-full rounded-full ${r.share >= 1 ? 'bg-success' : 'bg-brand'}`}
+                style={{ width: `${Math.max(4, Math.min(1, r.share) * 100)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }

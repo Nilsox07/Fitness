@@ -639,8 +639,8 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
               />
               <ToggleCard
                 icon={<Watch size={20} />}
-                label="Smartwatch"
-                sub="Schlaf, Puls & Schritte"
+                label="Uhr & Health Connect"
+                sub="Schlaf & Puls – Schritte auch vom Handy"
                 on={useWatch}
                 onChange={setUseWatch}
               />

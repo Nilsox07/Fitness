@@ -157,8 +157,8 @@ export function ModuleSettings() {
         <ModuleRow
           icon={<Watch size={19} />}
           tint="bg-sand text-cocoa-light"
-          title="Smartwatch"
-          hint="Laufen, Rad, Schlaf, Schritte & Tagesform"
+          title="Uhr & Health Connect"
+          hint="Schlaf, Puls, Tagesform – Schritte & Aktivitäten auch vom Handy"
         >
           <Switch on={hasWatch} label="Smartwatch" onChange={(v) => (v ? enableWatch() : setHasWatch(false))} />
         </ModuleRow>

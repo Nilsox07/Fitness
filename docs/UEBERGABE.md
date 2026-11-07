@@ -134,6 +134,13 @@ einer App, aber nur das sichtbar, was man nutzt.
   letzten Mal (Anzahl Arbeitssätze, Drop, Aufwärmen), neue nach eigenem Schema (Standard 3 Sätze, Aufwärmen
   automatisch = erste Übung je Muskel, kein Drop). Einstellbar unter Profil → Einstellungen. Die KI prüft den
   Aufwärmsatz nur bei „Auto“ und wenn bei der Übung sonst aufgewärmt wird.
+- **Satz-Zeile** (`CompactSetRow.tsx`): Typ-Knopf (Zahl / Flamme / Pfeil) · kg-Stepper · Wdh.-Stepper · Haken, alles
+  48 px hoch, Einheit im Feld, keine Kopfzeile/„Vorher“-Spalte mehr. Darunter „Letztes Mal 55 kg × 11“ – antippen
+  übernimmt die Werte und hakt ab.
+- **Ohne Uhr:** Vitamine waren nie an die Uhr gebunden, kommen aber nur über Foto/Beschreiben/Barcode – MicroCard
+  erklärt das, Mahlzeit-Analyse zeigt die Top-Nährstoffe (`MealMicros`). Belastungs-Insight läuft auch nur aus
+  Kraftsätzen. Das Modul heißt „Uhr & Health Connect“ (auch Handy-Schritte). Tagesform bleibt Uhr-only (braucht
+  Schlaf/Puls).
 - **Vitamine & Mineralstoffe** (`src/lib/micros.ts`, Karte `MicroCard`): KI schätzt je Lebensmittel Vitamin C, D,
   B12, Folat, Eisen, Calcium, Magnesium, Zink, Kalium (`food_entries.micros` jsonb, Migration 0045); Barcode-Produkte
   nehmen OFF-Angaben. Tagessumme gegen DGE-Referenz (Frauen eigene Werte), Hinweis „Noch wenig: …“ (ohne Vitamin D).

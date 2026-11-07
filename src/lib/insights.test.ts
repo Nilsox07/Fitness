@@ -515,3 +515,16 @@ describe('Erkenntnisse mit Grafik', () => {
     expect(debt.viz).toEqual({ kind: 'meter', value: 6, max: 10, lo: 8 })
   })
 })
+
+describe('ohne Uhr', () => {
+  it('Belastung aus Kraftsätzen auch ohne Uhr', () => {
+    const today = '2026-11-07'
+    const dates: string[] = []
+    for (let d = 0; d < 28; d++) {
+      const day = new Date(Date.parse(today + 'T12:00:00Z') - d * 86400000).toISOString().slice(0, 10)
+      if (d % 2 === 0) for (let k = 0; k < (d < 7 ? 30 : 12); k++) dates.push(day)
+    }
+    const out = buildInsights({ today, hasWatch: false, strengthSetDates: dates })
+    expect(out.some((x) => x.id.startsWith('load'))).toBe(true)
+  })
+})

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { haptic } from '../../lib/native'
-import { Check, Minus, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, Check, Flame, Minus, Plus, Trash2 } from 'lucide-react'
 import { useDeleteSet, useUpdateSet } from '../../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../../lib/weights'
 import { SET_TYPES, SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../../types'
@@ -32,6 +32,7 @@ function MiniStepper({
   step = 1,
   steps,
   dim,
+  unit,
 }: {
   label: string
   value: number
@@ -39,6 +40,8 @@ function MiniStepper({
   step?: number
   steps?: number[]
   dim?: boolean
+  /** Einheit klein unter der Zahl („kg“, „Wdh.“) */
+  unit?: string
 }) {
   const hasLadder = !!steps && steps.length > 0
   const [text, setText] = useState(fmtInput(value))
@@ -60,55 +63,48 @@ function MiniStepper({
   }
 
   return (
-    <div className="flex min-w-0 items-stretch overflow-hidden rounded-xl bg-sand">
+    <div className="flex h-12 min-w-0 items-stretch overflow-hidden rounded-xl bg-sand">
       <button
         type="button"
-        className="grid w-6 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
+        className="grid w-8 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
         onClick={() => adjust(-step)}
         aria-label={`${label} verringern`}
       >
-        <Minus size={14} strokeWidth={2.5} />
+        <Minus size={16} strokeWidth={2.5} />
       </button>
-      <input
-        type="text"
-        inputMode={Number.isInteger(step) ? 'numeric' : 'decimal'}
-        className={`tabular w-full min-w-0 bg-transparent px-0 py-2 text-center font-semibold outline-none focus:bg-sand-light focus:ring-2 focus:ring-inset focus:ring-brand ${
-          text.length >= 5 ? 'text-sm tracking-tight' : 'text-[15px]'
-        } ${dim ? 'text-cocoa-muted' : 'text-cocoa'}`}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onFocus={(e) => e.currentTarget.select()}
-        onBlur={(e) => commit(e.target.value)}
-        aria-label={label}
-      />
+      <label className="flex min-w-0 flex-1 flex-col items-center justify-center focus-within:bg-sand-light focus-within:ring-2 focus-within:ring-inset focus-within:ring-brand">
+        <input
+          type="text"
+          inputMode={Number.isInteger(step) ? 'numeric' : 'decimal'}
+          className={`tabular w-full min-w-0 bg-transparent p-0 text-center font-bold leading-none outline-none ${
+            text.length >= 5 ? 'text-base tracking-tight' : 'text-lg'
+          } ${dim ? 'text-cocoa-muted' : 'text-cocoa'}`}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onFocus={(e) => e.currentTarget.select()}
+          onBlur={(e) => commit(e.target.value)}
+          aria-label={label}
+        />
+        {unit && <span className="mt-0.5 text-[10px] font-medium leading-none text-cocoa-muted">{unit}</span>}
+      </label>
       <button
         type="button"
-        className="grid w-6 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
+        className="grid w-8 shrink-0 place-items-center text-cocoa-light transition active:bg-sand-dark"
         onClick={() => adjust(step)}
         aria-label={`${label} erhöhen`}
       >
-        <Plus size={14} strokeWidth={2.5} />
+        <Plus size={16} strokeWidth={2.5} />
       </button>
     </div>
   )
 }
 
-// Schmale „Vorher"-Spalte + enger Abstand, damit auch „102,5" bei 390 px Breite ins Feld passt.
-const GRID = 'grid grid-cols-[2rem_2.75rem_minmax(0,1fr)_minmax(0,1fr)_2.25rem] items-center gap-1'
+// Satz · Gewicht · Wiederholungen · Haken – Einheiten stehen in den Feldern, „letztes Mal“ darunter.
+const GRID = 'grid grid-cols-[2.25rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-1.5'
 
-/** Spaltenköpfe passend zu den Zeilen. */
+/** Früher Spaltenköpfe – die Felder sind jetzt selbst beschriftet. */
 export function SetTableHeader() {
-  return (
-    <div className={`${GRID} px-1 text-[10px] font-semibold uppercase tracking-wide text-cocoa-muted`}>
-      <span className="text-center">Satz</span>
-      <span>Vorher</span>
-      <span className="text-center">kg</span>
-      <span className="text-center">Wdh</span>
-      <span className="grid place-items-center">
-        <Check size={12} strokeWidth={3} />
-      </span>
-    </div>
-  )
+  return null
 }
 
 /**
@@ -248,37 +244,12 @@ export function CompactSetRow({
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className={`relative h-9 rounded-xl text-sm font-bold tabular ${
+            className={`grid h-12 place-items-center rounded-xl text-sm font-bold tabular ${
               s.set_type === 'working' ? 'text-cocoa' : 'text-cocoa-light'
             } ${open ? 'bg-sand-dark' : 'bg-sand'}`}
-            aria-label="Satz-Optionen"
+            aria-label={`${SET_TYPE_LABEL[s.set_type]} – Optionen`}
           >
-            {badge}
-            {!s.to_failure && s.set_type !== 'warmup' && (
-              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-cocoa-muted" />
-            )}
-          </button>
-          <button
-            type="button"
-            disabled={!prev}
-            onClick={() => {
-              // Wie bei Hevy: „Vorher“ antippen übernimmt Gewicht & Wiederholungen
-              if (!prev) return
-              update.mutate({
-                id: s.id,
-                weight: prev.weight,
-                reps: prev.reps,
-                ...(uni
-                  ? { weight_right: prev.weight_right ?? prev.weight, reps_right: prev.reps_right ?? prev.reps }
-                  : {}),
-              })
-              // Wdh > 0 = Satz erledigt → Pause starten wie beim ✓
-              fireDone()
-            }}
-            aria-label={prev ? `Wie letztes Mal: ${fmt(prev.weight)} kg × ${prev.reps}` : 'Kein Vorwert'}
-            className="tabular truncate rounded-md text-left text-xs text-cocoa-muted active:bg-sand"
-          >
-            {prev ? `${fmt(prev.weight)}×${prev.reps}` : '–'}
+            {s.set_type === 'warmup' ? <Flame size={16} /> : s.set_type === 'drop' ? <ArrowDown size={16} /> : badge}
           </button>
           <MiniStepper
             label="Gewicht"
@@ -286,39 +257,80 @@ export function CompactSetRow({
             step={exercise.increment}
             steps={steps}
             dim={!done}
+            unit="kg"
             onChange={(weight) => update.mutate({ id: s.id, weight })}
           />
-          <MiniStepper label="Wdh" value={s.reps} dim={!done} onChange={(v, via) => setReps('reps', v, via)} />
+          <MiniStepper
+            label="Wiederholungen"
+            value={s.reps}
+            dim={!done}
+            unit="Wdh."
+            onChange={(v, via) => setReps('reps', v, via)}
+          />
           <button
             type="button"
             onClick={complete}
             aria-label={done ? 'Satz erledigt' : 'Satz abhaken'}
-            className={`grid h-9 w-9 place-items-center rounded-xl transition active:scale-90 ${
+            className={`grid h-12 w-11 place-items-center rounded-xl transition active:scale-90 ${
               done ? 'anim-check bg-success text-white shadow-sm shadow-success/30' : 'bg-sand text-cocoa-muted'
             }`}
           >
-            <Check size={18} strokeWidth={3} />
+            <Check size={20} strokeWidth={3} />
           </button>
         </div>
 
+        {/* Satz-Art + letztes Mal (antippen = übernehmen) */}
+        {(s.set_type !== 'working' || prev) && (
+          <div className="mt-1 flex items-center gap-2 pl-[2.6rem] text-xs text-cocoa-muted">
+            {s.set_type !== 'working' && (
+              <span className="font-semibold text-cocoa-light">
+                {s.set_type === 'warmup' ? 'Aufwärmsatz' : 'Dropsatz'}
+              </span>
+            )}
+            {s.set_type !== 'working' && prev && <span aria-hidden>·</span>}
+            {prev && (
+              <button
+                type="button"
+                className="tabular truncate rounded-md py-0.5 text-left active:bg-sand"
+                aria-label={`Wie letztes Mal übernehmen: ${fmt(prev.weight)} kg × ${prev.reps}`}
+                onClick={() => {
+                  update.mutate({
+                    id: s.id,
+                    weight: prev.weight,
+                    reps: prev.reps,
+                    ...(uni
+                      ? { weight_right: prev.weight_right ?? prev.weight, reps_right: prev.reps_right ?? prev.reps }
+                      : {}),
+                  })
+                  fireDone()
+                }}
+              >
+                Letztes Mal{' '}
+                <span className="font-semibold text-cocoa-light">
+                  {fmt(prev.weight)} kg × {prev.reps}
+                </span>
+              </button>
+            )}
+          </div>
+        )}
+
         {uni && (
           <div className={`${GRID} mt-1`}>
-            <span className="text-center text-[10px] font-semibold text-cocoa-muted">R</span>
-            <span className="truncate text-xs text-cocoa-muted">
-              {prev?.reps_right != null ? `${fmt(prev.weight_right ?? prev.weight)}×${prev.reps_right}` : ''}
-            </span>
+            <span className="text-center text-[10px] font-semibold text-cocoa-muted">rechts</span>
             <MiniStepper
               label="Gewicht rechts"
               value={s.weight_right ?? 0}
               step={exercise.increment}
               steps={steps}
               dim={!done}
+              unit="kg"
               onChange={(weight_right) => update.mutate({ id: s.id, weight_right })}
             />
             <MiniStepper
               label="Wdh rechts"
               value={s.reps_right ?? 0}
               dim={!done}
+              unit="Wdh."
               onChange={(v, via) => setReps('reps_right', v, via)}
             />
             <span />
