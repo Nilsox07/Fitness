@@ -1,9 +1,9 @@
 import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { enter } from '../components/home/motion'
 import { ProgressHeader, SectionLabel } from '../components/progress/ProgressHeader'
-import { Hero, Stat } from '../components/health/ui'
+import { Group, GroupRow, Hero, IconBox, Stat } from '../components/health/ui'
 import { Hypnogram, MetricCard, RangeBar, SeriesChart, StatusChip } from '../components/health/Charts'
 import { FactorChips, ReadinessFactors } from '../components/health/ReadinessFactors'
 import { WeekPicker } from '../components/ui/WeekPicker'
@@ -14,13 +14,19 @@ import { useToday } from '../hooks/useToday'
 import { STAGE, hoursText, missingReadinessInputs, sleepScore, sleepStats } from '../lib/health'
 import { loadByDay, readinessOn } from '../lib/insights'
 import { dayLabel, localDate, shiftDate } from '../lib/day'
+import { useUserPrefs } from '../hooks/usePrefsSync'
+import { useSleepPlan } from '../hooks/useRecovery'
+import { SleepPlanCard } from '../components/health/SleepPlanCard'
+import { NotebookPen } from 'lucide-react'
 
-const NEED_MIN = 480
 const clock = (iso: string) => new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 
 /** Fortschritt → Schlaf & Erholung: Tag wählen, Tagesform mit Einflüssen, die Nacht im Detail, Verlauf. */
 export default function Sleep() {
   const heroBuddy = useHeroBuddy('sleep')
+  const navigate = useNavigate()
+  const NEED_MIN = useUserPrefs().prefs.sleepGoalMin
+  const plan = useSleepPlan()
   const t = useToday()
   const { data: nights = [], isLoading } = useHealthSleep(30)
   const { data: daily = [] } = useHealthDaily(30)
@@ -118,6 +124,13 @@ export default function Sleep() {
           </>
         )}
       </Hero>
+
+      {isToday && plan && (
+        <section style={enter(3)}>
+          <SectionLabel>Heute Nacht</SectionLabel>
+          <SleepPlanCard plan={plan} />
+        </section>
+      )}
 
       {r && r.factors.length > 0 && (
         <section style={enter(3)}>
@@ -312,7 +325,7 @@ export default function Sleep() {
                 className="tabular absolute left-0 text-[9px] text-cocoa-muted"
                 style={{ bottom: (m / MAX_MIN) * BAR_H + 14 - 5 }}
               >
-                {m / 60} h
+                {Math.round(m / 60)} h
               </span>
             ))}
             <div className="relative flex items-end gap-1" style={{ height: BAR_H + 18 }}>
@@ -363,7 +376,7 @@ export default function Sleep() {
               </span>
             )}
             <span className="flex items-center gap-1">
-              <span className="w-3 border-t border-dashed border-cocoa-muted" /> Ziel {NEED_MIN / 60} h
+              <span className="w-3 border-t border-dashed border-cocoa-muted" /> Ziel {hoursText(NEED_MIN)}
             </span>
           </div>
           {stats && (
@@ -375,6 +388,19 @@ export default function Sleep() {
           )}
         </MetricCard>
       )}
+
+      <Group>
+        <GroupRow
+          leading={
+            <IconBox>
+              <NotebookPen size={18} />
+            </IconBox>
+          }
+          title="Journal"
+          sub="Was deinen Schlaf beeinflusst"
+          onClick={() => navigate('/journal')}
+        />
+      </Group>
     </div>
   )
 }

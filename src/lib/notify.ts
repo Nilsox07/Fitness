@@ -16,6 +16,7 @@ export type NotifyKind =
   | 'review'
   | 'body'
   | 'social'
+  | 'bedtime'
 
 export interface NotifySetting {
   on: boolean
@@ -41,6 +42,7 @@ export const NOTIFY_DEFAULTS: NotifyPrefs = {
   review: { on: true, time: '09:00' },
   body: { on: true, time: '10:00' },
   social: { on: true },
+  bedtime: { on: true },
 }
 
 export type NotifyGroup = 'Ernährung' | 'Training' | 'Fortschritt' | 'Community'
@@ -95,6 +97,12 @@ export const NOTIFY_ITEMS: NotifyItem[] = [
     group: 'Fortschritt',
     label: 'Vergleichsfoto',
     hint: 'Sonntags, wenn dein letztes Foto 8 Wochen alt ist',
+  },
+  {
+    kind: 'bedtime',
+    group: 'Fortschritt',
+    label: 'Schlafenszeit',
+    hint: '30 min vor deiner empfohlenen Zubettgehzeit (mit Uhr)',
   },
   {
     kind: 'social',

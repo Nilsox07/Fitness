@@ -25,7 +25,7 @@ import { PHASE_LABEL, readinessEffect, trainingHint } from '../lib/cycle'
 import { useAllSets } from './useWorkouts'
 import { usePlans } from './usePlans'
 import { useStreakState } from './useStreak'
-import { useNutritionPrefs, useTrainingRhythm } from './usePrefsSync'
+import { useNutritionPrefs, useTrainingRhythm, useUserPrefs } from './usePrefsSync'
 import { useHealthActivities, useHealthDaily, useHealthSleep } from './useHealth'
 import type { HealthActivity, HealthSleep } from '../types'
 
@@ -67,6 +67,7 @@ export function useToday(): TodaySummary {
   const { data: streakState } = useStreakState()
   const rhythm = useTrainingRhythm(tday)
   const { kcalBonus } = useNutritionPrefs()
+  const sleepNeedMin = useUserPrefs().prefs.sleepGoalMin
   const { data: settings } = useNutritionSettings()
   const { data: entries } = useFoodEntries(day)
   const { data: entriesY } = useFoodEntries(yesterday)
@@ -103,6 +104,7 @@ export function useToday(): TodaySummary {
       const nutritionKnown = showNutrition && (entriesY?.length ?? 0) > 0
       ready = readiness({
         sleepMin: sleep?.asleep_min ?? null,
+        sleepNeedMin,
         hrv: today?.hrv_ms ?? null,
         hrvBaseline: baseline(daily ?? [], 'hrv_ms', day),
         restingHr: today?.resting_hr ?? null,
@@ -171,5 +173,6 @@ export function useToday(): TodaySummary {
     day,
     tday,
     yesterday,
+    sleepNeedMin,
   ])
 }

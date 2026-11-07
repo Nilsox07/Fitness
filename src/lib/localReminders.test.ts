@@ -36,6 +36,22 @@ const WORKOUT = isKind(8300)
 const supps = (r: R[]) => r.filter((x) => x.id >= 8200 && x.id < 8300)
 
 describe('Lokale Erinnerungen', () => {
+  it('Schlafenszeit 30 min vorher, nach Mitternacht am Folgetag', () => {
+    const bed = (bedAt: string) =>
+      planReminders({ ...base, bedtime: { bedAt, need: '8:15 h' } }).filter(isKind(8420))
+    const r = bed('22:45')
+    expect(r.map((x) => [x.at.getDate(), x.at.getHours(), x.at.getMinutes()])).toEqual([
+      [28, 22, 15],
+      [29, 22, 15],
+    ])
+    expect(r[0].body).toMatch(/8:15 h/)
+    expect(bed('0:20').map((x) => [x.at.getDate(), x.at.getHours(), x.at.getMinutes()])).toEqual([
+      [28, 23, 50],
+      [29, 23, 50],
+    ])
+    expect(planReminders(base).some(isKind(8420))).toBe(false)
+  })
+
   it('plant nur Zukünftiges und nur, was noch fehlt', () => {
     const r = planReminders(base)
     expect(r.every((x) => x.at > now)).toBe(true)

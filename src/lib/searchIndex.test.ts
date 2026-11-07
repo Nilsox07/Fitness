@@ -20,7 +20,7 @@ describe('App-Suche', () => {
 
   it('ausgeblendete Module tauchen nicht auf', () => {
     const mods = { nutrition: false, social: false, watch: false }
-    expect(searchEntries('schlaf', mods)).toEqual([])
+    expect(searchEntries('tiefschlaf', mods)).toEqual([])
     expect(searchEntries('kalorien', mods).some((e) => e.needs === 'nutrition')).toBe(false)
     expect(suggestions(mods).every((e) => !e.needs)).toBe(true)
   })

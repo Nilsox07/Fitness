@@ -57,6 +57,12 @@ export interface UserPrefs {
   targetWeightSince: string | null
   /** Sätze für neue Übungen (bekannte übernehmen das letzte Mal) */
   setScheme: SetScheme
+  /** Journal: abgefragte Gewohnheiten (null = Standardauswahl) */
+  journalHabits: string[] | null
+  /** Grund-Schlafbedarf in Minuten (360–600); dazu kommen Belastung und Schlafschuld */
+  sleepGoalMin: number
+  /** Gewünschte Aufstehzeit „HH:MM“ (null = aus den letzten Nächten) */
+  wakeTime: string | null
 }
 
 export interface Modules {
@@ -93,6 +99,9 @@ export const DEFAULT_PREFS: UserPrefs = {
   targetWeight: null,
   targetWeightSince: null,
   setScheme: DEFAULT_SET_SCHEME,
+  journalHabits: null,
+  sleepGoalMin: 480,
+  wakeTime: null,
 }
 
 /** Zielgewicht: 30–300 kg, auf 0,1 kg gerundet; sonst null. */
@@ -224,5 +233,10 @@ export function normalizePrefs(raw: unknown): UserPrefs {
         ? r.targetWeightSince
         : null,
     setScheme: normalizeSetScheme(r.setScheme),
+    journalHabits: Array.isArray(r.journalHabits)
+      ? [...new Set(r.journalHabits.filter((a): a is string => typeof a === 'string' && a.length < 30))].slice(0, 20)
+      : null,
+    sleepGoalMin: Math.round(num(r.sleepGoalMin, 360, 600, 480) / 15) * 15,
+    wakeTime: typeof r.wakeTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(r.wakeTime) ? r.wakeTime : null,
   }
 }

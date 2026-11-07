@@ -338,6 +338,23 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     needs: 'watch',
   },
   {
+    id: 'journal',
+    label: 'Journal',
+    sub: 'Gewohnheiten & was deinen Schlaf beeinflusst',
+    section: 'Fortschritt',
+    to: '/journal',
+    keywords: 'journal tagebuch gewohnheiten alkohol kaffee koffein stress handy gefühl ausgeruht müde einfluss',
+  },
+  {
+    id: 'bedtime',
+    label: 'Schlafenszeit',
+    sub: 'Schlafbedarf heute & wann ins Bett',
+    section: 'Fortschritt',
+    to: '/sleep',
+    keywords: 'schlafenszeit bett ins bett schlafbedarf aufstehen wecker schlafschuld schlafziel',
+    needs: 'watch',
+  },
+  {
     id: 'vitals',
     label: 'Herz & Körper',
     sub: 'Puls, HRV, Sauerstoff, VO₂max',

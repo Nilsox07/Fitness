@@ -15,6 +15,7 @@ export type TipPage =
   | 'social'
   | 'cycle'
   | 'insights'
+  | 'journal'
 
 export interface TipContext {
   hour: number
@@ -41,6 +42,8 @@ export interface TipContext {
   hardShare: number | null
   /** KI nutzbar (Buddy Plus); false = Tipps ohne KI-Funktionen. Fehlt = ja. */
   aiPlus?: boolean
+  /** Empfohlene Zubettgehzeit heute (nur mit Uhr) */
+  bedAt?: string | null
 }
 
 export interface Tip {
@@ -195,6 +198,13 @@ export function pageTip(page: TipPage, c: TipContext): Tip | null {
         text: 'Tipp auf eine Aktivität für Details.',
       }
     case 'sleep':
+      if (c.bedAt && c.hour >= 18)
+        return {
+          key: 'sleep-bedtime',
+          mood: 'sleepy',
+          text: `Heute ins Bett um ${c.bedAt} – dann passt dein Schlafbedarf.`,
+          ask: 'Wie schlafe ich schneller ein und tiefer durch?',
+        }
       if (c.sleepMin != null && c.sleepMin < 390)
         return {
           key: 'sleep-short',
@@ -225,6 +235,18 @@ export function pageTip(page: TipPage, c: TipContext): Tip | null {
         mood: 'focus',
         text: 'Je länger du dabei bist, desto genauer werden die Muster.',
         ask: 'Welche Muster siehst du in meinem Training, Schlaf und meiner Ernährung?',
+      }
+    case 'journal':
+      if (c.hour < 12)
+        return {
+          key: 'journal-morning',
+          mood: 'happy',
+          text: 'Wie war gestern? Kurz antippen – zwei Sekunden.',
+        }
+      return {
+        key: 'journal-tip',
+        mood: 'focus',
+        text: 'Auch „Nichts davon“ zählt – so wird der Vergleich genau.',
       }
     case 'cycle':
       return {

@@ -13,6 +13,8 @@ import {
   Flame,
   Footprints,
   HeartPulse,
+  Moon,
+  NotebookPen,
   Plus,
   Users,
   Watch,
@@ -34,6 +36,8 @@ import type { WidgetId } from '../../lib/dashboard'
 import { CardioPlanCard } from './CardioPlanCard'
 import { useCycleState } from '../../hooks/useCycle'
 import { PHASE_LABEL, trainingHint } from '../../lib/cycle'
+import { useSleepPlan } from '../../hooks/useRecovery'
+import { JournalCheckIn } from '../journal/JournalCheckIn'
 
 const fmt = (n: number) => Math.round(n).toLocaleString('de-DE')
 
@@ -194,6 +198,44 @@ function SleepWidget({ t }: { t: TodaySummary }) {
         <span className="text-sm text-cocoa-light">Noch keine Daten</span>
       )}
     </Tile>
+  )
+}
+
+function BedtimeWidget() {
+  const navigate = useNavigate()
+  const plan = useSleepPlan()
+  return (
+    <Tile
+      icon={<Moon size={15} />}
+      tint="bg-sand text-cocoa-light"
+      title="Schlafenszeit"
+      onClick={() => navigate('/sleep')}
+    >
+      {plan ? (
+        <>
+          <span className="tabular text-2xl font-bold leading-none">{plan.bedAt}</span>
+          <span className="text-xs text-cocoa-light">für {hoursText(plan.needMin)} Schlaf</span>
+        </>
+      ) : (
+        <span className="text-sm text-cocoa-light">Noch keine Daten</span>
+      )}
+    </Tile>
+  )
+}
+
+function JournalWidget() {
+  const navigate = useNavigate()
+  return (
+    <div className="card space-y-3">
+      <button className="flex w-full items-center gap-2 text-left" onClick={() => navigate('/journal')}>
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-sand text-cocoa-light">
+          <NotebookPen size={15} />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-cocoa-light">Journal</span>
+        <ChevronRight size={15} className="shrink-0 text-cocoa-muted" />
+      </button>
+      <JournalCheckIn compact />
+    </div>
   )
 }
 
@@ -578,5 +620,9 @@ export function renderWidget(id: WidgetId, t: TodaySummary): ReactNode {
       return <FriendsWidget t={t} />
     case 'lastWorkout':
       return <LastWorkoutWidget t={t} />
+    case 'bedtime':
+      return <BedtimeWidget />
+    case 'journal':
+      return <JournalWidget />
   }
 }

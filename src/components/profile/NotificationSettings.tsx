@@ -41,7 +41,7 @@ export function NotificationSettings() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const shareCheat = useShareCheat()
-  const { showNutrition, showSocial } = usePrefs()
+  const { showNutrition, showSocial, hasWatch } = usePrefs()
   // Essensfenster nur für Leute, die Intervallfasten machen
   const fasting = useDietStyle().fasting !== 'none'
   // Gruppen ausgeblendeter Module nicht anbieten
@@ -158,7 +158,9 @@ export function NotificationSettings() {
           title={g}
           footer={g === 'Community' ? 'Eigene Cheat-Meals teilst du nur, wenn der zweite Schalter an ist.' : undefined}
         >
-          {NOTIFY_ITEMS.filter((i) => i.group === g && (i.kind !== 'fasting' || fasting)).map((item) => {
+          {NOTIFY_ITEMS.filter(
+            (i) => i.group === g && (i.kind !== 'fasting' || fasting) && (i.kind !== 'bedtime' || hasWatch),
+          ).map((item) => {
             const s = prefs.notify[item.kind]
             return (
               <div key={item.kind} className="px-4 py-3">

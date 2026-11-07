@@ -14,6 +14,7 @@ import { usePrefs } from '../../lib/prefs'
 import { baseline } from '../../lib/health'
 import { pageTip, type Tip, type TipPage } from '../../lib/buddyTips'
 import { useAiGate } from '../../hooks/usePremium'
+import { useSleepPlan } from '../../hooks/useRecovery'
 
 const HIDDEN_KEY = 'buddy_tip_hidden'
 
@@ -128,6 +129,7 @@ export function usePageTip(page: TipPage | null): { tip: Tip | null; day: string
   const { data: daily } = useHealthDaily(30)
   const { data: board } = useLeaderboard()
   const gate = useAiGate()
+  const plan = useSleepPlan()
   const tip = useMemo(
     () =>
       page
@@ -154,9 +156,10 @@ export function usePageTip(page: TipPage | null): { tip: Tip | null; day: string
             hasWatch,
             hardShare: null,
             aiPlus: gate.canUse,
+            bedAt: plan?.bedAt ?? null,
           })
         : null,
-    [page, t, daily, board, user, showNutrition, showSocial, hasWatch, gate.canUse],
+    [page, t, daily, board, user, showNutrition, showSocial, hasWatch, gate.canUse, plan],
   )
   return { tip, day: t.day, loading: t.loading }
 }

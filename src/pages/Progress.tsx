@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Dumbbell,
   HeartPulse,
+  NotebookPen,
   Scale,
   TrendingDown,
   TrendingUp,
@@ -37,6 +38,10 @@ import { isPerformed, setVolume } from '../lib/analytics'
 import { dailySeries, lastWeeks, trendPct, weeklySum } from '../lib/progressSeries'
 import { useGoalPath } from '../hooks/useGoalPath'
 import { goalPathLine } from '../lib/goalPath'
+import { useJournal } from '../hooks/useJournal'
+import { useJournalImpacts } from '../hooks/useRecovery'
+import { habitLabel } from '../lib/journal'
+import { impactLine } from '../components/journal/HabitImpactList'
 
 const fmt = (n: number) => Math.round(n).toLocaleString('de-DE')
 const tons = (kg: number) =>
@@ -49,6 +54,9 @@ const tons = (kg: number) =>
 export default function Progress() {
   const navigate = useNavigate()
   const { showNutrition, hasWatch, hasCycle } = usePrefs()
+  const { data: journal = [] } = useJournal()
+  const journalDays = journal.filter((e) => e.tags.length || e.feel != null).length
+  const journalTop = useJournalImpacts().impacts.find((h) => h.status === 'ready' && h.main)
   const cycle = useCycleState()
   const t = useToday()
   const heroBuddy = useHeroBuddy('progress')
@@ -167,7 +175,7 @@ export default function Progress() {
         </p>
       </Tile>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 [&>*:last-child:nth-child(odd)]:col-span-2">
         {hasWatch && (
           <Tile
             icon={Activity}
@@ -260,6 +268,15 @@ export default function Progress() {
         >
           <Bars values={sessions} small />
         </Tile>
+        <Tile
+          icon={NotebookPen}
+          label="Journal"
+          onClick={() => navigate('/journal')}
+          index={i++}
+          value={journalDays > 0 ? `${journalDays}` : 'Eintragen'}
+          unit={journalDays > 0 ? (journalDays === 1 ? 'Tag' : 'Tage') : undefined}
+          sub={journalTop ? `${habitLabel(journalTop.habit)}: ${impactLine(journalTop)}` : 'Gewohnheiten & Schlaf'}
+        />
       </div>
 
       {top.length > 0 && (

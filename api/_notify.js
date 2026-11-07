@@ -18,6 +18,8 @@ export const NOTIFY_DEFAULTS = {
   review: { on: true, time: '09:00' },
   body: { on: true, time: '10:00' },
   social: { on: true },
+  // nur in der App (lokal geplant): Zeit hängt von Schlaf & Belastung ab
+  bedtime: { on: true },
 }
 
 export const NOTIFY_KINDS = Object.keys(NOTIFY_DEFAULTS)

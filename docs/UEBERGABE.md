@@ -137,6 +137,16 @@ einer App, aber nur das sichtbar, was man nutzt.
 - **Satz-Zeile** (`CompactSetRow.tsx`): Typ-Knopf (Zahl / Flamme / Pfeil) · kg-Stepper · Wdh.-Stepper · Haken, alles
   48 px hoch, Einheit im Feld, keine Kopfzeile/„Vorher“-Spalte mehr. Darunter „Letztes Mal 55 kg × 11“ – antippen
   übernimmt die Werte und hakt ab.
+- **Journal** (`/journal`, `src/lib/journal.ts`, Tabelle `journal_entries` – Migration 0046): Gewohnheiten des
+  Tages als Chips (Auswahl in `prefs.journalHabits`) + „Wie ausgeruht?“ 1–5 am Morgen. `habitImpacts` vergleicht
+  die Morgen nach Tagen mit/ohne (60 Tage, je ≥ 3, gesamt ≥ 8): Schlaf, Tiefschlaf, HRV, Ruhepuls, Tagesform,
+  Gefühl – ohne Uhr nur das Gefühl. Krafttraining zählt automatisch. „Nichts davon“ speichert einen leeren Tag
+  (wichtig für den Vergleich). Widget `journal`, Kachel in Fortschritt, Link auf der Schlaf-Seite.
+- **Schlafbedarf** (`src/lib/sleepNeed.ts`, `useSleepPlan` in `hooks/useRecovery.ts`): Grundbedarf
+  (`prefs.sleepGoalMin`, Std. 8 h) + Belastung heute vs. übliche Trainingstage (+10…45 min) + ¼ der
+  7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
+  Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
+  lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
 - **Ohne Uhr:** Vitamine waren nie an die Uhr gebunden, kommen aber nur über Foto/Beschreiben/Barcode – MicroCard
   erklärt das, Mahlzeit-Analyse zeigt die Top-Nährstoffe (`MealMicros`). Belastungs-Insight läuft auch nur aus
   Kraftsätzen. Das Modul heißt „Uhr & Health Connect“ (auch Handy-Schritte). Tagesform bleibt Uhr-only (braucht

@@ -35,6 +35,7 @@ import Body from './pages/Body'
 import Today from './pages/Today'
 import Cardio from './pages/Cardio'
 import Sleep from './pages/Sleep'
+import Journal from './pages/Journal'
 import Vitals from './pages/Vitals'
 import Insights from './pages/Insights'
 import ActivityDetail from './pages/ActivityDetail'
@@ -150,6 +151,7 @@ export default function App() {
             <Route path="/cardio" element={hasWatch ? <Cardio /> : <Navigate to="/progress" replace />} />
             <Route path="/cardio/:id" element={hasWatch ? <ActivityDetail /> : <Navigate to="/progress" replace />} />
             <Route path="/sleep" element={hasWatch ? <Sleep /> : <Navigate to="/progress" replace />} />
+            <Route path="/journal" element={<Journal />} />
             <Route path="/vitals" element={hasWatch ? <Vitals /> : <Navigate to="/progress" replace />} />
             <Route path="/nutrition" element={showNutrition ? <Nutrition /> : <Navigate to="/" replace />} />
             <Route path="/exercises" element={<Exercises />} />

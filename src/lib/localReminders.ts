@@ -27,6 +27,8 @@ export interface ReminderCtx {
   supplements: { name: string; time: string; taken: boolean; dayOffset: 0 | 1 }[]
   /** Essensfenster (Intervallfasten) als „HH:MM“ */
   fasting: { open: string; close: string } | null
+  /** Empfohlene Zubettgehzeit „H:MM“ + Schlafbedarf (nur mit Uhr) */
+  bedtime?: { bedAt: string; need: string } | null
 }
 
 export interface Reminder {
@@ -53,6 +55,7 @@ const BASE: Record<NotifyKind, number> = {
   review: 8360,
   body: 8380,
   social: 8400,
+  bedtime: 8420,
 }
 export const REMINDER_ID_MIN = 8000
 export const REMINDER_ID_MAX = 8499
@@ -156,6 +159,15 @@ export function planReminders(c: ReminderCtx): Reminder[] {
     if (n.weigh.on && n.weigh.time && (n.weigh.days ?? [0]).includes(weekday(day))) {
       const t = text('weigh')
       add('weigh', off, 0, at(day, n.weigh.time), t.title, t.body, '/body?weigh=1')
+    }
+
+    // Schlafenszeit: 30 min vorher; nach Mitternacht zählt sie zum nächsten Tag
+    if (n.bedtime.on && c.bedtime) {
+      const [h] = c.bedtime.bedAt.split(':').map(Number)
+      const base = new Date(day)
+      if (h < 12) base.setDate(base.getDate() + 1)
+      const t = text('bedtime', { bedAt: c.bedtime.bedAt, need: c.bedtime.need })
+      add('bedtime', off, 0, at(base, c.bedtime.bedAt, -30), t.title, t.body, '/sleep')
     }
 
     if (n.review.on && n.review.time && weekday(day) === 0) {

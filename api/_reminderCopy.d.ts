@@ -13,6 +13,7 @@ export type ReminderKind =
   | 'weigh'
   | 'review'
   | 'body'
+  | 'bedtime'
 
 export interface ReminderCtx {
   kcalLeft?: number
@@ -26,6 +27,9 @@ export interface ReminderCtx {
   name?: string
   dose?: string | null
   end?: string
+  /** Zubettgehzeit „22:45“ und Schlafbedarf „8:20 h“ */
+  bedAt?: string
+  need?: string
 }
 
 export function reminderCopy(

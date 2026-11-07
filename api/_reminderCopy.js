@@ -8,7 +8,7 @@ const de = (n, d = 0) => (typeof n === 'string' ? n : Number(n).toLocaleString('
 
 /**
  * Titel + Text je Art. `seed` (z. B. Tag des Jahres) wählt die Variante.
- * ctx: kcalLeft, drankL, targetL, missing (g Eiweiß), plan, days, weeks, name, dose, end
+ * ctx: kcalLeft, drankL, targetL, missing (g Eiweiß), plan, days, weeks, name, dose, end, bedAt, need
  */
 export function reminderCopy(kind, ctx = {}, seed = 0) {
   switch (kind) {
@@ -131,6 +131,17 @@ export function reminderCopy(kind, ctx = {}, seed = 0) {
       return {
         title: 'Deine Woche in Zahlen',
         body: 'Was lief gut, was nimmst du dir vor? Buddy hat’s zusammengefasst.',
+      }
+    case 'bedtime':
+      return {
+        title: `In 30 Minuten ins Bett`,
+        body: pick(
+          [
+            `Um ${ctx.bedAt} – dann passen ${ctx.need} Schlaf bis morgen früh.`,
+            `${ctx.need} Schlaf brauchst du heute. Handy weg, Licht runter.`,
+          ],
+          seed,
+        ),
       }
     case 'body':
       return {
