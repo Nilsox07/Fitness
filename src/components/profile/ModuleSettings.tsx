@@ -1,6 +1,6 @@
 import { useDietStyle } from '../../hooks/useNutrition'
 import { useEffect, useState, type ReactNode } from 'react'
-import { Droplet, Dumbbell, Lock, Users, Utensils, Watch } from 'lucide-react'
+import { Droplet, Dumbbell, HeartPulse, Lock, Users, Utensils, Watch } from 'lucide-react'
 import { usePrefs } from '../../lib/prefs'
 import { useNutritionSettings } from '../../hooks/useNutrition'
 import { useUserPrefs } from '../../hooks/usePrefsSync'
@@ -77,8 +77,18 @@ function ModuleRow({
  */
 export function ModuleSettings() {
   const fasting = useDietStyle().fasting !== 'none'
-  const { showNutrition, setShowNutrition, showSocial, setShowSocial, hasWatch, setHasWatch, hasCycle, setHasCycle } =
-    usePrefs()
+  const {
+    showNutrition,
+    setShowNutrition,
+    showSocial,
+    setShowSocial,
+    hasWatch,
+    setHasWatch,
+    hasCycle,
+    setHasCycle,
+    hasHybrid,
+    setHasHybrid,
+  } = usePrefs()
   const { data: settings } = useNutritionSettings()
   const [cycleConsent, setCycleConsent] = useState(false)
   const { prefs, save } = useUserPrefs()
@@ -145,6 +155,22 @@ export function ModuleSettings() {
           hint="Kalorien, Eiweiß, Wasser, Rezepte, Supplemente"
         >
           <Switch on={showNutrition} label="Ernährung" onChange={setShowNutrition} />
+        </ModuleRow>
+        <ModuleRow
+          icon={<HeartPulse size={19} />}
+          tint="bg-sand text-cocoa-light"
+          title="Hybrid (Kraft + Ausdauer)"
+          hint="Ausdauer-Plan, Abstimmung mit dem Gym, Hybrid-Einheiten, Laufwetter"
+        >
+          <Switch
+            on={hasHybrid}
+            label="Hybrid"
+            onChange={(v) => {
+              setHasHybrid(v)
+              if (v && prefs.cardioPlan)
+                void save({ dashboard: withWidget(prefs.dashboard, 'cardioPlan', 'nextWorkout') })
+            }}
+          />
         </ModuleRow>
         <ModuleRow
           icon={<Users size={19} />}

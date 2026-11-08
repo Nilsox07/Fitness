@@ -58,7 +58,7 @@ function NativeSyncInner() {
   const { data: weights } = useBodyWeights()
   const aiAvailable = useAiGate().enabled
   const lastWeight = weights?.length ? Number(weights[weights.length - 1].weight_kg) : null
-  const { showNutrition, hasWatch, showSocial } = usePrefs()
+  const { showNutrition, hasWatch, showSocial, hasHybrid } = usePrefs()
   const setWater = useSetWater()
   const qc = useQueryClient()
   const { fasting, fastingStart } = useDietStyle()
@@ -223,9 +223,10 @@ function NativeSyncInner() {
       weightKg: lastWeight,
       aiAvailable,
       trainedToday: t.trainedToday,
-      weather: weatherLoc,
+      weather: hasHybrid ? weatherLoc : null,
+      showHybrid: hasHybrid,
       cardio:
-        hasWatch || prefs.cardioPlan
+        hasHybrid && (hasWatch || prefs.cardioPlan)
           ? cardioSnapshot({
               acts: hasWatch ? (cardioActs ?? []) : [],
               today: t.day,
@@ -249,6 +250,7 @@ function NativeSyncInner() {
     lastWeight,
     aiAvailable,
     weatherLoc,
+    hasHybrid,
     cardioActs,
     prefs.cardioPlan,
     prefs.cardioDone,

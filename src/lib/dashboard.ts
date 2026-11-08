@@ -4,7 +4,7 @@
 
 import type { Capabilities, Capability } from './health'
 
-export type Module = 'training' | 'nutrition' | 'social' | 'watch' | 'cycle'
+export type Module = 'training' | 'nutrition' | 'social' | 'watch' | 'cycle' | 'hybrid'
 
 export type WidgetId =
   | 'readiness'
@@ -55,7 +55,7 @@ export const WIDGETS: WidgetDef[] = [
     size: 'full',
   },
   { id: 'cycle', label: 'Zyklus', hint: 'Phase, Tag & was das fürs Training heißt', module: 'cycle', size: 'full' },
-  { id: 'cardioPlan', label: 'Ausdauer-Plan', hint: 'Heutige Einheit abhaken', module: 'training', size: 'full' },
+  { id: 'cardioPlan', label: 'Ausdauer-Plan', hint: 'Heutige Einheit abhaken', module: 'hybrid', size: 'full' },
   { id: 'kcal', label: 'Kalorien & Eiweiß', hint: 'Was heute noch offen ist', module: 'nutrition', size: 'full' },
   { id: 'water', label: 'Wasser', hint: 'Mit +250 ml direkt eintragen', module: 'nutrition', size: 'half' },
   { id: 'streak', label: 'Serie', hint: 'Wochen in Folge & Ziel dieser Woche', module: 'training', size: 'half' },
@@ -129,7 +129,7 @@ export const DEFAULT_LAYOUT: WidgetId[] = [
   'friends',
 ]
 
-export type Modules = Record<Exclude<Module, 'cycle'>, boolean> & { cycle?: boolean }
+export type Modules = Record<Exclude<Module, 'cycle' | 'hybrid'>, boolean> & { cycle?: boolean; hybrid?: boolean }
 
 const isOn = (id: WidgetId, mods: Modules) => !!mods[widgetDef(id).module]
 

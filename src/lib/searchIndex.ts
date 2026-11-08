@@ -12,7 +12,7 @@ export interface SearchEntry {
   to: string
   keywords: string
   /** nur sichtbar, wenn das Modul an ist bzw. KI/Push verfügbar sind */
-  needs?: 'nutrition' | 'social' | 'watch' | 'ai' | 'push' | 'cycle'
+  needs?: 'nutrition' | 'social' | 'watch' | 'ai' | 'push' | 'cycle' | 'hybrid'
 }
 
 export const SEARCH_ENTRIES: SearchEntry[] = [
@@ -338,12 +338,31 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     needs: 'watch',
   },
   {
+    id: 'hybrid',
+    label: 'Hybrid-Einheiten',
+    sub: 'Laufen + Stationen mit Zwischenzeiten',
+    section: 'Training',
+    to: '/hybrid',
+    keywords: 'hybrid hyrox wettkampf simulation stationen laufen wall balls schlitten skierg rudern zeit stoppuhr',
+    needs: 'hybrid',
+  },
+  {
+    id: 'hybrid-week',
+    label: 'Kraft & Ausdauer abstimmen',
+    sub: 'Ausdauer-Plan passend zu deinen Beintagen',
+    section: 'Training',
+    to: '/',
+    keywords: 'hybrid ausdauer plan cardio beintag abstimmen intervalle laufen interferenz',
+    needs: 'hybrid',
+  },
+  {
     id: 'weather-widget',
     label: 'Laufwetter-Widget',
     sub: 'Ort für Wetter auf dem Homescreen',
     section: 'Einstellungen',
     to: '/profile?s=settings',
     keywords: 'wetter laufwetter radwetter widget homescreen uhrzeit standort ort regen temperatur',
+    needs: 'hybrid',
   },
   {
     id: 'journal',
@@ -596,6 +615,8 @@ export interface Modules {
   push?: boolean
   /** Zyklus-Bereich an (unbekannt = sichtbar) */
   cycle?: boolean
+  /** Hybrid-Bereich an (unbekannt = sichtbar) */
+  hybrid?: boolean
 }
 
 /** Darf der Eintrag bei diesen Modulen/Fähigkeiten gezeigt werden? */

@@ -36,6 +36,7 @@ import Today from './pages/Today'
 import Cardio from './pages/Cardio'
 import Sleep from './pages/Sleep'
 import Journal from './pages/Journal'
+import Hybrid from './pages/Hybrid'
 import Vitals from './pages/Vitals'
 import Insights from './pages/Insights'
 import ActivityDetail from './pages/ActivityDetail'
@@ -67,7 +68,7 @@ const FITNESS_ROUTES = ['/', '/plans', '/exercises']
 
 export default function App() {
   const { session, loading, recovery } = useAuth()
-  const { world, setWorld, showNutrition, showSocial, hasWatch, hasCycle } = usePrefs()
+  const { world, setWorld, showNutrition, showSocial, hasWatch, hasCycle, hasHybrid } = usePrefs()
   const { pathname, search } = useLocation()
   const mainRef = useRef<HTMLElement>(null)
 
@@ -152,6 +153,7 @@ export default function App() {
             <Route path="/cardio/:id" element={hasWatch ? <ActivityDetail /> : <Navigate to="/progress" replace />} />
             <Route path="/sleep" element={hasWatch ? <Sleep /> : <Navigate to="/progress" replace />} />
             <Route path="/journal" element={<Journal />} />
+            <Route path="/hybrid" element={hasHybrid ? <Hybrid /> : <Navigate to="/" replace />} />
             <Route path="/vitals" element={hasWatch ? <Vitals /> : <Navigate to="/progress" replace />} />
             <Route path="/nutrition" element={showNutrition ? <Nutrition /> : <Navigate to="/" replace />} />
             <Route path="/exercises" element={<Exercises />} />

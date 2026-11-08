@@ -5,6 +5,7 @@ const WORLD_KEY = 'pref_world'
 const SOCIAL_KEY = 'pref_show_social'
 const WATCH_KEY = 'pref_has_watch'
 const CYCLE_KEY = 'pref_has_cycle'
+export const HYBRID_KEY = 'pref_has_hybrid'
 
 /** Aktive Welt (Fitness oder Ernährung). */
 export type World = 'fitness' | 'food'
@@ -23,6 +24,9 @@ interface Prefs {
   /** Modul Zyklus: Periode, Phase, Einfluss auf Tagesform & Gewicht – nur auf Wunsch */
   hasCycle: boolean
   setHasCycle: (v: boolean) => void
+  /** Modul Hybrid: Ausdauer-Plan, Abstimmung Kraft/Ausdauer, Hybrid-Einheiten, Laufwetter – nur auf Wunsch */
+  hasHybrid: boolean
+  setHasHybrid: (v: boolean) => void
 }
 
 const PrefsContext = createContext<Prefs>({
@@ -36,6 +40,8 @@ const PrefsContext = createContext<Prefs>({
   setHasWatch: () => {},
   hasCycle: false,
   setHasCycle: () => {},
+  hasHybrid: false,
+  setHasHybrid: () => {},
 })
 
 function readFlag(key: string, fallback: boolean): boolean {
@@ -69,6 +75,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
   const [showSocial, setSocial] = useState(() => readFlag(SOCIAL_KEY, true))
   const [hasWatch, setWatch] = useState(() => readFlag(WATCH_KEY, false))
   const [hasCycle, setCycle] = useState(() => readFlag(CYCLE_KEY, false))
+  const [hasHybrid, setHybrid] = useState(() => readFlag(HYBRID_KEY, false))
 
   function setShowNutrition(v: boolean) {
     localStorage.setItem(KEY, v ? 'true' : 'false')
@@ -106,6 +113,11 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         setHasCycle: (v: boolean) => {
           writeFlag(CYCLE_KEY, v)
           setCycle(v)
+        },
+        hasHybrid,
+        setHasHybrid: (v: boolean) => {
+          writeFlag(HYBRID_KEY, v)
+          setHybrid(v)
         },
       }}
     >

@@ -34,7 +34,7 @@ import { ToolTiles } from './ToolTiles'
 import { CustomizeHome } from './CustomizeHome'
 import { useHomeCards } from '../../lib/homeCards'
 import { usePrefs } from '../../lib/prefs'
-import { ClipboardList, Dumbbell, Timer } from 'lucide-react'
+import { ClipboardList, Dumbbell, Footprints, Timer } from 'lucide-react'
 import { CardioPlanCard } from '../today/CardioPlanCard'
 
 const SKIP_MUSCLES = new Set<MuscleGroup>(['Sonstige', 'Ganzkörper'])
@@ -65,7 +65,7 @@ export function HomeStart({
   onStartFree: () => void
 }) {
   const [homeCards] = useHomeCards()
-  const { showNutrition } = usePrefs()
+  const { showNutrition, hasHybrid } = usePrefs()
   const { data: workouts } = useWorkouts()
   const { data: allSets } = useAllSets()
   const { data: exercises } = useExercises()
@@ -192,6 +192,7 @@ export function HomeStart({
           { to: '/plans', label: 'Pläne', sub: 'Rhythmus & Pläne', Icon: ClipboardList },
           { to: '/exercises', label: 'Übungen', sub: 'Bibliothek', Icon: Dumbbell },
           { to: '/quick', label: 'Home-Workout', sub: 'Ohne Geräte', Icon: Timer },
+          ...(hasHybrid ? [{ to: '/hybrid', label: 'Hybrid', sub: 'Laufen + Stationen', Icon: Footprints }] : []),
         ]}
       />
       {homeCards.recovery && <RecoveryCard items={muscleStates} index={++i} />}

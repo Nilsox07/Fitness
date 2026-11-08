@@ -12,7 +12,7 @@ export interface ToolTile {
 /** Werkzeuge eines Bereichs als schmale Zeile (eine Ebene tiefer, Zurück oben links). */
 export function ToolTiles({ items, style }: { items: ToolTile[]; style?: CSSProperties }) {
   return (
-    <nav className="flex gap-2" style={style} aria-label="Werkzeuge">
+    <nav className={items.length > 3 ? 'grid grid-cols-2 gap-2' : 'flex gap-2'} style={style} aria-label="Werkzeuge">
       {items.map(({ to, label, Icon }) => (
         <Link
           key={to}

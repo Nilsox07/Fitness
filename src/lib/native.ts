@@ -181,6 +181,8 @@ export interface WidgetSnapshot {
   weather?: { lat: number; lon: number } | null
   /** Ausdauer-Woche + Sportart (Widgets „Laufwetter“ und „Ausdauer-Woche“) */
   cardio?: CardioSnap | null
+  /** Hybrid-Bereich an? Aus → Laufwetter/Ausdauer-Woche zeigen einen Hinweis */
+  showHybrid?: boolean
 }
 
 interface AppWidgetsPlugin {

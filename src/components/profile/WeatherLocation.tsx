@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { MapPin } from 'lucide-react'
 import { isNative } from '../../lib/native'
+import { usePrefs } from '../../lib/prefs'
 import { getWeatherLoc, roundLoc, setWeatherLoc } from '../../lib/outdoorWidget'
 
 export function WeatherLocation() {
+  const { hasHybrid } = usePrefs()
   const [loc, setLoc] = useState(getWeatherLoc)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
-  if (!isNative()) return null
+  if (!isNative() || !hasHybrid) return null
 
   const locate = () => {
     if (!navigator.geolocation) return setMsg('Standort ist auf diesem Gerät nicht verfügbar.')

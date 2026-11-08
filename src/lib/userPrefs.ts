@@ -10,6 +10,7 @@ import { normalizePrestige, type PrestigeState } from './unlocks'
 import { DEFAULT_SET_SCHEME, normalizeSetScheme, type SetScheme } from './setScheme'
 import type { CardioKind, CardioPlan, CardioType, FitGoal } from './onboarding'
 import { normalizeConsent, type Consent } from './consent'
+import { normalizeRuns, type HybridRun } from './hybridSessions'
 
 /** Prozent je Mahlzeit (Summe = 100). */
 export type MealSplit = Record<Meal, number>
@@ -63,6 +64,8 @@ export interface UserPrefs {
   sleepGoalMin: number
   /** Gewünschte Aufstehzeit „HH:MM“ (null = aus den letzten Nächten) */
   wakeTime: string | null
+  /** Ergebnisse der Hybrid-Einheiten (höchstens 40) */
+  hybridRuns: HybridRun[]
 }
 
 export interface Modules {
@@ -71,6 +74,8 @@ export interface Modules {
   watch: boolean
   /** Zyklus-Bereich (optional, nur Frauen angeboten) */
   cycle?: boolean
+  /** Hybrid (Kraft + Ausdauer); fehlt bei älteren Ständen */
+  hybrid?: boolean
 }
 
 export const DEFAULT_KCAL_BONUS = 250
@@ -102,6 +107,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   journalHabits: null,
   sleepGoalMin: 480,
   wakeTime: null,
+  hybridRuns: [],
 }
 
 /** Zielgewicht: 30–300 kg, auf 0,1 kg gerundet; sonst null. */
@@ -165,11 +171,23 @@ function normalizeModules(v: unknown): Modules | null {
   if (!v || typeof v !== 'object') return null
   const m = v as Record<string, unknown>
   if (typeof m.nutrition !== 'boolean' || typeof m.social !== 'boolean' || typeof m.watch !== 'boolean') return null
-  return { nutrition: m.nutrition, social: m.social, watch: m.watch, cycle: m.cycle === true }
+  return {
+    nutrition: m.nutrition,
+    social: m.social,
+    watch: m.watch,
+    cycle: m.cycle === true,
+    ...(typeof m.hybrid === 'boolean' ? { hybrid: m.hybrid } : {}),
+  }
 }
 
 export const sameModules = (a: Modules | null, b: Modules | null): boolean =>
-  !!a && !!b && a.nutrition === b.nutrition && a.social === b.social && a.watch === b.watch && !!a.cycle === !!b.cycle
+  !!a &&
+  !!b &&
+  a.nutrition === b.nutrition &&
+  a.social === b.social &&
+  a.watch === b.watch &&
+  !!a.cycle === !!b.cycle &&
+  !!a.hybrid === !!b.hybrid
 
 /**
  * Module mit dem Konto abgleichen: Auf einem neuen Gerät die gespeicherten übernehmen
@@ -238,5 +256,6 @@ export function normalizePrefs(raw: unknown): UserPrefs {
       : null,
     sleepGoalMin: Math.round(num(r.sleepGoalMin, 360, 600, 480) / 15) * 15,
     wakeTime: typeof r.wakeTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(r.wakeTime) ? r.wakeTime : null,
+    hybridRuns: normalizeRuns(r.hybridRuns),
   }
 }

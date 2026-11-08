@@ -67,3 +67,20 @@ describe('Dashboard und Uhr-Fähigkeiten', () => {
     expect(addableWidgets(null, ALLM, caps).map((w) => w.id)).toContain('heart')
   })
 })
+
+describe('Hybrid-Bereich', () => {
+  it('Ausdauer-Plan nur mit Hybrid, unabhängig von Ernährung', async () => {
+    const { visibleLayout } = await import('./dashboard')
+    const base = { training: true, social: false, watch: false }
+    for (const nutrition of [true, false]) {
+      expect(visibleLayout(['cardioPlan', 'nextWorkout'], { ...base, nutrition, hybrid: false })).toEqual([
+        'nextWorkout',
+      ])
+      expect(visibleLayout(['cardioPlan', 'nextWorkout'], { ...base, nutrition, hybrid: true })).toEqual([
+        'cardioPlan',
+        'nextWorkout',
+      ])
+    }
+    expect(visibleLayout(['kcal', 'water'], { ...base, nutrition: false, hybrid: true })).toEqual([])
+  })
+})

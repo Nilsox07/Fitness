@@ -295,6 +295,14 @@ internal class Kit(val ctx: Context, val s: Snap) {
         return true
     }
 
+    /** Hybrid aus → Hinweis (fehlt der Wert in älteren Ständen: an). */
+    fun needsHybrid(v: RemoteViews): Boolean {
+        if (s.bool("showHybrid", true)) return false
+        empty(v, "Hybrid ist aus", "Unter Profil → Bereiche einschalten")
+        click(v, "/profile?s=modules", Req.MODULES)
+        return true
+    }
+
     fun needsWatch(v: RemoteViews): Boolean {
         if (s.bool("hasWatch", false)) return false
         empty(v, "Uhr verbinden", "Profil → Bereiche → Smartwatch")

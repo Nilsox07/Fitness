@@ -26,13 +26,13 @@ function stored(day: string): string | null {
  */
 export function useBriefing() {
   const t = useToday()
-  const { showNutrition, hasWatch } = usePrefs()
+  const { showNutrition, hasWatch, hasHybrid } = usePrefs()
   const { prefs } = useUserPrefs()
   const gate = useAiGate()
   const [aiText, setText] = useState(() => stored(t.day))
   const [busy, setBusy] = useState(false)
   const wd = weekdayIndex(t.day)
-  const cardioToday = prefs.cardioPlan?.sessions.find((s) => s.day === wd)
+  const cardioToday = hasHybrid ? prefs.cardioPlan?.sessions.find((s) => s.day === wd) : undefined
 
   const hour = new Date().getHours()
   const freeText = useMemo(

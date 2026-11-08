@@ -16,6 +16,7 @@ export type TipPage =
   | 'cycle'
   | 'insights'
   | 'journal'
+  | 'hybrid'
 
 export interface TipContext {
   hour: number
@@ -235,6 +236,13 @@ export function pageTip(page: TipPage, c: TipContext): Tip | null {
         mood: 'focus',
         text: 'Je länger du dabei bist, desto genauer werden die Muster.',
         ask: 'Welche Muster siehst du in meinem Training, Schlaf und meiner Ernährung?',
+      }
+    case 'hybrid':
+      return {
+        key: 'hybrid-tip',
+        mood: 'focus',
+        text: 'Gleichmäßig laufen, an den Stationen gewinnst du Zeit.',
+        ask: 'Wie trainiere ich für ein Hybrid-Rennen neben dem Krafttraining?',
       }
     case 'journal':
       if (c.hour < 12)

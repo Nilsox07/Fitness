@@ -29,6 +29,19 @@ describe('Cheat-Teilen, Module, gesehene Version', () => {
     expect(modulesSyncAction(on, off, false)).toBe('adopt')
     expect(modulesSyncAction(on, off, true)).toBe('push')
   })
+  it('Hybrid: optional, alte Stände ohne Feld, Unterschied zählt beim Abgleich', () => {
+    const base = { nutrition: true, social: true, watch: false }
+    expect(normalizePrefs({ modules: base }).modules?.hybrid).toBeUndefined()
+    expect(normalizePrefs({ modules: { ...base, hybrid: true } }).modules?.hybrid).toBe(true)
+    expect(normalizePrefs({ modules: { ...base, hybrid: 'ja' } }).modules?.hybrid).toBeUndefined()
+    expect(modulesSyncAction({ ...base, hybrid: true }, { ...base, hybrid: false }, false)).toBe('adopt')
+    expect(modulesSyncAction({ ...base, hybrid: false }, base, true)).toBe('none')
+    expect(normalizePrefs({ journalHabits: ['alcohol', 3], sleepGoalMin: 999, wakeTime: '6:5' })).toMatchObject({
+      journalHabits: ['alcohol'],
+      sleepGoalMin: 600,
+      wakeTime: null,
+    })
+  })
 })
 
 describe('Zielgewicht', () => {

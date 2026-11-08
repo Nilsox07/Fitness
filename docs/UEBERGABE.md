@@ -147,6 +147,18 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Modul Hybrid** (`hasHybrid` in `lib/prefs.tsx`, `modules.hybrid`): Ausdauer-Plan (Widget `cardioPlan`),
+  Hybrid-Abstimmung, Hybrid-Einheiten (`/hybrid`), Laufwetter/Ausdauer-Woche (Android, `showHybrid` im Snapshot),
+  Wetter-Ort. Alte Konten ohne Feld: an, wenn ein Ausdauer-Plan existiert. Ausdauer im Intro gewählt → an.
+  Unabhängig von Ernährung (alle Kombinationen funktionieren); Uhr-Daten (/cardio) bleiben beim Uhr-Modul.
+- **Hybrid-Abstimmung** (`src/lib/hybrid.ts`, `useGymWeek`): Beintag = ≥ 2 Bein-Übungen oder ⅓ des Plans;
+  hart = Intervalle oder lang ab 60 min. Warnung bei hart am/vor dem Beintag, Hinweis danach bzw. locker am
+  Beintag. „Automatisch abstimmen“ verteilt die Ausdauer-Tage neu (`arrangeCardio`), Tipp für heute
+  (`todayAdvice`). In der Ausdauer-Karte als Wochenleiste (Kraft oben, Ausdauer unten).
+- **Hybrid-Einheiten** (`src/lib/hybridSessions.ts`, `pages/Hybrid.tsx`): 5 Vorlagen (Wettkampf-Format wie
+  HYROX voll/halb, Gym, Engine, Zuhause). Zeit läuft durch, „Weiter“ = Zwischenzeit, Pause wird abgezogen,
+  Stand in localStorage `hybrid_run`. Ergebnisse in `prefs.hybridRuns` (max. 40), Bestzeit-Vergleich je
+  Abschnitt; Abschluss hakt die Ausdauer des Tages ab.
 - **Homescreen-Widgets „Laufwetter“ & „Ausdauer-Woche“** (`widgets/OutdoorWidgets.kt`): Laufwetter = TextClock
   (Uhr antippen → Wecker), Datum, Wetter jetzt, Einschätzung + Kleidungstipp je Sportart (Plan bzw. häufigste
   Aktivität), beste Stunde bei Tageslicht, ab 4×3 die nächsten Stunden. Logik rein in `Outdoor.kt` (JUnit

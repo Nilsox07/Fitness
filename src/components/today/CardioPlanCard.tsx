@@ -1,20 +1,27 @@
 import { useState } from 'react'
-import { Check, HeartPulse, Info } from 'lucide-react'
+import { Check, HeartPulse, Info, Sparkles } from 'lucide-react'
 import { useUserPrefs } from '../../hooks/usePrefsSync'
 import { useHealthActivities } from '../../hooks/useHealth'
 import { usePrefs } from '../../lib/prefs'
 import { localDate, shiftDate } from '../../lib/day'
 import { weekdayIndex } from '../../lib/schedule'
 import { WEEKDAYS, cardioHowTo, cardioTitle } from '../../lib/onboarding'
+import { useGymWeek } from '../../hooks/useGymWeek'
+import { arrangeCardio, hybridIssues, isHard, todayAdvice } from '../../lib/hybrid'
 
-/** Ausdauer-Plan aus dem Intro: heutige Einheit abhaken, Woche als Punkte. Erklärung nur auf Tippen. */
+/**
+ * Ausdauer-Plan (Hybrid): heutige Einheit abhaken, darunter die Woche mit Kraft- und Ausdauertagen.
+ * Passt etwas nicht (z. B. Intervalle vor dem Beintag), zeigt die Karte es und verteilt auf Wunsch neu.
+ */
 export function CardioPlanCard() {
   const { prefs, save } = useUserPrefs()
-  const { hasWatch } = usePrefs()
+  const { hasWatch, hasHybrid } = usePrefs()
   const { data: acts } = useHealthActivities(14)
   const [info, setInfo] = useState(false)
+  const [moved, setMoved] = useState(false)
+  const gym = useGymWeek()
   const plan = prefs.cardioPlan
-  if (!plan) return null
+  if (!plan || !hasHybrid) return null
 
   const today = localDate()
   const wd = weekdayIndex(today)
@@ -26,6 +33,11 @@ export function CardioPlanCard() {
   const upcoming = plan.sessions.find((s) => s.day > wd) ?? plan.sessions[0]
   const shown = todays ?? upcoming
   const doneToday = !!todays && isDone(today)
+
+  const issues = gym.known ? hybridIssues(plan.sessions, gym.week) : []
+  const warnDays = new Set(issues.filter((i) => i.severity === 'warn').map((i) => i.day))
+  const better = gym.known ? arrangeCardio(plan.sessions, gym.week) : null
+  const advice = gym.known && todays && !doneToday ? todayAdvice(todays, gym.week) : null
 
   function toggle() {
     const next = doneToday ? prefs.cardioDone.filter((d) => d !== today) : [...prefs.cardioDone, today]
@@ -66,24 +78,92 @@ export function CardioPlanCard() {
         )}
       </div>
       {info && <p className="anim-fade text-sm text-cocoa-light">{cardioHowTo(shown)}</p>}
-      <div className="flex justify-between px-1">
+      {advice && <p className="rounded-xl bg-gold/15 px-3 py-2 text-xs font-semibold text-cocoa">{advice}</p>}
+
+      {/* Woche: oben Kraft (Beintag kräftig), unten Ausdauer (hart = gefüllt, locker = Ring) */}
+      <div className="grid grid-cols-7 gap-1">
         {WEEKDAYS.map((w, d) => {
-          const has = plan.sessions.some((s) => s.day === d)
-          const done = has && isDone(shiftDate(monday, d))
+          const g = gym.week[d]
+          const c = plan.sessions.find((x) => x.day === d)
+          const done = !!c && isDone(shiftDate(monday, d))
+          const warn = warnDays.has(d)
           return (
-            <span key={w} className="flex flex-col items-center gap-1">
+            <div
+              key={w}
+              className={`flex flex-col items-center gap-1 rounded-xl py-1.5 ${warn ? 'bg-gold/15 ring-1 ring-gold/60' : ''}`}
+            >
+              <span
+                title={g?.planName}
+                className={`h-2 w-6 rounded-full ${g?.legs ? 'bg-brand' : g?.gym ? 'bg-brand/35' : 'bg-transparent'}`}
+              />
               <span
                 className={`grid h-5 w-5 place-items-center rounded-full ${
-                  done ? 'bg-success text-on-brand' : has ? 'ring-2 ring-brand/40' : 'bg-sand'
+                  done
+                    ? 'bg-success text-on-brand'
+                    : c
+                      ? isHard(c)
+                        ? 'bg-brand/80'
+                        : 'ring-2 ring-brand/50'
+                      : 'bg-sand'
                 }`}
               >
                 {done && <Check size={11} strokeWidth={3} />}
               </span>
               <span className={`text-[10px] ${d === wd ? 'font-bold text-brand' : 'text-cocoa-muted'}`}>{w}</span>
-            </span>
+            </div>
           )
         })}
       </div>
+      {gym.known && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[10px] text-cocoa-muted">
+          <span className="flex items-center gap-1">
+            <span className="h-1.5 w-3 rounded-full bg-brand" /> Beine
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-1.5 w-3 rounded-full bg-brand/35" /> Kraft
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-brand/80" /> hart
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-full ring-2 ring-brand/50" /> locker
+          </span>
+        </div>
+      )}
+
+      {issues.length > 0 && (
+        <ul className="space-y-1">
+          {issues.slice(0, 2).map((i) => (
+            <li key={i.kind + i.day} className="flex gap-1.5 text-xs text-cocoa-light">
+              <span
+                className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${i.severity === 'warn' ? 'bg-gold' : 'bg-sand-dark'}`}
+              />
+              {i.text}
+            </li>
+          ))}
+        </ul>
+      )}
+      {better && (
+        <button
+          onClick={() => {
+            void save({ cardioPlan: { ...plan, sessions: better } })
+            setMoved(true)
+          }}
+          className="flex w-full items-center justify-center gap-1.5 rounded-2xl bg-brand py-2.5 text-sm font-semibold text-on-brand"
+        >
+          <Sparkles size={15} /> Automatisch abstimmen
+        </button>
+      )}
+      {moved && !better && issues.every((i) => i.severity !== 'warn') && (
+        <p className="text-center text-xs font-semibold text-success">
+          Abgestimmt – Kraft und Ausdauer passen zusammen
+        </p>
+      )}
+      {!gym.known && (
+        <p className="text-[11px] text-cocoa-muted">
+          Mit festen Trainingstagen stimme ich Kraft und Ausdauer aufeinander ab.
+        </p>
+      )}
     </div>
   )
 }

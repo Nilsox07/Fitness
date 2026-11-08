@@ -316,6 +316,9 @@ function Onboarding({ mode, onClose }: { mode: 'intro' | 'plan'; onClose: () => 
         mods.setShowSocial(useSocial)
         mods.setHasCycle(useCycle)
       }
+      // Ausdauer gewählt → Hybrid-Bereich an (lässt sich im Profil wieder abschalten)
+      if (cardio) mods.setHasHybrid(true)
+      else if (!planOnly) mods.setHasHybrid(false)
       await save({
         onboarded: true,
         fitGoal: a.goal,

@@ -21,8 +21,15 @@ import {
 import { TodayHero } from '../components/today/TodayHero'
 
 export function useModules(): Modules {
-  const { showNutrition, showSocial, hasWatch, hasCycle } = usePrefs()
-  return { training: true, nutrition: showNutrition, social: showSocial, watch: hasWatch, cycle: hasCycle }
+  const { showNutrition, showSocial, hasWatch, hasCycle, hasHybrid } = usePrefs()
+  return {
+    training: true,
+    nutrition: showNutrition,
+    social: showSocial,
+    watch: hasWatch,
+    cycle: hasCycle,
+    hybrid: hasHybrid,
+  }
 }
 
 /** „Heute“: frei anpassbares Dashboard (Widgets hinzufügen, entfernen, verschieben). */

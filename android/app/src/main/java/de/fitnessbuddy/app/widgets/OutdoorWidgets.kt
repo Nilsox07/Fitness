@@ -71,6 +71,17 @@ class OutdoorWidget : BaseWidget() {
         if (wide) v.setViewVisibility(R.id.hours, if (layout == Layout.TALL) View.VISIBLE else View.GONE)
 
         val s = k.s
+        if (!s.bool("showHybrid", true)) {
+            v.setViewVisibility(R.id.now_box, View.GONE)
+            v.setTextViewText(R.id.headline, "Hybrid ist aus")
+            v.setTextViewText(R.id.tip, if (wide) "· Profil → Bereiche" else "Profil → Bereiche")
+            if (wide) {
+                v.setViewVisibility(R.id.hours, View.GONE)
+                v.setTextViewText(R.id.best, "")
+            }
+            k.click(v, "/profile?s=modules", Req.MODULES)
+            return v
+        }
         val sport = Sport.of(s.obj("cardio")?.optString("kind"))
         val loc = WeatherRepo.location(s)
         val cache = WeatherRepo.load(ctx)
@@ -172,7 +183,7 @@ class CardioWidget : BaseWidget() {
     private fun build(k: Kit, art: Bitmap, wide: Boolean, widthDp: Float): RemoteViews {
         val v = RemoteViews(k.ctx.packageName, if (wide) R.layout.widget_cardio else R.layout.widget_cardio_square)
         v.setImageViewBitmap(R.id.art, art)
-        if (k.needsData(v)) return v
+        if (k.needsData(v) || k.needsHybrid(v)) return v
         val s = k.s
         val c = s.obj("cardio")
         val plan = c?.optString("plan")?.takeIf { it.isNotBlank() && it != "null" }
