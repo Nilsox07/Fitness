@@ -16,8 +16,7 @@ const PRESETS = [60, 90, 120, 180]
 function beep() {
   try {
     const Ctx =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     const ctx = new Ctx()
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
@@ -141,9 +140,7 @@ export function RestControl({
           style={{ width: `${pct}%` }}
         />
         <Timer size={16} className="relative text-brand" />
-        <span className="tabular relative w-12 text-lg font-bold">
-          {timer.left <= 0 ? 'Los!' : mmss(timer.left)}
-        </span>
+        <span className="tabular relative w-12 text-lg font-bold">{timer.left <= 0 ? 'Los!' : mmss(timer.left)}</span>
         <button
           className="tabular relative rounded-full bg-sand-light px-2 py-0.5 text-xs font-semibold"
           onClick={() => timer.add(-15)}
@@ -235,7 +232,9 @@ export function RestControl({
           </div>
           {exercise && (
             <div>
-              <div className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">Nur für {exercise.name}</div>
+              <div className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
+                Nur für {exercise.name}
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -279,13 +278,15 @@ export function RestControl({
                 </div>
               </div>
               <p className="mt-2 px-1 text-xs leading-relaxed text-cocoa-light">
-                Schwere Grundübungen (Kniebeuge, Bankdrücken, Kreuzheben) brauchen 2–3 Min, Isolationsübungen
-                (Curls, Seitheben) meist 60–90 s.
+                Schwere Grundübungen (Kniebeuge, Bankdrücken, Kreuzheben) brauchen 2–3 Min, Isolationsübungen (Curls,
+                Seitheben) meist 60–90 s.
               </p>
             </div>
           )}
           <div>
-            <div className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">Automatisch starten</div>
+            <div className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">
+              Automatisch starten
+            </div>
             <div className="grid grid-cols-2 gap-2">
               {(['auto', 'off'] as const).map((m) => (
                 <button
@@ -300,9 +301,9 @@ export function RestControl({
               ))}
             </div>
             <p className="mt-2 px-1 text-xs leading-relaxed text-cocoa-light">
-              „Nach Satz" startet beim Abhaken ✓. Bei <strong>Supersätzen</strong> erst, wenn die
-              Runde aus beiden Übungen erledigt ist. Zur Partner-Übung wechselst du selbst. Pausen vor <strong>Dropsätzen</strong> und nach dem <strong>Aufwärmen</strong>{' '}
-              stellst du unter Profil → Meine Einstellungen ein.
+              „Nach Satz" startet beim Abhaken ✓. Bei <strong>Supersätzen</strong> erst, wenn die Runde aus beiden
+              Übungen erledigt ist. Zur Partner-Übung wechselst du selbst. Pausen vor <strong>Dropsätzen</strong> und
+              nach dem <strong>Aufwärmen</strong> stellst du unter Profil → Meine Einstellungen ein.
             </p>
           </div>
         </PremiumSheet>
