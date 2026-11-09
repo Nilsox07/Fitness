@@ -4,7 +4,6 @@ import { ChevronDown, Flame, Target } from 'lucide-react'
 import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
 import { useWater } from '../../hooks/useWater'
 import { useAllSets } from '../../hooks/useWorkouts'
-import { kcalTargetFor } from '../../lib/dayTarget'
 import { localDate } from '../../lib/day'
 import { sumEntries } from '../../lib/nutrition'
 import { byDay, nutritionDailyQuests, nutritionStreak, nutritionWeeklyQuests } from '../../lib/nutritionXp'
@@ -14,14 +13,14 @@ import { MyBuddy } from '../buddy/MyBuddy'
 import { BuddyLevelUp } from '../buddy/BuddyLevelUp'
 import { useBuddyLevel } from '../buddy/useBuddy'
 import { nf } from '../stats/shared'
-import { useTrainingKcal } from '../../hooks/useTrainingKcal'
+import { useKcalTarget } from '../../hooks/useKcalTarget'
 
 /**
  * Kompakte Gamification-Karte: Buddy im XP-Ring, Buddy-Level (Training + Ernährung),
  * Serie, Quests; aufklappbar.
  */
 export function NutritionGameCard({ style }: { style?: CSSProperties }) {
-  const { bonusOn } = useTrainingKcal()
+  const { targetOn } = useKcalTarget()
   const today = localDate()
   const { data: allEntries } = useAllFoodEntries()
   const { data: todayEntries } = useFoodEntries(today)
@@ -32,7 +31,7 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
   const g = useMemo(() => {
     const entries = allEntries ?? []
     const proteinTarget = settings?.protein_target ?? 0
-    const kcalTarget = kcalTargetFor(settings, true, bonusOn(today))
+    const kcalTarget = targetOn(today)
     const totals = sumEntries(todayEntries ?? [])
     const quests = [
       ...nutritionDailyQuests({
@@ -50,7 +49,7 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
       streak: nutritionStreak(new Set(byDay(entries).keys()), today),
       open: quests.filter((q) => !q.done).length,
     }
-  }, [allEntries, todayEntries, water, settings, allSets, today, bonusOn])
+  }, [allEntries, todayEntries, water, settings, allSets, today, targetOn])
   const level = useBuddyLevel()
   const [open, setOpen] = useState(false)
 

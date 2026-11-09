@@ -147,6 +147,11 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Kalorienbedarf nach Aktivität** (`src/lib/energy.ts`, `useKcalTarget`, Karte `EnergyCard` in Ernährung):
+  Grundumsatz (Mifflin-St Jeor) + Alltag (Schritte über 4.000 × 0,0005 × kg + 10 % GU; ohne Schritte
+  Alltags-PAL aus `activity`) + Training + Verdauung 10 %. Heute zählen mind. die Ø-Schritte der letzten 7 Tage.
+  `prefs.kcalTargetMode` 'activity' = Ziel täglich aus Bedarf (Training halb) + Ziel-Anpassung, mind. 1200;
+  'fixed' (Standard) = `kcal_target` + Bonus. Alle Tagesziele über `useKcalTarget().targetOn(date)`.
 - **Kalorien pro Training** (`src/lib/trainingKcal.ts`, `useTrainingKcal`): nur pro Training, nie pro Übung.
   Kraft: (MET − 1) × kg × h, MET 3–6,5 aus Satzdichte + Anteil großer Muskeln (Compendium-Werte), Dauer aus
   Satz-Zeitstempeln; Anzeige als Spanne ±20 %. Uhr-Aktivität im Zeitfenster (±20 min) zählt, wenn 60–160 % der

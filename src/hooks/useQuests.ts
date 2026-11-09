@@ -7,9 +7,8 @@ import { localDate, trainingDay } from '../lib/day'
 import { dailyQuests, weeklyQuests, type Quest } from '../lib/xp'
 import { nutritionDailyQuests, nutritionWeeklyQuests } from '../lib/nutritionXp'
 import { sumEntries } from '../lib/nutrition'
-import { kcalTargetFor } from '../lib/dayTarget'
 import { fluidTotal } from '../lib/fluid'
-import { useTrainingKcal } from './useTrainingKcal'
+import { useKcalTarget } from './useKcalTarget'
 
 export interface QuestSet {
   daily: Quest[]
@@ -19,7 +18,7 @@ export interface QuestSet {
 /** Tages- und Wochenquests für Training und (falls aktiv) Ernährung – Quelle der Buddy-XP. */
 export function useQuests(): { training: QuestSet; food: QuestSet | null } {
   const { showNutrition } = usePrefs()
-  const { bonusOn } = useTrainingKcal()
+  const { targetOn } = useKcalTarget()
   const { data: sets } = useAllSets()
   const { data: allEntries } = useAllFoodEntries()
   const foodDay = localDate()
@@ -40,12 +39,12 @@ export function useQuests(): { training: QuestSet; food: QuestSet | null } {
         protein: totals.protein,
         proteinTarget,
         kcal: totals.kcal,
-        kcalTarget: kcalTargetFor(settings, true, bonusOn(foodDay)),
+        kcalTarget: targetOn(foodDay),
         waterMl: (water?.ml ?? 0) + fluidTotal(todayEntries ?? []),
         waterTarget: settings?.water_target_ml || 2500,
       }),
       weekly: nutritionWeeklyQuests(allEntries ?? [], proteinTarget),
     }
     return { training, food }
-  }, [sets, allEntries, todayEntries, water, settings, showNutrition, bonusOn, trainDay, foodDay])
+  }, [sets, allEntries, todayEntries, water, settings, showNutrition, targetOn, trainDay, foodDay])
 }

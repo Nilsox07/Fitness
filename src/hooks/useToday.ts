@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { usePrefs } from '../lib/prefs'
 import { localDate, shiftDate, trainingDay } from '../lib/day'
 import { sumEntries } from '../lib/nutrition'
-import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
+import { trainedOn } from '../lib/dayTarget'
 import { sessionDates } from '../lib/analytics'
 import { weekStreakWithFreezes } from '../lib/streaks'
 import { weekDates } from '../lib/home'
@@ -28,7 +28,7 @@ import { useStreakState } from './useStreak'
 import { useTrainingRhythm, useUserPrefs } from './usePrefsSync'
 import { useHealthActivities, useHealthDaily, useHealthSleep } from './useHealth'
 import type { HealthActivity, HealthSleep } from '../types'
-import { useTrainingKcal } from './useTrainingKcal'
+import { useKcalTarget } from './useKcalTarget'
 
 export interface TodaySummary {
   day: string
@@ -67,7 +67,7 @@ export function useToday(): TodaySummary {
   const { data: plans } = usePlans()
   const { data: streakState } = useStreakState()
   const rhythm = useTrainingRhythm(tday)
-  const { bonusOn } = useTrainingKcal()
+  const { targetOn } = useKcalTarget()
   const sleepNeedMin = useUserPrefs().prefs.sleepGoalMin
   const { data: settings } = useNutritionSettings()
   const { data: entries } = useFoodEntries(day)
@@ -101,7 +101,7 @@ export function useToday(): TodaySummary {
       const setsOn = (d: string) =>
         (allSets ?? []).filter((s) => s.date === d && s.set_type !== 'warmup' && (s.reps ?? 0) > 0).length
       const totY = sumEntries(entriesY ?? [])
-      const targetY = kcalTargetFor(settings, true, bonusOn(yesterday))
+      const targetY = targetOn(yesterday)
       const nutritionKnown = showNutrition && (entriesY?.length ?? 0) > 0
       ready = readiness({
         sleepMin: sleep?.asleep_min ?? null,
@@ -132,7 +132,7 @@ export function useToday(): TodaySummary {
       day,
       trainingDay: tday,
       kcalEaten: Math.round(totals.kcal),
-      kcalTarget: kcalTargetFor(settings, true, bonusOn(day)),
+      kcalTarget: targetOn(day),
       proteinEaten: Math.round(totals.protein),
       proteinTarget: settings?.protein_target ?? 0,
       waterMl: water?.ml ?? 0,
@@ -159,7 +159,7 @@ export function useToday(): TodaySummary {
     streakState,
     rhythm.today,
     rhythm.goal,
-    bonusOn,
+    targetOn,
     settings,
     entries,
     entriesY,

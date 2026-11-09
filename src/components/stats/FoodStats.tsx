@@ -17,13 +17,13 @@ import { useProgressPeriod } from '../../lib/progressPeriod'
 import { periodRange, PERIOD_LABELS, type Period } from '../../lib/periods'
 import { daysBetween } from '../social/format'
 import { isoWeekNumber, MONTHS_LONG } from '../progress/progressUtils'
-import { useTrainingKcal } from '../../hooks/useTrainingKcal'
+import { useKcalTarget } from '../../hooks/useKcalTarget'
 
 const ddmm = (date: string) => `${date.slice(8, 10)}.${date.slice(5, 7)}`
 
 /** Ernährungs-Statistik (neue App). */
 export function FoodStats() {
-  const { bonusOn } = useTrainingKcal()
+  const { targetOn } = useKcalTarget()
   const { data: entries, isLoading } = useAllFoodEntries()
   const { data: settings } = useNutritionSettings()
   const { data: allSets } = useAllSets()
@@ -35,8 +35,7 @@ export function FoodStats() {
 
   const stats = useMemo(() => {
     const days = foodTotalsByDate(entries)
-    // Kalorienziel je Tag (inkl. Trainingsbonus) — gleiche Regel wie auf der Ernährungsseite.
-    const targetOn = (date: string) => kcalTargetFor(settings, true, bonusOn(date))
+    // Kalorienziel je Tag (fest + Bonus oder nach Aktivität) — gleiche Regel wie auf der Ernährungsseite.
     // Ø nur über abgeschlossene Tage mit Einträgen im Zeitraum (ohne heute, ohne Lücken)
     const complete = [...days.entries()].filter(([d]) => d >= range.start && d < today)
     const n = complete.length
@@ -91,7 +90,7 @@ export function FoodStats() {
       streak: proteinStreak(days, today, proteinTarget),
       hasAny: days.size > 0,
     }
-  }, [entries, settings, allSets, today, proteinTarget, bonusOn, range, period])
+  }, [entries, settings, allSets, today, proteinTarget, targetOn, range, period])
 
   const [, sm] = range.start.split('-').map(Number)
   const periodName =

@@ -5,7 +5,6 @@ import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../hook
 import { useAllWater, useWater } from '../hooks/useWater'
 import { useAllSets } from '../hooks/useWorkouts'
 import { sumEntries } from '../lib/nutrition'
-import { kcalTargetFor } from '../lib/dayTarget'
 import { localDate } from '../lib/day'
 import { levelInfo, type Quest } from '../lib/xp'
 import {
@@ -18,7 +17,7 @@ import {
 } from '../lib/nutritionXp'
 import { Confetti } from './Confetti'
 import { playLevelUp } from '../lib/sound'
-import { useTrainingKcal } from '../hooks/useTrainingKcal'
+import { useKcalTarget } from '../hooks/useKcalTarget'
 
 function foodMascot(level: number): string {
   if (level >= 20) return '🏆'
@@ -57,7 +56,7 @@ function QuestRow({ q }: { q: Quest }) {
  * Ernährungs-XP fließen dort ins Buddy-Level, das auch die einzige Level-up-Feier hat.
  */
 export function NutritionGamePanel({ compact = false }: { compact?: boolean } = {}) {
-  const { bonusOn } = useTrainingKcal()
+  const { targetOn } = useKcalTarget()
   const today = localDate()
   const { data: allEntries } = useAllFoodEntries()
   const { data: todayEntries } = useFoodEntries(today)
@@ -69,7 +68,7 @@ export function NutritionGamePanel({ compact = false }: { compact?: boolean } = 
   const g = useMemo(() => {
     const entries = allEntries ?? []
     const proteinTarget = settings?.protein_target ?? 0
-    const kcalTarget = kcalTargetFor(settings, true, bonusOn(today))
+    const kcalTarget = targetOn(today)
     const waterTarget = settings?.water_target_ml || 2500
     const days = byDay(entries)
     const dates = new Set(days.keys())
@@ -95,7 +94,7 @@ export function NutritionGamePanel({ compact = false }: { compact?: boolean } = 
       weekly: nutritionWeeklyQuests(entries, proteinTarget),
       badges: nutritionAchievements({ daysLogged: days.size, streak, proteinDays, waterGoalDays }),
     }
-  }, [allEntries, todayEntries, allWater, water, settings, allSets, today, bonusOn])
+  }, [allEntries, todayEntries, allWater, water, settings, allSets, today, targetOn])
 
   // Level-up-Feier (eigener Zähler, getrennt vom Fitness-Level). Der gespeicherte
   // „gesehene" Level sinkt nie — sonst würde ein kurzzeitig niedrigerer Level

@@ -10,7 +10,6 @@ import { useRecipes, useToggleRecipeShared, useDeleteRecipe } from '../hooks/use
 import { useAddFoodEntry, useDietStyle, useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useAllSets } from '../hooks/useWorkouts'
 import { localDate } from '../lib/day'
-import { kcalTargetFor } from '../lib/dayTarget'
 import { scoreMeal, type MealScore } from '../lib/mealScore'
 import { stagger } from '../components/nutrition-home/motion'
 import { RecipeCreateSheet, type CreateMode } from '../components/recipes/RecipeCreateSheet'
@@ -30,7 +29,7 @@ import {
 } from '../components/recipes/recipeUtils'
 import type { Meal, SavedRecipe } from '../types'
 import { hintFoodMethod, track } from '../lib/track'
-import { useTrainingKcal } from '../hooks/useTrainingKcal'
+import { useKcalTarget } from '../hooks/useKcalTarget'
 
 // ---------------------------------------------------------------------------
 // „Für dich"-Karussell, Suche, Filter-Chips, 2-Spalten-Raster,
@@ -40,7 +39,7 @@ import { useTrainingKcal } from '../hooks/useTrainingKcal'
 type Filter = 'all' | 'protein' | 'friends'
 
 function NewRecipes() {
-  const { bonusOn } = useTrainingKcal()
+  const { targetOn } = useKcalTarget()
   const { user } = useAuth()
   const { data: recipes, isLoading } = useRecipes()
   const { data: ai, isPending: aiPending } = useAiStatus()
@@ -117,7 +116,7 @@ function NewRecipes() {
       (s, e) => ({ kcal: s.kcal + (Number(e.kcal) || 0), protein: s.protein + (Number(e.protein) || 0) }),
       { kcal: 0, protein: 0 },
     )
-    const target = kcalTargetFor(settings, true, bonusOn(date))
+    const target = targetOn(date)
     const proteinTarget = settings?.protein_target ?? 0
     return {
       goal: settings?.goal ?? null,
@@ -127,7 +126,7 @@ function NewRecipes() {
       carbsTarget: settings?.carbs_target ?? 0,
       fatTarget: settings?.fat_target ?? 0,
     }
-  }, [entries, settings, allSets, date, bonusOn])
+  }, [entries, settings, allSets, date, targetOn])
 
   const recCtx = useMemo<RecommendContext>(
     () => ({

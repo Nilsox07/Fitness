@@ -3,24 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import { usePrefs } from '../../lib/prefs'
 import { localDate } from '../../lib/day'
 import { sumEntries } from '../../lib/nutrition'
-import { kcalTargetFor } from '../../lib/dayTarget'
-import { useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
+import { useFoodEntries } from '../../hooks/useNutrition'
 import type { SetWithDate } from '../../types'
 import { enter } from './motion'
-import { useTrainingKcal } from '../../hooks/useTrainingKcal'
+import { useKcalTarget } from '../../hooks/useKcalTarget'
 
 /** Eine Zeile Ernährung statt doppeltem Tagesüberblick → wechselt in die Ernährungs-Welt. */
 export function NutritionRow({ index }: { allSets?: SetWithDate[] | undefined; index: number }) {
-  const { bonusOn } = useTrainingKcal()
+  const { targetOn } = useKcalTarget()
   const navigate = useNavigate()
   const { showNutrition, setWorld } = usePrefs()
   const day = localDate() // Ernährung zählt nach Kalendertag
-  const { data: settings } = useNutritionSettings()
   const { data: entries } = useFoodEntries(day)
   if (!showNutrition) return null
 
   const totals = sumEntries(entries ?? [])
-  const target = kcalTargetFor(settings, true, bonusOn(day))
+  const target = targetOn(day)
   const pct = target ? Math.min(100, Math.round((totals.kcal / target) * 100)) : 0
   const fmt = (n: number) => n.toLocaleString('de-DE')
 

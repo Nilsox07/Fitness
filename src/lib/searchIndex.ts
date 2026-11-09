@@ -338,6 +338,15 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     needs: 'watch',
   },
   {
+    id: 'energy',
+    label: 'Kalorienbedarf',
+    sub: 'Grundumsatz, Schritte & Training – Ziel nach Aktivität',
+    section: 'Ernährung',
+    to: '/nutrition',
+    keywords: 'kalorienbedarf bedarf grundumsatz tdee umsatz schritte aktivität verbrauch ziel automatisch',
+    needs: 'nutrition',
+  },
+  {
     id: 'training-kcal',
     label: 'Kalorien beim Training',
     sub: 'Schätzung je Training & Bonus fürs Tagesziel',

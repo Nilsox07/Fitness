@@ -12,6 +12,7 @@ import type { CardioKind, CardioPlan, CardioType, FitGoal } from './onboarding'
 import { normalizeConsent, type Consent } from './consent'
 import { normalizeRuns, type HybridRun } from './hybridSessions'
 import type { BonusMode } from './trainingKcal'
+import type { TargetMode } from './energy'
 
 /** Prozent je Mahlzeit (Summe = 100). */
 export type MealSplit = Record<Meal, number>
@@ -69,6 +70,8 @@ export interface UserPrefs {
   hybridRuns: HybridRun[]
   /** Kalorien-Bonus an Trainingstagen: pauschal (kcalBonus) oder nach geschätztem Verbrauch (halb) */
   kcalBonusMode: BonusMode
+  /** Kalorienziel: fest (Profil + Bonus) oder täglich nach Aktivität (Schritte + Training) */
+  kcalTargetMode: TargetMode
 }
 
 export interface Modules {
@@ -112,6 +115,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   wakeTime: null,
   hybridRuns: [],
   kcalBonusMode: 'auto',
+  kcalTargetMode: 'fixed',
 }
 
 /** Zielgewicht: 30–300 kg, auf 0,1 kg gerundet; sonst null. */
@@ -262,5 +266,6 @@ export function normalizePrefs(raw: unknown): UserPrefs {
     wakeTime: typeof r.wakeTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(r.wakeTime) ? r.wakeTime : null,
     hybridRuns: normalizeRuns(r.hybridRuns),
     kcalBonusMode: r.kcalBonusMode === 'fixed' ? 'fixed' : 'auto',
+    kcalTargetMode: r.kcalTargetMode === 'activity' ? 'activity' : 'fixed',
   }
 }

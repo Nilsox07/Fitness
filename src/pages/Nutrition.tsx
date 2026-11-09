@@ -64,9 +64,9 @@ import {
   useNutritionSettings,
   useDietStyle,
 } from '../hooks/useNutrition'
-import { useTrainingKcal } from '../hooks/useTrainingKcal'
+import { useKcalTarget } from '../hooks/useKcalTarget'
 import { GOAL_LABEL, fiberTarget, scalePer100, sumEntries } from '../lib/nutrition'
-import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
+import { trainedOn } from '../lib/dayTarget'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
 import {
   analyzeMeal,
@@ -82,6 +82,7 @@ import {
   type MealPlanItem,
   type Recipe,
 } from '../lib/ai'
+import { EnergyCard } from '../components/nutrition-home/EnergyCard'
 import { useAiGate } from '../hooks/usePremium'
 import { PlusBadge } from '../components/premium/PlusBadge'
 import { mealVerdictText } from '../lib/freeTexts'
@@ -316,7 +317,7 @@ function ManualField({ label, value, onChange }: { label: string; value: number;
 
 export default function Nutrition() {
   const { mealSplit } = useNutritionPrefs()
-  const { bonusOn } = useTrainingKcal()
+  const { targetOn, bonusOn, mode: targetMode } = useKcalTarget()
   const nutrientPins = useNutrientPins()
   const { user } = useAuth()
   const addRecipe = useAddRecipe()
@@ -1085,7 +1086,7 @@ export default function Nutrition() {
 
   const hasTarget = settings && settings.kcal_target > 0
   // Gleiches Tagesziel wie Tagesüberblick/Auswertung (Trainingstag + eigener Bonus, Standard 250).
-  const kcalTarget = kcalTargetFor(settings, true, bonusOn(today))
+  const kcalTarget = targetOn(today)
   const dayKcal = useMemo(() => kcalByDate(allEntries), [allEntries])
   const sheetOpen = addMode !== null || !!pending || !!aiResults || !!recipe || !!planItems || !!analysis
 
@@ -1130,7 +1131,7 @@ export default function Nutrition() {
           today={realToday}
           onChange={setDay}
           kcalByDate={dayKcal}
-          targetFor={(d) => kcalTargetFor(settings, true, bonusOn(d))}
+          targetFor={(d) => targetOn(d)}
         />
 
         {isToday && <QuestStrip area="food" />}
@@ -1155,7 +1156,7 @@ export default function Nutrition() {
           }}
           pins={nutrientPins}
           trained={trainedToday}
-          bonus={bonusOn(today)}
+          bonus={targetMode === 'activity' ? 0 : bonusOn(today)}
           onSetup={openSetup}
           buddy={isToday ? heroBuddy : undefined}
           style={stagger(1)}
@@ -1244,6 +1245,7 @@ export default function Nutrition() {
         <WaterRow date={today} style={stagger(8)} />
         <MicroCard entries={entries ?? []} sex={settings?.sex ?? null} style={stagger(9)} />
         {(homeCards.supplements || (supplements?.length ?? 0) > 0) && <SupplementCard date={today} />}
+        {hasTarget && <EnergyCard date={today} isToday={isToday} />}
         {isToday && (homeCards.weight || params.has('weigh')) && <BodyWeightCard />}
         {isToday && <CustomizeHome area="food" />}
       </>
