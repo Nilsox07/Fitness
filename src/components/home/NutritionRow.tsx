@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { usePrefs } from '../../lib/prefs'
 import { localDate } from '../../lib/day'
 import { sumEntries } from '../../lib/nutrition'
-import { kcalTargetFor, trainedOn } from '../../lib/dayTarget'
+import { kcalTargetFor } from '../../lib/dayTarget'
 import { useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
 import type { SetWithDate } from '../../types'
 import { enter } from './motion'
-import { useNutritionPrefs } from '../../hooks/usePrefsSync'
+import { useTrainingKcal } from '../../hooks/useTrainingKcal'
 
 /** Eine Zeile Ernährung statt doppeltem Tagesüberblick → wechselt in die Ernährungs-Welt. */
-export function NutritionRow({ allSets, index }: { allSets: SetWithDate[] | undefined; index: number }) {
-  const { kcalBonus } = useNutritionPrefs()
+export function NutritionRow({ index }: { allSets?: SetWithDate[] | undefined; index: number }) {
+  const { bonusOn } = useTrainingKcal()
   const navigate = useNavigate()
   const { showNutrition, setWorld } = usePrefs()
   const day = localDate() // Ernährung zählt nach Kalendertag
@@ -20,7 +20,7 @@ export function NutritionRow({ allSets, index }: { allSets: SetWithDate[] | unde
   if (!showNutrition) return null
 
   const totals = sumEntries(entries ?? [])
-  const target = kcalTargetFor(settings, trainedOn(day, allSets), kcalBonus)
+  const target = kcalTargetFor(settings, true, bonusOn(day))
   const pct = target ? Math.min(100, Math.round((totals.kcal / target) * 100)) : 0
   const fmt = (n: number) => n.toLocaleString('de-DE')
 

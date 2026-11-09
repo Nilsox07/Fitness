@@ -36,6 +36,7 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
   const flexible = !definesDays(prefs.schedule)
   const [perWeek, setPerWeek] = useState(weeklyGoal(prefs.schedule))
   const [bonus, setBonus] = useState(prefs.kcalBonus)
+  const [bonusMode, setBonusMode] = useState(prefs.kcalBonusMode)
   const [split, setSplit] = useState<MealSplit>(prefs.mealSplit)
   const [rest, setRest] = useState(getRestSeconds())
   const [rules, setRules] = useState<RestRules>(getRestRules())
@@ -52,6 +53,7 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
   const dirty =
     (flexible && perWeek !== weeklyGoal(prefs.schedule)) ||
     bonus !== prefs.kcalBonus ||
+    bonusMode !== prefs.kcalBonusMode ||
     MEALS.some((m) => split[m] !== prefs.mealSplit[m]) ||
     rest !== getRestSeconds() ||
     rules.warmupToWarmup !== savedRules.warmupToWarmup ||
@@ -79,6 +81,7 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
       setRestRules(rules)
       await save({
         kcalBonus: bonus,
+        kcalBonusMode: bonusMode,
         mealSplit: split,
         dayCutoff: cutoff,
         showSugar,
@@ -262,28 +265,53 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
       {showNutrition && (
         <Section title="Ernährung">
           <div className="space-y-2 px-4 py-3">
-            <div className="flex items-baseline justify-between gap-2">
-              <div>
-                <div className="font-medium">Bonus an Trainingstagen</div>
-                <div className="text-xs text-cocoa-light">Zusätzliche kcal, wenn du trainiert hast.</div>
+            <div>
+              <div className="font-medium">Bonus an Trainingstagen</div>
+              <div className="text-xs text-cocoa-light">
+                {bonusMode === 'auto'
+                  ? 'Die Hälfte der geschätzten Trainings-kcal – nie alles zurückessen.'
+                  : 'Feste kcal, wenn du trainiert hast.'}
               </div>
-              <span className="tabular shrink-0 text-sm font-semibold">+{bonus} kcal</span>
             </div>
-            <input
-              type="range"
-              min={0}
-              max={600}
-              step={25}
-              value={bonus}
-              onChange={(e) => change(setBonus)(Number(e.target.value))}
-              aria-label="Kalorien-Bonus an Trainingstagen"
-              className="w-full accent-[rgb(var(--c-ruby))]"
-            />
-            <div className="flex justify-between text-[11px] text-cocoa-muted">
-              <span>0</span>
-              <span>Standard {DEFAULT_KCAL_BONUS}</span>
-              <span>600</span>
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-sand p-1 text-sm font-semibold">
+              {(
+                [
+                  ['auto', 'Nach Training'],
+                  ['fixed', 'Pauschal'],
+                ] as const
+              ).map(([m, l]) => (
+                <button
+                  key={m}
+                  onClick={() => change(setBonusMode)(m)}
+                  aria-pressed={bonusMode === m}
+                  className={`rounded-lg py-1.5 ${bonusMode === m ? 'bg-cream text-cocoa shadow-sm' : 'text-cocoa-muted'}`}
+                >
+                  {l}
+                </button>
+              ))}
             </div>
+            {bonusMode === 'fixed' && (
+              <>
+                <div className="flex justify-end">
+                  <span className="tabular text-sm font-semibold">+{bonus} kcal</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={600}
+                  step={25}
+                  value={bonus}
+                  onChange={(e) => change(setBonus)(Number(e.target.value))}
+                  aria-label="Kalorien-Bonus an Trainingstagen"
+                  className="w-full accent-[rgb(var(--c-ruby))]"
+                />
+                <div className="flex justify-between text-[11px] text-cocoa-muted">
+                  <span>0</span>
+                  <span>Standard {DEFAULT_KCAL_BONUS}</span>
+                  <span>600</span>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="space-y-2 px-4 py-3">
@@ -383,7 +411,8 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
           <p className="text-center text-xs text-cocoa-muted">Wird vorerst nur auf diesem Gerät gespeichert.</p>
         )}
         <p className="text-center text-[11px] text-cocoa-muted">
-          Standard: 250 kcal · 25/35/30/10 % · {fmtRest(REST_DEFAULT)} Pause · {String(DAY_CUTOFF_H).padStart(2, '0')}
+          Standard: Bonus nach Training · 25/35/30/10 % · {fmtRest(REST_DEFAULT)} Pause ·{' '}
+          {String(DAY_CUTOFF_H).padStart(2, '0')}
           :00 Uhr
         </p>
       </div>

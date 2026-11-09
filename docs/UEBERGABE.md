@@ -147,6 +147,12 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Kalorien pro Training** (`src/lib/trainingKcal.ts`, `useTrainingKcal`): nur pro Training, nie pro Übung.
+  Kraft: (MET − 1) × kg × h, MET 3–6,5 aus Satzdichte + Anteil großer Muskeln (Compendium-Werte), Dauer aus
+  Satz-Zeitstempeln; Anzeige als Spanne ±20 %. Uhr-Aktivität im Zeitfenster (±20 min) zählt, wenn 60–160 % der
+  Schätzung, sonst begrenzt. Hybrid: Laufen 0,95 kcal/kg/km, Stationen 8 MET. Anzeige: Letztes Training,
+  Verlauf, Hybrid-Abschluss. **Tagesziel:** `prefs.kcalBonusMode` 'auto' (Standard) = halbe Gutschrift, max.
+  600 kcal; 'fixed' = alter Pauschal-Bonus. Alle `kcalTargetFor`-Aufrufe nutzen `bonusOn(date)`.
 - **Modul Hybrid** (`hasHybrid` in `lib/prefs.tsx`, `modules.hybrid`): Ausdauer-Plan (Widget `cardioPlan`),
   Hybrid-Abstimmung, Hybrid-Einheiten (`/hybrid`), Laufwetter/Ausdauer-Woche (Android, `showHybrid` im Snapshot),
   Wetter-Ort. Alte Konten ohne Feld: an, wenn ein Ausdauer-Plan existiert. Ausdauer im Intro gewählt → an.

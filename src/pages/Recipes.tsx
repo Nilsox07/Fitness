@@ -10,7 +10,7 @@ import { useRecipes, useToggleRecipeShared, useDeleteRecipe } from '../hooks/use
 import { useAddFoodEntry, useDietStyle, useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useAllSets } from '../hooks/useWorkouts'
 import { localDate } from '../lib/day'
-import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
+import { kcalTargetFor } from '../lib/dayTarget'
 import { scoreMeal, type MealScore } from '../lib/mealScore'
 import { stagger } from '../components/nutrition-home/motion'
 import { RecipeCreateSheet, type CreateMode } from '../components/recipes/RecipeCreateSheet'
@@ -29,8 +29,8 @@ import {
   recipesForToday,
 } from '../components/recipes/recipeUtils'
 import type { Meal, SavedRecipe } from '../types'
-import { useNutritionPrefs } from '../hooks/usePrefsSync'
 import { hintFoodMethod, track } from '../lib/track'
+import { useTrainingKcal } from '../hooks/useTrainingKcal'
 
 // ---------------------------------------------------------------------------
 // „Für dich"-Karussell, Suche, Filter-Chips, 2-Spalten-Raster,
@@ -40,7 +40,7 @@ import { hintFoodMethod, track } from '../lib/track'
 type Filter = 'all' | 'protein' | 'friends'
 
 function NewRecipes() {
-  const { kcalBonus } = useNutritionPrefs()
+  const { bonusOn } = useTrainingKcal()
   const { user } = useAuth()
   const { data: recipes, isLoading } = useRecipes()
   const { data: ai, isPending: aiPending } = useAiStatus()
@@ -117,7 +117,7 @@ function NewRecipes() {
       (s, e) => ({ kcal: s.kcal + (Number(e.kcal) || 0), protein: s.protein + (Number(e.protein) || 0) }),
       { kcal: 0, protein: 0 },
     )
-    const target = kcalTargetFor(settings, trainedOn(date, allSets), kcalBonus)
+    const target = kcalTargetFor(settings, true, bonusOn(date))
     const proteinTarget = settings?.protein_target ?? 0
     return {
       goal: settings?.goal ?? null,
@@ -127,7 +127,7 @@ function NewRecipes() {
       carbsTarget: settings?.carbs_target ?? 0,
       fatTarget: settings?.fat_target ?? 0,
     }
-  }, [entries, settings, allSets, date, kcalBonus])
+  }, [entries, settings, allSets, date, bonusOn])
 
   const recCtx = useMemo<RecommendContext>(
     () => ({

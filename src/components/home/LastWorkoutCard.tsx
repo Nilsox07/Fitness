@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Trophy } from 'lucide-react'
+import { ChevronRight, Flame, Trophy } from 'lucide-react'
 import { dayLabel } from '../../lib/day'
 import type { LastSessionStats } from '../../lib/home'
+import { kcalSourceText, kcalText, type KcalEstimate } from '../../lib/trainingKcal'
 import { enter } from './motion'
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
@@ -25,11 +26,14 @@ export function LastWorkoutCard({
   today,
   names,
   index,
+  kcal,
 }: {
   stats: LastSessionStats
   today: string
   names: string[]
   index: number
+  /** Geschätzter Verbrauch (Kraft) – null = nichts zeigen */
+  kcal?: KcalEstimate | null
 }) {
   const navigate = useNavigate()
   return (
@@ -63,11 +67,23 @@ export function LastWorkoutCard({
           }
         />
       </div>
-      {names.length > 0 && (
-        <p className="truncate border-t border-sand pt-2.5 text-xs text-cocoa-light">
-          {names.slice(0, 3).join(' · ')}
-          {names.length > 3 && <span className="text-cocoa-muted"> · +{names.length - 3}</span>}
-        </p>
+      {(names.length > 0 || kcal) && (
+        <div className="flex items-center gap-3 border-t border-sand pt-2.5 text-xs">
+          <p className="min-w-0 flex-1 truncate text-cocoa-light">
+            {names.slice(0, 3).join(' · ')}
+            {names.length > 3 && <span className="text-cocoa-muted"> · +{names.length - 3}</span>}
+          </p>
+          {kcal && (
+            <span
+              className="tabular flex shrink-0 items-center gap-1 font-semibold text-cocoa-light"
+              title={kcalSourceText(kcal)}
+            >
+              <Flame size={13} className="text-cocoa-muted" />
+              {kcalText(kcal)}
+              {kcal.source !== 'estimate' && <span className="font-normal text-cocoa-muted">· Uhr</span>}
+            </span>
+          )}
+        </div>
       )}
     </button>
   )

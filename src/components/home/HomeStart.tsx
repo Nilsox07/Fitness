@@ -25,6 +25,7 @@ import { WeekStrip } from './WeekStrip'
 import { NextWorkoutCard } from './NextWorkoutCard'
 import { RecoveryCard, type MuscleState } from './RecoveryCard'
 import { LastWorkoutCard } from './LastWorkoutCard'
+import { useTrainingKcal } from '../../hooks/useTrainingKcal'
 import { NutritionRow } from './NutritionRow'
 import { ChallengeCard } from './ChallengeCard'
 import { RestDayCard } from './RestDayCard'
@@ -66,6 +67,7 @@ export function HomeStart({
 }) {
   const [homeCards] = useHomeCards()
   const { showNutrition, hasHybrid } = usePrefs()
+  const kcal = useTrainingKcal()
   const { data: workouts } = useWorkouts()
   const { data: allSets } = useAllSets()
   const { data: exercises } = useExercises()
@@ -196,7 +198,9 @@ export function HomeStart({
         ]}
       />
       {homeCards.recovery && <RecoveryCard items={muscleStates} index={++i} />}
-      {homeCards.lastWorkout && last && <LastWorkoutCard stats={last} today={today} names={lastNames} index={++i} />}
+      {homeCards.lastWorkout && last && (
+        <LastWorkoutCard stats={last} today={today} names={lastNames} index={++i} kcal={kcal.strengthOn(last.date)} />
+      )}
       {homeCards.nutrition && showNutrition && <NutritionRow allSets={allSets} index={++i} />}
       {homeCards.challenge && <ChallengeCard index={++i} />}
       <CustomizeHome area="training" />

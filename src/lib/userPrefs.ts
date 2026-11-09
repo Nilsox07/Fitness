@@ -11,6 +11,7 @@ import { DEFAULT_SET_SCHEME, normalizeSetScheme, type SetScheme } from './setSch
 import type { CardioKind, CardioPlan, CardioType, FitGoal } from './onboarding'
 import { normalizeConsent, type Consent } from './consent'
 import { normalizeRuns, type HybridRun } from './hybridSessions'
+import type { BonusMode } from './trainingKcal'
 
 /** Prozent je Mahlzeit (Summe = 100). */
 export type MealSplit = Record<Meal, number>
@@ -66,6 +67,8 @@ export interface UserPrefs {
   wakeTime: string | null
   /** Ergebnisse der Hybrid-Einheiten (höchstens 40) */
   hybridRuns: HybridRun[]
+  /** Kalorien-Bonus an Trainingstagen: pauschal (kcalBonus) oder nach geschätztem Verbrauch (halb) */
+  kcalBonusMode: BonusMode
 }
 
 export interface Modules {
@@ -108,6 +111,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   sleepGoalMin: 480,
   wakeTime: null,
   hybridRuns: [],
+  kcalBonusMode: 'auto',
 }
 
 /** Zielgewicht: 30–300 kg, auf 0,1 kg gerundet; sonst null. */
@@ -257,5 +261,6 @@ export function normalizePrefs(raw: unknown): UserPrefs {
     sleepGoalMin: Math.round(num(r.sleepGoalMin, 360, 600, 480) / 15) * 15,
     wakeTime: typeof r.wakeTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(r.wakeTime) ? r.wakeTime : null,
     hybridRuns: normalizeRuns(r.hybridRuns),
+    kcalBonusMode: r.kcalBonusMode === 'fixed' ? 'fixed' : 'auto',
   }
 }

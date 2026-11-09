@@ -7,9 +7,9 @@ import { useAllSets } from '../hooks/useWorkouts'
 import { useFoodEntries, useNutritionSettings } from '../hooks/useNutrition'
 import { useWater } from '../hooks/useWater'
 import { sumEntries } from '../lib/nutrition'
-import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
-import { useNutritionPrefs } from '../hooks/usePrefsSync'
+import { kcalTargetFor } from '../lib/dayTarget'
 import { trainingDay } from '../lib/day'
+import { useTrainingKcal } from '../hooks/useTrainingKcal'
 
 /** Trainings-Tag (Wechsel um die eingestellte Stunde, Standard 4 Uhr). */
 function trainingToday(): string {
@@ -19,9 +19,7 @@ function today(): string {
   return ymd(new Date())
 }
 function ymd(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function Tile({
@@ -40,9 +38,7 @@ function Tile({
   return (
     <button
       onClick={onClick}
-      className={`rounded-xl p-2 text-center transition-colors duration-200 ${
-        done ? 'bg-success/10' : 'bg-sand'
-      }`}
+      className={`rounded-xl p-2 text-center transition-colors duration-200 ${done ? 'bg-success/10' : 'bg-sand'}`}
     >
       <div className="text-[11px] text-cocoa-light">{label}</div>
       <div
@@ -59,7 +55,7 @@ function Tile({
 
 /** Kompakter Tagesüberblick über Fitness + Ernährung, oben auf „Heute". */
 export function DailyOverview() {
-  const { kcalBonus } = useNutritionPrefs()
+  const { bonusOn } = useTrainingKcal()
   const navigate = useNavigate()
   const { setWorld, showNutrition } = usePrefs()
   const { data: allSets } = useAllSets()
@@ -71,7 +67,7 @@ export function DailyOverview() {
   const trained = tSets.length > 0
   const totals = sumEntries(entries ?? [])
   // Ernährung zählt nach Kalendertag — gleiches Ziel (inkl. Trainingsbonus) wie auf „Ernährung".
-  const kcalTarget = kcalTargetFor(settings, trainedOn(today(), allSets), kcalBonus)
+  const kcalTarget = kcalTargetFor(settings, true, bonusOn(today()))
   const kcalLeft = kcalTarget ? kcalTarget - totals.kcal : 0
   const proteinTarget = settings?.protein_target ?? 0
   const goalWater = settings?.water_target_ml || 2500

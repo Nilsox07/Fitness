@@ -32,6 +32,8 @@ import {
 } from '../components/progress/progressUtils'
 import { enter } from '../components/home/motion'
 import type { Exercise, SetWithDate, Workout } from '../types'
+import { useTrainingKcal } from '../hooks/useTrainingKcal'
+import { kcalText, type KcalEstimate } from '../lib/trainingKcal'
 
 export default function History() {
   // Bereich kommt aus dem Link (?view=food|training); ohne Angabe: Training
@@ -260,6 +262,7 @@ function NewHistory({
     return m
   }, [allSets])
   const metas = useMemo(() => workoutMetas(allSets), [allSets])
+  const kcalBy = useTrainingKcal().byWorkout
 
   const volumeByDate = useMemo(() => {
     const m = new Map<string, number>()
@@ -362,6 +365,7 @@ function NewHistory({
                   workout={w}
                   today={today}
                   meta={metas.get(w.id)}
+                  kcal={kcalBy.get(w.id)}
                   names={(metas.get(w.id)?.exerciseIds ?? []).map(exName)}
                   open={openId === w.id}
                   editing={editId === w.id}
@@ -408,6 +412,7 @@ function WorkoutCard({
   workout: w,
   today,
   meta,
+  kcal,
   names,
   open,
   editing,
@@ -419,6 +424,7 @@ function WorkoutCard({
   workout: Workout
   today: string
   meta: WorkoutMeta | undefined
+  kcal?: KcalEstimate
   names: string[]
   open: boolean
   editing: boolean
@@ -456,6 +462,7 @@ function WorkoutCard({
                 {(meta?.volume ?? 0) > 0 && (
                   <Stat icon={<Weight size={12} className="text-cocoa-muted" />}>{formatVolume(meta!.volume)}</Stat>
                 )}
+                {kcal && <Stat icon={<Flame size={12} className="text-cocoa-muted" />}>{kcalText(kcal)}</Stat>}
                 {(meta?.prs ?? 0) > 0 && (
                   <Stat icon={<Trophy size={12} strokeWidth={2.5} />} className="font-semibold text-gold">
                     {meta!.prs} {meta!.prs === 1 ? 'Rekord' : 'Rekorde'}

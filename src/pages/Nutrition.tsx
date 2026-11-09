@@ -64,6 +64,7 @@ import {
   useNutritionSettings,
   useDietStyle,
 } from '../hooks/useNutrition'
+import { useTrainingKcal } from '../hooks/useTrainingKcal'
 import { GOAL_LABEL, fiberTarget, scalePer100, sumEntries } from '../lib/nutrition'
 import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
 import { fetchProductByBarcode, searchProducts, type FoodProduct } from '../lib/openfoodfacts'
@@ -314,7 +315,8 @@ function ManualField({ label, value, onChange }: { label: string; value: number;
 }
 
 export default function Nutrition() {
-  const { kcalBonus, mealSplit } = useNutritionPrefs()
+  const { mealSplit } = useNutritionPrefs()
+  const { bonusOn } = useTrainingKcal()
   const nutrientPins = useNutrientPins()
   const { user } = useAuth()
   const addRecipe = useAddRecipe()
@@ -1083,7 +1085,7 @@ export default function Nutrition() {
 
   const hasTarget = settings && settings.kcal_target > 0
   // Gleiches Tagesziel wie Tagesüberblick/Auswertung (Trainingstag + eigener Bonus, Standard 250).
-  const kcalTarget = kcalTargetFor(settings, trainedToday, kcalBonus)
+  const kcalTarget = kcalTargetFor(settings, true, bonusOn(today))
   const dayKcal = useMemo(() => kcalByDate(allEntries), [allEntries])
   const sheetOpen = addMode !== null || !!pending || !!aiResults || !!recipe || !!planItems || !!analysis
 
@@ -1128,7 +1130,7 @@ export default function Nutrition() {
           today={realToday}
           onChange={setDay}
           kcalByDate={dayKcal}
-          targetFor={(d) => kcalTargetFor(settings, trainedOn(d, allSets), kcalBonus)}
+          targetFor={(d) => kcalTargetFor(settings, true, bonusOn(d))}
         />
 
         {isToday && <QuestStrip area="food" />}
@@ -1153,7 +1155,7 @@ export default function Nutrition() {
           }}
           pins={nutrientPins}
           trained={trainedToday}
-          bonus={kcalBonus}
+          bonus={bonusOn(today)}
           onSetup={openSetup}
           buddy={isToday ? heroBuddy : undefined}
           style={stagger(1)}

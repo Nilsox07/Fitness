@@ -25,9 +25,10 @@ import { PHASE_LABEL, readinessEffect, trainingHint } from '../lib/cycle'
 import { useAllSets } from './useWorkouts'
 import { usePlans } from './usePlans'
 import { useStreakState } from './useStreak'
-import { useNutritionPrefs, useTrainingRhythm, useUserPrefs } from './usePrefsSync'
+import { useTrainingRhythm, useUserPrefs } from './usePrefsSync'
 import { useHealthActivities, useHealthDaily, useHealthSleep } from './useHealth'
 import type { HealthActivity, HealthSleep } from '../types'
+import { useTrainingKcal } from './useTrainingKcal'
 
 export interface TodaySummary {
   day: string
@@ -66,7 +67,7 @@ export function useToday(): TodaySummary {
   const { data: plans } = usePlans()
   const { data: streakState } = useStreakState()
   const rhythm = useTrainingRhythm(tday)
-  const { kcalBonus } = useNutritionPrefs()
+  const { bonusOn } = useTrainingKcal()
   const sleepNeedMin = useUserPrefs().prefs.sleepGoalMin
   const { data: settings } = useNutritionSettings()
   const { data: entries } = useFoodEntries(day)
@@ -100,7 +101,7 @@ export function useToday(): TodaySummary {
       const setsOn = (d: string) =>
         (allSets ?? []).filter((s) => s.date === d && s.set_type !== 'warmup' && (s.reps ?? 0) > 0).length
       const totY = sumEntries(entriesY ?? [])
-      const targetY = kcalTargetFor(settings, trainedOn(yesterday, allSets), kcalBonus)
+      const targetY = kcalTargetFor(settings, true, bonusOn(yesterday))
       const nutritionKnown = showNutrition && (entriesY?.length ?? 0) > 0
       ready = readiness({
         sleepMin: sleep?.asleep_min ?? null,
@@ -131,7 +132,7 @@ export function useToday(): TodaySummary {
       day,
       trainingDay: tday,
       kcalEaten: Math.round(totals.kcal),
-      kcalTarget: kcalTargetFor(settings, trainedOn(day, allSets), kcalBonus),
+      kcalTarget: kcalTargetFor(settings, true, bonusOn(day)),
       proteinEaten: Math.round(totals.protein),
       proteinTarget: settings?.protein_target ?? 0,
       waterMl: water?.ml ?? 0,
@@ -158,7 +159,7 @@ export function useToday(): TodaySummary {
     streakState,
     rhythm.today,
     rhythm.goal,
-    kcalBonus,
+    bonusOn,
     settings,
     entries,
     entriesY,

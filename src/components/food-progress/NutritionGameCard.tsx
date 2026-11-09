@@ -4,29 +4,24 @@ import { ChevronDown, Flame, Target } from 'lucide-react'
 import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from '../../hooks/useNutrition'
 import { useWater } from '../../hooks/useWater'
 import { useAllSets } from '../../hooks/useWorkouts'
-import { kcalTargetFor, trainedOn } from '../../lib/dayTarget'
+import { kcalTargetFor } from '../../lib/dayTarget'
 import { localDate } from '../../lib/day'
 import { sumEntries } from '../../lib/nutrition'
-import {
-  byDay,
-  nutritionDailyQuests,
-  nutritionStreak,
-  nutritionWeeklyQuests,
-} from '../../lib/nutritionXp'
+import { byDay, nutritionDailyQuests, nutritionStreak, nutritionWeeklyQuests } from '../../lib/nutritionXp'
 import { NutritionGamePanel } from '../NutritionGamePanel'
 import { Ring } from '../nutrition-home/Ring'
 import { MyBuddy } from '../buddy/MyBuddy'
 import { BuddyLevelUp } from '../buddy/BuddyLevelUp'
 import { useBuddyLevel } from '../buddy/useBuddy'
 import { nf } from '../stats/shared'
-import { useNutritionPrefs } from '../../hooks/usePrefsSync'
+import { useTrainingKcal } from '../../hooks/useTrainingKcal'
 
 /**
  * Kompakte Gamification-Karte: Buddy im XP-Ring, Buddy-Level (Training + Ernährung),
  * Serie, Quests; aufklappbar.
  */
 export function NutritionGameCard({ style }: { style?: CSSProperties }) {
-  const { kcalBonus } = useNutritionPrefs()
+  const { bonusOn } = useTrainingKcal()
   const today = localDate()
   const { data: allEntries } = useAllFoodEntries()
   const { data: todayEntries } = useFoodEntries(today)
@@ -37,7 +32,7 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
   const g = useMemo(() => {
     const entries = allEntries ?? []
     const proteinTarget = settings?.protein_target ?? 0
-    const kcalTarget = kcalTargetFor(settings, trainedOn(today, allSets), kcalBonus)
+    const kcalTarget = kcalTargetFor(settings, true, bonusOn(today))
     const totals = sumEntries(todayEntries ?? [])
     const quests = [
       ...nutritionDailyQuests({
@@ -55,7 +50,7 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
       streak: nutritionStreak(new Set(byDay(entries).keys()), today),
       open: quests.filter((q) => !q.done).length,
     }
-  }, [allEntries, todayEntries, water, settings, allSets, today, kcalBonus])
+  }, [allEntries, todayEntries, water, settings, allSets, today, bonusOn])
   const level = useBuddyLevel()
   const [open, setOpen] = useState(false)
 
@@ -73,9 +68,7 @@ export function NutritionGameCard({ style }: { style?: CSSProperties }) {
           </span>
         </Ring>
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-semibold uppercase tracking-wide text-cocoa-muted">
-            Buddy-Level
-          </span>
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-cocoa-muted">Buddy-Level</span>
           <span className="tabular flex items-baseline gap-1.5">
             <span className="text-xl font-bold text-cocoa">Level {level.level}</span>
             <span className="text-xs text-cocoa-light">

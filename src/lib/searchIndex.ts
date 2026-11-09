@@ -338,6 +338,14 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     needs: 'watch',
   },
   {
+    id: 'training-kcal',
+    label: 'Kalorien beim Training',
+    sub: 'Schätzung je Training & Bonus fürs Tagesziel',
+    section: 'Einstellungen',
+    to: '/profile?s=settings',
+    keywords: 'kalorien verbrauch verbrannt training kcal bonus trainingstag uhr schätzung',
+  },
+  {
     id: 'hybrid',
     label: 'Hybrid-Einheiten',
     sub: 'Laufen + Stationen mit Zwischenzeiten',

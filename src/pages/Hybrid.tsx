@@ -3,12 +3,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Footprints, Pause, Play, SkipForward, Timer, Trophy, X } from 'lucide-react'
+import { ChevronLeft, Flame, Footprints, Pause, Play, SkipForward, Timer, Trophy, X } from 'lucide-react'
 import { enter } from '../components/home/motion'
 import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { Hero, HeroPill } from '../components/health/ui'
 import { SectionLabel } from '../components/progress/ProgressHeader'
 import { useUserPrefs } from '../hooks/usePrefsSync'
+import { useTrainingKcal } from '../hooks/useTrainingKcal'
+import { hybridKcal, kcalText } from '../lib/trainingKcal'
 import { localDate } from '../lib/day'
 import {
   HYBRID_TEMPLATES,
@@ -401,6 +403,8 @@ function SplitRow({ name, sec, best, run }: { name: string; sec: number; best?: 
 function Finish({ run, runs, onClose }: { run: HybridRun; runs: HybridRun[]; onClose: () => void }) {
   const t = templateById(run.template)!
   const s = useMemo(() => summarize(t, run.splits), [t, run])
+  const { kgOn } = useTrainingKcal()
+  const kcal = hybridKcal(t, run.splits, kgOn(run.date))
   const prev = bestRun(
     runs.filter((r) => r !== run),
     t,
@@ -428,6 +432,13 @@ function Finish({ run, runs, onClose }: { run: HybridRun; runs: HybridRun[]; onC
           <span>Stationen {clock(s.stationTime)}</span>
         </div>
       </Hero>
+      <p className="card flex items-center gap-2 text-sm">
+        <Flame size={16} className="shrink-0 text-cocoa-muted" />
+        <span className="flex-1">
+          Verbraucht: <b className="tabular">{kcalText(kcal)}</b>
+        </span>
+        <span className="text-[11px] text-cocoa-muted">Laufen nach Strecke, Stationen nach Zeit</span>
+      </p>
       {s.slowest && (
         <p className="card text-sm">
           Längste Station: <b>{s.slowest.name}</b> mit {clock(s.slowest.sec)} – da steckt die meiste Zeit drin.

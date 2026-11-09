@@ -2,14 +2,14 @@ import { useMemo } from 'react'
 import { useAllSets } from './useWorkouts'
 import { useAllFoodEntries, useFoodEntries, useNutritionSettings } from './useNutrition'
 import { useWater } from './useWater'
-import { useNutritionPrefs } from './usePrefsSync'
 import { usePrefs } from '../lib/prefs'
 import { localDate, trainingDay } from '../lib/day'
 import { dailyQuests, weeklyQuests, type Quest } from '../lib/xp'
 import { nutritionDailyQuests, nutritionWeeklyQuests } from '../lib/nutritionXp'
 import { sumEntries } from '../lib/nutrition'
-import { kcalTargetFor, trainedOn } from '../lib/dayTarget'
+import { kcalTargetFor } from '../lib/dayTarget'
 import { fluidTotal } from '../lib/fluid'
+import { useTrainingKcal } from './useTrainingKcal'
 
 export interface QuestSet {
   daily: Quest[]
@@ -19,7 +19,7 @@ export interface QuestSet {
 /** Tages- und Wochenquests für Training und (falls aktiv) Ernährung – Quelle der Buddy-XP. */
 export function useQuests(): { training: QuestSet; food: QuestSet | null } {
   const { showNutrition } = usePrefs()
-  const { kcalBonus } = useNutritionPrefs()
+  const { bonusOn } = useTrainingKcal()
   const { data: sets } = useAllSets()
   const { data: allEntries } = useAllFoodEntries()
   const foodDay = localDate()
@@ -40,12 +40,12 @@ export function useQuests(): { training: QuestSet; food: QuestSet | null } {
         protein: totals.protein,
         proteinTarget,
         kcal: totals.kcal,
-        kcalTarget: kcalTargetFor(settings, trainedOn(foodDay, sets), kcalBonus),
+        kcalTarget: kcalTargetFor(settings, true, bonusOn(foodDay)),
         waterMl: (water?.ml ?? 0) + fluidTotal(todayEntries ?? []),
         waterTarget: settings?.water_target_ml || 2500,
       }),
       weekly: nutritionWeeklyQuests(allEntries ?? [], proteinTarget),
     }
     return { training, food }
-  }, [sets, allEntries, todayEntries, water, settings, showNutrition, kcalBonus, trainDay, foodDay])
+  }, [sets, allEntries, todayEntries, water, settings, showNutrition, bonusOn, trainDay, foodDay])
 }
