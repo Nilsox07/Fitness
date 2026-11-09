@@ -105,9 +105,9 @@ export function matchingSet<T extends { set_type: string }>(
  * auch wenn nur eine der Übungen einen Aufwärmsatz hat.
  * - Ohne Supersatz: Pause starten, auf der Übung bleiben.
  * - Im Supersatz und der passende Satz der Partner-Übung ist noch offen:
- *   KEINE Pause, direkt zur Partner-Übung wechseln.
+ *   KEINE Pause (`next` = Partner, nur als Hinweis – die App wechselt nicht selbst).
  * - Im Supersatz und die Runde ist komplett (oder der Partner hat keinen
- *   passenden Satz): Pause starten und zurück zur ersten Übung des Paares.
+ *   passenden Satz): Pause starten.
  */
 export function afterSetDone(opts: {
   exId: string

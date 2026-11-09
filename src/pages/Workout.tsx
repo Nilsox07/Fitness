@@ -799,7 +799,7 @@ export default function Workout() {
       if (sec > 0) rest.start(sec)
       else rest.stop()
     }
-    if (decision.next) setExerciseId(decision.next)
+    // Kein automatischer Wechsel zur nächsten Übung/zum Supersatz-Partner – du entscheidest selbst.
     try {
       navigator.vibrate?.(15)
     } catch {

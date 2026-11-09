@@ -301,8 +301,7 @@ export function RestControl({
             </div>
             <p className="mt-2 px-1 text-xs leading-relaxed text-cocoa-light">
               „Nach Satz" startet beim Abhaken ✓. Bei <strong>Supersätzen</strong> erst, wenn die
-              Runde aus beiden Übungen erledigt ist — dazwischen springt die App direkt zur
-              Partner-Übung. Pausen vor <strong>Dropsätzen</strong> und nach dem <strong>Aufwärmen</strong>{' '}
+              Runde aus beiden Übungen erledigt ist. Zur Partner-Übung wechselst du selbst. Pausen vor <strong>Dropsätzen</strong> und nach dem <strong>Aufwärmen</strong>{' '}
               stellst du unter Profil → Meine Einstellungen ein.
             </p>
           </div>
