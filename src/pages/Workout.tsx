@@ -31,7 +31,7 @@ import {
 import { fatigueByDate, muscleMap, preFatigueSets } from '../lib/fatigue'
 import { trainingDay } from '../lib/day'
 import { workoutShare, type ShareContent } from '../lib/shareCard'
-import { lastSessionTypes, planSetTypes } from '../lib/setScheme'
+import { lastSessionTypes, planSetTypes, recentSessionTypes } from '../lib/setScheme'
 import { useUserPrefs } from '../hooks/usePrefsSync'
 import { ShareSheet } from '../components/share/ShareSheet'
 import { alternativeExercise, hypeLine, warmupAdvice } from '../lib/ai'
@@ -529,6 +529,7 @@ export default function Workout() {
     return planSetTypes({
       scheme: userPrefs.setScheme,
       last: lastSessionTypes(hist),
+      sessions: recentSessionTypes(hist.filter(isPerformed)),
       muscleWarm: !needsWarmup(ex, warmed),
     })
   }

@@ -130,8 +130,9 @@ einer App, aber nur das sichtbar, was man nutzt.
   Zusatzgewicht pro Stufe (`withAddons`); einzelne Stufen im Formular antippbar (Rest verschiebt sich mit).
 - **Tagesform** (`ReadinessFactors.tsx`): Faktoren als Balken (hebt/senkt) mit Bereichs-Balken; Wochenleiste
   `ui/WeekPicker.tsx` (gemeinsam mit Ernährung).
-- **Satz-Schema** (`src/lib/setScheme.ts`, `prefs.setScheme`): bekannte Übungen starten mit der Struktur vom
-  letzten Mal (Anzahl Arbeitssätze, Drop, Aufwärmen), neue nach eigenem Schema (Standard 3 Sätze, Aufwärmen
+- **Satz-Schema** (`src/lib/setScheme.ts`, `prefs.setScheme`): bekannte Übungen starten mit der *üblichen*
+  Struktur (`usualSession`: letzte 4 Einheiten, Ausreißer zählen nicht, 2× gleich = bewusst geändert; nur eine
+  Einheit bekannt → mind. eigenes Schema), früher: vom letzten Mal (Anzahl Arbeitssätze, Drop, Aufwärmen), neue nach eigenem Schema (Standard 3 Sätze, Aufwärmen
   automatisch = erste Übung je Muskel, kein Drop). Einstellbar unter Profil → Einstellungen. Die KI prüft den
   Aufwärmsatz nur bei „Auto“ und wenn bei der Übung sonst aufgewärmt wird.
 - **Satz-Zeile** (`CompactSetRow.tsx`): Typ-Knopf (Zahl / Flamme / Pfeil) · kg-Stepper · Wdh.-Stepper · Haken, alles
