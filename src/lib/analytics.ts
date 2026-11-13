@@ -1,6 +1,7 @@
 import { FATIGUE_NOTICE, fatigueFactor } from './fatigue'
 import type { Exercise, MuscleGroup, SetType, SetWithDate, WorkoutSet } from '../types'
 import { localDate } from './day'
+import { parseLadder } from './weights'
 
 type PerformedSet = Pick<WorkoutSet, 'reps'> & Partial<Pick<WorkoutSet, 'reps_right'>>
 
@@ -48,14 +49,11 @@ export function estimate1RM(weight: number, reps: number): number {
   return weight * (1 + reps / 30)
 }
 
-type VolumeSet = Pick<WorkoutSet, 'reps' | 'weight'> &
-  Partial<Pick<WorkoutSet, 'reps_right' | 'weight_right'>>
+type VolumeSet = Pick<WorkoutSet, 'reps' | 'weight'> & Partial<Pick<WorkoutSet, 'reps_right' | 'weight_right'>>
 
 /** Volumen eines Satzes: Wdh × Gewicht (bei einseitigen Übungen plus rechte Seite). */
 export function setVolume(set: VolumeSet): number {
-  const right = set.reps_right != null && set.weight_right != null
-    ? set.reps_right * set.weight_right
-    : 0
+  const right = set.reps_right != null && set.weight_right != null ? set.reps_right * set.weight_right : 0
   return set.reps * set.weight + right
 }
 
@@ -191,9 +189,7 @@ export function weeklyVolume(sets: SetWithDate[]): WeeklyVolume[] {
     const key = isoWeekKey(s.date)
     byWeek.set(key, (byWeek.get(key) ?? 0) + setVolume(s))
   }
-  return [...byWeek.entries()]
-    .map(([week, volume]) => ({ week, volume }))
-    .sort((a, b) => a.week.localeCompare(b.week))
+  return [...byWeek.entries()].map(([week, volume]) => ({ week, volume })).sort((a, b) => a.week.localeCompare(b.week))
 }
 
 // ---------------------------------------------------------------------------
@@ -247,11 +243,7 @@ export interface MuscleSets {
  * Effektive Arbeitssätze pro Muskel in der aktuellen ISO-Woche (primär 1,0,
  * sekundär 0,5). Ampel gegen gängige Richtwerte: <8 zu wenig, >22 sehr viel.
  */
-export function weeklyMuscleSets(
-  sets: SetWithDate[],
-  exercises: ExerciseMuscles[],
-  today = new Date(),
-): MuscleSets[] {
+export function weeklyMuscleSets(sets: SetWithDate[], exercises: ExerciseMuscles[], today = new Date()): MuscleSets[] {
   const byId = new Map(exercises.map((e) => [e.id, e]))
   const week = isoWeekKey(localDate(today))
   const acc = new Map<MuscleGroup, number>()
@@ -342,9 +334,7 @@ export function lastTrainedPerMuscle(
   const todayStr = localDate(today)
   return [...last.entries()]
     .map(([muscle, lastDate]) => {
-      const daysAgo = Math.round(
-        (Date.parse(todayStr) - Date.parse(lastDate)) / 86400000,
-      )
+      const daysAgo = Math.round((Date.parse(todayStr) - Date.parse(lastDate)) / 86400000)
       return { muscle, lastDate, daysAgo }
     })
     .sort((a, b) => b.daysAgo - a.daysAgo)
@@ -408,11 +398,7 @@ type ExerciseNamed = ExerciseMuscles & Pick<Exercise, 'name'>
  * Verdichtet die Trainingsdaten zu einem kompakten Objekt für die KI
  * (Wochenreview, Coach-Chat). Bewusst klein gehalten, um Tokens zu sparen.
  */
-export function trainingSummary(
-  sets: SetWithDate[],
-  exercises: ExerciseNamed[],
-  today = new Date(),
-) {
+export function trainingSummary(sets: SetWithDate[], exercises: ExerciseNamed[], today = new Date()) {
   const freq = frequencyStats(sessionDates(sets), today)
   const weeks = weeklyVolume(sets).slice(-6)
   const perMuscleSets = weeklyMuscleSets(sets, exercises, today)
@@ -493,7 +479,9 @@ export function isPlateau(sessions: Pick<SessionSummary, 'date' | 'bestEstimated
   const best = Math.max(...before.map((s) => s.bestEstimated1RM))
   if (!(best > 0)) return false
   const noProgress = recent.every((s) => s.bestEstimated1RM <= best * 1.01)
-  return noProgress && daysApart(sessions[sessions.length - 5].date, sessions[sessions.length - 1].date) >= PLATEAU_MIN_DAYS
+  return (
+    noProgress && daysApart(sessions[sessions.length - 5].date, sessions[sessions.length - 1].date) >= PLATEAU_MIN_DAYS
+  )
 }
 
 /**
@@ -524,12 +512,52 @@ export interface ProgressionContext {
  *  - Stagnation über mehrere Sessions beim selben Gewicht → Deload.
  */
 export function progressionSuggestion(
-  exercise: Pick<Exercise, 'target_rep_min' | 'target_rep_max' | 'increment'>,
+  exercise: Pick<Exercise, 'target_rep_min' | 'target_rep_max' | 'increment'> & {
+    weight_steps?: string | null
+  },
   allSets: SetWithDate[],
   ctx: ProgressionContext = {},
 ): ProgressionSuggestion {
   const base = progressionCore(exercise, allSets, ctx)
-  return adjustForToday(base, exercise.increment, allSets, ctx)
+  const adjusted = adjustForToday(base, exercise.increment, allSets, ctx)
+  return germanKg(onLadder(adjusted, parseLadder(exercise.weight_steps), allSets))
+}
+
+/**
+ * Maschine mit festen Gewichtsstufen: der Vorschlag muss eine echte Stufe sein – sonst steht oben „Versuch
+ * 56,5 kg“, eingetragen wird aber wieder die nächstgelegene Stufe (54). Mehr = nächste Stufe über dem
+ * letzten Arbeitsgewicht, weniger = Stufe darunter, halten = nächstgelegene Stufe.
+ */
+function onLadder(sug: ProgressionSuggestion, ladder: number[], allSets: SetWithDate[]): ProgressionSuggestion {
+  if (!ladder.length || sug.suggestedWeight <= 0 || sug.action === 'start') return sug
+  const sorted = [...ladder].sort((a, b) => a - b)
+  const working = onlyWorking(allSets)
+  const lastDate = working.reduce((d, x) => (x.date > d ? x.date : d), '')
+  const top = Math.max(0, ...working.filter((x) => x.date === lastDate).map((x) => x.weight))
+  const want = sug.suggestedWeight
+  let w: number
+  if (sug.action === 'increase') {
+    // kleinste Stufe ≥ Wunsch, mindestens eine Stufe über dem letzten Gewicht
+    w =
+      sorted.find((v) => v >= want - 0.01 && v > top + 0.01) ??
+      sorted.find((v) => v > top + 0.01) ??
+      sorted[sorted.length - 1]
+  } else if (want < top - 0.01) {
+    // weniger (Deload, Vorermüdung): größte Stufe ≤ Wunsch
+    w = [...sorted].reverse().find((v) => v <= want + 0.01) ?? sorted[0]
+  } else {
+    w = sorted.reduce((b, v) => (Math.abs(v - want) < Math.abs(b - want) ? v : b))
+  }
+  if (Math.abs(w - want) < 0.01) return sug
+  const fmt = (n: number) => `${n} kg`
+  const reason =
+    sug.reason.split(fmt(want)).join(fmt(w)) + (sug.action === 'increase' ? ' (nächste Stufe an deiner Maschine)' : '')
+  return { ...sug, suggestedWeight: w, reason }
+}
+
+/** Gewichte im Text mit Komma (56,5 kg statt 56.5 kg). */
+function germanKg(sug: ProgressionSuggestion): ProgressionSuggestion {
+  return { ...sug, reason: sug.reason.replace(/(\d+)\.(\d+)(?=\s?kg)/g, '$1,$2') }
 }
 
 /** Heute mehr/weniger vorbelastet als beim letzten Mal? Dann den Vorschlag anpassen. */
@@ -580,6 +608,10 @@ function progressionCore(
   const workingSets = last.sets.filter((s) => s.weight === topWeight)
   const minReps = Math.min(...workingSets.map((s) => s.reps))
   const setCount = workingSets.length
+  // „3×10“ nur, wenn alle Sätze gleich waren – sonst „10 + 9 Wdh.“ (ehrlicher)
+  const repsText = workingSets.every((s) => s.reps === minReps)
+    ? `${setCount}×${minReps}`
+    : `${workingSets.map((s) => s.reps).join(' + ')} Wdh.`
   // Wurde am Arbeitsgewicht bis zum Versagen gegangen?
   const reachedFailure = workingSets.some((s) => s.to_failure)
   const { target_rep_min, target_rep_max, increment } = exercise
@@ -609,8 +641,8 @@ function progressionCore(
       suggestedWeight: next,
       reason:
         steps >= 2
-          ? `Letztes Mal ${setCount}×${minReps} @ ${topWeight} kg${reserve}, klar über deinem Ziel (${target_rep_max} Wdh.). Überspring ${steps} Stufen und geh direkt auf ${next} kg.`
-          : `Letztes Mal ${setCount}×${minReps} @ ${topWeight} kg${reserve} — am oberen Wdh.-Ziel. Versuch ${next} kg.`,
+          ? `Letztes Mal ${repsText} @ ${topWeight} kg${reserve}, klar über deinem Ziel (${target_rep_max} Wdh.). Überspring ${steps} Stufen und geh direkt auf ${next} kg.`
+          : `Letztes Mal ${repsText} @ ${topWeight} kg${reserve} — am oberen Wdh.-Ziel. Versuch ${next} kg.`,
     }
   }
 

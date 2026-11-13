@@ -46,7 +46,11 @@ function mkSet(
   }
 }
 
-function mkEx(id: string, muscle_group: Exercise['muscle_group'], secondary: Exercise['muscle_group'][] = []): Pick<Exercise, 'id' | 'muscle_group' | 'secondary_muscles'> {
+function mkEx(
+  id: string,
+  muscle_group: Exercise['muscle_group'],
+  secondary: Exercise['muscle_group'][] = [],
+): Pick<Exercise, 'id' | 'muscle_group' | 'secondary_muscles'> {
   return { id, muscle_group, secondary_muscles: secondary }
 }
 function withEx(set: SetWithDate, exercise_id: string): SetWithDate {
@@ -69,10 +73,7 @@ describe('weeklyMuscleSets (Ampel)', () => {
   it('zählt effektive Sätze und markiert zu wenig', () => {
     const today = new Date('2026-09-03T12:00:00Z')
     const exs = [mkEx('lat', 'Rücken', ['Bizeps'])]
-    const sets = [
-      withEx(mkSet('2026-09-01', 8, 50, 1), 'lat'),
-      withEx(mkSet('2026-09-02', 8, 50, 1), 'lat'),
-    ]
+    const sets = [withEx(mkSet('2026-09-01', 8, 50, 1), 'lat'), withEx(mkSet('2026-09-02', 8, 50, 1), 'lat')]
     const res = weeklyMuscleSets(sets, exs, today)
     const back = res.find((r) => r.muscle === 'Rücken')!
     expect(back.sets).toBe(2) // 2 Arbeitssätze primär
@@ -126,7 +127,12 @@ describe('estimate1RM (Epley)', () => {
 
 describe('Volumen', () => {
   it('summiert Wdh × Gewicht', () => {
-    expect(totalVolume([{ reps: 10, weight: 50 }, { reps: 8, weight: 60 }])).toBe(980)
+    expect(
+      totalVolume([
+        { reps: 10, weight: 50 },
+        { reps: 8, weight: 60 },
+      ]),
+    ).toBe(980)
   })
   it('zählt bei einseitigen Sätzen beide Seiten', () => {
     expect(totalVolume([{ reps: 8, weight: 40, reps_right: 8, weight_right: 40 }])).toBe(640)
@@ -135,11 +141,7 @@ describe('Volumen', () => {
 
 describe('summarizeSessions', () => {
   it('gruppiert nach Datum, sortiert aufsteigend, ermittelt Top-Werte', () => {
-    const sets = [
-      mkSet('2026-01-10', 10, 50, 1),
-      mkSet('2026-01-10', 8, 55, 2),
-      mkSet('2026-01-03', 12, 40, 1),
-    ]
+    const sets = [mkSet('2026-01-10', 10, 50, 1), mkSet('2026-01-10', 8, 55, 2), mkSet('2026-01-03', 12, 40, 1)]
     const sessions = summarizeSessions(sets)
     expect(sessions.map((s) => s.date)).toEqual(['2026-01-03', '2026-01-10'])
     const last = sessions[1]
@@ -221,11 +223,7 @@ describe('progressionSuggestion (Double Progression)', () => {
   const ex = { target_rep_min: 8, target_rep_max: 12, increment: 2.5 }
 
   it('empfiehlt Steigerung, wenn alle Sätze das obere Ziel erreichen', () => {
-    const sets = [
-      mkSet('2026-01-10', 12, 50, 1),
-      mkSet('2026-01-10', 12, 50, 2),
-      mkSet('2026-01-10', 12, 50, 3),
-    ]
+    const sets = [mkSet('2026-01-10', 12, 50, 1), mkSet('2026-01-10', 12, 50, 2), mkSet('2026-01-10', 12, 50, 3)]
     const s = progressionSuggestion(ex, sets)
     expect(s.action).toBe('increase')
     expect(s.suggestedWeight).toBe(52.5)
@@ -359,5 +357,34 @@ describe('Einseitige Rekorde', () => {
     expect(pr.maxWeight).toBe(22)
     expect(pr.maxReps).toBe(10)
     expect(pr.maxEstimated1RM).toBeCloseTo(estimate1RM(22, 10), 1)
+  })
+})
+
+describe('Vorschlag auf echten Maschinen-Stufen', () => {
+  // Bizeps-Maschine: Stufen 9, 18, 27, 36, 45, 54, 59, 63 – 56,5 gibt es nicht
+  const ex = { target_rep_min: 8, target_rep_max: 9, increment: 2.5, weight_steps: '9 18 27 36 45 54 59 63' }
+  const last = [mkSet('2026-11-10', 10, 54, 1), mkSet('2026-11-10', 9, 54, 2)]
+
+  it('mehr = nächste Stufe über dem letzten Gewicht, Text und Wert stimmen überein', () => {
+    const s = progressionSuggestion(ex, last)
+    expect(s.action).toBe('increase')
+    expect(s.suggestedWeight).toBe(59)
+    expect(s.reason).toContain('59 kg')
+    expect(s.reason).not.toContain('56')
+    expect(s.reason).toContain('10 + 9 Wdh.')
+  })
+
+  it('ohne Stufen bleibt es bei der Steigerung in Schritten – mit Komma im Text', () => {
+    const s = progressionSuggestion({ ...ex, weight_steps: null }, last)
+    expect(s.suggestedWeight).toBe(56.5)
+    expect(s.reason).toContain('56,5 kg')
+  })
+
+  it('gleiche Wdh. → „2×10“', () => {
+    const s = progressionSuggestion({ ...ex, weight_steps: null }, [
+      mkSet('2026-11-10', 10, 54, 1),
+      mkSet('2026-11-10', 10, 54, 2),
+    ])
+    expect(s.reason).toContain('2×10 @ 54 kg')
   })
 })

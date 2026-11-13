@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Clock,
   Flame,
+  Share2,
   Layers,
   Pencil,
   Plus,
@@ -34,6 +35,8 @@ import { enter } from '../components/home/motion'
 import type { Exercise, SetWithDate, Workout } from '../types'
 import { useTrainingKcal } from '../hooks/useTrainingKcal'
 import { ActivitiesCard } from '../components/activity/ActivitiesCard'
+import { ShareSheet } from '../components/share/ShareSheet'
+import { workoutShare, type ShareContent } from '../lib/shareCard'
 import { kcalText, type KcalEstimate } from '../lib/trainingKcal'
 
 export default function History() {
@@ -275,6 +278,8 @@ function NewHistory({
   }, [allSets])
 
   const freq = useMemo(() => frequencyStats(sessionDates(allSets)), [allSets])
+  const [share, setShare] = useState<{ date: string; content: ShareContent } | null>(null)
+  const lastDate = (workouts ?? []).reduce((m, w) => (w.date > m ? w.date : m), '')
 
   const groups = useMemo(() => {
     const out: { key: string; label: string; items: Workout[] }[] = []
@@ -381,6 +386,24 @@ function NewHistory({
                   onDelete={() => {
                     if (confirm('Dieses Training löschen?')) onDelete(w.id)
                   }}
+                  onShare={() => {
+                    const m = metas.get(w.id)
+                    if (!m) return
+                    setShare({
+                      date: w.date,
+                      content: workoutShare({
+                        title: w.name,
+                        date: new Date(w.date + 'T12:00:00'),
+                        volumeKg: m.volume,
+                        sets: m.sets,
+                        exercises: m.exerciseIds.length,
+                        minutes: m.minutes ?? null,
+                        // Serie nur beim letzten Training aussagekräftig
+                        weekStreak: w.date === lastDate ? freq.weekStreak : 0,
+                        record: m.prs > 0 ? (m.prs === 1 ? 'Rekord' : `${m.prs} Rekorde`) : null,
+                      }),
+                    })
+                  }}
                 >
                   {renderSets(w, setsByWorkout.get(w.id) ?? [], editId === w.id)}
                 </WorkoutCard>
@@ -397,6 +420,15 @@ function NewHistory({
           </div>
           <p className="text-sm text-cocoa-light">Noch keine Trainings erfasst.</p>
         </div>
+      )}
+
+      {share && (
+        <ShareSheet
+          content={share.content}
+          mood="proud"
+          filename={`training-${share.date}`}
+          onClose={() => setShare(null)}
+        />
       )}
     </div>
   )
@@ -422,6 +454,7 @@ function WorkoutCard({
   onToggle,
   onEdit,
   onDelete,
+  onShare,
   children,
 }: {
   workout: Workout
@@ -434,6 +467,7 @@ function WorkoutCard({
   onToggle: () => void
   onEdit: () => void
   onDelete: () => void
+  onShare: () => void
   children: ReactNode
 }) {
   const sets = meta?.sets ?? 0
@@ -508,10 +542,18 @@ function WorkoutCard({
               <Trash2 size={15} />
               Löschen
             </button>
-            <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={onEdit}>
-              {editing ? <Check size={16} /> : <Pencil size={16} />}
-              {editing ? 'Fertig' : 'Bearbeiten'}
-            </button>
+            <div className="flex items-center gap-1.5">
+              {sets > 0 && !editing && (
+                <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={onShare}>
+                  <Share2 size={16} />
+                  Teilen
+                </button>
+              )}
+              <button className="btn-ghost flex items-center gap-1.5 text-sm" onClick={onEdit}>
+                {editing ? <Check size={16} /> : <Pencil size={16} />}
+                {editing ? 'Fertig' : 'Bearbeiten'}
+              </button>
+            </div>
           </div>
           {children}
         </div>

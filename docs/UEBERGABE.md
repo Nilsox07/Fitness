@@ -148,6 +148,11 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Steigerung auf Maschinen-Stufen** (`onLadder` in `analytics.ts`): hat die Übung `weight_steps`, ist der Vorschlag
+  immer eine echte Stufe (mehr = nächste Stufe über dem letzten Gewicht, weniger = Stufe darunter) – Hinweis und
+  Vorbelegung zeigen dieselbe Zahl. Text: „10 + 9 Wdh.“ statt „2×9“ bei ungleichen Sätzen, Gewichte mit Komma.
+- **Training teilen aus dem Verlauf:** aufgeklapptes Training → „Teilen“ öffnet dieselbe `ShareSheet` wie nach dem
+  Training (Buddy-Karte, Clean, Story).
 - **Pausentimer im Hintergrund** (`useRestTimer` in `workout/RestControl.tsx`): plant bei jeder neuen Endzeit
   Sperrbildschirm-Countdown (`liveStart('rest')`) und „Pause vorbei“ (`scheduleRestDone`); im Vordergrund nimmt der
   Piepton die Benachrichtigung wieder weg. Ab Android 14 bietet das Timer-Menü „Wecker & Erinnerungen“ an
