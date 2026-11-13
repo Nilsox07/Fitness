@@ -15,6 +15,10 @@ const config: CapacitorConfig = {
       smallIcon: 'ic_stat_buddy',
       iconColor: '#E11D48',
     },
+    // Server-Push auch zeigen, wenn die App gerade offen ist
+    PushNotifications: {
+      presentationOptions: ['alert', 'sound'],
+    },
   },
 }
 

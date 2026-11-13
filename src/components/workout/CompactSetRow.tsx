@@ -99,6 +99,9 @@ function MiniStepper({
   )
 }
 
+/** So lange nach dem letzten −/+ bei den Wdh warten, bevor der Satz als fertig gilt. */
+export const STEP_SETTLE_MS = 2000
+
 // Satz · Gewicht · Wiederholungen · Haken – Einheiten stehen in den Feldern, „letztes Mal“ darunter.
 const GRID = 'grid grid-cols-[2.25rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-1.5'
 
@@ -144,7 +147,11 @@ export function CompactSetRow({
   }
 
   function complete() {
-    if (done) return
+    // Schon grün (Wdh per −/+ eingestellt), aber Pause noch nicht gestartet → ✓ bestätigt den Satz
+    if (done) {
+      fireDone()
+      return
+    }
     const reps = prev?.reps || exercise.target_rep_min || 8
     update.mutate({
       id: s.id,
@@ -154,12 +161,27 @@ export function CompactSetRow({
     fireDone()
   }
 
-  // Nur ✓ oder fertig eingetippte Wdh (Feld verlassen) lösen Pause/Supersatz-Sprung
-  // aus — ein Tipp auf „+" (0 → 1) ist noch kein abgeschlossener Satz.
+  // ✓ oder fertig eingetippte Wdh (Feld verlassen) lösen die Pause sofort aus. Bei −/+ zählt erst,
+  // wenn kurz nicht mehr getippt wird (0 → 1 → … → 10 ist ein Satz, nicht zehn) – vorher wurde der
+  // Satz per „+“ grün, die Pause startete aber nie.
+  const stepTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(stepTimer.current), [])
+  // War der Satz schon vor dem ersten −/+ erledigt? Dann ist es eine Korrektur – keine neue Pause.
+  const seqWasDone = useRef<boolean | null>(null)
   function setReps(key: 'reps' | 'reps_right', v: number, via: 'input' | 'step') {
-    const wasDone = done
     update.mutate({ id: s.id, [key]: v })
-    if (via === 'input' && !wasDone && v > 0) fireDone()
+    clearTimeout(stepTimer.current)
+    if (via === 'input') {
+      seqWasDone.current = null
+      if (!done && v > 0) fireDone()
+      return
+    }
+    seqWasDone.current ??= done
+    const was = seqWasDone.current
+    stepTimer.current = setTimeout(() => {
+      seqWasDone.current = null
+      if (!was && v > 0) fireDone()
+    }, STEP_SETTLE_MS)
   }
 
   // Nach links wischen = löschen (wie Hevy/Strong). Nur waagerechte Gesten zählen,

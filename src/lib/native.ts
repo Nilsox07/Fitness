@@ -281,9 +281,20 @@ export interface LiveOptions {
 interface LiveActivityPlugin {
   start(opts: LiveOptions): Promise<void>
   stop(opts: { kind: LiveKind }): Promise<void>
+  pushReady(): Promise<{ ready: boolean }>
 }
 
 const LiveActivity = registerPlugin<LiveActivityPlugin>('LiveActivity')
+
+/** Firebase in der App eingebaut (google-services.json beim Bauen)? Sonst kein Server-Push. */
+export async function nativePushReady(): Promise<boolean> {
+  if (!isNative()) return false
+  try {
+    return (await LiveActivity.pushReady()).ready
+  } catch {
+    return false
+  }
+}
 
 let notifyAsked = false
 
@@ -454,21 +465,21 @@ async function remindersChannel() {
   channelReady = true
 }
 
-/** Alle geplanten Erinnerungen ersetzen (IDs im reservierten Bereich). */
+/** Alle geplanten Erinnerungen ersetzen (IDs im reservierten Bereich). true = geplant. */
 export async function syncReminders(
   list: { id: number; at: Date; title: string; body: string; route: string }[],
   idMin: number,
   idMax: number,
-): Promise<void> {
-  if (!isNative()) return
+): Promise<boolean> {
+  if (!isNative()) return false
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications')
-    if ((await LocalNotifications.checkPermissions()).display !== 'granted') return
+    if ((await LocalNotifications.checkPermissions()).display !== 'granted') return false
     await remindersChannel()
     const pending = await LocalNotifications.getPending()
     const old = pending.notifications.filter((n) => n.id >= idMin && n.id <= idMax).map((n) => ({ id: n.id }))
     if (old.length) await LocalNotifications.cancel({ notifications: old })
-    if (!list.length) return
+    if (!list.length) return true
     await LocalNotifications.schedule({
       notifications: list.map((r) => ({
         id: r.id,
@@ -480,8 +491,9 @@ export async function syncReminders(
         extra: { route: r.route },
       })),
     })
+    return true
   } catch {
-    /* ignore */
+    return false
   }
 }
 

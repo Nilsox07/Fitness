@@ -4,6 +4,8 @@ import { Bell, BellRing, Check, Send } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
 import { isNative, notifyPermission, requestNotifyPermission, sendTestReminder } from '../../lib/native'
 import { enablePush, pushSupported, sendTestPush } from '../../lib/push'
+import { fcmRegistered, registerFcm } from '../../lib/fcm'
+import { localDate, shiftDate } from '../../lib/day'
 import { usePrefs } from '../../lib/prefs'
 import { useShareCheat } from '../../hooks/useShareCheat'
 import { useUserPrefs } from '../../hooks/usePrefsSync'
@@ -65,6 +67,8 @@ export function NotificationSettings() {
     try {
       if (isNative()) {
         const ok = await requestNotifyPermission()
+        // Zusätzlich für Server-Push (Freunde, wenn die App länger zu ist) anmelden – falls eingebaut
+        if (ok) await registerFcm(user.id, shiftDate(localDate(), 1))
         recheck()
         setMsg(
           ok
@@ -88,7 +92,9 @@ export function NotificationSettings() {
     setMsg(null)
     try {
       if (isNative()) {
-        setMsg((await sendTestReminder()) ? 'Kommt in 5 Sekunden.' : 'Senden fehlgeschlagen.')
+        // Mit Server-Push den ganzen Weg testen (Server → Firebase → Handy), sonst lokal
+        if (fcmRegistered()) setMsg(await sendTestPush())
+        else setMsg((await sendTestReminder()) ? 'Kommt in 5 Sekunden.' : 'Senden fehlgeschlagen.')
         return
       }
       setMsg(await sendTestPush())

@@ -73,4 +73,14 @@ class LiveActivityPlugin : Plugin() {
         NotificationManagerCompat.from(context).cancel(idOf(call.getString("kind") ?: "workout"))
         call.resolve()
     }
+
+    /**
+     * Ist Firebase eingerichtet (google-services.json beim Bauen vorhanden)? Ohne würde das
+     * Push-Plugin beim Registrieren abstürzen – die App fragt deshalb vorher hier nach.
+     */
+    @PluginMethod
+    fun pushReady(call: PluginCall) {
+        val id = context.resources.getIdentifier("google_app_id", "string", context.packageName)
+        call.resolve(com.getcapacitor.JSObject().put("ready", id != 0))
+    }
 }

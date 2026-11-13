@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { apiUrl } from './native'
+import { unregisterFcm } from './fcm'
 
 export const pushSupported =
   typeof navigator !== 'undefined' &&
@@ -43,6 +44,7 @@ export async function notifyFriendsCheat(title: string, body: string): Promise<v
  * Abmelden. Best effort: Fehler werden ignoriert, damit Logout nie hängt.
  */
 export async function disablePushOnThisDevice(): Promise<void> {
+  await unregisterFcm()
   if (!pushSupported) return
   try {
     const reg = await navigator.serviceWorker.getRegistration()
@@ -116,7 +118,7 @@ export async function sendTestPush(): Promise<string> {
   }
   if (res.reason === 'server_config' && res.error) return res.error
   if (res.ok) return 'Test verschickt – sollte gleich auf dem Handy erscheinen.'
-  if (res.reason === 'push_not_configured') return 'Auf dem Server fehlen die VAPID-Schlüssel.'
+  if (res.reason === 'push_not_configured') return 'Auf dem Server ist Push noch nicht eingerichtet.'
   if (res.reason === 'no_subscription')
     return 'Auf diesem Konto ist noch kein Gerät angemeldet – erst „Aktivieren“ tippen.'
   return `Senden fehlgeschlagen${res.errors?.length ? ` (Fehler ${res.errors.join(', ')})` : ''}.`

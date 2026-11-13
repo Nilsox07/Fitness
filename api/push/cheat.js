@@ -1,7 +1,7 @@
 // Schickt einen Push an alle Freunde des Nutzers (z. B. Cheat-Meal-Alarm).
-import webpush from 'web-push'
 import { admin, userFromAuth } from '../_fitbit.js'
 import { cors } from '../_cors.js'
+import { deliver, pushConfig } from '../_push.js'
 
 export default async function handler(req, res) {
   if (cors(req, res)) return
@@ -9,8 +9,8 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'method' })
     return
   }
-  const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = process.env
-  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  const cfg = pushConfig()
+  if (!cfg) {
     res.status(200).json({ ok: false, reason: 'push_not_configured' })
     return
   }
@@ -23,7 +23,6 @@ export default async function handler(req, res) {
   const title = String(body.title || 'Fitness').slice(0, 80)
   const text = String(body.body || '').slice(0, 160)
 
-  webpush.setVapidDetails(VAPID_SUBJECT || 'mailto:admin@example.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
   let db
   try {
     db = admin()
@@ -55,17 +54,7 @@ export default async function handler(req, res) {
       friendIds.filter((id) => !muted.has(id)),
     )
 
-  const payload = JSON.stringify({ title, body: text, tag: 'fitness-cheat', url: '/social' })
-  let sent = 0
-  for (const sub of subs || []) {
-    try {
-      await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload)
-      sent++
-    } catch (err) {
-      if (err && (err.statusCode === 404 || err.statusCode === 410)) {
-        await db.from('push_subscriptions').delete().eq('id', sub.id)
-      }
-    }
-  }
+  const payload = { title, body: text, tag: 'fitness-cheat', url: '/social' }
+  const { sent } = await deliver(db, subs, payload, cfg, { kind: 'social' })
   res.status(200).json({ ok: true, sent })
 }

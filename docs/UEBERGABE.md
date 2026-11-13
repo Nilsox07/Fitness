@@ -148,6 +148,9 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Satzpause startet zuverlässig** (`CompactSetRow.tsx`): Wdh per −/+ eingestellt → Pause startet 2 s nach dem
+  letzten Tippen (`STEP_SETTLE_MS`); ✓ auf einem schon grünen Satz startet sie sofort (vorher passierte da nichts).
+  Korrekturen an schon erledigten Sätzen starten keine neue Pause.
 - **Steigerung auf Maschinen-Stufen** (`onLadder` in `analytics.ts`): hat die Übung `weight_steps`, ist der Vorschlag
   immer eine echte Stufe (mehr = nächste Stufe über dem letzten Gewicht, weniger = Stufe darunter) – Hinweis und
   Vorbelegung zeigen dieselbe Zahl. Text: „10 + 9 Wdh.“ statt „2×9“ bei ungleichen Sätzen, Gewichte mit Komma.
@@ -274,9 +277,16 @@ einer App, aber nur das sichtbar, was man nutzt.
 **Noch offen für die App:**
 - Sperrbildschirm-*Widgets* gibt es auf normalen Android-Handys nicht mehr (nur Tablets/einzelne Hersteller) –
   auf dem Sperrbildschirm arbeiten wir mit Live-Benachrichtigungen. Widgets sind trotzdem als `keyguard` markiert.
-- Push-Erinnerungen in der App brauchen **Firebase (FCM)**: `google-services.json` in `android/app/` legen
-  (nicht geheim, aber projektbezogen) und den Cron auf FCM umstellen (Phase 3). Bis dahin kommen in der App nur
-  lokale Benachrichtigungen (Pause, Countdown).
+- **Server-Push in der App (FCM)** ist eingebaut (`src/lib/fcm.ts`, `api/_fcm.js`, `api/_push.js`,
+  Migration `0048_push_fcm.sql`), wird aber erst aktiv mit:
+  1. `google-services.json` aus Firebase (Android-App `de.fitnessbuddy.app`) – entweder nach `android/app/`
+     einchecken (nicht geheim) oder als GitHub-Secret `GOOGLE_SERVICES_JSON` (die Action schreibt die Datei).
+  2. Firebase-Dienstkonto-JSON als Vercel-Env `FCM_SERVICE_ACCOUNT` (geheim, nur in Vercel).
+  Ohne beides läuft alles wie vorher (`pushReady` im LiveActivity-Plugin prüft, ob Firebase eingebaut ist).
+  Ablauf: Die App plant Erinnerungen weiter selbst (heute + morgen) und meldet ihr Gerät mit `local_until` =
+  morgen an. Der Server schickt Android-Geräten deshalb nur Freundes-Pushes und den Test – erst wenn die App
+  länger nicht geöffnet wurde (`local_until` < heute), übernimmt er die Erinnerungen (`serverSends`).
+  Abo-Zeilen: `endpoint = 'fcm:<token>'`, `platform = 'android'`. Antippen öffnet `data.url`.
 - Datenschutzerklärung: TODO-Stellen in `src/pages/Privacy.tsx` (`/datenschutz`) ausfüllen bzw. prüfen lassen.
 - Teilen-Menü (Rezept-Links) in der App: braucht ein Plugin für eingehende `SEND`-Intents.
 - Paketname `de.fitnessbuddy.app` vor dem ersten Play-Upload final festlegen (danach unveränderbar).

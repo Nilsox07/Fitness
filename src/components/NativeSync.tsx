@@ -39,6 +39,8 @@ import { mascotEmoji } from '../lib/cosmetics'
 import { useDietStyle } from '../hooks/useNutrition'
 import { fastingState, fastingWindow } from '../lib/dietStyle'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
+import { registerFcm } from '../lib/fcm'
 import type { WaterIntake } from '../types'
 import { handleBack } from '../lib/backStack'
 import { claimDeepLink, deepLinkRoute, launchRoute, markDeepLinkHandled } from '../lib/deepLink'
@@ -64,6 +66,7 @@ function NativeSyncInner() {
   const setWater = useSetWater()
   const qc = useQueryClient()
   const { fasting, fastingStart } = useDietStyle()
+  const userId = useAuth().user?.id
 
   // Intervallfasten: Countdown bis zum nächsten Wechsel auf dem Sperrbildschirm (wenn eingeschaltet)
   useEffect(() => {
@@ -134,7 +137,10 @@ function NativeSyncInner() {
         journalDone: (journal ?? []).some((e) => e.date === t.day && e.tags.length > 0),
         bedtime: hasWatch && sleepPlan ? { bedAt: sleepPlan.bedAt, need: hoursText(sleepPlan.needMin) } : null,
       })
-      void syncReminders(list, REMINDER_ID_MIN, REMINDER_ID_MAX)
+      // Danach Server-Push anmelden: bis morgen plant das Handy selbst, der Server schickt nur Freundes-Pushes
+      void syncReminders(list, REMINDER_ID_MIN, REMINDER_ID_MAX).then((planned) => {
+        if (userId) void registerFcm(userId, planned ? tomorrow : null)
+      })
     }, 1500)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,6 +158,7 @@ function NativeSyncInner() {
     journal,
     fasting,
     fastingStart,
+    userId,
   ])
 
   // Widgets aktualisieren, sobald sich die Zahlen ändern (inkl. App-Farbe und Buddy)
@@ -365,6 +372,15 @@ function NativeNavInner() {
       void import('@capacitor/local-notifications').then(({ LocalNotifications }) =>
         LocalNotifications.addListener('localNotificationActionPerformed', ({ notification }) => {
           const route = (notification.extra as { route?: string } | undefined)?.route
+          if (!route || !route.startsWith('/')) return
+          markDeepLinkHandled()
+          navigate(route)
+        }).then((h) => off.push(() => void h.remove())),
+      )
+      // Server-Push (FCM) angetippt → Ziel-Seite aus den Daten
+      void import('@capacitor/push-notifications').then(({ PushNotifications }) =>
+        PushNotifications.addListener('pushNotificationActionPerformed', ({ notification }) => {
+          const route = (notification.data as { url?: string } | undefined)?.url
           if (!route || !route.startsWith('/')) return
           markDeepLinkHandled()
           navigate(route)

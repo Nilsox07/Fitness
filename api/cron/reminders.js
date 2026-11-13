@@ -6,13 +6,15 @@
 // Tag (Tabelle notification_log), und nur, wenn wirklich etwas fehlt.
 //
 // Nötige Env-Variablen (Vercel):
-//   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (z. B. mailto:du@mail.de)
+//   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (z. B. mailto:du@mail.de) – Browser
+//   FCM_SERVICE_ACCOUNT (Firebase-Dienstkonto als JSON) – Android-App
 //   SUPABASE_SERVICE_ROLE_KEY
 //   CRON_SECRET (empfohlen, schützt den Endpoint)
 
-import webpush from 'web-push'
 import { SUPABASE_URL } from '../_supabase.js'
 import { createClient } from '@supabase/supabase-js'
+import { deliver, pushConfig } from '../_push.js'
+import { serverSends } from '../_fcm.js'
 import { fastingDue, inWindow, localNow, message, moduleAllows, normalizeNotify, dueKinds, toMin } from '../_notify.js'
 
 const DAYS_THRESHOLD = 3
@@ -40,17 +42,18 @@ export default async function handler(req, res) {
     res.status(401).json({ error: 'unauthorized' })
     return
   }
-  const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, SUPABASE_SERVICE_ROLE_KEY } = process.env
+  const { SUPABASE_SERVICE_ROLE_KEY } = process.env
+  const cfg = pushConfig()
   // Nur die NAMEN fehlender Variablen melden (nie Werte), damit man sie in Vercel nachtragen kann
-  const missing = Object.entries({ VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY })
+  const missing = Object.entries({ SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY })
     .filter(([, v]) => !v)
     .map(([k]) => k)
+  if (!cfg) missing.push('VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY oder FCM_SERVICE_ACCOUNT')
   if (missing.length) {
     res.status(503).json({ error: 'Push nicht konfiguriert', missing })
     return
   }
 
-  webpush.setVapidDetails(VAPID_SUBJECT || 'mailto:admin@example.com', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
   const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
   const { data: subs, error } = await db.from('push_subscriptions').select('*')
@@ -75,7 +78,7 @@ export default async function handler(req, res) {
   const now = new Date()
   for (const [userId, userSubs] of byUser) {
     try {
-      sent += await remindUser(db, userId, userSubs, prefsOf.get(userId) || {}, now)
+      sent += await remindUser(db, cfg, userId, userSubs, prefsOf.get(userId) || {}, now)
     } catch (e) {
       console.error('reminder', userId, e?.message)
     }
@@ -83,13 +86,16 @@ export default async function handler(req, res) {
   res.status(200).json({ ok: true, sent })
 }
 
-async function remindUser(db, userId, subs, prefs, now) {
+async function remindUser(db, cfg, userId, subs, prefs, now) {
   const notify = normalizeNotify(prefs.notify)
   const local = localNow(prefs.tz, now)
   const today = local.date
+  // Nur Android-Geräte, die ihre Erinnerungen selbst geplant haben → hier nichts zu tun
+  if (!subs.some((s) => serverSends(s, 'reminder', today))) return 0
   // Ausgeblendete Module (Ernährung/Community) bekommen keine Erinnerungen
   const allowed = (k) => moduleAllows(k, prefs.modules)
   const kinds = dueKinds(notify, local).filter(allowed)
+  const send = async (payload, kind) => (await deliver(db, subs, payload, cfg, { kind, today })).sent
 
   // Daten nur laden, wenn sie gebraucht werden (einmal pro Nutzer)
   const cache = {}
@@ -145,7 +151,7 @@ async function remindUser(db, userId, subs, prefs, now) {
         const { error } = await db.from('notification_log').insert({ user_id: userId, kind, day: today })
         if (error) continue
         const msg = message('supplement', { id: s.id, slot, name: s.name, dose: s.dose })
-        if (msg) count += await send(db, subs, { ...msg, tag: `fitness-supp-${s.id}` })
+        if (msg) count += await send({ ...msg, tag: `fitness-supp-${s.id}` }, 'supplements')
       }
     }
   }
@@ -158,7 +164,7 @@ async function remindUser(db, userId, subs, prefs, now) {
     if (error) continue
     const msg = message(kind, ctx, now.getUTCDate() + userId.length)
     if (!msg) continue
-    count += await send(db, subs, { ...msg, tag: `fitness-${kind}` })
+    count += await send({ ...msg, tag: `fitness-${kind}` }, kind)
   }
   return count
 }
@@ -271,23 +277,4 @@ async function check(kind, { db, userId, today, local, prefs, settings, food, wo
     default:
       return null
   }
-}
-
-async function send(db, subs, payload) {
-  let n = 0
-  for (const sub of subs) {
-    try {
-      await webpush.sendNotification(
-        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify(payload),
-      )
-      n++
-    } catch (err) {
-      // Abgelaufene Abos entfernen
-      if (err && (err.statusCode === 404 || err.statusCode === 410)) {
-        await db.from('push_subscriptions').delete().eq('id', sub.id)
-      }
-    }
-  }
-  return n
 }

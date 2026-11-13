@@ -4,6 +4,8 @@
 #
 # Secrets für die Release-Signatur (Settings → Secrets and variables → Actions):
 #   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# Server-Push (Firebase): GOOGLE_SERVICES_JSON = Inhalt von google-services.json (alternativ die Datei
+# unter android/app/ einchecken – sie ist nicht geheim). Ohne beides läuft die App, nur ohne Server-Push.
 name: Android
 
 on:
@@ -35,6 +37,14 @@ jobs:
           java-version: 21
 
       - uses: gradle/actions/setup-gradle@v4
+
+      - name: Firebase-Konfiguration (nur mit Secret)
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ] && [ ! -f android/app/google-services.json ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          fi
 
       - name: Web-App bauen und in die Android-App kopieren
         run: |
