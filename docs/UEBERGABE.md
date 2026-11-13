@@ -148,6 +148,12 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Pausentimer im Hintergrund** (`useRestTimer` in `workout/RestControl.tsx`): plant bei jeder neuen Endzeit
+  Sperrbildschirm-Countdown (`liveStart('rest')`) und „Pause vorbei“ (`scheduleRestDone`); im Vordergrund nimmt der
+  Piepton die Benachrichtigung wieder weg. Ab Android 14 bietet das Timer-Menü „Wecker & Erinnerungen“ an
+  (`exactAlarmsAllowed`/`openExactAlarmSettings`), sonst kann der Hinweis bei gesperrtem Handy später kommen.
+- **Buddy-Spruch = Überschrift** (`BuddyLine`): groß und fett statt grauer Sprechblase, max. 2 Zeilen. Auf Heute
+  `splitHeadline` (erster Satz, ≤ 60 Zeichen, sonst am Gedankenstrich), der Rest des Briefings klappt per Tipp auf.
 - **Heute schlank** (`src/lib/nextUp.ts`, `NextUpCard`): Hero (Buddy + 3 Zahlen, ohne Essens-Knöpfe) →
   „Jetzt dran“ (max. 3 je Uhrzeit/Stand: Gefühl morgens, Training, Ausdauer laut Plan, Mahlzeit des Zeitfensters,
   Trinken ab 500 ml Rückstand, fälliges Supplement, Schlafenszeit ab 19 Uhr; sonst „Alles erledigt“) → wenige

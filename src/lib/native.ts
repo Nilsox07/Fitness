@@ -355,6 +355,30 @@ export async function cancelRestDone() {
   }
 }
 
+/**
+ * Pünktliche Hinweise (Pause vorbei) brauchen ab Android 14 „Wecker & Erinnerungen“. Ohne die Freigabe
+ * kommt die Benachrichtigung trotzdem, kann bei gesperrtem Handy aber etwas später sein.
+ */
+export async function exactAlarmsAllowed(): Promise<boolean> {
+  if (!isNative()) return true
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    return (await LocalNotifications.checkExactNotificationSetting()).exact_alarm === 'granted'
+  } catch {
+    return true
+  }
+}
+
+export async function openExactAlarmSettings(): Promise<boolean> {
+  if (!isNative()) return true
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    return (await LocalNotifications.changeExactNotificationSetting()).exact_alarm === 'granted'
+  } catch {
+    return false
+  }
+}
+
 // ---------- Koch-Timer (Nachkochen) ----------
 
 const COOK_TIMER_ID = 7002

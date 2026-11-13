@@ -61,30 +61,20 @@ export function BuddyLine({
   line: string
   tone: 'dark' | 'light'
   onClick?: () => void
-  /** längere Texte (z. B. Tagesbriefing) bis 4 Zeilen */
+  /** etwas mehr Platz (3 statt 2 Zeilen) */
   long?: boolean
 }) {
-  const look =
-    tone === 'dark' ? 'bg-bg/10 text-bg/80 dark:bg-white/5 dark:text-cocoa-light' : 'bg-sand/80 text-cocoa-light'
-  const cls = `mb-3 mr-[5.5rem] ${long ? 'line-clamp-4' : 'line-clamp-2'} w-fit rounded-2xl rounded-tr-md px-3 py-1.5 text-left text-[13px] font-medium leading-snug ${look}`
+  // Buddys Spruch ist die Überschrift der Karte: groß, fett, kurz – keine graue Sprechblase mit Fließtext
+  const color = tone === 'dark' ? 'text-bg dark:text-cocoa' : 'text-cocoa'
+  const cls = `mb-3 mr-[5.5rem] ${long ? 'line-clamp-3' : 'line-clamp-2'} text-left text-[17px] font-bold leading-snug tracking-tight ${color}`
   if (onClick)
     return (
-      <button type="button" onClick={onClick} className={`${cls} block transition active:scale-[0.98]`}>
+      <button type="button" onClick={onClick} className={`${cls} block transition active:opacity-70`}>
         {line}
-        <span aria-hidden className="ml-1 font-bold opacity-60">
+        <span aria-hidden className="ml-1 opacity-50">
           ›
         </span>
       </button>
     )
-  return (
-    <p className={cls}>
-      <span aria-hidden className="mr-0.5 font-bold opacity-60">
-        „
-      </span>
-      {line}
-      <span aria-hidden className="ml-0.5 font-bold opacity-60">
-        “
-      </span>
-    </p>
-  )
+  return <p className={cls}>{line}</p>
 }

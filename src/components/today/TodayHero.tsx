@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { BuddyLine, HeroWithBuddy } from '../home/HeroBuddy'
+import { splitHeadline } from '../../lib/headline'
 import { useHeroBuddy } from '../home/useHeroBuddy'
 import { useBriefing } from '../buddy/useBriefing'
 import { enter } from '../home/motion'
@@ -20,12 +22,17 @@ export function TodayHero() {
 
   // Spruch: Tagesbriefing (Plus: nach Antippen; kostenlos: fester Text), sonst der Seiten-Tipp
   const hasBrief = !!brief.text
+  const [open, setOpen] = useState(false)
+  const full = brief.busy ? 'Ich schau mir deinen Tag an …' : hasBrief ? brief.text! : tipBuddy.line
+  // Überschrift = erster Satz; der Rest (z. B. vom Tagesbriefing) klappt erst auf Tippen auf
+  const { head, rest } = splitHeadline(full)
   const buddy = {
     ...tipBuddy,
     mood: brief.busy ? ('focus' as const) : tipBuddy.mood,
-    line: brief.busy ? 'Ich schau mir deinen Tag an …' : hasBrief ? brief.text! : tipBuddy.line,
-    onLine:
-      !hasBrief && (brief.aiOn || brief.locked)
+    line: head,
+    onLine: rest
+      ? () => setOpen((o) => !o)
+      : !hasBrief && (brief.aiOn || brief.locked)
         ? () => void brief.load()
         : brief.locked && hasBrief
           ? () => void brief.load()
@@ -49,7 +56,12 @@ export function TodayHero() {
           <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-brand/30 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-brand/10 blur-3xl" />
           <div className="relative">
-            <BuddyLine line={buddy.line} tone="dark" onClick={buddy.onLine} long />
+            <BuddyLine line={buddy.line} tone="dark" onClick={buddy.onLine} />
+            {open && rest && (
+              <p className="anim-fade -mt-1 mb-3 mr-4 text-[13px] leading-relaxed text-bg/75 dark:text-cocoa-light">
+                {rest}
+              </p>
+            )}
             {!hasBrief && brief.locked && (
               <p className="-mt-2 mb-3 flex items-center gap-1.5 text-[11px] text-bg/60 dark:text-cocoa-light">
                 Tippen für dein Tagesbriefing <PlusBadge onDark />

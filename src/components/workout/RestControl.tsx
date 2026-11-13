@@ -10,6 +10,15 @@ import {
   setRestSeconds,
   type RestMode,
 } from '../../lib/workoutSession'
+import {
+  cancelRestDone,
+  exactAlarmsAllowed,
+  isNative,
+  liveStart,
+  liveStop,
+  openExactAlarmSettings,
+  scheduleRestDone,
+} from '../../lib/native'
 
 const PRESETS = [60, 90, 120, 180]
 
@@ -76,6 +85,8 @@ export function useRestTimer(): RestTimer {
       if (l <= 0 && !beeped.current) {
         beeped.current = true
         beep()
+        // App ist offen: Ton reicht, die geplante Benachrichtigung wieder wegnehmen
+        if (document.visibilityState === 'visible') void cancelRestDone()
         hide = setTimeout(() => setEndAt((cur) => (cur === endAt ? null : cur)), 1200)
       }
     }
@@ -85,6 +96,18 @@ export function useRestTimer(): RestTimer {
       clearInterval(id)
       if (hide) clearTimeout(hide)
     }
+  }, [endAt])
+
+  // Android: Countdown auf dem Sperrbildschirm + „Pause vorbei“, auch wenn die App im Hintergrund ist
+  // oder das Handy gesperrt. Neu planen nur, wenn sich die Endzeit wirklich ändert (Start, ±15 s).
+  useEffect(() => {
+    if (endAt == null || endAt <= Date.now()) {
+      void liveStop('rest')
+      if (endAt == null) void cancelRestDone()
+      return
+    }
+    void liveStart({ kind: 'rest', title: 'Satzpause', body: 'Gleich geht’s weiter', endsAt: endAt })
+    void scheduleRestDone(endAt)
   }, [endAt])
 
   const start = useCallback(
@@ -124,6 +147,11 @@ export function RestControl({
   exercise?: { id: string; name: string }
 }) {
   const [settings, setSettings] = useState(false)
+  // Android 14+: ohne „Wecker & Erinnerungen“ kann „Pause vorbei“ bei gesperrtem Handy etwas später kommen
+  const [exact, setExact] = useState<boolean | null>(null)
+  useEffect(() => {
+    if (settings && isNative()) void exactAlarmsAllowed().then(setExact)
+  }, [settings])
   const [exRest, setExRestState] = useState<number | null>(null)
   useEffect(() => {
     setExRestState(exercise ? getExerciseRest(exercise.id) : null)
@@ -305,6 +333,20 @@ export function RestControl({
               Übungen erledigt ist. Zur Partner-Übung wechselst du selbst. Pausen vor <strong>Dropsätzen</strong> und
               nach dem <strong>Aufwärmen</strong> stellst du unter Profil → Meine Einstellungen ein.
             </p>
+            {exact === false && (
+              <div className="mt-3 space-y-2 rounded-2xl bg-gold/15 p-3">
+                <p className="text-xs leading-relaxed">
+                  Damit „Pause vorbei“ auch bei gesperrtem Handy <b>pünktlich</b> kommt, erlaube der App „Wecker &amp;
+                  Erinnerungen“.
+                </p>
+                <button
+                  className="btn-primary w-full rounded-xl py-2.5 text-sm"
+                  onClick={() => void openExactAlarmSettings().then(setExact)}
+                >
+                  Erlauben
+                </button>
+              </div>
+            )}
           </div>
         </PremiumSheet>
       )}
