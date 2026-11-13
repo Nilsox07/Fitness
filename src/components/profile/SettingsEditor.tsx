@@ -37,6 +37,7 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
   const [perWeek, setPerWeek] = useState(weeklyGoal(prefs.schedule))
   const [bonus, setBonus] = useState(prefs.kcalBonus)
   const [bonusMode, setBonusMode] = useState(prefs.kcalBonusMode)
+  const [targetMode, setTargetMode] = useState(prefs.kcalTargetMode)
   const [split, setSplit] = useState<MealSplit>(prefs.mealSplit)
   const [rest, setRest] = useState(getRestSeconds())
   const [rules, setRules] = useState<RestRules>(getRestRules())
@@ -54,6 +55,7 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
     (flexible && perWeek !== weeklyGoal(prefs.schedule)) ||
     bonus !== prefs.kcalBonus ||
     bonusMode !== prefs.kcalBonusMode ||
+    targetMode !== prefs.kcalTargetMode ||
     MEALS.some((m) => split[m] !== prefs.mealSplit[m]) ||
     rest !== getRestSeconds() ||
     rules.warmupToWarmup !== savedRules.warmupToWarmup ||
@@ -82,6 +84,7 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
       await save({
         kcalBonus: bonus,
         kcalBonusMode: bonusMode,
+        kcalTargetMode: targetMode,
         mealSplit: split,
         dayCutoff: cutoff,
         showSugar,
@@ -264,55 +267,68 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
 
       {showNutrition && (
         <Section title="Ernährung">
-          <div className="space-y-2 px-4 py-3">
-            <div>
-              <div className="font-medium">Bonus an Trainingstagen</div>
-              <div className="text-xs text-cocoa-light">
-                {bonusMode === 'auto'
-                  ? 'Die Hälfte der geschätzten Trainings-kcal – nie alles zurückessen.'
-                  : 'Feste kcal, wenn du trainiert hast.'}
+          <Line
+            label="Kalorienziel nach Aktivität"
+            hint="Täglich neu aus Schritten und Training statt fest"
+            trailing={
+              <Toggle
+                checked={targetMode === 'activity'}
+                onChange={(v: boolean) => change(setTargetMode)(v ? 'activity' : 'fixed')}
+                label="Kalorienziel nach Aktivität"
+              />
+            }
+          />
+          {targetMode === 'fixed' && (
+            <div className="space-y-2 px-4 py-3">
+              <div>
+                <div className="font-medium">Bonus an Trainingstagen</div>
+                <div className="text-xs text-cocoa-light">
+                  {bonusMode === 'auto'
+                    ? 'Die Hälfte der geschätzten Trainings-kcal – nie alles zurückessen.'
+                    : 'Feste kcal, wenn du trainiert hast.'}
+                </div>
               </div>
+              <div className="grid grid-cols-2 gap-1 rounded-xl bg-sand p-1 text-sm font-semibold">
+                {(
+                  [
+                    ['auto', 'Nach Training'],
+                    ['fixed', 'Pauschal'],
+                  ] as const
+                ).map(([m, l]) => (
+                  <button
+                    key={m}
+                    onClick={() => change(setBonusMode)(m)}
+                    aria-pressed={bonusMode === m}
+                    className={`rounded-lg py-1.5 ${bonusMode === m ? 'bg-cream text-cocoa shadow-sm' : 'text-cocoa-muted'}`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+              {bonusMode === 'fixed' && (
+                <>
+                  <div className="flex justify-end">
+                    <span className="tabular text-sm font-semibold">+{bonus} kcal</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={600}
+                    step={25}
+                    value={bonus}
+                    onChange={(e) => change(setBonus)(Number(e.target.value))}
+                    aria-label="Kalorien-Bonus an Trainingstagen"
+                    className="w-full accent-[rgb(var(--c-ruby))]"
+                  />
+                  <div className="flex justify-between text-[11px] text-cocoa-muted">
+                    <span>0</span>
+                    <span>Standard {DEFAULT_KCAL_BONUS}</span>
+                    <span>600</span>
+                  </div>
+                </>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-sand p-1 text-sm font-semibold">
-              {(
-                [
-                  ['auto', 'Nach Training'],
-                  ['fixed', 'Pauschal'],
-                ] as const
-              ).map(([m, l]) => (
-                <button
-                  key={m}
-                  onClick={() => change(setBonusMode)(m)}
-                  aria-pressed={bonusMode === m}
-                  className={`rounded-lg py-1.5 ${bonusMode === m ? 'bg-cream text-cocoa shadow-sm' : 'text-cocoa-muted'}`}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-            {bonusMode === 'fixed' && (
-              <>
-                <div className="flex justify-end">
-                  <span className="tabular text-sm font-semibold">+{bonus} kcal</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={600}
-                  step={25}
-                  value={bonus}
-                  onChange={(e) => change(setBonus)(Number(e.target.value))}
-                  aria-label="Kalorien-Bonus an Trainingstagen"
-                  className="w-full accent-[rgb(var(--c-ruby))]"
-                />
-                <div className="flex justify-between text-[11px] text-cocoa-muted">
-                  <span>0</span>
-                  <span>Standard {DEFAULT_KCAL_BONUS}</span>
-                  <span>600</span>
-                </div>
-              </>
-            )}
-          </div>
+          )}
 
           <div className="space-y-2 px-4 py-3">
             <div className="flex items-baseline justify-between gap-2">

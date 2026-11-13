@@ -171,7 +171,8 @@ einer App, aber nur das sichtbar, was man nutzt.
 - **Essen vorab (Meal Prep):** Ernährung bis 13 Tage voraus wählbar (`WeekPicker maxDate`), Hinweis „Vorab für …“.
   „Für weitere Tage“ an jeder Mahlzeit (`PrepSheet`: Tage, Nächste 3/5, Werktage). `useAllFoodEntries()` blendet
   zukünftige Tage aus (Serien/Erfolge/Durchschnitte), nur die Ernährungsseite nutzt `includePlanned`.
-- **Kalorienbedarf nach Aktivität** (`src/lib/energy.ts`, `useKcalTarget`, Karte `EnergyCard` in Ernährung):
+- **Kalorienbedarf nach Aktivität** (`src/lib/energy.ts`, `useKcalTarget`; Schalter nur in Profil → Einstellungen →
+  Ernährung, Hinweis „nach Aktivität“ unter dem Ziel in der Ernährungs-Karte, keine eigene Karte mehr):
   Grundumsatz (Mifflin-St Jeor) + Alltag (Schritte über 4.000 × 0,0005 × kg + 10 % GU; ohne Schritte
   Alltags-PAL aus `activity`) + Training + Verdauung 10 %. Heute zählen mind. die Ø-Schritte der letzten 7 Tage.
   `prefs.kcalTargetMode` 'activity' = Ziel täglich aus Bedarf (Training halb) + Ziel-Anpassung, mind. 1200;
@@ -205,7 +206,8 @@ einer App, aber nur das sichtbar, was man nutzt.
   erklärt das, Mahlzeit-Analyse zeigt die Top-Nährstoffe (`MealMicros`). Belastungs-Insight läuft auch nur aus
   Kraftsätzen. Das Modul heißt „Uhr & Health Connect“ (auch Handy-Schritte). Tagesform bleibt Uhr-only (braucht
   Schlaf/Puls).
-- **Vitamine & Mineralstoffe** (`src/lib/micros.ts`, Karte `MicroCard`): KI schätzt je Lebensmittel Vitamin C, D,
+- **Vitamine & Mineralstoffe** (`src/lib/micros.ts`, aufklappbar „Vitamine & mehr“ in der großen Ernährungs-Karte `HeroCard`
+  zusammen mit Zucker/ges. Fett/Salz; `MealMicros` in der Mahlzeit-Analyse): KI schätzt je Lebensmittel Vitamin C, D,
   B12, Folat, Eisen, Calcium, Magnesium, Zink, Kalium (`food_entries.micros` jsonb, Migration 0045); Barcode-Produkte
   nehmen OFF-Angaben. Tagessumme gegen DGE-Referenz (Frauen eigene Werte), Hinweis „Noch wenig: …“ (ohne Vitamin D).
   Fehlt die Spalte, wird ohne Vitamine gespeichert.

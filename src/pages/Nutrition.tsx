@@ -82,7 +82,6 @@ import {
   type MealPlanItem,
   type Recipe,
 } from '../lib/ai'
-import { EnergyCard } from '../components/nutrition-home/EnergyCard'
 import { useAiGate } from '../hooks/usePremium'
 import { PlusBadge } from '../components/premium/PlusBadge'
 import { mealVerdictText } from '../lib/freeTexts'
@@ -93,8 +92,7 @@ import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
 import { NutrientExtras } from '../components/food/NutrientExtras'
 import { RecentFoods } from '../components/nutrition-home/RecentFoods'
 import { lastMealCopy, recentFoods, repeatEntry } from '../lib/recentFoods'
-import { scaleMicros } from '../lib/micros'
-import { MicroCard } from '../components/nutrition-home/MicroCard'
+import { microDay, scaleMicros } from '../lib/micros'
 import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { MealCard } from '../components/nutrition-home/MealCard'
 import { SaveMealSheet, SavedMealChips } from '../components/nutrition-home/SavedMeals'
@@ -1173,6 +1171,9 @@ export default function Nutrition() {
           bonus={targetMode === 'activity' ? 0 : bonusOn(today)}
           onSetup={openSetup}
           buddy={isToday ? heroBuddy : undefined}
+          micros={microDay(entries ?? [], settings?.sex ?? null)}
+          hasEntries={(entries ?? []).length > 0}
+          targetHint={targetMode === 'activity' ? 'nach Aktivität' : undefined}
           style={stagger(1)}
         />
 
@@ -1264,9 +1265,7 @@ export default function Nutrition() {
         )}
 
         {!isFuture && <WaterRow date={today} style={stagger(8)} />}
-        <MicroCard entries={entries ?? []} sex={settings?.sex ?? null} style={stagger(9)} />
         {(homeCards.supplements || (supplements?.length ?? 0) > 0) && <SupplementCard date={today} />}
-        {hasTarget && <EnergyCard date={today} isToday={isToday} />}
         {isToday && (homeCards.weight || params.has('weigh')) && <BodyWeightCard />}
         {isToday && <CustomizeHome area="food" />}
       </>

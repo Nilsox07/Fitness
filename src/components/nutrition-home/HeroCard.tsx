@@ -7,6 +7,7 @@ import { DEFAULT_FIBER_TARGET, NUTRIENT_REFERENCE, type Nutrients } from '../../
 import { Ring } from './Ring'
 import { MyBuddy } from '../buddy/MyBuddy'
 import { BuddyLine, HeroWithBuddy, type HeroBuddyData } from '../home/HeroBuddy'
+import { fmtMicro, lowest, type MicroDay } from '../../lib/micros'
 
 type Targets = { kcal: number; protein: number; carbs: number; fat: number; fiber?: number }
 
@@ -18,7 +19,10 @@ const EXTRA: Record<Extra, { label: string; digits: number }> = {
   salt: { label: 'Salz', digits: 1 },
 }
 
-/** Großer Kalorienring + Makro- und Ballaststoff-Balken + aufklappbare weitere Nährwerte. */
+/**
+ * Großer Kalorienring + Makro- und Ballaststoff-Balken. Aufklappbar darunter: Vitamine & Mineralstoffe
+ * (geschätzt, gegen DGE-Richtwerte) und Zucker/ges. Fett/Salz – alle Nährwerte an einer Stelle.
+ */
 export function HeroCard({
   totals,
   targets,
@@ -27,6 +31,9 @@ export function HeroCard({
   onSetup,
   pins = { sugar: false, salt: false },
   buddy,
+  micros,
+  hasEntries = false,
+  targetHint,
   style,
 }: {
   totals: Nutrients
@@ -40,6 +47,12 @@ export function HeroCard({
   pins?: { sugar: boolean; salt: boolean }
   /** Buddy lugt über die Karte, sein Spruch steht oben in der Karte (wie im Training) */
   buddy?: HeroBuddyData
+  /** Vitamine & Mineralstoffe des Tages (null = keine Daten) */
+  micros?: MicroDay | null
+  /** Gibt es heute Einträge? (für den Hinweis, woher Vitamine kommen) */
+  hasEntries?: boolean
+  /** kleiner Hinweis unter „Ziel“ (z. B. „nach Aktivität“) – ersetzt den Trainings-Bonus-Hinweis */
+  targetHint?: string
   style?: CSSProperties
 }) {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -50,6 +63,7 @@ export function HeroCard({
   const over = left < 0
   const pinned = EXTRAS.filter((k) => (k === 'sugar' && pins.sugar) || (k === 'salt' && pins.salt))
   const hidden = EXTRAS.filter((k) => !pinned.includes(k))
+  const low = micros ? lowest(micros) : []
 
   if (!hasTarget) {
     return (
@@ -105,7 +119,7 @@ export function HeroCard({
             <Side
               label="Ziel"
               value={fmtInt(targets.kcal)}
-              hint={trained && bonus > 0 ? `inkl. Training +${bonus}` : undefined}
+              hint={targetHint ?? (trained && bonus > 0 ? `inkl. Training +${bonus}` : undefined)}
             />
           </div>
 
@@ -140,22 +154,52 @@ export function HeroCard({
 
           <div className="relative border-t border-bg/10 pt-2 dark:border-sand-dark/40">
             <button
-              className="flex w-full items-center justify-between py-1 text-sm text-bg/60 dark:text-cocoa-light"
+              className="flex w-full items-center gap-2 py-1 text-left text-sm text-bg/60 dark:text-cocoa-light"
               onClick={() => setMoreOpen((o) => !o)}
               aria-expanded={moreOpen}
             >
-              Mehr Nährwerte
-              <ChevronDown size={16} className={`transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`} />
+              <span className="shrink-0 font-medium text-bg/80 dark:text-cocoa">Vitamine & mehr</span>
+              {micros && !moreOpen && (
+                <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-xs">
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${low.length ? 'bg-gold' : 'bg-good'}`} />
+                  {low.length ? `Noch wenig: ${low.map((r) => r.label).join(', ')}` : 'Gut dabei'}
+                </span>
+              )}
+              <ChevronDown
+                size={16}
+                className={`ml-auto shrink-0 transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`}
+              />
             </button>
             {moreOpen && (
-              <div
-                className={`anim-fade tabular mt-2 grid gap-2 rounded-xl bg-bg/10 p-2 text-center text-[11px] text-bg/60 dark:bg-white/5 dark:text-cocoa-light ${
-                  hidden.length === 3 ? 'grid-cols-3' : hidden.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
-                }`}
-              >
-                {hidden.map((k) => (
-                  <Micro key={k} label={EXTRA[k].label} value={totals[k]} />
-                ))}
+              <div className="anim-fade mt-2 space-y-3">
+                {micros ? (
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                    {micros.rows.map((r) => (
+                      <MicroBar key={r.key} label={r.label} amount={r.amount} target={r.target} unit={r.unit} />
+                    ))}
+                  </div>
+                ) : (
+                  hasEntries && (
+                    <p className="text-xs text-bg/60 dark:text-cocoa-light">
+                      Vitamine & Mineralstoffe kommen mit Foto, Beschreiben oder Barcode.
+                    </p>
+                  )
+                )}
+                <div
+                  className={`tabular grid gap-2 rounded-xl bg-bg/10 p-2 text-center text-[11px] text-bg/60 dark:bg-white/5 dark:text-cocoa-light ${
+                    hidden.length === 3 ? 'grid-cols-3' : hidden.length === 2 ? 'grid-cols-2' : 'grid-cols-1'
+                  }`}
+                >
+                  {hidden.map((k) => (
+                    <Micro key={k} label={EXTRA[k].label} value={totals[k]} />
+                  ))}
+                </div>
+                {micros && (
+                  <p className="text-[10px] text-bg/50 dark:text-cocoa-muted">
+                    Vitamine geschätzt · Richtwerte der DGE
+                    {micros.coverage < 0.6 ? ' · teilweise erfasst' : ''}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -211,6 +255,26 @@ function Macro({
       <div className="tabular mt-1 text-[11px] text-bg/60 dark:text-cocoa-light">
         <span className="font-semibold text-bg dark:text-cocoa">{f(value)}</span>
         {target > 0 ? ` / ${f(target)} g` : ' g'}
+      </div>
+    </div>
+  )
+}
+
+/** Vitamin/Mineralstoff als Balken gegen den Richtwert (auf der dunklen Karte) */
+function MicroBar({ label, amount, target, unit }: { label: string; amount: number; target: number; unit: string }) {
+  const share = target > 0 ? amount / target : 0
+  return (
+    <div className="min-w-0">
+      <div className="truncate text-xs font-medium">{label}</div>
+      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-bg/15 dark:bg-sand-dark/45">
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ease-out ${share >= 1 ? 'bg-success' : 'bg-brand/70'}`}
+          style={{ width: `${Math.max(2, Math.min(1, share) * 100)}%` }}
+        />
+      </div>
+      <div className="tabular mt-1 text-[11px] text-bg/60 dark:text-cocoa-light">
+        <span className="font-semibold text-bg dark:text-cocoa">{fmtMicro(amount, unit)}</span> /{' '}
+        {fmtMicro(target, unit)}
       </div>
     </div>
   )
