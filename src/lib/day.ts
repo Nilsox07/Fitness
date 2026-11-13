@@ -13,6 +13,7 @@ export function shiftDate(date: string, days: number): string {
 export function dayLabel(date: string, today = localDate()): string {
   if (date === today) return 'Heute'
   if (date === shiftDate(today, -1)) return 'Gestern'
+  if (date === shiftDate(today, 1)) return 'Morgen'
   const [y, m, d] = date.split('-').map(Number)
   return new Date(y, m - 1, d).toLocaleDateString('de-DE', {
     weekday: 'short',

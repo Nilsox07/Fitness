@@ -18,6 +18,7 @@ export function WeekPicker({
   progressFor,
   describe,
   minDate,
+  maxDate,
 }: {
   date: string
   today: string
@@ -27,13 +28,16 @@ export function WeekPicker({
   describe?: (d: string) => string | null
   /** frühester wählbarer Tag (z. B. so weit die Daten reichen) */
   minDate?: string
+  /** spätester wählbarer Tag (Standard: heute; z. B. Essen vorab eintragen) */
+  maxDate?: string
 }) {
   const days = weekOf(date)
-  const isCurrentWeek = days.includes(today)
+  const last = maxDate && maxDate > today ? maxDate : today
+  const isCurrentWeek = days[6] >= last
   const canBack = !minDate || days[0] > minDate
   const nextWeek = () => {
     const d = shiftDate(date, 7)
-    onChange(d > today ? today : d)
+    onChange(d > last ? last : d)
   }
   const prevWeek = () => {
     const d = shiftDate(date, -7)
@@ -49,7 +53,7 @@ export function WeekPicker({
       </button>
       <div className="grid flex-1 grid-cols-7 gap-0.5">
         {days.map((d, i) => {
-          const future = d > today
+          const future = d > last
           const tooEarly = minDate != null && d < minDate
           const selected = d === date
           const isToday = d === today

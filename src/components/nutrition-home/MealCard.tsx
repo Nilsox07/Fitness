@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { fluidOf } from '../../lib/fluid'
-import { Bookmark, Coffee, Cookie, Moon, Plus, RotateCcw, Sun, type LucideIcon } from 'lucide-react'
+import { Bookmark, CalendarPlus, Coffee, Cookie, Moon, Plus, RotateCcw, Sun, type LucideIcon } from 'lucide-react'
 import { MEAL_LABEL, type FoodEntry, type Meal } from '../../types'
 import { fmtInt } from '../../lib/nutritionHome'
 import { namesLine, type MealCopy } from '../../lib/recentFoods'
@@ -23,6 +23,7 @@ export function MealCard({
   copy,
   onCopy,
   copyBusy,
+  onPrep,
   style,
 }: {
   meal: Meal
@@ -37,6 +38,8 @@ export function MealCard({
   copy?: MealCopy | null
   onCopy?: () => void
   copyBusy?: boolean
+  /** Meal Prep: auf weitere Tage eintragen (nur mit Einträgen) */
+  onPrep?: () => void
   style?: CSSProperties
 }) {
   const Icon = ICON[meal]
@@ -112,23 +115,34 @@ export function MealCard({
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{e.name}</div>
                   <div className="tabular text-[11px] text-cocoa-muted">
-                    {fluidOf(e) > 0 ? `💧 ${fmtInt(fluidOf(e))} ml · ` : e.amount_g ? `${fmtInt(e.amount_g)} g · ` : ''}E {Math.round(e.protein)} · K {Math.round(e.carbs)} · F{' '}
-                    {Math.round(e.fat)}
+                    {fluidOf(e) > 0 ? `💧 ${fmtInt(fluidOf(e))} ml · ` : e.amount_g ? `${fmtInt(e.amount_g)} g · ` : ''}
+                    E {Math.round(e.protein)} · K {Math.round(e.carbs)} · F {Math.round(e.fat)}
                   </div>
                 </div>
                 <span className="tabular shrink-0 text-sm text-cocoa-light">{fmtInt(e.kcal)}</span>
               </button>
             </li>
           ))}
-          {onSaveMeal && (
-            <li>
-              <button
-                className="flex w-full items-center gap-1.5 px-4 py-2 text-xs font-semibold text-cocoa-light transition-colors duration-200 hover:bg-sand-light"
-                onClick={onSaveMeal}
-              >
-                <Bookmark size={13} />
-                Als Mahlzeit speichern
-              </button>
+          {(onSaveMeal || onPrep) && (
+            <li className="flex">
+              {onSaveMeal && (
+                <button
+                  className="flex flex-1 items-center gap-1.5 px-4 py-2 text-xs font-semibold text-cocoa-light transition-colors duration-200 hover:bg-sand-light"
+                  onClick={onSaveMeal}
+                >
+                  <Bookmark size={13} />
+                  Als Mahlzeit speichern
+                </button>
+              )}
+              {onPrep && (
+                <button
+                  className="flex flex-1 items-center justify-end gap-1.5 px-4 py-2 text-xs font-semibold text-cocoa-light transition-colors duration-200 hover:bg-sand-light"
+                  onClick={onPrep}
+                >
+                  <CalendarPlus size={13} />
+                  Für weitere Tage
+                </button>
+              )}
             </li>
           )}
         </ul>

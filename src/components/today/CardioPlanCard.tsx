@@ -7,6 +7,8 @@ import { localDate, shiftDate } from '../../lib/day'
 import { weekdayIndex } from '../../lib/schedule'
 import { WEEKDAYS, cardioHowTo, cardioTitle } from '../../lib/onboarding'
 import { useGymWeek } from '../../hooks/useGymWeek'
+import { useManualActivities } from '../../hooks/useManualActivities'
+import { sportById } from '../../lib/sports'
 import { arrangeCardio, hybridIssues, isHard, todayAdvice } from '../../lib/hybrid'
 
 /**
@@ -17,6 +19,7 @@ export function CardioPlanCard() {
   const { prefs, save } = useUserPrefs()
   const { hasWatch, hasHybrid } = usePrefs()
   const { data: acts } = useHealthActivities(14)
+  const { data: manual } = useManualActivities()
   const [info, setInfo] = useState(false)
   const [moved, setMoved] = useState(false)
   const gym = useGymWeek()
@@ -26,7 +29,11 @@ export function CardioPlanCard() {
   const today = localDate()
   const wd = weekdayIndex(today)
   const monday = shiftDate(today, -wd)
-  const watchDays = new Set(hasWatch ? (acts ?? []).map((a) => a.started_at.slice(0, 10)) : [])
+  const watchDays = new Set([
+    ...(hasWatch ? (acts ?? []).map((a) => a.started_at.slice(0, 10)) : []),
+    // manuell eingetragene Ausdauer (Radfahren, Laufen, Schwimmen …) zählt auch
+    ...(manual ?? []).filter((a) => sportById(a.sport).cardio).map((a) => a.date),
+  ])
   const isDone = (date: string) => prefs.cardioDone.includes(date) || watchDays.has(date)
 
   const todays = plan.sessions.find((s) => s.day === wd)

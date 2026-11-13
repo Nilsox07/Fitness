@@ -33,6 +33,7 @@ import {
 import { enter } from '../components/home/motion'
 import type { Exercise, SetWithDate, Workout } from '../types'
 import { useTrainingKcal } from '../hooks/useTrainingKcal'
+import { ActivitiesCard } from '../components/activity/ActivitiesCard'
 import { kcalText, type KcalEstimate } from '../lib/trainingKcal'
 
 export default function History() {
@@ -343,6 +344,8 @@ function NewHistory({
       {volumeByDate.size > 0 && <MonthHeatmap today={today} volumeByDate={volumeByDate} onPick={pickDay} index={1} />}
 
       {isLoading && <p className="text-cocoa-light">Lädt…</p>}
+
+      <ActivitiesCard days={30} style={enter(1)} />
 
       {groups.map((g) => {
         const groupVolume = g.items.reduce((s, w) => s + (metas.get(w.id)?.volume ?? 0), 0)

@@ -9,6 +9,7 @@ describe('day', () => {
   it('benennt heute und gestern', () => {
     expect(dayLabel('2026-09-30', '2026-09-30')).toBe('Heute')
     expect(dayLabel('2026-09-29', '2026-09-30')).toBe('Gestern')
+    expect(dayLabel('2026-10-01', '2026-09-30')).toBe('Morgen')
     expect(dayLabel('2026-09-20', '2026-09-30')).toMatch(/20/)
   })
   it('localDate nutzt die lokale Zeit', () => {

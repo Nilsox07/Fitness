@@ -338,6 +338,15 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     needs: 'watch',
   },
   {
+    id: 'activities',
+    label: 'Aktivität eintragen',
+    sub: 'Radfahren, Volleyball, Schwimmen – auch ohne Uhr',
+    section: 'Training',
+    to: '/',
+    keywords:
+      'aktivität sport eintragen manuell radfahren fahrrad volleyball fußball schwimmen tennis wandern yoga tanzen klettern',
+  },
+  {
     id: 'energy',
     label: 'Kalorienbedarf',
     sub: 'Grundumsatz, Schritte & Training – Ziel nach Aktivität',

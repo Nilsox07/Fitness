@@ -107,7 +107,7 @@ import { FastingCard } from '../components/nutrition-home/FastingCard'
 import { dietShortLabel } from '../lib/dietStyle'
 import { stagger } from '../components/nutrition-home/motion'
 import { kcalByDate, mealRecommendation } from '../lib/nutritionHome'
-import { dayLabel } from '../lib/day'
+import { dayLabel, shiftDate } from '../lib/day'
 import type { FoodEntry } from '../types'
 import { useNutrientPins, useNutritionPrefs } from '../hooks/usePrefsSync'
 import { ToolTiles } from '../components/home/ToolTiles'
@@ -128,6 +128,7 @@ import {
   type Chain,
   type Combo,
 } from '../lib/fastfood'
+import { PREP_DAYS, PrepSheet } from '../components/nutrition-home/PrepSheet'
 
 /** Datei zu (verkleinerter) Data-URL — spart Tokens/Upload. */
 function fileToDataUrl(file: File, maxDim = 1024): Promise<string> {
@@ -386,9 +387,17 @@ export default function Nutrition() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suppParam, slotParam])
   // Vergangene Tage per ?date=… (Tagesnavigation)
-  const today = paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate < realToday ? paramDate : realToday
+  // Vergangene Tage nachtragen, kommende Tage vorab (Meal Prep, bis 13 Tage voraus)
+  const maxDay = shiftDate(realToday, PREP_DAYS - 1)
+  const today =
+    paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate !== realToday && paramDate <= maxDay
+      ? paramDate
+      : realToday
   const isToday = today === realToday
-  const setDay = (d: string) => setParams(d >= realToday ? {} : { date: d }, { replace: true })
+  const isFuture = today > realToday
+  const setDay = (d: string) => setParams(d === realToday ? {} : { date: d }, { replace: true })
+  const [prepFor, setPrepFor] = useState<Meal | null>(null)
+  const [prepNote, setPrepNote] = useState<string | null>(null)
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null)
   const { data: settings } = useNutritionSettings()
   const diet = useDietStyle()
@@ -398,7 +407,7 @@ export default function Nutrition() {
   const { data: supplements } = useSupplements()
   const dietLabel = dietShortLabel(diet)
   const { data: entries } = useFoodEntries(today)
-  const { data: allEntries } = useAllFoodEntries()
+  const { data: allEntries } = useAllFoodEntries({ includePlanned: true })
   const { data: allSets } = useAllSets()
   const trainedToday = trainedOn(today, allSets)
 
@@ -1132,13 +1141,18 @@ export default function Nutrition() {
           onChange={setDay}
           kcalByDate={dayKcal}
           targetFor={(d) => targetOn(d)}
+          maxDate={maxDay}
         />
 
         {isToday && <QuestStrip area="food" />}
 
         {!isToday && (
           <div className="anim-fade flex items-center justify-between gap-2 rounded-full bg-sand px-3 py-1.5 text-xs text-cocoa-light">
-            <span className="truncate">Vergangener Tag — neue Einträge landen hier</span>
+            <span className="truncate">
+              {isFuture
+                ? `Vorab für ${dayLabel(today, realToday)} – zählt an dem Tag`
+                : 'Vergangener Tag — neue Einträge landen hier'}
+            </span>
             <button className="shrink-0 font-semibold text-brand" onClick={() => setDay(realToday)}>
               Zu heute
             </button>
@@ -1237,12 +1251,19 @@ export default function Nutrition() {
               copy={lastMealCopy(allEntries ?? [], meal, today)}
               onCopy={() => copyMeal(meal)}
               copyBusy={addEntries.isPending}
+              onPrep={() => setPrepFor(meal)}
               style={stagger(4 + i)}
             />
           ))}
         </div>
 
-        <WaterRow date={today} style={stagger(8)} />
+        {prepNote && (
+          <div className="anim-fade rounded-full bg-success/15 px-4 py-2 text-center text-sm font-semibold text-success">
+            {prepNote}
+          </div>
+        )}
+
+        {!isFuture && <WaterRow date={today} style={stagger(8)} />}
         <MicroCard entries={entries ?? []} sex={settings?.sex ?? null} style={stagger(9)} />
         {(homeCards.supplements || (supplements?.length ?? 0) > 0) && <SupplementCard date={today} />}
         {hasTarget && <EnergyCard date={today} isToday={isToday} />}
@@ -1256,6 +1277,19 @@ export default function Nutrition() {
           entries={(entries ?? []).filter((e) => (e.meal ?? 'snack') === saveMealFor)}
           onClose={() => setSaveMealFor(null)}
           onSaved={(n) => flashNote(`„${n}“ gespeichert – beim Hinzufügen mit einem Tipp`)}
+        />
+      )}
+
+      {prepFor && (
+        <PrepSheet
+          entries={(entries ?? []).filter((e) => (e.meal ?? 'snack') === prepFor)}
+          meal={prepFor}
+          fromDate={today}
+          onClose={() => setPrepFor(null)}
+          onDone={(n) => {
+            setPrepNote(`Für ${n} ${n === 1 ? 'weiteren Tag' : 'weitere Tage'} eingetragen`)
+            setTimeout(() => setPrepNote(null), 3500)
+          }}
         />
       )}
 

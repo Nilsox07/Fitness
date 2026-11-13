@@ -22,6 +22,18 @@ import { useNutritionSettings } from './useNutrition'
 import { useHealthActivities } from './useHealth'
 import { useUserPrefs } from './usePrefsSync'
 import type { SetWithDate } from '../types'
+import { useManualActivities } from './useManualActivities'
+import { activityKcal, coveredByWatch } from '../lib/sports'
+
+/** Uhr-Typ → Sportart für die Schätzung, wenn die Uhr keine kcal liefert */
+const WATCH_SPORT: Record<string, string> = {
+  run: 'run',
+  ride: 'bike',
+  walk: 'walk',
+  hike: 'hike',
+  swim: 'swim',
+  row: 'row',
+}
 
 export interface TrainingKcal {
   /** Schätzung je Training (workout_id) */
@@ -45,8 +57,9 @@ export function useTrainingKcal(): TrainingKcal {
   const { data: weights } = useBodyWeights()
   const { data: settings } = useNutritionSettings()
   const { data: acts } = useHealthActivities(60)
+  const { data: manual } = useManualActivities()
 
-  const { byWorkout, byDate, strengthByDate } = useMemo(() => {
+  const { byWorkout, byDate, strengthByDate, activityDates } = useMemo(() => {
     const muscle = new Map((exercises ?? []).map((e) => [e.id, e.muscle_group as string]))
     const kgList = (weights ?? []).map((w) => ({ date: w.date, kg: Number(w.weight_kg) }))
     const groups = new Map<string, SetWithDate[]>()
@@ -80,6 +93,32 @@ export function useTrainingKcal(): TrainingKcal {
           : e,
       )
     }
+    // Uhr-Aktivitäten, die nicht zu einem Krafttraining gehören (Lauf, Radtour …)
+    const windows = [...groups.values()]
+      .map((sets) => sets.map((x) => Date.parse(x.created_at)).filter(Number.isFinite))
+      .filter((t) => t.length)
+      .map((t) => [Math.min(...t) - 20 * 60000, Math.max(...t) + 20 * 60000] as const)
+    const activityDates = new Set<string>()
+    const watch = hasWatch ? (acts ?? []) : []
+    for (const a of watch) {
+      const start = Date.parse(a.started_at)
+      const end = start + a.duration_s * 1000
+      if (windows.some(([f, t]) => end >= f && start <= t)) continue
+      const date = a.started_at.slice(0, 10)
+      const kg = weightOn(date, kgList, settings?.weight_kg)
+      const est = activityKcal(WATCH_SPORT[a.type] ?? 'other', 'moderate', a.duration_s / 60, kg)
+      const v = a.kcal && a.kcal > 0 && est > 0 ? Math.min(est * 1.6, Math.max(est * 0.6, a.kcal)) : est
+      byDate.set(date, (byDate.get(date) ?? 0) + Math.round(v))
+      activityDates.add(date)
+    }
+    // Manuell eingetragen – zählt nicht, wenn die Uhr dieselbe Aktivität schon hat
+    for (const m of manual ?? []) {
+      if (hasWatch && coveredByWatch(m, watch)) continue
+      const kcal =
+        m.kcal || activityKcal(m.sport, m.intensity, m.minutes, weightOn(m.date, kgList, settings?.weight_kg))
+      byDate.set(m.date, (byDate.get(m.date) ?? 0) + kcal)
+      activityDates.add(m.date)
+    }
     if (hasHybrid)
       for (const r of prefs.hybridRuns) {
         const t = templateById(r.template)
@@ -87,18 +126,18 @@ export function useTrainingKcal(): TrainingKcal {
         const e = hybridKcal(t, r.splits, weightOn(r.date, kgList, settings?.weight_kg))
         byDate.set(r.date, (byDate.get(r.date) ?? 0) + e.kcal)
       }
-    return { byWorkout, byDate, strengthByDate }
-  }, [allSets, exercises, weights, settings?.weight_kg, acts, hasWatch, hasHybrid, prefs.hybridRuns])
+    return { byWorkout, byDate, strengthByDate, activityDates }
+  }, [allSets, exercises, weights, settings?.weight_kg, acts, manual, hasWatch, hasHybrid, prefs.hybridRuns])
 
   const strengthOn = useCallback((date: string) => strengthByDate.get(date) ?? null, [strengthByDate])
   const burnedOn = useCallback((date: string) => byDate.get(date) ?? 0, [byDate])
   const bonusOn = useCallback(
     (date: string) => {
       const burned = byDate.get(date) ?? 0
-      const trained = prefs.kcalBonusMode === 'fixed' ? trainedOn(date, allSets) : burned > 0
+      const trained = prefs.kcalBonusMode === 'fixed' ? trainedOn(date, allSets) || activityDates.has(date) : burned > 0
       return dayBonus(prefs.kcalBonusMode, prefs.kcalBonus, trained, burned)
     },
-    [byDate, allSets, prefs.kcalBonusMode, prefs.kcalBonus],
+    [byDate, allSets, activityDates, prefs.kcalBonusMode, prefs.kcalBonus],
   )
   const kgOn = useCallback(
     (date: string) =>

@@ -25,6 +25,7 @@ import { WeekStrip } from './WeekStrip'
 import { NextWorkoutCard } from './NextWorkoutCard'
 import { RecoveryCard, type MuscleState } from './RecoveryCard'
 import { LastWorkoutCard } from './LastWorkoutCard'
+import { ActivitiesCard } from '../activity/ActivitiesCard'
 import { useTrainingKcal } from '../../hooks/useTrainingKcal'
 import { NutritionRow } from './NutritionRow'
 import { ChallengeCard } from './ChallengeCard'
@@ -187,6 +188,7 @@ export function HomeStart({
         />
       )}
       <CardioPlanCard />
+      <ActivitiesCard style={enter(++i)} />
       <QuestStrip area="training" style={enter(++i)} />
       <ToolTiles
         style={enter(++i)}

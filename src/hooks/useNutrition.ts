@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { localDate } from '../lib/day'
 import { useAuth } from '../lib/auth'
 import { judgeCheatMeal } from '../lib/ai'
 import { cheatJudgeText } from '../lib/freeTexts'
@@ -146,10 +147,17 @@ export function useFoodEntries(date: string) {
   })
 }
 
-/** Alle Essens-Einträge (für die Auswertung / Tagesverlauf). */
-export function useAllFoodEntries() {
+/**
+ * Alle Essens-Einträge (für die Auswertung / Tagesverlauf). Vorab eingetragene Tage (Meal Prep, Datum in der
+ * Zukunft) sind ausgeblendet – sie zählen erst an ihrem Tag (Serien, Erfolge, Durchschnitte).
+ * `includePlanned` zeigt sie trotzdem (z. B. die Wochenleiste der Ernährung).
+ */
+export function useAllFoodEntries(opts: { includePlanned?: boolean } = {}) {
+  const today = localDate()
+  const hidePlanned = useCallback((list: FoodEntry[]) => list.filter((e) => e.date <= today), [today])
   return useQuery({
     queryKey: ['food_entries', 'all'],
+    select: opts.includePlanned ? undefined : hidePlanned,
     queryFn: async (): Promise<FoodEntry[]> => {
       const { data, error } = await supabase
         .from('food_entries')

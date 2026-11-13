@@ -148,6 +148,16 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Manuelle Aktivitäten** (`src/lib/sports.ts`, Tabelle `manual_activities` – Migration 0047,
+  `useManualActivities`, `components/activity/*`): 25 Sportarten mit MET locker/mittel/hart (Compendium),
+  kcal = (MET − 1) × kg × h, gespeichert. Immer an (kein Modul). Eintragen über Karte „Aktivitäten“ (Training,
+  Heute-Widget `activities`, Verlauf 30 Tage), letzte Kombinationen „Nochmal eintragen“. Zählen im
+  Kalorienbedarf/Bonus (`useTrainingKcal`), Ausdauer-Sportarten haken den Ausdauer-Plan ab. Uhr-Dubletten
+  (`coveredByWatch`: gleicher Tag, passende Art, Dauer ±35 %) zählen nur einmal. Uhr-Aktivitäten ohne
+  Krafttraining zählen jetzt ebenfalls im Bedarf (Uhr-kcal, auf 60–160 % der Schätzung begrenzt).
+- **Essen vorab (Meal Prep):** Ernährung bis 13 Tage voraus wählbar (`WeekPicker maxDate`), Hinweis „Vorab für …“.
+  „Für weitere Tage“ an jeder Mahlzeit (`PrepSheet`: Tage, Nächste 3/5, Werktage). `useAllFoodEntries()` blendet
+  zukünftige Tage aus (Serien/Erfolge/Durchschnitte), nur die Ernährungsseite nutzt `includePlanned`.
 - **Kalorienbedarf nach Aktivität** (`src/lib/energy.ts`, `useKcalTarget`, Karte `EnergyCard` in Ernährung):
   Grundumsatz (Mifflin-St Jeor) + Alltag (Schritte über 4.000 × 0,0005 × kg + 10 % GU; ohne Schritte
   Alltags-PAL aus `activity`) + Training + Verdauung 10 %. Heute zählen mind. die Ø-Schritte der letzten 7 Tage.

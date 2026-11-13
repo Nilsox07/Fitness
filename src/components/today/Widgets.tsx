@@ -38,6 +38,7 @@ import { useCycleState } from '../../hooks/useCycle'
 import { PHASE_LABEL, trainingHint } from '../../lib/cycle'
 import { useSleepPlan } from '../../hooks/useRecovery'
 import { JournalCheckIn } from '../journal/JournalCheckIn'
+import { ActivitiesCard } from '../activity/ActivitiesCard'
 
 const fmt = (n: number) => Math.round(n).toLocaleString('de-DE')
 
@@ -624,5 +625,7 @@ export function renderWidget(id: WidgetId, t: TodaySummary): ReactNode {
       return <BedtimeWidget />
     case 'journal':
       return <JournalWidget />
+    case 'activities':
+      return <ActivitiesCard />
   }
 }

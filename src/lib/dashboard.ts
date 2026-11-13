@@ -26,6 +26,7 @@ export type WidgetId =
   | 'lastWorkout'
   | 'bedtime'
   | 'journal'
+  | 'activities'
 
 export interface WidgetDef {
   id: WidgetId
@@ -74,6 +75,13 @@ export const WIDGETS: WidgetDef[] = [
     module: 'watch',
     size: 'half',
     needs: ['sleep'],
+  },
+  {
+    id: 'activities',
+    label: 'Aktivitäten',
+    hint: 'Radfahren, Volleyball & Co. eintragen',
+    module: 'training',
+    size: 'full',
   },
   { id: 'journal', label: 'Journal', hint: 'Gewohnheiten antippen – was hilft dir?', module: 'training', size: 'full' },
   { id: 'steps', label: 'Schritte', hint: 'Heute von deiner Uhr', module: 'watch', size: 'half', needs: ['steps'] },
@@ -124,6 +132,7 @@ export const DEFAULT_LAYOUT: WidgetId[] = [
   'bedtime',
   'steps',
   'journal',
+  'activities',
   'lastActivity',
   'quests',
   'friends',
