@@ -1,6 +1,3 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Camera, Check, MessageSquare, Plus, ScanBarcode, Search } from 'lucide-react'
 import { BuddyLine, HeroWithBuddy } from '../home/HeroBuddy'
 import { useHeroBuddy } from '../home/useHeroBuddy'
 import { useBriefing } from '../buddy/useBriefing'
@@ -8,25 +5,16 @@ import { enter } from '../home/motion'
 import { HeroPill } from '../health/ui'
 import { PlusBadge } from '../premium/PlusBadge'
 import { useToday } from '../../hooks/useToday'
-import { useAddFoodEntry, useAllFoodEntries } from '../../hooks/useNutrition'
-import { useAiGate } from '../../hooks/usePremium'
 import { usePrefs } from '../../lib/prefs'
-import { localDate } from '../../lib/day'
-import { recentFoods, repeatEntry } from '../../lib/recentFoods'
-import { currentMeal } from '../recipes/recipeUtils'
 import { fmtInt } from '../../lib/nutritionHome'
-import { haptic } from '../../lib/native'
-import { MEAL_LABEL } from '../../types'
 
 /**
  * Kopf von „Heute“: Buddy sitzt auf der großen Karte, sein Spruch (bzw. das Tagesbriefing) oben.
- * Darunter die wichtigsten Zahlen und – mit Ernährung – Essen direkt hier eintragen.
+ * Darunter die drei wichtigsten Zahlen. Eintragen passiert in „Jetzt dran“ darunter.
  */
 export function TodayHero() {
   const t = useToday()
-  const navigate = useNavigate()
   const { showNutrition, hasWatch } = usePrefs()
-  const gate = useAiGate()
   const brief = useBriefing()
   const tipBuddy = useHeroBuddy('today')
 
@@ -72,90 +60,9 @@ export function TodayHero() {
                 <HeroPill key={p.label} value={p.value} label={p.label} />
               ))}
             </div>
-            {showNutrition && (
-              <QuickFood aiLocked={gate.locked} aiOn={gate.enabled} onOpen={(m) => navigate(`/nutrition?add=${m}`)} />
-            )}
           </div>
         </section>
       </HeroWithBuddy>
-    </div>
-  )
-}
-
-/** Essen eintragen, ohne erst in den Ernährungs-Tab zu wechseln: Wege + „Nochmal“ mit einem Tipp. */
-function QuickFood({ aiOn, aiLocked, onOpen }: { aiOn: boolean; aiLocked: boolean; onOpen: (mode: string) => void }) {
-  const { data: all } = useAllFoodEntries()
-  const add = useAddFoodEntry()
-  const day = localDate()
-  const meal = currentMeal()
-  const recent = useMemo(() => recentFoods(all ?? [], meal, day).slice(0, 2), [all, meal, day])
-  const [done, setDone] = useState<Record<string, boolean>>({})
-
-  const ways = [
-    ...(aiOn
-      ? [
-          { id: 'photo', label: 'Foto', Icon: Camera },
-          { id: 'aitext', label: 'Sagen', Icon: MessageSquare },
-        ]
-      : []),
-    { id: 'scan', label: 'Scannen', Icon: ScanBarcode },
-    { id: 'search', label: 'Suchen', Icon: Search },
-  ]
-
-  return (
-    <div className="mt-4 border-t border-white/10 pt-3 dark:border-sand-dark/40">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-bg/60 dark:text-cocoa-light">
-        {MEAL_LABEL[meal]} eintragen
-      </p>
-      <div className={`grid gap-2 ${ways.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
-        {ways.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onOpen(id)}
-            className="relative flex flex-col items-center gap-1 rounded-2xl bg-bg/10 py-2.5 text-xs font-semibold transition active:scale-95 dark:bg-white/5"
-          >
-            <Icon size={19} className="text-brand" />
-            {label}
-            {aiLocked && (id === 'photo' || id === 'aitext') && (
-              <span className="absolute right-1 top-1">
-                <PlusBadge onDark />
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-      {recent.length > 0 && (
-        <div className="mt-2 space-y-1.5">
-          {recent.map(({ entry: e }) => (
-            <button
-              key={e.id}
-              type="button"
-              disabled={add.isPending}
-              onClick={() => {
-                add.mutate(repeatEntry(e, day, meal))
-                void haptic('success')
-                setDone((d) => ({ ...d, [e.id]: true }))
-              }}
-              className="flex w-full items-center gap-3 rounded-2xl bg-bg/10 py-2 pl-3 pr-2 text-left transition active:scale-[0.99] disabled:opacity-60 dark:bg-white/5"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">{e.name}</span>
-                <span className="tabular block text-[11px] text-bg/60 dark:text-cocoa-light">
-                  Nochmal · {fmtInt(e.kcal)} kcal
-                </span>
-              </span>
-              <span
-                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
-                  done[e.id] ? 'bg-success text-white' : 'bg-brand text-on-brand'
-                }`}
-              >
-                {done[e.id] ? <Check size={16} strokeWidth={3} /> : <Plus size={16} strokeWidth={2.5} />}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

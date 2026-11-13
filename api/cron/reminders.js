@@ -246,6 +246,17 @@ async function check(kind, { db, userId, today, local, prefs, settings, food, wo
     }
     case 'review':
       return {}
+    case 'journal': {
+      // Nur wenn heute noch nichts im Journal steht (Tabelle fehlt → keine Erinnerung)
+      const { data, error } = await db
+        .from('journal_entries')
+        .select('tags')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .limit(1)
+      if (error) return null
+      return data?.length && (data[0].tags ?? []).length > 0 ? null : {}
+    }
     case 'body': {
       const { data } = await db
         .from('body_scans')

@@ -72,6 +72,8 @@ export interface UserPrefs {
   kcalBonusMode: BonusMode
   /** Kalorienziel: fest (Profil + Bonus) oder täglich nach Aktivität (Schritte + Training) */
   kcalTargetMode: TargetMode
+  /** Welche Fassung des Heute-Standards zuletzt gegolten hat (alte volle Layouts einmal zurücksetzen) */
+  dashboardVersion: number
 }
 
 export interface Modules {
@@ -116,6 +118,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   hybridRuns: [],
   kcalBonusMode: 'auto',
   kcalTargetMode: 'fixed',
+  dashboardVersion: 0,
 }
 
 /** Zielgewicht: 30–300 kg, auf 0,1 kg gerundet; sonst null. */
@@ -267,5 +270,6 @@ export function normalizePrefs(raw: unknown): UserPrefs {
     hybridRuns: normalizeRuns(r.hybridRuns),
     kcalBonusMode: r.kcalBonusMode === 'fixed' ? 'fixed' : 'auto',
     kcalTargetMode: r.kcalTargetMode === 'activity' ? 'activity' : 'fixed',
+    dashboardVersion: num(r.dashboardVersion, 0, 99, 0),
   }
 }

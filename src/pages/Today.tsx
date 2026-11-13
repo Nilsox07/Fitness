@@ -10,8 +10,11 @@ import type { Capabilities } from '../lib/health'
 import { useUserPrefs } from '../hooks/usePrefsSync'
 import { usePrefs } from '../lib/prefs'
 import {
+  LAYOUT_VERSION,
   addableWidgets,
   mergeLayout,
+  packLayout,
+  timeOk,
   moveItem,
   visibleLayout,
   widgetDef,
@@ -19,6 +22,7 @@ import {
   type WidgetId,
 } from '../lib/dashboard'
 import { TodayHero } from '../components/today/TodayHero'
+import { NextUpCard } from '../components/today/NextUpCard'
 
 export function useModules(): Modules {
   const { showNutrition, showSocial, hasWatch, hasCycle, hasHybrid } = usePrefs()
@@ -36,7 +40,7 @@ export function useModules(): Modules {
 export default function Today() {
   const t = useToday()
   const mods = useModules()
-  const { prefs } = useUserPrefs()
+  const { prefs, ready } = useUserPrefs()
   const [params, setParams] = useSearchParams()
   const [editing, setEditing] = useState(() => params.has('edit'))
   // ?edit=1 (aus der Suche) öffnet das Anpassen – auch wenn „Heute“ schon offen ist; danach Parameter entfernen
@@ -53,7 +57,15 @@ export default function Today() {
       { replace: true },
     )
   }, [wantsEdit, setParams])
-  const layout = visibleLayout(prefs.dashboard, mods, t.caps)
+  const hour = new Date().getHours()
+  const layout = visibleLayout(prefs.dashboard, mods, t.caps).filter((id) => timeOk(id, hour))
+  const wide = packLayout(layout, (id) => widgetDef(id).size)
+  // Neuer, schlanker Standard: eine alte (volle) Reihenfolge einmal zurücksetzen
+  const { save } = useUserPrefs()
+  useEffect(() => {
+    if (!ready || prefs.dashboardVersion >= LAYOUT_VERSION) return
+    void save({ dashboardVersion: LAYOUT_VERSION, ...(prefs.dashboard ? { dashboard: null } : {}) })
+  }, [ready, prefs.dashboardVersion, prefs.dashboard, save])
 
   const dateLabel = new Date(t.day + 'T00:00:00').toLocaleDateString('de-DE', {
     weekday: 'long',
@@ -65,13 +77,10 @@ export default function Today() {
     <div className="space-y-4">
       <TabHeader overline={dateLabel} title="Heute" style={enter(0)} />
       <TodayHero />
+      <NextUpCard t={t} style={enter(2)} />
       <div className="grid grid-cols-2 gap-3">
         {layout.map((id, i) => (
-          <div
-            key={id}
-            className={`empty:hidden ${widgetDef(id).size === 'full' ? 'col-span-2' : ''}`}
-            style={enter(i + 2)}
-          >
+          <div key={id} className={`empty:hidden ${wide[i] ? 'col-span-2' : ''}`} style={enter(i + 3)}>
             {renderWidget(id, t)}
           </div>
         ))}

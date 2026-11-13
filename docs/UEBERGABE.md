@@ -148,6 +148,13 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Heute schlank** (`src/lib/nextUp.ts`, `NextUpCard`): Hero (Buddy + 3 Zahlen, ohne Essens-Knöpfe) →
+  „Jetzt dran“ (max. 3 je Uhrzeit/Stand: Gefühl morgens, Training, Ausdauer laut Plan, Mahlzeit des Zeitfensters,
+  Trinken ab 500 ml Rückstand, fälliges Supplement, Schlafenszeit ab 19 Uhr; sonst „Alles erledigt“) → wenige
+  Zahlen-Kacheln (Standard: Zyklus, Kalorien, Wasser, Schritte, Schlaf, Serie). `packLayout` macht einzelne halbe
+  Kacheln breit (keine Lücken), `timeOk` blendet die Schlafenszeit vor 16 Uhr aus. `LAYOUT_VERSION` 2 setzt alte
+  Reihenfolgen einmal zurück (`prefs.dashboardVersion`). Journal: Erinnerung `journal` um 21 Uhr (lokal + Push,
+  nur ohne Eintrag) statt Karte den ganzen Tag.
 - **Manuelle Aktivitäten** (`src/lib/sports.ts`, Tabelle `manual_activities` – Migration 0047,
   `useManualActivities`, `components/activity/*`): 25 Sportarten mit MET locker/mittel/hart (Compendium),
   kcal = (MET − 1) × kg × h, gespeichert. Immer an (kein Modul). Eintragen über Karte „Aktivitäten“ (Training,

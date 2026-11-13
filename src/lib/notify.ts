@@ -17,6 +17,7 @@ export type NotifyKind =
   | 'body'
   | 'social'
   | 'bedtime'
+  | 'journal'
 
 export interface NotifySetting {
   on: boolean
@@ -43,6 +44,7 @@ export const NOTIFY_DEFAULTS: NotifyPrefs = {
   body: { on: true, time: '10:00' },
   social: { on: true },
   bedtime: { on: true },
+  journal: { on: true, time: '21:00' },
 }
 
 export type NotifyGroup = 'Ernährung' | 'Training' | 'Fortschritt' | 'Community'
@@ -97,6 +99,12 @@ export const NOTIFY_ITEMS: NotifyItem[] = [
     group: 'Fortschritt',
     label: 'Vergleichsfoto',
     hint: 'Sonntags, wenn dein letztes Foto 8 Wochen alt ist',
+  },
+  {
+    kind: 'journal',
+    group: 'Fortschritt',
+    label: 'Journal am Abend',
+    hint: 'Kurz antippen, was heute war – nur wenn noch nichts eingetragen ist',
   },
   {
     kind: 'bedtime',

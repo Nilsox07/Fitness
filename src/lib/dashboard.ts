@@ -120,23 +120,41 @@ export function widgetDef(id: WidgetId): WidgetDef {
   return BY_ID.get(id)!
 }
 
-export const DEFAULT_LAYOUT: WidgetId[] = [
-  'readiness',
-  'nextWorkout',
-  'cycle',
-  'cardioPlan',
-  'kcal',
-  'water',
-  'streak',
-  'sleep',
-  'bedtime',
-  'steps',
-  'journal',
-  'activities',
-  'lastActivity',
-  'quests',
-  'friends',
-]
+/**
+ * Bewusst schlank: Was gerade ansteht, zeigt „Jetzt dran“ (Training, Essen, Trinken, Supplemente, Schlafenszeit).
+ * Hier nur noch die Zahlen. Mehr gibt es über „Heute anpassen“.
+ */
+export const DEFAULT_LAYOUT: WidgetId[] = ['cycle', 'kcal', 'water', 'steps', 'sleep', 'streak']
+
+/** Version des Standard-Layouts – bei Änderung wird eine alte, volle Reihenfolge einmal zurückgesetzt */
+export const LAYOUT_VERSION = 2
+
+/** Manche Widgets ergeben nur zu bestimmten Zeiten Sinn (Schlafenszeit erst ab dem Nachmittag). */
+export function timeOk(id: WidgetId, hour: number): boolean {
+  if (id === 'bedtime') return hour >= 16
+  return true
+}
+
+/**
+ * Halbe Kacheln paarweise: steht eine halbe allein in ihrer Zeile, wird sie breit – keine Lücken.
+ * Gibt je Widget zurück, ob es die ganze Breite nimmt.
+ */
+export function packLayout(ids: readonly WidgetId[], sizeOf: (id: WidgetId) => 'full' | 'half'): boolean[] {
+  const full = ids.map((id) => sizeOf(id) === 'full')
+  let i = 0
+  while (i < ids.length) {
+    if (full[i]) {
+      i++
+      continue
+    }
+    if (i + 1 < ids.length && !full[i + 1]) i += 2
+    else {
+      full[i] = true
+      i++
+    }
+  }
+  return full
+}
 
 export type Modules = Record<Exclude<Module, 'cycle' | 'hybrid'>, boolean> & { cycle?: boolean; hybrid?: boolean }
 
@@ -207,7 +225,7 @@ export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
 /** Beim Einschalten der Uhr: ihre wichtigsten Widgets ergänzen, falls sie fehlen. */
 export function withWatchWidgets(saved: readonly string[] | null | undefined): string[] | null {
   if (!saved) return null
-  const add = (['readiness', 'sleep', 'steps', 'lastActivity'] as const).filter((id) => !saved.includes(id))
+  const add = (['steps', 'sleep'] as const).filter((id) => !saved.includes(id))
   return add.length ? [add[0], ...saved, ...add.slice(1)] : [...saved]
 }
 

@@ -21,6 +21,7 @@ import {
 } from '../lib/native'
 import { REMINDER_ID_MAX, REMINDER_ID_MIN, planReminders } from '../lib/localReminders'
 import { useSleepPlan } from '../hooks/useRecovery'
+import { useJournal } from '../hooks/useJournal'
 import { hoursText } from '../lib/health'
 import { useTrainingRhythm, useUserPrefs } from '../hooks/usePrefsSync'
 import { useFoodEntries } from '../hooks/useNutrition'
@@ -55,6 +56,7 @@ function NativeSyncInner() {
   useHealthSync()
   const t = useToday()
   const sleepPlan = useSleepPlan()
+  const { data: journal } = useJournal()
   const { data: weights } = useBodyWeights()
   const aiAvailable = useAiGate().enabled
   const lastWeight = weights?.length ? Number(weights[weights.length - 1].weight_kg) : null
@@ -129,6 +131,7 @@ function NativeSyncInner() {
         nextWorkout: t.nextWorkout,
         supplements: [...doses(t.day, 0, suppLogR), ...doses(tomorrow, 1, [])],
         fasting: win ? { open: win.start, close: win.end } : null,
+        journalDone: (journal ?? []).some((e) => e.date === t.day && e.tags.length > 0),
         bedtime: hasWatch && sleepPlan ? { bedAt: sleepPlan.bedAt, need: hoursText(sleepPlan.needMin) } : null,
       })
       void syncReminders(list, REMINDER_ID_MIN, REMINDER_ID_MAX)
@@ -146,6 +149,7 @@ function NativeSyncInner() {
     suppLogR,
     showNutrition,
     sleepPlan?.bedAt,
+    journal,
     fasting,
     fastingStart,
   ])

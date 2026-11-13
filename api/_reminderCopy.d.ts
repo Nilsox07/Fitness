@@ -14,6 +14,7 @@ export type ReminderKind =
   | 'review'
   | 'body'
   | 'bedtime'
+  | 'journal'
 
 export interface ReminderCtx {
   kcalLeft?: number

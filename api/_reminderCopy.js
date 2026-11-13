@@ -132,6 +132,20 @@ export function reminderCopy(kind, ctx = {}, seed = 0) {
         title: 'Deine Woche in Zahlen',
         body: 'Was lief gut, was nimmst du dir vor? Buddy hat’s zusammengefasst.',
       }
+    case 'journal':
+      return pick(
+        [
+          {
+            title: 'Wie war dein Tag?',
+            body: 'Zwei Sekunden: kurz antippen, was heute war – Buddy findet die Muster.',
+          },
+          {
+            title: 'Kurz ins Journal',
+            body: 'Alkohol, Stress, Handy im Bett? Ein Tipp – und du siehst, was deinen Schlaf beeinflusst.',
+          },
+        ],
+        seed,
+      )
     case 'bedtime':
       return {
         title: `In 30 Minuten ins Bett`,

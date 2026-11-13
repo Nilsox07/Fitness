@@ -29,6 +29,8 @@ export interface ReminderCtx {
   fasting: { open: string; close: string } | null
   /** Empfohlene Zubettgehzeit „H:MM“ + Schlafbedarf (nur mit Uhr) */
   bedtime?: { bedAt: string; need: string } | null
+  /** Heute schon Gewohnheiten im Journal? (dann keine Abend-Erinnerung) */
+  journalDone?: boolean
 }
 
 export interface Reminder {
@@ -56,6 +58,7 @@ const BASE: Record<NotifyKind, number> = {
   body: 8380,
   social: 8400,
   bedtime: 8420,
+  journal: 8440,
 }
 export const REMINDER_ID_MIN = 8000
 export const REMINDER_ID_MAX = 8499
@@ -168,6 +171,11 @@ export function planReminders(c: ReminderCtx): Reminder[] {
       if (h < 12) base.setDate(base.getDate() + 1)
       const t = text('bedtime', { bedAt: c.bedtime.bedAt, need: c.bedtime.need })
       add('bedtime', off, 0, at(base, c.bedtime.bedAt, -30), t.title, t.body, '/sleep')
+    }
+
+    if (n.journal.on && n.journal.time && !(isToday && c.journalDone)) {
+      const t = text('journal')
+      add('journal', off, 0, at(day, n.journal.time), t.title, t.body, '/journal')
     }
 
     if (n.review.on && n.review.time && weekday(day) === 0) {

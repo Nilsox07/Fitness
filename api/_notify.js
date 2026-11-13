@@ -20,6 +20,7 @@ export const NOTIFY_DEFAULTS = {
   social: { on: true },
   // nur in der App (lokal geplant): Zeit hängt von Schlaf & Belastung ab
   bedtime: { on: true },
+  journal: { on: true, time: '21:00' },
 }
 
 export const NOTIFY_KINDS = Object.keys(NOTIFY_DEFAULTS)
@@ -154,7 +155,9 @@ export function message(kind, ctx = {}, seed = 0) {
         ? '/body'
         : kind === 'review'
           ? '/profile?s=review'
-          : '/nutrition'
+          : kind === 'journal'
+            ? '/journal'
+            : '/nutrition'
   const extra =
     kind === 'water'
       ? {
