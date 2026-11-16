@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase'
 import { isNative } from '../../lib/native'
 import { fileToDataUrl } from '../../lib/image'
 import { APP_VERSION } from '../../lib/whatsnew'
+import { BUILD } from '../../build'
 import {
   FEEDBACK_KINDS,
   FEEDBACK_MAX_CHARS,
@@ -65,7 +66,7 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
       text: text.trim(),
       screenshot: shot,
       meta: feedbackMeta({
-        version: APP_VERSION,
+        version: `${APP_VERSION} ${BUILD.split(' ')[0]}`,
         platform: isNative() ? 'android' : 'web',
         pathname,
         lang: typeof navigator !== 'undefined' ? navigator.language : null,

@@ -2,12 +2,27 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
 
 // Android-App (Capacitor): ohne Service Worker – die Dateien liegen ohnehin in der App.
 const ANDROID = process.env.BUILD_TARGET === 'android'
 
+// Stand der App (Commit + Datum) – steht unten im Profil, damit man alte Installationen erkennt
+function buildStamp(): string {
+  let hash = (process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || '').slice(0, 7)
+  try {
+    hash ||= execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+  } catch {
+    /* kein git */
+  }
+  const d = new Date()
+  const date = `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`
+  return hash ? `${hash} · ${date}` : date
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: { __BUILD__: JSON.stringify(buildStamp()) },
   plugins: [
     react(),
     !ANDROID &&

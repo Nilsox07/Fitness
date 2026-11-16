@@ -62,6 +62,8 @@ import { usePremium } from '../hooks/usePremium'
 import { openPlusSheet } from '../lib/premium'
 import { FeedbackSheet } from '../components/profile/FeedbackSheet'
 import { DeleteAccountSheet } from '../components/privacy/DeleteAccountSheet'
+import { APP_VERSION } from '../lib/whatsnew'
+import { BUILD } from '../build'
 
 /**
  * Unterseiten des Profils, per ?s=… in der URL → Zurück-Geste funktioniert.
@@ -430,6 +432,9 @@ export default function Profile() {
           onClick={() => setDeleteMode('revoke')}
         />
       </Group>
+      <p className="pb-2 text-center text-[11px] text-cocoa-muted">
+        Version {APP_VERSION} · Stand {BUILD}
+      </p>
       {nameOpen && <NameSheet current={myProfile?.display_name ?? ''} onClose={() => setNameOpen(false)} />}
       {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
       {deleteMode && <DeleteAccountSheet revoke={deleteMode === 'revoke'} onClose={() => setDeleteMode(null)} />}
