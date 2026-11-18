@@ -47,7 +47,14 @@ import { hypeLineText } from '../lib/freeTexts'
 import { PlusBadge } from '../components/premium/PlusBadge'
 import { usePostActivity } from '../hooks/useFeed'
 import { useMyProfile } from '../hooks/useSocial'
-import { type Exercise, type PlanWithExercises, type SetType, type SetWithDate, type WorkoutSet } from '../types'
+import {
+  type Exercise,
+  type MuscleGroup,
+  type PlanWithExercises,
+  type SetType,
+  type SetWithDate,
+  type WorkoutSet,
+} from '../types'
 import { CompactSetRow, SetTableHeader, isSetDone, type PrevSet } from '../components/workout/CompactSetRow'
 import { RestControl, useRestTimer } from '../components/workout/RestControl'
 import { SessionClock } from '../components/workout/SessionClock'
@@ -60,7 +67,9 @@ import { MyBuddy } from '../components/buddy/MyBuddy'
 import { showBuddyMoment } from '../components/buddy/BuddyMoment'
 import { LibrarySheet } from '../components/library/LibrarySheet'
 import { ExerciseHowTo } from '../components/library/ExerciseHowTo'
-import { useLibraryMatch } from '../components/library/useLibrary'
+import { useLibrary, useLibraryMatch } from '../components/library/useLibrary'
+import { findLibraryMatch } from '../lib/exerciseLibrary'
+import { effectiveSecondary } from '../lib/warmMuscles'
 import { LibraryResults } from '../components/library/LibraryResults'
 import {
   AlertTriangle,
@@ -124,15 +133,20 @@ function needsWarmup(ex: Exercise, warmedGroups: Set<string>): boolean {
 }
 
 /** Muskelgruppen, die in den gegebenen Sätzen heute schon trainiert wurden —
- *  inkl. Sekundärmuskeln (z. B. wärmt Rudern auch die Schultern mit). */
-function warmedMuscleGroups(sets: { exercise_id: string }[], exercises: Exercise[]): Set<string> {
+ *  inkl. Sekundärmuskeln (z. B. wärmt Rudern auch den Bizeps mit) – auch wenn bei einer
+ *  eigenen Übung keine eingetragen sind (effectiveSecondary). */
+function warmedMuscleGroups(
+  sets: { exercise_id: string }[],
+  exercises: Exercise[],
+  secondaryOf: (ex: Exercise) => readonly string[],
+): Set<string> {
   const byId = new Map(exercises.map((e) => [e.id, e]))
   const groups = new Set<string>()
   for (const s of sets) {
     const ex = byId.get(s.exercise_id)
     if (!ex) continue
     groups.add(ex.muscle_group)
-    for (const m of ex.secondary_muscles ?? []) groups.add(m)
+    for (const m of secondaryOf(ex)) groups.add(m)
   }
   return groups
 }
@@ -531,6 +545,20 @@ export default function Workout() {
     return out
   }, [workoutSets, allSets, exercises, today])
 
+  // Mitarbeitende Muskeln je Übung (eingetragen → Bibliothek → Name), einmal je Übung berechnet
+  const { list: library } = useLibrary()
+  const secondaryOf = useMemo(() => {
+    const cache = new Map<string, MuscleGroup[]>()
+    return (ex: Exercise): MuscleGroup[] => {
+      let v = cache.get(ex.id)
+      if (!v) {
+        v = effectiveSecondary(ex, library ? findLibraryMatch(ex, library)?.secondary : null)
+        cache.set(ex.id, v)
+      }
+      return v
+    }
+  }, [library])
+
   // Aufwärm-Gewohnheit aus dem Verlauf (nur Einheiten, in denen der Muskel kalt war)
   const warmHabit = useMemo(() => {
     const byId = new Map((exercises ?? []).map((e) => [e.id, e]))
@@ -538,10 +566,10 @@ export default function Workout() {
       (allSets ?? []).filter((s) => s.date !== today && isPerformed(s)),
       (id) => {
         const e = byId.get(id)
-        return e ? { group: e.muscle_group, secondary: e.secondary_muscles ?? [] } : undefined
+        return e ? { group: e.muscle_group, secondary: secondaryOf(e) } : undefined
       },
     )
-  }, [allSets, exercises, today])
+  }, [allSets, exercises, today, secondaryOf])
 
   /** Satz-Typen für eine Übung: wie üblich bzw. eigenes Schema (Aufwärmen nur bei kaltem Muskel). */
   function typesFor(ex: Exercise): SetType[] {
@@ -549,6 +577,7 @@ export default function Workout() {
     const warmed = warmedMuscleGroups(
       (workoutSets ?? []).filter((s) => s.exercise_id !== ex.id),
       exercises ?? [],
+      secondaryOf,
     )
     return planSetTypes({
       scheme: userPrefs.setScheme,
@@ -571,6 +600,7 @@ export default function Workout() {
         warmedMuscleGroups(
           (workoutSets ?? []).filter((s) => s.exercise_id !== selectedExercise.id),
           exercises ?? [],
+          secondaryOf,
         ),
       )
     : true

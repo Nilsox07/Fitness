@@ -148,6 +148,10 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Mitarbeitende Muskeln wärmen mit** (`warmMuscles.ts`): Für Aufwärmen zählt jede Gruppe, die eine frühere Übung
+  heute als Haupt- oder Nebenmuskel hatte. Fehlen bei einer eigenen Übung die Nebenmuskeln, kommen sie aus der
+  Bibliothek (`findLibraryMatch`) oder aus dem Namen (`secondaryFromName`: Rudern → Bizeps/Unterarme/Schulter,
+  Drücken → Trizeps …). Gilt auch fürs Lernen in `warmupHabit`.
 - **Aufwärm-/Dropsätze nach Gewohnheit** (`setScheme.ts`): `warmupHabit` baut je Training die Übungsreihenfolge
   nach und lernt die Zahl der Aufwärmsätze nur aus Einheiten, in denen der Muskel kalt war (Latzug nach Rudern ohne
   Aufwärmen ≠ „wärmt nie auf“). Übung vor Gesamt-Gewohnheit, ohne Verlauf einer; 0 wird respektiert. Mehrere
