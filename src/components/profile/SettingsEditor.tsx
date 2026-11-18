@@ -11,7 +11,7 @@ import { fmtLiters } from '../../lib/nutritionHome'
 import { MEALS, MEAL_LABEL } from '../../types'
 import { Toggle } from './ui'
 import { WeatherLocation } from './WeatherLocation'
-import type { SetScheme, WarmupMode } from '../../lib/setScheme'
+import type { DropMode, SetScheme, WarmupMode } from '../../lib/setScheme'
 
 const REST_DEFAULT = 120
 
@@ -209,10 +209,10 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
         />
       </Section>
 
-      <Section title="Sätze bei neuen Übungen">
+      <Section title="Sätze">
         <Line
           label="Arbeitssätze"
-          hint="Bekannte Übungen starten wie beim letzten Mal"
+          hint="Für neue Übungen – bekannte wie üblich"
           trailing={
             <Counter
               value={scheme.working}
@@ -225,40 +225,20 @@ function SettingsEditorInner({ onOpenRhythm, onOpenGoal }: { onOpenRhythm: () =>
           }
         />
         <Line
-          label="Aufwärmsatz"
-          hint="Auto = nur die erste Übung je Muskel"
+          label="Aufwärmsätze"
+          hint="Auto: bei kaltem Muskel, wie gewohnt"
           trailing={
-            <div className="flex shrink-0 gap-1 rounded-full bg-sand p-1">
-              {(
-                [
-                  ['auto', 'Auto'],
-                  ['always', 'Immer'],
-                  ['never', 'Nie'],
-                ] as [WarmupMode, string][]
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  aria-pressed={scheme.warmup === id}
-                  onClick={() => change(setScheme)({ ...scheme, warmup: id })}
-                  className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-                    scheme.warmup === id ? 'bg-cream text-cocoa shadow-sm' : 'text-cocoa-light'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <ModePick
+              value={scheme.warmup}
+              onChange={(warmup: WarmupMode) => change(setScheme)({ ...scheme, warmup })}
+            />
           }
         />
         <Line
-          label="Dropsatz am Ende"
+          label="Dropsätze"
+          hint="Auto: wo du sie sonst machst"
           trailing={
-            <Toggle
-              checked={scheme.drop}
-              onChange={change((v: boolean) => setScheme((x) => ({ ...x, drop: v })))}
-              label="Dropsatz am Ende"
-            />
+            <ModePick value={scheme.drop} onChange={(drop: DropMode) => change(setScheme)({ ...scheme, drop })} />
           }
         />
       </Section>
@@ -499,6 +479,32 @@ function Counter({
       >
         <Plus size={15} />
       </button>
+    </div>
+  )
+}
+
+/** Auto · Immer · Nie – für Aufwärm- und Dropsätze. */
+function ModePick<T extends 'auto' | 'always' | 'never'>({ value, onChange }: { value: T; onChange: (v: T) => void }) {
+  const opts = [
+    ['auto', 'Auto'],
+    ['always', 'Immer'],
+    ['never', 'Nie'],
+  ] as [T, string][]
+  return (
+    <div className="flex shrink-0 gap-1 rounded-full bg-sand p-1">
+      {opts.map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={value === id}
+          onClick={() => onChange(id)}
+          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+            value === id ? 'bg-cream text-cocoa shadow-sm' : 'text-cocoa-light'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   )
 }

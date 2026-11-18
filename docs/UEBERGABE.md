@@ -148,6 +148,11 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Aufwärm-/Dropsätze nach Gewohnheit** (`setScheme.ts`): `warmupHabit` baut je Training die Übungsreihenfolge
+  nach und lernt die Zahl der Aufwärmsätze nur aus Einheiten, in denen der Muskel kalt war (Latzug nach Rudern ohne
+  Aufwärmen ≠ „wärmt nie auf“). Übung vor Gesamt-Gewohnheit, ohne Verlauf einer; 0 wird respektiert. Mehrere
+  Aufwärmsätze steigen im Gewicht (`warmupShare`, 40 → 75 %). Dropsätze: `drop` ist jetzt Auto/Immer/Nie (alter
+  Schalter `true` → „Immer“); Auto = wie bei der Übung üblich (auch Doppel-Drop), neue Übungen ohne.
 - **Satzpause startet zuverlässig** (`CompactSetRow.tsx`): Wdh per −/+ eingestellt → Pause startet 2 s nach dem
   letzten Tippen (`STEP_SETTLE_MS`); ✓ auf einem schon grünen Satz startet sie sofort (vorher passierte da nichts).
   Korrekturen an schon erledigten Sätzen starten keine neue Pause.

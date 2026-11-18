@@ -31,7 +31,14 @@ import {
 import { fatigueByDate, muscleMap, preFatigueSets } from '../lib/fatigue'
 import { trainingDay } from '../lib/day'
 import { workoutShare, type ShareContent } from '../lib/shareCard'
-import { lastSessionTypes, planSetTypes, recentSessionTypes } from '../lib/setScheme'
+import {
+  coldWarmupCount,
+  lastSessionTypes,
+  planSetTypes,
+  recentSessionTypes,
+  warmupHabit,
+  warmupShare,
+} from '../lib/setScheme'
 import { useUserPrefs } from '../hooks/usePrefsSync'
 import { ShareSheet } from '../components/share/ShareSheet'
 import { alternativeExercise, hypeLine, warmupAdvice } from '../lib/ai'
@@ -151,8 +158,13 @@ function snapWeight(ex: Exercise, w: number): number {
 
 /** Baut die Sätze für eine Übung (Wdh leer, Gewicht vorbefüllt). */
 function templateInputs(workoutId: string, ex: Exercise, base: number, startNo: number, template: SetType[]) {
+  const warmups = template.filter((t) => t === 'warmup').length
   return template.map((type, i) => {
-    const d = deriveSet(type, base)
+    // Mehrere Aufwärmsätze: Gewicht steigt an (i = Position unter den Aufwärmsätzen)
+    const d =
+      type === 'warmup' && warmups > 1
+        ? { reps: 0, weight: roundHalf(base * warmupShare(i, warmups)) }
+        : deriveSet(type, base)
     const weight = snapWeight(ex, d.weight)
     return {
       workout_id: workoutId,
@@ -519,7 +531,19 @@ export default function Workout() {
     return out
   }, [workoutSets, allSets, exercises, today])
 
-  /** Satz-Typen für eine Übung: wie beim letzten Mal bzw. eigenes Schema (Aufwärmen nur bei kaltem Muskel). */
+  // Aufwärm-Gewohnheit aus dem Verlauf (nur Einheiten, in denen der Muskel kalt war)
+  const warmHabit = useMemo(() => {
+    const byId = new Map((exercises ?? []).map((e) => [e.id, e]))
+    return warmupHabit(
+      (allSets ?? []).filter((s) => s.date !== today && isPerformed(s)),
+      (id) => {
+        const e = byId.get(id)
+        return e ? { group: e.muscle_group, secondary: e.secondary_muscles ?? [] } : undefined
+      },
+    )
+  }, [allSets, exercises, today])
+
+  /** Satz-Typen für eine Übung: wie üblich bzw. eigenes Schema (Aufwärmen nur bei kaltem Muskel). */
   function typesFor(ex: Exercise): SetType[] {
     const hist = (allSets ?? []).filter((s) => s.exercise_id === ex.id && s.date !== today)
     const warmed = warmedMuscleGroups(
@@ -531,18 +555,14 @@ export default function Workout() {
       last: lastSessionTypes(hist),
       sessions: recentSessionTypes(hist.filter(isPerformed)),
       muscleWarm: !needsWarmup(ex, warmed),
+      warmups: warmHabit.forExercise(ex.id),
     })
   }
   // Darf die KI über den Aufwärmsatz entscheiden? Nur bei „automatisch“ und wenn du bei der Übung aufwärmst.
   const aiWarmupAllowed =
     !!selectedExercise &&
     userPrefs.setScheme.warmup === 'auto' &&
-    (() => {
-      const last = lastSessionTypes(
-        (allSets ?? []).filter((s) => s.exercise_id === selectedExercise.id && s.date !== today),
-      )
-      return last.length === 0 || last.includes('warmup')
-    })()
+    coldWarmupCount(warmHabit.forExercise(selectedExercise.id), []) > 0
 
   // Bekommt die gewählte Übung einen Aufwärmsatz? (nur wenn ihre Muskelgruppe heute noch kalt ist)
   const willWarmup = selectedExercise
