@@ -244,3 +244,21 @@ export function setExerciseRest(exId: string, sec: number | null) {
     /* ignore */
   }
 }
+
+// ---- Sätze umsortieren -----------------------------------------------------
+
+/**
+ * Satz von Position `from` nach `to` schieben und neu durchnummerieren (1, 2, 3 …).
+ * Liefert nur die Sätze, deren Nummer sich ändert – als Patch fürs Speichern.
+ */
+export function renumberedSets<T extends { id: string; set_number: number }>(
+  list: readonly T[],
+  from: number,
+  to: number,
+): { id: string; set_number: number }[] {
+  if (from === to || from < 0 || from >= list.length || to < 0 || to >= list.length) return []
+  const next = [...list]
+  const [x] = next.splice(from, 1)
+  next.splice(to, 0, x)
+  return next.flatMap((s, i) => (s.set_number === i + 1 ? [] : [{ id: s.id, set_number: i + 1 }]))
+}

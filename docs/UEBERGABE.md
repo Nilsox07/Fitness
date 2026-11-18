@@ -148,6 +148,9 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Sätze verschieben:** Satz-Kürzel antippen → ↑/↓ (`renumberedSets` in `workoutSession.ts` nummeriert neu und
+  speichert nur Geändertes). Bauch/Unterarme ohne eigene Aufwärm-Erfahrung bekommen nach anderen Übungen keinen
+  Aufwärmsatz (`warmupsFor` in `Workout.tsx`).
 - **Mitarbeitende Muskeln wärmen mit** (`warmMuscles.ts`): Für Aufwärmen zählt jede Gruppe, die eine frühere Übung
   heute als Haupt- oder Nebenmuskel hatte. Fehlen bei einer eigenen Übung die Nebenmuskeln, kommen sie aus der
   Bibliothek (`findLibraryMatch`) oder aus dem Namen (`secondaryFromName`: Rudern → Bizeps/Unterarme/Schulter,

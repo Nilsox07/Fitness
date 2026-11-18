@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  renumberedSets,
   afterSetDone,
   matchingSet,
   partnerOf,
@@ -17,16 +18,17 @@ const dr = (done: boolean) => ({ set_type: 'drop', done })
 
 describe('afterSetDone', () => {
   it('ohne Supersatz: Pause starten, auf der Übung bleiben', () => {
-    expect(
-      afterSetDone({ exId: 'curl', setType: 'working', occurrence: 0, pairs, setsOf: () => [] }),
-    ).toEqual({ next: null, rest: true })
+    expect(afterSetDone({ exId: 'curl', setType: 'working', occurrence: 0, pairs, setsOf: () => [] })).toEqual({
+      next: null,
+      rest: true,
+    })
   })
 
   it('Supersatz A1 erledigt, A2 offen: KEINE Pause, zu A2 wechseln', () => {
     const flags: Flags = { bank: [w(true), w(false)], rudern: [w(false), w(false)] }
-    expect(
-      afterSetDone({ exId: 'bank', setType: 'working', occurrence: 0, pairs, setsOf: (id) => flags[id] }),
-    ).toEqual({ next: 'rudern', rest: false })
+    expect(afterSetDone({ exId: 'bank', setType: 'working', occurrence: 0, pairs, setsOf: (id) => flags[id] })).toEqual(
+      { next: 'rudern', rest: false },
+    )
   })
 
   it('Supersatz Runde komplett (A2 erledigt): Pause + zurück zu A1', () => {
@@ -38,9 +40,9 @@ describe('afterSetDone', () => {
 
   it('Partner hat weniger Sätze: Runde gilt als komplett', () => {
     const flags: Flags = { bank: [w(true), w(true), w(true)], rudern: [w(true), w(true)] }
-    expect(
-      afterSetDone({ exId: 'bank', setType: 'working', occurrence: 2, pairs, setsOf: (id) => flags[id] }),
-    ).toEqual({ next: null, rest: true })
+    expect(afterSetDone({ exId: 'bank', setType: 'working', occurrence: 2, pairs, setsOf: (id) => flags[id] })).toEqual(
+      { next: null, rest: true },
+    )
   })
 
   it('ordnet nach Satz-Typ zu, nicht nach Index (nur A1 hat einen Aufwärmsatz)', () => {
@@ -50,20 +52,22 @@ describe('afterSetDone', () => {
       rudern: [w(false), w(false), dr(false)],
     }
     // Aufwärmsatz von A1: Partner hat keinen → bleiben, Pause
-    expect(
-      afterSetDone({ exId: 'bank', setType: 'warmup', occurrence: 0, pairs, setsOf: (id) => flags[id] }),
-    ).toEqual({ next: null, rest: true })
+    expect(afterSetDone({ exId: 'bank', setType: 'warmup', occurrence: 0, pairs, setsOf: (id) => flags[id] })).toEqual({
+      next: null,
+      rest: true,
+    })
     // 1. Arbeitssatz von A1 → 1. Arbeitssatz von A2 (Index 0, nicht 1)
-    expect(
-      afterSetDone({ exId: 'bank', setType: 'working', occurrence: 0, pairs, setsOf: (id) => flags[id] }),
-    ).toEqual({ next: 'rudern', rest: false })
+    expect(afterSetDone({ exId: 'bank', setType: 'working', occurrence: 0, pairs, setsOf: (id) => flags[id] })).toEqual(
+      { next: 'rudern', rest: false },
+    )
   })
 
   it('Dropsatz trifft Dropsatz', () => {
     const flags: Flags = { bank: [w(true), dr(true)], rudern: [w(true), w(false), dr(false)] }
-    expect(
-      afterSetDone({ exId: 'bank', setType: 'drop', occurrence: 0, pairs, setsOf: (id) => flags[id] }),
-    ).toEqual({ next: 'rudern', rest: false })
+    expect(afterSetDone({ exId: 'bank', setType: 'drop', occurrence: 0, pairs, setsOf: (id) => flags[id] })).toEqual({
+      next: 'rudern',
+      rest: false,
+    })
   })
 })
 
@@ -106,5 +110,36 @@ describe('restSecondsAfter', () => {
     expect(restSecondsAfter('working', 'working', 180)).toBe(180)
     expect(restSecondsAfter('working', null, 120)).toBe(120)
     expect(restSecondsAfter('drop', null, 120)).toBe(120)
+  })
+})
+
+describe('Sätze umsortieren', () => {
+  const sets = [
+    { id: 'w', set_number: 1 },
+    { id: 'a', set_number: 2 },
+    { id: 'b', set_number: 3 },
+    { id: 'd', set_number: 4 },
+  ]
+  it('tauscht Nachbarn und speichert nur Geändertes', () => {
+    expect(renumberedSets(sets, 2, 1)).toEqual([
+      { id: 'b', set_number: 2 },
+      { id: 'a', set_number: 3 },
+    ])
+  })
+  it('lückenhafte oder doppelte Nummern werden dabei repariert', () => {
+    const odd = [
+      { id: 'x', set_number: 3 },
+      { id: 'y', set_number: 3 },
+      { id: 'z', set_number: 7 },
+    ]
+    expect(renumberedSets(odd, 0, 1)).toEqual([
+      { id: 'y', set_number: 1 },
+      { id: 'x', set_number: 2 },
+      { id: 'z', set_number: 3 },
+    ])
+  })
+  it('außerhalb der Liste: nichts', () => {
+    expect(renumberedSets(sets, 0, -1)).toEqual([])
+    expect(renumberedSets(sets, 3, 4)).toEqual([])
   })
 })

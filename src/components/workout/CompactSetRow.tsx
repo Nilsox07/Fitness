@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { haptic } from '../../lib/native'
-import { ArrowDown, Check, Flame, Minus, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, Check, ChevronDown, ChevronUp, Flame, Minus, Plus, Trash2 } from 'lucide-react'
 import { useDeleteSet, useUpdateSet } from '../../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../../lib/weights'
 import { SET_TYPES, SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../../types'
@@ -120,12 +120,15 @@ export function CompactSetRow({
   badge,
   prev,
   onDone,
+  onMove,
 }: {
   set: WorkoutSet
   exercise: Exercise
   badge: string
   prev: PrevSet | null
   onDone: () => void
+  /** Satz in der Reihenfolge verschieben; null = in diese Richtung geht's nicht */
+  onMove?: { up: (() => void) | null; down: (() => void) | null }
 }) {
   const update = useUpdateSet()
   const del = useDeleteSet()
@@ -382,6 +385,28 @@ export function CompactSetRow({
             >
               {s.to_failure ? 'Bis Versagen' : 'Nicht ans Limit'}
             </button>
+            {onMove && (onMove.up || onMove.down) && (
+              <span className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={onMove.up ?? undefined}
+                  disabled={!onMove.up}
+                  aria-label="Satz nach oben"
+                  className="grid h-7 w-7 place-items-center rounded-full bg-sand text-cocoa-light disabled:opacity-35"
+                >
+                  <ChevronUp size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={onMove.down ?? undefined}
+                  disabled={!onMove.down}
+                  aria-label="Satz nach unten"
+                  className="grid h-7 w-7 place-items-center rounded-full bg-sand text-cocoa-light disabled:opacity-35"
+                >
+                  <ChevronDown size={15} />
+                </button>
+              </span>
+            )}
             <button
               type="button"
               onClick={remove}

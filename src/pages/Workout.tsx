@@ -107,6 +107,7 @@ import {
   pairOf,
   setPairs,
   sortByOrder,
+  renumberedSets,
   type Pair,
 } from '../lib/workoutSession'
 
@@ -571,6 +572,17 @@ export default function Workout() {
     )
   }, [allSets, exercises, today, secondaryOf])
 
+  /**
+   * Aufwärm-Gewohnheit für eine Übung. Bauch/Unterarme ohne eigene Erfahrung: nach anderen Übungen
+   * nicht extra aufwärmen (arbeiten bei fast allem mit) – nur als erste Übung des Trainings.
+   */
+  function warmupsFor(ex: Exercise) {
+    const h = warmHabit.forExercise(ex.id)
+    const small = ex.muscle_group === 'Bauch' || ex.muscle_group === 'Unterarme'
+    const bodyWarm = (workoutSets ?? []).some((s) => s.exercise_id !== ex.id && isPerformed(s))
+    return small && h.exercise == null && bodyWarm ? { ...h, habit: 0 } : h
+  }
+
   /** Satz-Typen für eine Übung: wie üblich bzw. eigenes Schema (Aufwärmen nur bei kaltem Muskel). */
   function typesFor(ex: Exercise): SetType[] {
     const hist = (allSets ?? []).filter((s) => s.exercise_id === ex.id && s.date !== today)
@@ -584,14 +596,12 @@ export default function Workout() {
       last: lastSessionTypes(hist),
       sessions: recentSessionTypes(hist.filter(isPerformed)),
       muscleWarm: !needsWarmup(ex, warmed),
-      warmups: warmHabit.forExercise(ex.id),
+      warmups: warmupsFor(ex),
     })
   }
   // Darf die KI über den Aufwärmsatz entscheiden? Nur bei „automatisch“ und wenn du bei der Übung aufwärmst.
   const aiWarmupAllowed =
-    !!selectedExercise &&
-    userPrefs.setScheme.warmup === 'auto' &&
-    coldWarmupCount(warmHabit.forExercise(selectedExercise.id), []) > 0
+    !!selectedExercise && userPrefs.setScheme.warmup === 'auto' && coldWarmupCount(warmupsFor(selectedExercise), []) > 0
 
   // Bekommt die gewählte Übung einen Aufwärmsatz? (nur wenn ihre Muskelgruppe heute noch kalt ist)
   const willWarmup = selectedExercise
@@ -810,6 +820,11 @@ export default function Workout() {
     if (!prev?.length) return null
     const k = list.filter((x) => x.set_type === s.set_type && x.set_number < s.set_number).length
     return prev.filter((p) => p.set_type === s.set_type)[k] ?? null
+  }
+
+  /** Satz verschieben: neue Reihenfolge durchnummerieren (1, 2, 3 …), nur geänderte speichern. */
+  function moveSet(list: WorkoutSet[], from: number, to: number) {
+    renumberedSets(list, from, to).forEach((p) => updateSet.mutate(p))
   }
 
   function badgeFor(s: WorkoutSet, list: WorkoutSet[]): string {
@@ -1326,7 +1341,7 @@ export default function Workout() {
           {activeSets.length > 0 ? (
             <div className="space-y-1">
               <SetTableHeader />
-              {activeSets.map((s) => (
+              {activeSets.map((s, i) => (
                 <CompactSetRow
                   key={s.id}
                   set={s}
@@ -1334,6 +1349,10 @@ export default function Workout() {
                   badge={badgeFor(s, activeSets)}
                   prev={prevFor(active.id, s, activeSets)}
                   onDone={() => onSetDone(active.id, s)}
+                  onMove={{
+                    up: i > 0 ? () => moveSet(activeSets, i, i - 1) : null,
+                    down: i < activeSets.length - 1 ? () => moveSet(activeSets, i, i + 1) : null,
+                  }}
                 />
               ))}
             </div>
