@@ -148,6 +148,13 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Satz-Optionen als Sheet** (`SetOptionsSheet.tsx`): Satz-Kürzel antippen → Art als Kacheln (Aufwärmen/Arbeitssatz/
+  Drop), „Bis zum Versagen“, Reihenfolge ↑/↓, „Satz löschen“ unten.
+- **Schlafenszeit nach Rhythmus** (`wakeRhythm.ts`): Aufstehzeit je Morgen aus den Nächten der letzten 6 Wochen –
+  Werktag vs. frei (Wochenende + bundesweite Feiertage inkl. Heiligabend/Silvester), fester anderer Wochentag
+  (z. B. freitags frei), neuer Rhythmus, wenn die letzten 3 gleicher Art klar abweichen (Urlaub/Schicht). Eigene
+  Aufstehzeit gilt nur werktags. `useSleepPlan` liefert `wakeReason` und `next` (Nacht danach) → die lokale
+  Erinnerung plant heute und morgen Abend mit eigener Zeit (`bedtimeNext`).
 - **Sätze verschieben:** Satz-Kürzel antippen → ↑/↓ (`renumberedSets` in `workoutSession.ts` nummeriert neu und
   speichert nur Geändertes). Bauch/Unterarme ohne eigene Aufwärm-Erfahrung bekommen nach anderen Übungen keinen
   Aufwärmsatz (`warmupsFor` in `Workout.tsx`).

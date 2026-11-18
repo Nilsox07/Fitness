@@ -136,6 +136,8 @@ function NativeSyncInner() {
         fasting: win ? { open: win.start, close: win.end } : null,
         journalDone: (journal ?? []).some((e) => e.date === t.day && e.tags.length > 0),
         bedtime: hasWatch && sleepPlan ? { bedAt: sleepPlan.bedAt, need: hoursText(sleepPlan.needMin) } : null,
+        bedtimeNext:
+          hasWatch && sleepPlan?.next ? { bedAt: sleepPlan.next.bedAt, need: hoursText(sleepPlan.baseMin) } : null,
       })
       // Danach Server-Push anmelden: bis morgen plant das Handy selbst, der Server schickt nur Freundes-Pushes
       void syncReminders(list, REMINDER_ID_MIN, REMINDER_ID_MAX).then((planned) => {
@@ -155,6 +157,7 @@ function NativeSyncInner() {
     suppLogR,
     showNutrition,
     sleepPlan?.bedAt,
+    sleepPlan?.next?.bedAt,
     journal,
     fasting,
     fastingStart,

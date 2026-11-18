@@ -95,9 +95,9 @@ export function SleepPlanCard({ plan }: { plan: SleepPlan }) {
       <div className="flex items-center justify-between gap-2 border-t border-sand-dark/40 pt-2">
         <InfoTip
           className="text-[11px] text-cocoa-muted"
-          info={`Aufstehen um ${plan.wake}${plan.wakeAuto ? ' (wie meist in den letzten Nächten)' : ''}. Nach Training braucht der Körper mehr Erholung, und ein Teil der Schlafschuld (max. 1 h pro Nacht) lässt sich nachholen. Eingerechnet ist auch die Zeit, in der du im Bett wach liegst (${hoursText(plan.inBedMin)} im Bett).`}
+          info={`Aufstehen um ${plan.wake}${plan.wakeAuto ? ' – gelernt aus deinen Nächten, getrennt nach Werktagen, Wochenende und Feiertagen. Weichen die letzten Tage klar ab (z. B. Urlaub), gilt der neue Rhythmus' : ''}. Nach Training braucht der Körper mehr Erholung, und ein Teil der Schlafschuld (max. 1 h pro Nacht) lässt sich nachholen. Eingerechnet ist auch die Zeit, in der du im Bett wach liegst (${hoursText(plan.inBedMin)} im Bett).`}
         >
-          {plan.wakeAuto ? 'Aufstehzeit aus deinen Nächten' : 'Eigene Aufstehzeit'}
+          {plan.wakeReason}
           {plan.debtMin != null && plan.debtMin > 0 && ` · Schuld ${hoursText(plan.debtMin)}`}
         </InfoTip>
         <button
@@ -132,7 +132,7 @@ export function SleepPlanCard({ plan }: { plan: SleepPlan }) {
             </div>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold">Aufstehen</span>
+            <span className="text-sm font-semibold">Aufstehen werktags</span>
             <div className="flex items-center gap-2">
               {prefs.wakeTime && (
                 <button className="text-xs font-semibold text-brand" onClick={() => void save({ wakeTime: null })}>

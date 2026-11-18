@@ -2,7 +2,8 @@
 
 import { useMemo } from 'react'
 import { usePrefs } from '../lib/prefs'
-import { localDate } from '../lib/day'
+import { localDate, shiftDate } from '../lib/day'
+import { predictWake, wakeDateFor } from '../lib/wakeRhythm'
 import { isPerformed } from '../lib/analytics'
 import { dailyLoad, loadByDay, readinessHistory } from '../lib/insights'
 import { bedtimePlan, sleepEfficiency, sleepNeed, typicalWake, type SleepNeed } from '../lib/sleepNeed'
@@ -18,6 +19,12 @@ export interface SleepPlan extends SleepNeed {
   /** Aufstehzeit aus den letzten Nächten geschätzt (nicht selbst eingestellt) */
   wakeAuto: boolean
   inBedMin: number
+  /** Warum diese Aufstehzeit (Wochenende, Feiertag, fester Tag, neuer Rhythmus …) */
+  wakeReason: string
+  /** Morgen ist frei (Wochenende/Feiertag) */
+  wakeFree: boolean
+  /** Die Nacht danach (für die Erinnerung morgen Abend) */
+  next: { bedAt: string; wake: string } | null
 }
 
 /** Kraft-Arbeitssätze je Datum (ohne Aufwärmen). */
@@ -42,10 +49,23 @@ export function useSleepPlan(): SleepPlan | null {
       load: dailyLoad(acts ?? [], setDates),
       sleep,
     })
-    const auto = typicalWake(sleep, today)
-    const wake = prefs.wakeTime ?? auto ?? '7:00'
-    const plan = bedtimePlan(need.needMin, wake, sleepEfficiency(sleep, today))
-    return { ...need, ...plan, wake: wake.replace(/^0(\d)/, '$1'), wakeAuto: !prefs.wakeTime }
+    // Aufstehzeit nach Rhythmus: Werktag/Wochenende/Feiertag, fester anderer Tag, Urlaub
+    const eff = sleepEfficiency(sleep, today)
+    const wakeDate = wakeDateFor()
+    const guess = predictWake(sleep, wakeDate, prefs.wakeTime)
+    const wake = guess?.wake ?? typicalWake(sleep, today) ?? '7:00'
+    const plan = bedtimePlan(need.needMin, wake, eff)
+    const after = predictWake(sleep, shiftDate(wakeDate, 1), prefs.wakeTime)
+    const next = after ? { bedAt: bedtimePlan(need.baseMin, after.wake, eff).bedAt, wake: after.wake } : null
+    return {
+      ...need,
+      ...plan,
+      wake: wake.replace(/^0(\d)/, '$1'),
+      wakeAuto: !prefs.wakeTime || !!guess?.free,
+      wakeReason: guess?.reason ?? 'Aufstehzeit aus deinen Nächten',
+      wakeFree: !!guess?.free,
+      next,
+    }
   }, [hasWatch, sleep, acts, setDates, prefs.sleepGoalMin, prefs.wakeTime, today])
 }
 

@@ -29,6 +29,8 @@ export interface ReminderCtx {
   fasting: { open: string; close: string } | null
   /** Empfohlene Zubettgehzeit „H:MM“ + Schlafbedarf (nur mit Uhr) */
   bedtime?: { bedAt: string; need: string } | null
+  /** Dasselbe für morgen Abend (anderer Rhythmus, z. B. vor dem Wochenende) */
+  bedtimeNext?: { bedAt: string; need: string } | null
   /** Heute schon Gewohnheiten im Journal? (dann keine Abend-Erinnerung) */
   journalDone?: boolean
 }
@@ -165,12 +167,13 @@ export function planReminders(c: ReminderCtx): Reminder[] {
     }
 
     // Schlafenszeit: 30 min vorher; nach Mitternacht zählt sie zum nächsten Tag
-    if (n.bedtime.on && c.bedtime) {
-      const [h] = c.bedtime.bedAt.split(':').map(Number)
+    const bed = off === 0 ? c.bedtime : c.bedtimeNext
+    if (n.bedtime.on && bed) {
+      const [h] = bed.bedAt.split(':').map(Number)
       const base = new Date(day)
       if (h < 12) base.setDate(base.getDate() + 1)
-      const t = text('bedtime', { bedAt: c.bedtime.bedAt, need: c.bedtime.need })
-      add('bedtime', off, 0, at(base, c.bedtime.bedAt, -30), t.title, t.body, '/sleep')
+      const t = text('bedtime', { bedAt: bed.bedAt, need: bed.need })
+      add('bedtime', off, 0, at(base, bed.bedAt, -30), t.title, t.body, '/sleep')
     }
 
     if (n.journal.on && n.journal.time && !(isToday && c.journalDone)) {

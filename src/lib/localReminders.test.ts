@@ -46,7 +46,12 @@ describe('Lokale Erinnerungen', () => {
     expect(j(false)[0].route).toBe('/journal')
   })
   it('Schlafenszeit 30 min vorher, nach Mitternacht am Folgetag', () => {
-    const bed = (bedAt: string) => planReminders({ ...base, bedtime: { bedAt, need: '8:15 h' } }).filter(isKind(8420))
+    const bed = (bedAt: string) =>
+      planReminders({
+        ...base,
+        bedtime: { bedAt, need: '8:15 h' },
+        bedtimeNext: { bedAt, need: '8:15 h' },
+      }).filter(isKind(8420))
     const r = bed('22:45')
     expect(r.map((x) => [x.at.getDate(), x.at.getHours(), x.at.getMinutes()])).toEqual([
       [28, 22, 15],
@@ -58,6 +63,16 @@ describe('Lokale Erinnerungen', () => {
       [29, 23, 50],
     ])
     expect(planReminders(base).some(isKind(8420))).toBe(false)
+    // vor dem Wochenende später: morgen Abend eigene Zeit
+    const fri = planReminders({
+      ...base,
+      bedtime: { bedAt: '22:45', need: '8 h' },
+      bedtimeNext: { bedAt: '0:15', need: '8 h' },
+    }).filter(isKind(8420))
+    expect(fri.map((x) => [x.at.getDate(), x.at.getHours(), x.at.getMinutes()])).toEqual([
+      [28, 22, 15],
+      [29, 23, 45],
+    ])
   })
 
   it('plant nur Zukünftiges und nur, was noch fehlt', () => {

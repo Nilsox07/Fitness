@@ -1,0 +1,133 @@
+// Optionen eines Satzes (Satz-Kürzel antippen): Art, bis zum Versagen, Reihenfolge, Löschen.
+
+import type { ReactNode } from 'react'
+import { ArrowDown, ChevronDown, ChevronUp, Dumbbell, Flame, Trash2 } from 'lucide-react'
+import { PremiumSheet } from '../ui/PremiumSheet'
+import { Toggle } from '../profile/ui'
+import { SectionLabel } from '../progress/ProgressHeader'
+import { SET_TYPE_LABEL, type SetType, type WorkoutSet } from '../../types'
+
+const TYPES: { id: SetType; icon: ReactNode; hint: string }[] = [
+  { id: 'warmup', icon: <Flame size={20} />, hint: 'Leicht, vorm Arbeiten' },
+  { id: 'working', icon: <Dumbbell size={20} />, hint: 'Zählt für Fortschritt' },
+  { id: 'drop', icon: <ArrowDown size={20} />, hint: 'Direkt danach, leichter' },
+]
+
+const fmt = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 2 })
+
+export function SetOptionsSheet({
+  set: s,
+  badge,
+  done,
+  onType,
+  onFailure,
+  onMove,
+  onDelete,
+  onClose,
+}: {
+  set: WorkoutSet
+  badge: string
+  done: boolean
+  onType: (t: SetType) => void
+  onFailure: (v: boolean) => void
+  onMove?: { up: (() => void) | null; down: (() => void) | null }
+  onDelete: () => void
+  onClose: () => void
+}) {
+  const title = s.set_type === 'working' ? `Satz ${badge}` : SET_TYPE_LABEL[s.set_type]
+  const sub = done ? `${fmt(s.weight)} kg × ${s.reps}` : `${fmt(s.weight)} kg · noch offen`
+  const canMove = !!onMove && (!!onMove.up || !!onMove.down)
+  return (
+    <PremiumSheet
+      title={title}
+      subtitle={sub}
+      leading={
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sand text-sm font-bold text-cocoa-light">
+          {TYPES.find((t) => t.id === s.set_type)?.icon}
+        </span>
+      }
+      onClose={onClose}
+      bodyClassName="space-y-5"
+      footer={
+        <button
+          type="button"
+          onClick={() => {
+            onDelete()
+            onClose()
+          }}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-500/10 py-3 text-sm font-semibold text-red-500 transition active:scale-[0.98]"
+        >
+          <Trash2 size={16} /> Satz löschen
+        </button>
+      }
+    >
+      <section className="space-y-2">
+        <SectionLabel>Art</SectionLabel>
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Art des Satzes">
+          {TYPES.map((t) => {
+            const on = s.set_type === t.id
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => onType(t.id)}
+                className={`flex flex-col items-center gap-1.5 rounded-2xl px-2 py-3 text-center transition active:scale-95 ${
+                  on ? 'bg-brand/10 text-cocoa ring-2 ring-brand' : 'bg-sand text-cocoa-light'
+                }`}
+              >
+                <span className={on ? 'text-brand' : ''}>{t.icon}</span>
+                <span className="text-sm font-semibold">{SET_TYPE_LABEL[t.id]}</span>
+                <span className="text-[10px] leading-tight text-cocoa-muted">{t.hint}</span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
+      <div className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-sand/70 dark:bg-sand">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Bis zum Versagen</span>
+            <span className="block text-xs text-cocoa-light">Keine Wdh. mehr drin gewesen</span>
+          </span>
+          <Toggle checked={s.to_failure} onChange={onFailure} label="Bis zum Versagen" />
+        </div>
+        {canMove && (
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className="min-w-0 flex-1 font-semibold">Reihenfolge</span>
+            <MoveButton label="Nach oben" onClick={onMove!.up}>
+              <ChevronUp size={18} />
+            </MoveButton>
+            <MoveButton label="Nach unten" onClick={onMove!.down}>
+              <ChevronDown size={18} />
+            </MoveButton>
+          </div>
+        )}
+      </div>
+    </PremiumSheet>
+  )
+}
+
+function MoveButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string
+  onClick: (() => void) | null
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={!onClick}
+      onClick={onClick ?? undefined}
+      className="grid h-10 w-10 place-items-center rounded-full bg-cream text-cocoa shadow-sm transition active:scale-90 disabled:opacity-30 dark:bg-sand-light dark:shadow-none"
+    >
+      {children}
+    </button>
+  )
+}

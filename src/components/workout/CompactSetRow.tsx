@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { haptic } from '../../lib/native'
-import { ArrowDown, Check, ChevronDown, ChevronUp, Flame, Minus, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, Check, Flame, Minus, Plus, Trash2 } from 'lucide-react'
+import { SetOptionsSheet } from './SetOptionsSheet'
 import { useDeleteSet, useUpdateSet } from '../../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../../lib/weights'
-import { SET_TYPES, SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../../types'
+import { SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../../types'
 
 export interface PrevSet {
   reps: number
@@ -363,59 +364,16 @@ export function CompactSetRow({
         )}
 
         {open && (
-          <div className="anim-fade mt-1.5 flex flex-wrap items-center gap-1.5 px-1 pt-1">
-            {SET_TYPES.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => update.mutate({ id: s.id, set_type: t })}
-                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  s.set_type === t ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-                }`}
-              >
-                {SET_TYPE_LABEL[t]}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => update.mutate({ id: s.id, to_failure: !s.to_failure })}
-              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                s.to_failure ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-              }`}
-            >
-              {s.to_failure ? 'Bis Versagen' : 'Nicht ans Limit'}
-            </button>
-            {onMove && (onMove.up || onMove.down) && (
-              <span className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={onMove.up ?? undefined}
-                  disabled={!onMove.up}
-                  aria-label="Satz nach oben"
-                  className="grid h-7 w-7 place-items-center rounded-full bg-sand text-cocoa-light disabled:opacity-35"
-                >
-                  <ChevronUp size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={onMove.down ?? undefined}
-                  disabled={!onMove.down}
-                  aria-label="Satz nach unten"
-                  className="grid h-7 w-7 place-items-center rounded-full bg-sand text-cocoa-light disabled:opacity-35"
-                >
-                  <ChevronDown size={15} />
-                </button>
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={remove}
-              aria-label="Satz löschen"
-              className="ml-auto flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-500"
-            >
-              <Trash2 size={13} /> Löschen
-            </button>
-          </div>
+          <SetOptionsSheet
+            set={s}
+            badge={badge}
+            done={done}
+            onType={(set_type) => update.mutate({ id: s.id, set_type })}
+            onFailure={(to_failure) => update.mutate({ id: s.id, to_failure })}
+            onMove={onMove}
+            onDelete={remove}
+            onClose={() => setOpen(false)}
+          />
         )}
       </div>
     </div>

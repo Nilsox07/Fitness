@@ -404,7 +404,7 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     sub: 'Schlafbedarf heute & wann ins Bett',
     section: 'Fortschritt',
     to: '/sleep',
-    keywords: 'schlafenszeit bett ins bett schlafbedarf aufstehen wecker schlafschuld schlafziel',
+    keywords: 'schlafenszeit bett ins bett schlafbedarf aufstehen wecker schlafschuld schlafziel wochenende feiertag urlaub rhythmus',
     needs: 'watch',
   },
   {
