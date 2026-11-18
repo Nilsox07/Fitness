@@ -1,12 +1,24 @@
 import { useEffect, useState } from 'react'
-import { Minus, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, Flame, Minus, MoreHorizontal, Plus } from 'lucide-react'
+import { SetOptionsSheet } from './workout/SetOptionsSheet'
 import { useDeleteSet, useUpdateSet } from '../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../lib/weights'
-import { SET_TYPES, SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../types'
+import { SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../types'
 
 /** Editierbare Satz-Zeile (Typ, Versagen, Wdh/Gewicht, ggf. links/rechts). */
-export function EditableSetRow({ set, exercise }: { set: WorkoutSet; exercise: Exercise }) {
-  return <CompactEditRow set={set} exercise={exercise} />
+export function EditableSetRow({
+  set,
+  exercise,
+  onMove,
+  workingNo,
+}: {
+  set: WorkoutSet
+  exercise: Exercise
+  onMove?: { up: (() => void) | null; down: (() => void) | null }
+  /** Nummer unter den Arbeitssätzen („1“, „2“ …) */
+  workingNo?: string
+}) {
+  return <CompactEditRow set={set} exercise={exercise} onMove={onMove} workingNo={workingNo} />
 }
 
 // ---------------------------------------------------------------------------
@@ -85,17 +97,28 @@ function MiniStepper({
 
 const GRID = 'grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-1.5'
 
-function CompactEditRow({ set: s, exercise }: { set: WorkoutSet; exercise: Exercise }) {
+function CompactEditRow({
+  set: s,
+  exercise,
+  onMove,
+  workingNo,
+}: {
+  set: WorkoutSet
+  exercise: Exercise
+  onMove?: { up: (() => void) | null; down: (() => void) | null }
+  workingNo?: string
+}) {
   const update = useUpdateSet()
   const del = useDeleteSet()
   const [open, setOpen] = useState(false)
   const ladder = parseLadder(exercise.weight_steps)
   const steps = ladder.length ? ladder : undefined
   const uni = exercise.unilateral
-  const badge = s.set_type === 'warmup' ? 'W' : s.set_type === 'drop' ? 'D' : String(s.set_number)
+  // Wie im Training: Symbol für Aufwärmen/Drop, Arbeitssätze durchgezählt
+  const badge = workingNo ?? String(s.set_number)
 
   return (
-    <div className={`rounded-xl p-1 transition-colors duration-200 ${open ? 'bg-sand-light' : ''}`}>
+    <div className="rounded-xl p-1">
       <div className={GRID}>
         <span
           className={`relative grid h-8 place-items-center rounded-lg bg-sand text-sm font-bold tabular ${
@@ -103,7 +126,7 @@ function CompactEditRow({ set: s, exercise }: { set: WorkoutSet; exercise: Exerc
           }`}
           title={SET_TYPE_LABEL[s.set_type]}
         >
-          {badge}
+          {s.set_type === 'warmup' ? <Flame size={14} /> : s.set_type === 'drop' ? <ArrowDown size={14} /> : badge}
           {!s.to_failure && s.set_type !== 'warmup' && (
             <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-cocoa-muted" />
           )}
@@ -153,37 +176,16 @@ function CompactEditRow({ set: s, exercise }: { set: WorkoutSet; exercise: Exerc
       )}
 
       {open && (
-        <div className="anim-fade mt-1.5 flex flex-wrap items-center gap-1.5 px-1 pb-0.5 pt-1">
-          {SET_TYPES.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => update.mutate({ id: s.id, set_type: t })}
-              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                s.set_type === t ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-              }`}
-            >
-              {SET_TYPE_LABEL[t]}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => update.mutate({ id: s.id, to_failure: !s.to_failure })}
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-              s.to_failure ? 'bg-cocoa text-cream' : 'bg-sand text-cocoa-light'
-            }`}
-          >
-            {s.to_failure ? 'Bis Versagen' : 'Nicht ans Limit'}
-          </button>
-          <button
-            type="button"
-            onClick={() => del.mutate(s)}
-            aria-label="Satz löschen"
-            className="ml-auto grid h-7 w-7 place-items-center rounded-full text-red-500"
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
+        <SetOptionsSheet
+          set={s}
+          badge={badge}
+          done={s.reps > 0}
+          onType={(set_type) => update.mutate({ id: s.id, set_type })}
+          onFailure={(to_failure) => update.mutate({ id: s.id, to_failure })}
+          onMove={onMove}
+          onDelete={() => del.mutate(s)}
+          onClose={() => setOpen(false)}
+        />
       )}
     </div>
   )

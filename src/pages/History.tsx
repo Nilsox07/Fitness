@@ -17,7 +17,16 @@ import {
 import { useSearchParams } from 'react-router-dom'
 import { usePrefs } from '../lib/prefs'
 import { useExercises } from '../hooks/useExercises'
-import { newId, useAddSet, useAllSets, useCreateWorkout, useDeleteWorkout, useWorkouts } from '../hooks/useWorkouts'
+import {
+  newId,
+  useAddSet,
+  useAllSets,
+  useCreateWorkout,
+  useDeleteWorkout,
+  useUpdateSet,
+  useWorkouts,
+} from '../hooks/useWorkouts'
+import { renumberedSets } from '../lib/workoutSession'
 import { FoodDays } from '../components/FoodDays'
 import { dayLabel, trainingDay } from '../lib/day'
 import { EditableSetRow } from '../components/EditableSetRow'
@@ -49,6 +58,7 @@ export default function History() {
   const { data: allSets } = useAllSets()
   const deleteWorkout = useDeleteWorkout()
   const addSet = useAddSet()
+  const updateSet = useUpdateSet()
   const [openId, setOpenId] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
   const createWorkout = useCreateWorkout()
@@ -125,8 +135,20 @@ export default function History() {
               <div className="font-medium">{exName(exId)}</div>
               {editing && ex ? (
                 <>
-                  {sorted.map((s) => (
-                    <EditableSetRow key={s.id} set={s} exercise={ex} />
+                  {sorted.map((s, i) => (
+                    <EditableSetRow
+                      key={s.id}
+                      set={s}
+                      exercise={ex}
+                      workingNo={String(sorted.slice(0, i + 1).filter((x) => x.set_type === 'working').length)}
+                      onMove={{
+                        up: i > 0 ? () => renumberedSets(sorted, i, i - 1).forEach((p) => updateSet.mutate(p)) : null,
+                        down:
+                          i < sorted.length - 1
+                            ? () => renumberedSets(sorted, i, i + 1).forEach((p) => updateSet.mutate(p))
+                            : null,
+                      }}
+                    />
                   ))}
                   <button
                     className="btn-ghost flex w-full items-center justify-center gap-1.5 text-sm"
