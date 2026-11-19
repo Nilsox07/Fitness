@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lastMealCopy, namesLine, recentFoods, repeatEntry } from './recentFoods'
+import { foodKey, lastMealCopy, namesLine, quickPicks, recentFoods, repeatEntry } from './recentFoods'
 import type { FoodEntry, Meal } from '../types'
 
 let n = 0
@@ -96,5 +96,49 @@ describe('Wie gestern', () => {
     const r = repeatEntry(e('Wasser', '2026-11-01', 'snack', { fluid_ml: 500 }), T, 'lunch')
     expect(r).toMatchObject({ date: T, meal: 'lunch', name: 'Wasser', fluid_ml: 500 })
     expect('id' in r).toBe(false)
+  })
+})
+
+describe('Schnellauswahl als Mischung', () => {
+  const T2 = '2026-11-19'
+  const d = (back: number) => {
+    const x = new Date(T2 + 'T12:00:00')
+    x.setDate(x.getDate() - back)
+    return x.toISOString().slice(0, 10)
+  }
+  // sonst immer Skyr zum Frühstück, gestern mal Rührei, vorgestern Abend Pizza
+  const hist = [
+    ...[2, 3, 4, 5, 6, 8, 9, 10].map((b) => e('Skyr mit Beeren', d(b), 'breakfast')),
+    e('Rührei', d(1), 'breakfast'),
+    e('Pizza Margherita', d(2), 'dinner'),
+    ...[3, 10, 17].map((b) => e('Haferflocken', d(b), 'breakfast')),
+  ]
+
+  it('ein anderer Tag verdrängt das Übliche nicht', () => {
+    const r = quickPicks(hist, 'breakfast', T2)
+    const names = r.map((x) => x.entry.name)
+    expect(names.slice(0, 3)).toEqual(expect.arrayContaining(['Rührei', 'Skyr mit Beeren']))
+    expect(names).toContain('Haferflocken')
+    expect(r.find((x) => x.entry.name === 'Skyr mit Beeren')!.why).toMatch(/Oft · 8×/)
+    expect(r.find((x) => x.entry.name === 'Rührei')!.why).toBe('Gestern zum Frühstück')
+  })
+
+  it('zuletzt überhaupt kommt auch vor (andere Mahlzeit)', () => {
+    const r = quickPicks(hist, 'breakfast', T2)
+    expect(r.find((x) => x.entry.name === 'Pizza Margherita')!.why).toBe('Vorgestern gegessen')
+  })
+
+  it('was heute schon in der Mahlzeit steht, fällt raus; andere Mahlzeit heute zuerst', () => {
+    const r = quickPicks([...hist, e('Skyr mit Beeren', T2, 'breakfast'), e('Banane', T2, 'snack')], 'breakfast', T2)
+    expect(r.some((x) => x.entry.name === 'Skyr mit Beeren')).toBe(false)
+    expect(r[0]).toMatchObject({ why: 'Heute schon gegessen', today: true })
+  })
+
+  it('gleiches Essen mit anderer Schreibweise wird zusammengezählt', () => {
+    expect(foodKey('Skyr (250 g)')).toBe(foodKey('Skyr, 250g'))
+    expect(foodKey('2 Eier')).toBe('eier')
+    const r = quickPicks([e('Skyr (250 g)', d(1), 'breakfast'), e('Skyr, 250g', d(2), 'breakfast')], 'breakfast', T2)
+    expect(r).toHaveLength(1)
+    expect(r[0].count).toBe(2)
   })
 })

@@ -91,7 +91,7 @@ import { HeroCard } from '../components/nutrition-home/HeroCard'
 import { QuickAddBar } from '../components/nutrition-home/QuickAddBar'
 import { NutrientExtras } from '../components/food/NutrientExtras'
 import { RecentFoods } from '../components/nutrition-home/RecentFoods'
-import { lastMealCopy, recentFoods, repeatEntry } from '../lib/recentFoods'
+import { lastMealCopy, quickPicks, repeatEntry } from '../lib/recentFoods'
 import { microDay, scaleMicros } from '../lib/micros'
 import { useHeroBuddy } from '../components/home/useHeroBuddy'
 import { MealCard } from '../components/nutrition-home/MealCard'
@@ -409,8 +409,8 @@ export default function Nutrition() {
   const { data: allSets } = useAllSets()
   const trainedToday = trainedOn(today, allSets)
 
-  // „Zuletzt gegessen": passend zur Mahlzeit, oft Gegessenes und heute schon Gegessenes zuerst
-  const recentFor = (meal: Meal) => recentFoods(allEntries ?? [], meal, today)
+  // Schnellauswahl: Mischung aus zuletzt zu dieser Mahlzeit, oft gegessen und zuletzt überhaupt
+  const recentFor = (meal: Meal) => quickPicks(allEntries ?? [], meal, today)
 
   /** Ein Lebensmittel mit derselben Menge nochmal eintragen (Menü bleibt offen). */
   function quickRepeat(e: FoodEntry, meal: Meal) {
@@ -1253,6 +1253,8 @@ export default function Nutrition() {
               onCopy={() => copyMeal(meal)}
               copyBusy={addEntries.isPending}
               onPrep={() => setPrepFor(meal)}
+              picks={recentFor(meal)}
+              onPick={(e) => quickRepeat(e, meal)}
               style={stagger(4 + i)}
             />
           ))}

@@ -7,7 +7,8 @@ import { fmtInt } from '../../lib/nutritionHome'
 import { haptic } from '../../lib/native'
 
 /**
- * „Zuletzt“ im Hinzufügen-Menü: passende Lebensmittel zur Mahlzeit.
+ * Schnellauswahl im Hinzufügen-Menü: Mischung aus zuletzt zur Mahlzeit, oft und zuletzt gegessen
+ * (src/lib/recentFoods.ts – quickPicks), mit kurzem Grund je Zeile.
  * „+“ trägt sofort mit derselben Menge ein (mehrere nacheinander möglich, Menü bleibt offen),
  * Antippen der Zeile öffnet die Menge zum Anpassen.
  */
@@ -16,7 +17,7 @@ export function RecentFoods({
   onQuick,
   onOpen,
   disabled,
-  label = 'Zuletzt',
+  label = 'Schnellauswahl',
 }: {
   items: RecentFood[]
   onQuick: (e: FoodEntry) => void
@@ -33,7 +34,7 @@ export function RecentFoods({
     <div>
       <h3 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-cocoa-muted">{label}</h3>
       <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
-        {shown.map(({ entry: e, today }) => {
+        {shown.map(({ entry: e, today, why }) => {
           const n = added[e.id] ?? 0
           const ml = fluidOf(e)
           return (
@@ -46,8 +47,9 @@ export function RecentFoods({
               >
                 <span className="truncate text-[15px] font-medium text-cocoa">{e.name}</span>
                 <span className="tabular truncate text-xs text-cocoa-muted">
+                  {why && <span className="font-semibold text-cocoa-light">{why} · </span>}
                   {ml > 0 ? `${fmtInt(ml)} ml · ` : e.amount_g ? `${fmtInt(e.amount_g)} g · ` : ''}
-                  {fmtInt(e.kcal)} kcal{today ? ' · heute schon' : ''}
+                  {fmtInt(e.kcal)} kcal{today && !why ? ' · heute schon' : ''}
                 </span>
               </button>
               <button

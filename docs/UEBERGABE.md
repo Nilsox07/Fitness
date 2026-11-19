@@ -148,6 +148,10 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Schnellauswahl Essen** (`quickPicks` in `recentFoods.ts`): abwechselnd „zuletzt zu dieser Mahlzeit“, „oft (6 Wochen)“
+  und „zuletzt überhaupt“, heute in anderer Mahlzeit Gegessenes zuerst; Namen werden über `foodKey` zusammengefasst
+  (Mengen/Klammern egal). Jede Zeile nennt den Grund. Leere Mahlzeit-Karten zeigen die Top 5 als Chips (ein Tipp trägt
+  ein), „Wie gestern“ ist nur noch ein Chip am Ende.
 - **Satz-Optionen als Sheet** (`SetOptionsSheet.tsx`, im Training und beim Bearbeiten im Verlauf): Satz-Kürzel antippen → Art als Kacheln (Aufwärmen/Arbeitssatz/
   Drop), „Bis zum Versagen“, Reihenfolge ↑/↓, „Satz löschen“ unten.
 - **Schlafenszeit nach Rhythmus** (`wakeRhythm.ts`): Aufstehzeit je Morgen aus den Nächten der letzten 6 Wochen –

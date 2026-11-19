@@ -11,6 +11,8 @@ export interface RecentFood {
   count: number
   /** heute schon gegessen (in einer anderen Mahlzeit) */
   today: boolean
+  /** Warum vorgeschlagen (Schnellauswahl): „Oft · 9×“, „Gestern zum Frühstück“ … */
+  why?: string
 }
 
 const DAY = 86_400_000
@@ -55,6 +57,124 @@ export function recentFoods(
     .sort((a, b) => b.rank - a.rank || b.entry.created_at.localeCompare(a.entry.created_at))
     .slice(0, limit)
     .map(({ entry, count, today: t, inMeal }) => ({ entry, count, today: t && !inMeal }))
+}
+
+/**
+ * Name zum Zusammenfassen: KI und Suche benennen dasselbe Essen oft leicht anders
+ * („Skyr (250 g)“, „Skyr, 250g“). Mengen, Klammern und Satzzeichen zählen nicht.
+ */
+export function foodKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\d+([.,]\d+)?\s*(g|gramm|ml|l|kcal|stk|stück|el|tl|portion(en)?)?\b/g, ' ')
+    .replace(/[^a-zäöüß ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+const MEAL_DAT: Record<Meal, string> = {
+  breakfast: 'zum Frühstück',
+  lunch: 'zum Mittag',
+  dinner: 'zum Abendessen',
+  snack: 'als Snack',
+}
+
+function whenLabel(date: string, today: string): string {
+  const d = dayDiff(date, today)
+  if (d === 0) return 'Heute'
+  if (d === 1) return 'Gestern'
+  if (d === 2) return 'Vorgestern'
+  if (d < 7) return new Date(date + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long' })
+  return `Vor ${Math.round(d / 7)} Wo.`
+}
+
+/**
+ * Schnellauswahl als Mischung, damit ein Ausreißer-Tag nichts verdrängt:
+ * abwechselnd „zuletzt zu dieser Mahlzeit“, „oft in den letzten 6 Wochen“ und „zuletzt überhaupt“.
+ * Was heute schon in dieser Mahlzeit steht, fällt raus. Jeder Vorschlag sagt, warum er da ist.
+ */
+export function quickPicks(
+  entries: readonly FoodEntry[],
+  meal: Meal,
+  today: string,
+  opts: { days?: number; limit?: number } = {},
+): RecentFood[] {
+  const days = opts.days ?? 42
+  const limit = opts.limit ?? 12
+  type Stat = {
+    entry: FoodEntry
+    last: string
+    lastInMeal: string | null
+    count: number
+    inMealCount: number
+    todayOther: boolean
+    todayInMeal: boolean
+  }
+  const acc = new Map<string, Stat>()
+  const newer = (a: FoodEntry, b: FoodEntry) => a.date > b.date || (a.date === b.date && a.created_at >= b.created_at)
+  for (const e of entries) {
+    if (!e.name?.trim()) continue
+    const age = dayDiff(e.date, today)
+    if (age < 0 || age > days) continue
+    const k = foodKey(e.name) || keyOf(e)
+    const m = e.meal ?? 'snack'
+    const cur =
+      acc.get(k) ??
+      ({
+        entry: e,
+        last: e.date,
+        lastInMeal: null,
+        count: 0,
+        inMealCount: 0,
+        todayOther: false,
+        todayInMeal: false,
+      } as Stat)
+    cur.count += 1
+    if (newer(e, cur.entry)) cur.entry = e
+    if (e.date > cur.last) cur.last = e.date
+    if (m === meal) {
+      cur.inMealCount += 1
+      if (!cur.lastInMeal || e.date > cur.lastInMeal) cur.lastInMeal = e.date
+      if (age === 0) cur.todayInMeal = true
+    } else if (age === 0) cur.todayOther = true
+    acc.set(k, cur)
+  }
+  const pool = [...acc.values()].filter((x) => !x.todayInMeal)
+  const byDate = (a: string | null, b: string | null) => (b ?? '').localeCompare(a ?? '')
+  const mealRecent = pool
+    .filter((x) => x.lastInMeal)
+    .sort((a, b) => byDate(a.lastInMeal, b.lastInMeal) || b.inMealCount - a.inMealCount)
+  const frequent = pool
+    .filter((x) => x.count >= 2)
+    .sort((a, b) => b.inMealCount + b.count * 0.4 - (a.inMealCount + a.count * 0.4) || byDate(a.last, b.last))
+  const recent = [...pool].sort((a, b) => byDate(a.last, b.last) || b.count - a.count)
+
+  const out: RecentFood[] = []
+  const seen = new Set<Stat>()
+  const take = (x: Stat | undefined, why: string) => {
+    if (!x || seen.has(x)) return
+    seen.add(x)
+    out.push({ entry: x.entry, count: x.count, today: x.todayOther, why })
+  }
+  // heute in einer anderen Mahlzeit gegessen (z. B. gleiches Mittag wie Frühstück) zuerst
+  for (const x of recent.filter((r) => r.todayOther).slice(0, 2)) take(x, 'Heute schon gegessen')
+  const lists: [Stat[], (x: Stat) => string][] = [
+    [mealRecent, (x) => `${whenLabel(x.lastInMeal!, today)} ${MEAL_DAT[meal]}`],
+    [frequent, (x) => `Oft · ${x.count}×`],
+    [recent, (x) => `${whenLabel(x.last, today)} gegessen`],
+  ]
+  const idx = [0, 0, 0]
+  while (out.length < limit && lists.some(([l], i) => idx[i] < l.length)) {
+    lists.forEach(([l, why], i) => {
+      while (idx[i] < l.length && seen.has(l[idx[i]])) idx[i]++
+      if (out.length < limit && idx[i] < l.length) {
+        const x = l[idx[i]++]
+        take(x, why(x))
+      }
+    })
+  }
+  return out
 }
 
 export interface MealCopy {

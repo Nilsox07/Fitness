@@ -1,9 +1,11 @@
 import type { CSSProperties } from 'react'
 import { fluidOf } from '../../lib/fluid'
 import { Bookmark, CalendarPlus, Coffee, Cookie, Moon, Plus, RotateCcw, Sun, type LucideIcon } from 'lucide-react'
+import { useState } from 'react'
 import { MEAL_LABEL, type FoodEntry, type Meal } from '../../types'
 import { fmtInt } from '../../lib/nutritionHome'
-import { namesLine, type MealCopy } from '../../lib/recentFoods'
+import { type MealCopy, type RecentFood } from '../../lib/recentFoods'
+import { haptic } from '../../lib/native'
 
 const ICON: Record<Meal, LucideIcon> = {
   breakfast: Coffee,
@@ -24,6 +26,8 @@ export function MealCard({
   onCopy,
   copyBusy,
   onPrep,
+  picks,
+  onPick,
   style,
 }: {
   meal: Meal
@@ -40,6 +44,9 @@ export function MealCard({
   copyBusy?: boolean
   /** Meal Prep: auf weitere Tage eintragen (nur mit Einträgen) */
   onPrep?: () => void
+  /** Schnellauswahl (leere Mahlzeit): ein Tipp trägt mit derselben Menge ein */
+  picks?: RecentFood[]
+  onPick?: (e: FoodEntry) => void
   style?: CSSProperties
 }) {
   const Icon = ICON[meal]
@@ -81,24 +88,8 @@ export function MealCard({
       </div>
 
       {empty ? (
-        copy && onCopy ? (
-          <button
-            type="button"
-            onClick={onCopy}
-            disabled={copyBusy}
-            className="flex w-full items-center gap-3 border-t border-sand-dark/30 px-4 py-2.5 text-left transition-colors active:bg-sand-light disabled:opacity-50"
-          >
-            <RotateCcw size={16} className="shrink-0 text-cocoa-muted" />
-            <span className="min-w-0 flex-1">
-              <span className="tabular block text-sm font-semibold text-cocoa">
-                Wie {copy.label} <span className="font-normal text-cocoa-muted">· {fmtInt(copy.kcal)} kcal</span>
-              </span>
-              <span className="block truncate text-xs text-cocoa-muted">{namesLine(copy.items)}</span>
-            </span>
-            <span className="shrink-0 rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand">
-              Eintragen
-            </span>
-          </button>
+        (picks?.length ?? 0) > 0 || (copy && onCopy) ? (
+          <QuickChips picks={picks ?? []} onPick={onPick} copy={copy} onCopy={onCopy} copyBusy={copyBusy} />
         ) : (
           recommended > 0 && (
             <p className="-mt-1 px-4 pb-3 pl-[4.25rem] text-xs text-cocoa-muted">Noch nichts — tippe +</p>
@@ -148,5 +139,53 @@ export function MealCard({
         </ul>
       )}
     </section>
+  )
+}
+
+/** Schnellauswahl in der leeren Mahlzeit: zuletzt/oft Gegessenes als Chips, ein Tipp trägt ein. */
+function QuickChips({
+  picks,
+  onPick,
+  copy,
+  onCopy,
+  copyBusy,
+}: {
+  picks: RecentFood[]
+  onPick?: (e: FoodEntry) => void
+  copy?: MealCopy | null
+  onCopy?: () => void
+  copyBusy?: boolean
+}) {
+  const [added, setAdded] = useState<string | null>(null)
+  const chip =
+    'flex shrink-0 items-center gap-1.5 rounded-full bg-sand py-1.5 pl-3 pr-2 text-sm font-medium text-cocoa transition active:scale-95 disabled:opacity-50'
+  return (
+    <div className="-mt-1 flex gap-1.5 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {picks.slice(0, 5).map(({ entry: e }) => (
+        <button
+          key={e.id}
+          type="button"
+          className={chip}
+          aria-label={`${e.name} eintragen`}
+          disabled={added === e.id}
+          onClick={() => {
+            setAdded(e.id)
+            void haptic('success')
+            onPick?.(e)
+          }}
+        >
+          <span className="max-w-[9.5rem] truncate">{e.name}</span>
+          <span className="tabular text-xs text-cocoa-muted">{fmtInt(e.kcal)}</span>
+          <Plus size={15} strokeWidth={2.5} className="text-brand" />
+        </button>
+      ))}
+      {copy && onCopy && (
+        <button type="button" className={chip} onClick={onCopy} disabled={copyBusy} aria-label={`Wie ${copy.label}`}>
+          <RotateCcw size={14} className="text-cocoa-muted" />
+          <span className="whitespace-nowrap">Wie {copy.label}</span>
+          <span className="tabular text-xs text-cocoa-muted">{fmtInt(copy.kcal)}</span>
+        </button>
+      )}
+    </div>
   )
 }
