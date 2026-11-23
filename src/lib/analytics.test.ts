@@ -279,7 +279,9 @@ describe('progressionSuggestion (Double Progression)', () => {
     expect(s.suggestedWeight).toBeLessThan(50)
     expect(s.reason).toContain('davor')
     // kaum Unterschied → nichts ändern
-    expect(progressionSuggestion(ex, sets, { fatigue, todayFatigue: 2 }).suggestedWeight).toBe(50)
+    expect(progressionSuggestion(ex, sets, { fatigue, todayFatigue: 1 }).suggestedWeight).toBe(50)
+    // 3 Sätze Rudern vor dem Latzug (gleicher Muskel) reichen jetzt für eine Anpassung
+    expect(progressionSuggestion(ex, sets, { fatigue, todayFatigue: 3 }).suggestedWeight).toBeLessThan(50)
   })
 
   it('kein Deload, wenn die Wdh. beim gleichen Gewicht steigen (Double Progression)', () => {

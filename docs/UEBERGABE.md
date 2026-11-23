@@ -148,6 +148,14 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Aufwärmen abgleichen statt einmal festlegen** (`Workout.tsx`): „warm“ zählt nur aus *erledigten* Sätzen anderer
+  Übungen. Solange eine Übung nicht begonnen ist, werden Aufwärmsätze ergänzt/entfernt, wenn sich die Lage ändert
+  (`warmKey`, gemerkt je Training in `wo_warmup_plan_<id>`; gleiche Lage → eigene Änderungen bleiben). Der frühere
+  KI-Aufwärm-Check (überschrieb die Regel) ist raus.
+- **Vorermüdung stärker und mit Nebenmuskeln** (`fatigue.ts`, `useMuscles`): −2,5 %/Satz, max. −20 %, ab 3 % angepasst.
+  Auswertung fair: Diagramm „Geschätztes Max“ und Trend in der Übungsliste rechnen vorbelastete Tage hoch (`fairE1RM`).
+- **Sätze sichtbar verschieben/hinzufügen:** Satz-Menü zeigt die Reihenfolge als Mini-Liste („dieser Satz“ markiert);
+  nach dem Schließen bzw. beim Hinzufügen leuchtet der Satz kurz auf. „+ Satz“ setzt hinter den letzten Arbeitssatz.
 - **Schnellauswahl Essen** (`quickPicks` in `recentFoods.ts`): abwechselnd „zuletzt zu dieser Mahlzeit“, „oft (6 Wochen)“
   und „zuletzt überhaupt“, heute in anderer Mahlzeit Gegessenes zuerst; Namen werden über `foodKey` zusammengefasst
   (Mengen/Klammern egal). Jede Zeile nennt den Grund. Leere Mahlzeit-Karten zeigen die Top 5 als Chips (ein Tipp trägt

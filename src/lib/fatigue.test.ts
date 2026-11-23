@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fatigueByDate, fatigueFactor, muscleMap, overlap, preFatigueSets } from './fatigue'
+import { fairE1RM, fatigueByDate, fatigueFactor, muscleMap, overlap, preFatigueSets } from './fatigue'
 
 const muscles = muscleMap([
   { id: 'incline', muscle_group: 'Brust', secondary_muscles: ['Schultern', 'Trizeps'] },
@@ -41,10 +41,10 @@ describe('Vorermüdung', () => {
     expect(preFatigueSets([set('incline'), set('dips')], 'fly', muscles)).toBe(1.5)
   })
 
-  it('Faktor: −1,5 % je Satz, höchstens −15 %', () => {
+  it('Faktor: −2,5 % je Satz, höchstens −20 %', () => {
     expect(fatigueFactor(0)).toBe(1)
-    expect(fatigueFactor(4)).toBeCloseTo(0.94)
-    expect(fatigueFactor(40)).toBe(0.85)
+    expect(fatigueFactor(4)).toBeCloseTo(0.9)
+    expect(fatigueFactor(40)).toBe(0.8)
   })
 
   it('je Tag', () => {
@@ -57,5 +57,13 @@ describe('Vorermüdung', () => {
     const m = fatigueByDate(all, 'fly', muscles)
     expect(m.get('2026-11-01')).toBe(1)
     expect(m.get('2026-11-03')).toBe(0)
+  })
+})
+
+describe('Faire Auswertung', () => {
+  it('vorbelastete Tage werden auf „ausgeruht“ hochgerechnet', () => {
+    expect(fairE1RM(90, 0)).toBe(90)
+    // 4 Sätze davor → Faktor 0,9 → 90 kg zählen wie 100 kg ausgeruht
+    expect(fairE1RM(90, 4)).toBeCloseTo(100)
   })
 })

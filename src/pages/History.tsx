@@ -141,6 +141,13 @@ export default function History() {
                       set={s}
                       exercise={ex}
                       workingNo={String(sorted.slice(0, i + 1).filter((x) => x.set_type === 'working').length)}
+                      order={sorted.map((x, j) => ({
+                        id: x.id,
+                        type: x.set_type,
+                        badge: String(sorted.slice(0, j + 1).filter((y) => y.set_type === 'working').length),
+                        weight: x.weight,
+                        reps: x.reps,
+                      }))}
                       onMove={{
                         up: i > 0 ? () => renumberedSets(sorted, i, i - 1).forEach((p) => updateSet.mutate(p)) : null,
                         down:

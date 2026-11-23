@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { haptic } from '../../lib/native'
 import { ArrowDown, Check, Flame, Minus, Plus, Trash2 } from 'lucide-react'
-import { SetOptionsSheet } from './SetOptionsSheet'
+import { SetOptionsSheet, type SetOrderItem } from './SetOptionsSheet'
 import { useDeleteSet, useUpdateSet } from '../../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../../lib/weights'
 import { SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../../types'
@@ -122,6 +122,8 @@ export function CompactSetRow({
   prev,
   onDone,
   onMove,
+  order,
+  flash = false,
 }: {
   set: WorkoutSet
   exercise: Exercise
@@ -130,10 +132,30 @@ export function CompactSetRow({
   onDone: () => void
   /** Satz in der Reihenfolge verschieben; null = in diese Richtung geht's nicht */
   onMove?: { up: (() => void) | null; down: (() => void) | null }
+  /** Alle Sätze der Übung (für die Reihenfolge im Satz-Menü) */
+  order?: SetOrderItem[]
+  /** Kurz hervorheben (gerade hinzugefügt) */
+  flash?: boolean
 }) {
   const update = useUpdateSet()
   const del = useDeleteSet()
   const [open, setOpen] = useState(false)
+  // Hervorheben + ins Bild holen: nach Hinzufügen (flash) oder nach Verschieben im Satz-Menü
+  const rowRef = useRef<HTMLDivElement>(null)
+  const moved = useRef(false)
+  const [glow, setGlow] = useState(false)
+  function highlight() {
+    setGlow(true)
+    rowRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    window.setTimeout(() => setGlow(false), 1400)
+  }
+  useEffect(() => {
+    if (flash) highlight()
+  }, [flash])
+  const trackedMove = onMove && {
+    up: onMove.up && (() => ((moved.current = true), onMove.up!())),
+    down: onMove.down && (() => ((moved.current = true), onMove.down!())),
+  }
   const ladder = parseLadder(exercise.weight_steps)
   const steps = ladder.length ? ladder : undefined
   const uni = exercise.unilateral
@@ -237,9 +259,10 @@ export function CompactSetRow({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl transition-[max-height,opacity] duration-200 ${
+      ref={rowRef}
+      className={`relative overflow-hidden rounded-2xl transition-[max-height,opacity,box-shadow,background-color] duration-300 ${
         removing ? 'max-h-0 opacity-0' : 'max-h-96'
-      }`}
+      } ${glow ? 'bg-brand/10 ring-2 ring-brand' : ''}`}
     >
       {dx < 0 && (
         <div
@@ -370,9 +393,14 @@ export function CompactSetRow({
             done={done}
             onType={(set_type) => update.mutate({ id: s.id, set_type })}
             onFailure={(to_failure) => update.mutate({ id: s.id, to_failure })}
-            onMove={onMove}
+            onMove={trackedMove}
+            order={order}
             onDelete={remove}
-            onClose={() => setOpen(false)}
+            onClose={() => {
+              setOpen(false)
+              if (moved.current) highlight()
+              moved.current = false
+            }}
           />
         )}
       </div>

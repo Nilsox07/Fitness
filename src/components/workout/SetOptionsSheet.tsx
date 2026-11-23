@@ -13,6 +13,15 @@ const TYPES: { id: SetType; icon: ReactNode; hint: string }[] = [
   { id: 'drop', icon: <ArrowDown size={20} />, hint: 'Direkt danach, leichter' },
 ]
 
+export interface SetOrderItem {
+  id: string
+  type: SetType
+  /** Nummer unter den Arbeitssätzen */
+  badge: string
+  weight: number
+  reps: number
+}
+
 const fmt = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 2 })
 
 export function SetOptionsSheet({
@@ -22,6 +31,7 @@ export function SetOptionsSheet({
   onType,
   onFailure,
   onMove,
+  order,
   onDelete,
   onClose,
 }: {
@@ -31,6 +41,8 @@ export function SetOptionsSheet({
   onType: (t: SetType) => void
   onFailure: (v: boolean) => void
   onMove?: { up: (() => void) | null; down: (() => void) | null }
+  /** Alle Sätze der Übung in aktueller Reihenfolge – zeigt, wohin der Satz wandert */
+  order?: SetOrderItem[]
   onDelete: () => void
   onClose: () => void
 }) {
@@ -94,18 +106,60 @@ export function SetOptionsSheet({
           </span>
           <Toggle checked={s.to_failure} onChange={onFailure} label="Bis zum Versagen" />
         </div>
-        {canMove && (
-          <div className="flex items-center gap-3 px-4 py-3">
-            <span className="min-w-0 flex-1 font-semibold">Reihenfolge</span>
-            <MoveButton label="Nach oben" onClick={onMove!.up}>
-              <ChevronUp size={18} />
-            </MoveButton>
-            <MoveButton label="Nach unten" onClick={onMove!.down}>
-              <ChevronDown size={18} />
-            </MoveButton>
-          </div>
-        )}
       </div>
+
+      {canMove && (
+        <section className="space-y-2">
+          <SectionLabel
+            right={
+              <span className="flex gap-1.5">
+                <MoveButton label="Nach oben" onClick={onMove!.up}>
+                  <ChevronUp size={18} />
+                </MoveButton>
+                <MoveButton label="Nach unten" onClick={onMove!.down}>
+                  <ChevronDown size={18} />
+                </MoveButton>
+              </span>
+            }
+          >
+            Reihenfolge
+          </SectionLabel>
+          {order && order.length > 1 && (
+            <ol className="space-y-1" aria-label="Reihenfolge der Sätze">
+              {order.map((o) => {
+                const me = o.id === s.id
+                return (
+                  <li
+                    key={o.id}
+                    aria-current={me ? 'true' : undefined}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-200 ${
+                      me
+                        ? 'bg-brand/10 font-semibold text-cocoa ring-2 ring-brand'
+                        : 'bg-sand/70 text-cocoa-light dark:bg-sand'
+                    }`}
+                  >
+                    <span
+                      className={`grid h-6 w-6 shrink-0 place-items-center text-xs font-bold ${me ? 'text-brand' : ''}`}
+                    >
+                      {o.type === 'warmup' ? (
+                        <Flame size={15} />
+                      ) : o.type === 'drop' ? (
+                        <ArrowDown size={15} />
+                      ) : (
+                        o.badge
+                      )}
+                    </span>
+                    <span className="tabular min-w-0 flex-1 truncate">
+                      {fmt(o.weight)} kg{o.reps > 0 ? ` × ${o.reps}` : ''}
+                    </span>
+                    {me && <span className="text-[11px] font-semibold text-brand">dieser Satz</span>}
+                  </li>
+                )
+              })}
+            </ol>
+          )}
+        </section>
+      )}
     </PremiumSheet>
   )
 }

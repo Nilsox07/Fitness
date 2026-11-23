@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowDown, Flame, Minus, MoreHorizontal, Plus } from 'lucide-react'
-import { SetOptionsSheet } from './workout/SetOptionsSheet'
+import { SetOptionsSheet, type SetOrderItem } from './workout/SetOptionsSheet'
 import { useDeleteSet, useUpdateSet } from '../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../lib/weights'
 import { SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../types'
@@ -11,14 +11,16 @@ export function EditableSetRow({
   exercise,
   onMove,
   workingNo,
+  order,
 }: {
   set: WorkoutSet
   exercise: Exercise
   onMove?: { up: (() => void) | null; down: (() => void) | null }
   /** Nummer unter den Arbeitssätzen („1“, „2“ …) */
   workingNo?: string
+  order?: SetOrderItem[]
 }) {
-  return <CompactEditRow set={set} exercise={exercise} onMove={onMove} workingNo={workingNo} />
+  return <CompactEditRow set={set} exercise={exercise} onMove={onMove} workingNo={workingNo} order={order} />
 }
 
 // ---------------------------------------------------------------------------
@@ -102,11 +104,13 @@ function CompactEditRow({
   exercise,
   onMove,
   workingNo,
+  order,
 }: {
   set: WorkoutSet
   exercise: Exercise
   onMove?: { up: (() => void) | null; down: (() => void) | null }
   workingNo?: string
+  order?: SetOrderItem[]
 }) {
   const update = useUpdateSet()
   const del = useDeleteSet()
@@ -183,6 +187,7 @@ function CompactEditRow({
           onType={(set_type) => update.mutate({ id: s.id, set_type })}
           onFailure={(to_failure) => update.mutate({ id: s.id, to_failure })}
           onMove={onMove}
+          order={order}
           onDelete={() => del.mutate(s)}
           onClose={() => setOpen(false)}
         />

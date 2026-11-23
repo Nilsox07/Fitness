@@ -31,17 +31,10 @@ import {
 import { fatigueByDate, muscleMap, preFatigueSets } from '../lib/fatigue'
 import { trainingDay } from '../lib/day'
 import { workoutShare, type ShareContent } from '../lib/shareCard'
-import {
-  coldWarmupCount,
-  lastSessionTypes,
-  planSetTypes,
-  recentSessionTypes,
-  warmupHabit,
-  warmupShare,
-} from '../lib/setScheme'
+import { lastSessionTypes, planSetTypes, recentSessionTypes, warmupHabit, warmupShare } from '../lib/setScheme'
 import { useUserPrefs } from '../hooks/usePrefsSync'
 import { ShareSheet } from '../components/share/ShareSheet'
-import { alternativeExercise, hypeLine, warmupAdvice } from '../lib/ai'
+import { alternativeExercise, hypeLine } from '../lib/ai'
 import { useAiGate } from '../hooks/usePremium'
 import { hypeLineText } from '../lib/freeTexts'
 import { PlusBadge } from '../components/premium/PlusBadge'
@@ -200,17 +193,20 @@ function baseFor(ex: Exercise, history: SetWithDate[], ctx?: ProgressionContext)
   return sug.suggestedWeight > 0 ? sug.suggestedWeight : 0 // neue Übung: Gewicht selbst eintragen statt pauschal 20 kg
 }
 
-/** Gespeicherte „KI hat den Aufwärmsatz geprüft"-Übungen je Training (übersteht Reload). */
-function readWarmupChecked(workoutId: string): Set<string> {
+/**
+ * Zuletzt abgeglichene Zahl an Aufwärmsätzen je Übung und Training (übersteht Reload). Neu abgeglichen
+ * wird nur, wenn sich die Lage ändert (z. B. andere Reihenfolge) – eigene Änderungen bleiben sonst stehen.
+ */
+function readWarmupPlan(workoutId: string): Record<string, number> {
   try {
-    return new Set<string>(JSON.parse(localStorage.getItem(`wo_warmup_checked_${workoutId}`) || '[]'))
+    return JSON.parse(localStorage.getItem(`wo_warmup_plan_${workoutId}`) || '{}') as Record<string, number>
   } catch {
-    return new Set<string>()
+    return {}
   }
 }
-function writeWarmupChecked(workoutId: string, ids: Set<string>) {
+function writeWarmupPlan(workoutId: string, plan: Record<string, number>) {
   try {
-    localStorage.setItem(`wo_warmup_checked_${workoutId}`, JSON.stringify([...ids]))
+    localStorage.setItem(`wo_warmup_plan_${workoutId}`, JSON.stringify(plan))
   } catch {
     /* ignore */
   }
@@ -308,8 +304,26 @@ export default function Workout() {
     return allSets.filter((s) => s.exercise_id === exerciseId && s.date !== today)
   }, [allSets, exerciseId, today])
 
+  // Mitarbeitende Muskeln je Übung (eingetragen → Bibliothek → Name), einmal je Übung berechnet
+  const { list: library } = useLibrary()
+  const secondaryOf = useMemo(() => {
+    const cache = new Map<string, MuscleGroup[]>()
+    return (ex: Exercise): MuscleGroup[] => {
+      let v = cache.get(ex.id)
+      if (!v) {
+        v = effectiveSecondary(ex, library ? findLibraryMatch(ex, library)?.secondary : null)
+        cache.set(ex.id, v)
+      }
+      return v
+    }
+  }, [library])
+
   // Vorermüdung: welche Übungen kamen heute/früher davor? (Butterfly nach Schrägbank ist schwächer)
-  const muscles = useMemo(() => muscleMap(exercises ?? []), [exercises])
+  // Nebenmuskeln auch für eigene Übungen ohne Eintrag (Bizeps nach Rudern)
+  const muscles = useMemo(
+    () => muscleMap((exercises ?? []).map((e) => ({ ...e, secondary_muscles: secondaryOf(e) }))),
+    [exercises, secondaryOf],
+  )
   const fatigueCtx = (exId: string): ProgressionContext => ({
     fatigue: fatigueByDate(allSets ?? [], exId, muscles),
     todayFatigue: preFatigueSets(workoutSets ?? [], exId, muscles),
@@ -546,20 +560,6 @@ export default function Workout() {
     return out
   }, [workoutSets, allSets, exercises, today])
 
-  // Mitarbeitende Muskeln je Übung (eingetragen → Bibliothek → Name), einmal je Übung berechnet
-  const { list: library } = useLibrary()
-  const secondaryOf = useMemo(() => {
-    const cache = new Map<string, MuscleGroup[]>()
-    return (ex: Exercise): MuscleGroup[] => {
-      let v = cache.get(ex.id)
-      if (!v) {
-        v = effectiveSecondary(ex, library ? findLibraryMatch(ex, library)?.secondary : null)
-        cache.set(ex.id, v)
-      }
-      return v
-    }
-  }, [library])
-
   // Aufwärm-Gewohnheit aus dem Verlauf (nur Einheiten, in denen der Muskel kalt war)
   const warmHabit = useMemo(() => {
     const byId = new Map((exercises ?? []).map((e) => [e.id, e]))
@@ -586,8 +586,9 @@ export default function Workout() {
   /** Satz-Typen für eine Übung: wie üblich bzw. eigenes Schema (Aufwärmen nur bei kaltem Muskel). */
   function typesFor(ex: Exercise): SetType[] {
     const hist = (allSets ?? []).filter((s) => s.exercise_id === ex.id && s.date !== today)
+    // Warm ist nur, was heute schon wirklich trainiert wurde – nicht jede kurz geöffnete Übung
     const warmed = warmedMuscleGroups(
-      (workoutSets ?? []).filter((s) => s.exercise_id !== ex.id),
+      (workoutSets ?? []).filter((s) => s.exercise_id !== ex.id && isPerformed(s)),
       exercises ?? [],
       secondaryOf,
     )
@@ -599,97 +600,71 @@ export default function Workout() {
       warmups: warmupsFor(ex),
     })
   }
-  // Darf die KI über den Aufwärmsatz entscheiden? Nur bei „automatisch“ und wenn du bei der Übung aufwärmst.
-  const aiWarmupAllowed =
-    !!selectedExercise && userPrefs.setScheme.warmup === 'auto' && coldWarmupCount(warmupsFor(selectedExercise), []) > 0
-
-  // Bekommt die gewählte Übung einen Aufwärmsatz? (nur wenn ihre Muskelgruppe heute noch kalt ist)
-  const willWarmup = selectedExercise
-    ? needsWarmup(
-        selectedExercise,
-        warmedMuscleGroups(
-          (workoutSets ?? []).filter((s) => s.exercise_id !== selectedExercise.id),
-          exercises ?? [],
-          secondaryOf,
-        ),
-      )
-    : true
-
   /**
-   * Aufwärmsatz VOR die bestehenden Sätze setzen. set_number muss laut DB > 0
-   * sein — ist vorne kein Platz, rücken die bestehenden Sätze eine Nummer nach
-   * hinten (die Updates laufen in derselben Warteschlange vor dem Einfügen).
+   * Aufwärmsätze VOR die bestehenden Sätze setzen (Gewicht steigt bei mehreren an). set_number muss
+   * laut DB > 0 sein — ist vorne kein Platz, rücken die bestehenden Sätze nach hinten.
    */
-  function insertWarmupFirst(ex: Exercise, exSets: WorkoutSet[], base: number) {
-    if (!todaysWorkout) return
-    const d = deriveSet('warmup', base)
-    const weight = snapWeight(ex, d.weight)
+  function insertWarmups(ex: Exercise, exSets: WorkoutSet[], base: number, n: number) {
+    if (!todaysWorkout || n <= 0) return
     const minNo = exSets.reduce((m, s) => Math.min(m, s.set_number), Infinity)
-    let setNumber = 1
-    if (exSets.length && minNo > 1) setNumber = minNo - 1
+    let first = 1
+    if (exSets.length && minNo > n) first = minNo - n
     else if (exSets.length) {
       for (const s of [...exSets].sort((a, b) => b.set_number - a.set_number)) {
-        updateSet.mutate({ id: s.id, set_number: s.set_number + 1 })
+        updateSet.mutate({ id: s.id, set_number: s.set_number + n })
       }
     }
-    addSet.mutate({
-      workout_id: todaysWorkout.id,
-      exercise_id: ex.id,
-      set_number: setNumber,
-      reps: d.reps,
-      weight,
-      reps_right: ex.unilateral ? d.reps : null,
-      weight_right: ex.unilateral ? weight : null,
-      set_type: 'warmup',
-      to_failure: false,
-    })
+    for (let i = 0; i < n; i++) {
+      const weight = snapWeight(ex, n > 1 ? roundHalf(base * warmupShare(i, n)) : deriveSet('warmup', base).weight)
+      addSet.mutate({
+        workout_id: todaysWorkout.id,
+        exercise_id: ex.id,
+        set_number: first + i,
+        reps: 0,
+        weight,
+        reps_right: ex.unilateral ? 0 : null,
+        weight_right: ex.unilateral ? weight : null,
+        set_type: 'warmup',
+        to_failure: false,
+      })
+    }
   }
 
-  // KI entscheidet im Hintergrund über den Aufwärmsatz und passt ihn still an —
-  // aber nur, solange bei der Übung noch kein Satz erledigt ist, und nur einmal
-  // pro Übung und Training (gemerkt in localStorage, übersteht also einen Reload).
+  // Aufwärmen abgleichen, solange bei der Übung noch nichts erledigt ist: Hat sich die Lage geändert
+  // (andere Reihenfolge – Muskel inzwischen warm oder doch noch kalt), Aufwärmsätze ergänzen bzw.
+  // nicht erledigte entfernen. Gleiche Lage → nichts anfassen (eigene Änderungen bleiben).
   const exNotStarted =
     !!selectedExercise &&
     setsForExercise.length > 0 &&
     !setsForExercise.some((s) => isSetDone(s, selectedExercise.unilateral))
+  const warmKey = [
+    ...warmedMuscleGroups(
+      (workoutSets ?? []).filter((s) => isPerformed(s)),
+      exercises ?? [],
+      secondaryOf,
+    ),
+  ]
+    .sort()
+    .join(',')
   useEffect(() => {
     const wid = todaysWorkout?.id
-    // KI-Aufwärm-Check nur mit Buddy Plus – sonst bleibt die Standardregel.
-    if (!gate.canUse || !selectedExercise || !wid || !exNotStarted || !aiWarmupAllowed) return
-    const checked = readWarmupChecked(wid)
-    if (checked.has(selectedExercise.id)) return
-    checked.add(selectedExercise.id)
-    writeWarmupChecked(wid, checked)
+    if (!selectedExercise || !wid || !exNotStarted) return
     const ex = selectedExercise
-    const base = workingBase
-    ;(async () => {
-      try {
-        const otherSets = (workoutSets ?? []).filter((s) => s.exercise_id !== ex.id)
-        const adv = await warmupAdvice({
-          exercise: ex.name,
-          primary: ex.muscle_group,
-          secondary: ex.secondary_muscles ?? [],
-          muscleAlreadyWarm: !willWarmup,
-          firstOfSession: otherSets.length === 0,
-          base,
-        })
-        // Aktuellen Stand prüfen — inzwischen könnte schon ein Satz erledigt sein.
-        const exSets = (latestSets.current ?? [])
-          .filter((s) => s.exercise_id === ex.id && s.workout_id === wid)
-          .sort((a, b) => a.set_number - b.set_number)
-        if (exSets.length === 0 || exSets.some((s) => isSetDone(s, ex.unilateral))) return
-        const warmups = exSets.filter((s) => s.set_type === 'warmup')
-        if (adv.warmup && warmups.length === 0) insertWarmupFirst(ex, exSets, base)
-        else if (!adv.warmup) {
-          // Erledigte Aufwärmsätze werden nie gelöscht.
-          for (const w of warmups) if (!isSetDone(w, ex.unilateral)) deleteSet.mutate(w)
-        }
-      } catch {
-        /* still im Hintergrund – Standardregel bleibt */
-      }
-    })()
+    const want = typesFor(ex).filter((t) => t === 'warmup').length
+    const plan = readWarmupPlan(wid)
+    const exSets = (latestSets.current ?? [])
+      .filter((s) => s.exercise_id === ex.id && s.workout_id === wid)
+      .sort((a, b) => a.set_number - b.set_number)
+    const open = exSets.filter((s) => s.set_type === 'warmup' && !isSetDone(s, ex.unilateral))
+    const known = plan[ex.id]
+    plan[ex.id] = want
+    writeWarmupPlan(wid, plan)
+    // gleiche Lage wie beim letzten Abgleich → eigene Änderungen respektieren
+    if (known === want || (known === undefined && open.length === want)) return
+    if (open.length < want) insertWarmups(ex, exSets, workingBase, want - open.length)
+    else if (open.length > want) for (const w of open.slice(0, open.length - want)) deleteSet.mutate(w)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gate.canUse, selectedExercise?.id, exNotStarted, todaysWorkout?.id])
+  }, [selectedExercise?.id, exNotStarted, warmKey, todaysWorkout?.id])
 
   // Übung auswählen → bei leerem Stand automatisch die Standard-Sätze anlegen
   function selectExercise(id: string) {
@@ -736,10 +711,20 @@ export default function Workout() {
         weight = lastWorking?.weight ?? snapWeight(selectedExercise, workingBase)
         weightRight = uni ? (lastWorking?.weight_right ?? weight) : null
       }
+      // Neuer Arbeitssatz direkt hinter den letzten Arbeitssatz (vor Dropsätze), nicht ans Ende
+      let setNumber = nextSetNumber
+      if (setsForExercise.length > 0 && lastWorking) {
+        setNumber = lastWorking.set_number + 1
+        for (const x of [...setsForExercise].sort((a, b) => b.set_number - a.set_number)) {
+          if (x.set_number >= setNumber) updateSet.mutate({ id: x.id, set_number: x.set_number + 1 })
+        }
+      }
+      const id = newId()
       addSet.mutate({
+        id,
         workout_id: todaysWorkout.id,
         exercise_id: selectedExercise.id,
-        set_number: nextSetNumber,
+        set_number: setNumber,
         reps: 0,
         weight,
         reps_right: uni ? 0 : null,
@@ -747,6 +732,7 @@ export default function Workout() {
         set_type: type,
         to_failure: type === 'working' && lastWorking ? lastWorking.to_failure : type !== 'warmup',
       })
+      flashSet(id)
       autoRest()
     })
   }
@@ -756,6 +742,12 @@ export default function Workout() {
   // supersatz-tauglicher Pausentimer, feste Aktionsleiste.
   // ======================================================================
   const rest = useRestTimer()
+  // Gerade hinzugefügter Satz leuchtet kurz auf (man sieht, wo er gelandet ist)
+  const [flashId, setFlashId] = useState<string | null>(null)
+  const flashSet = (id: string) => {
+    setFlashId(id)
+    window.setTimeout(() => setFlashId((cur) => (cur === id ? null : cur)), 1600)
+  }
   const [sessionVer, setSessionVer] = useState(0)
   const bump = () => setSessionVer((v) => v + 1)
   const [sheet, setSheet] = useState<null | 'picker' | 'pair' | 'menu' | 'alts' | 'finish'>(null)
@@ -1353,6 +1345,14 @@ export default function Workout() {
                     up: i > 0 ? () => moveSet(activeSets, i, i - 1) : null,
                     down: i < activeSets.length - 1 ? () => moveSet(activeSets, i, i + 1) : null,
                   }}
+                  order={activeSets.map((x) => ({
+                    id: x.id,
+                    type: x.set_type,
+                    badge: badgeFor(x, activeSets),
+                    weight: x.weight,
+                    reps: x.reps,
+                  }))}
+                  flash={flashId === s.id}
                 />
               ))}
             </div>

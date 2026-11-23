@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { ChevronRight, Dumbbell, Plus } from 'lucide-react'
 import { onlyWorking, summarizeSessions } from '../../lib/analytics'
+import { fairE1RM, fatigueByDate } from '../../lib/fatigue'
+import { useMuscles } from '../../hooks/useMuscles'
 import type { Exercise, SetWithDate } from '../../types'
 import type { LibraryExercise } from '../../lib/exerciseLibrary'
 import { ExerciseAnimation } from '../library/ExerciseAnimation'
@@ -42,17 +44,20 @@ export function ExerciseListNew({
   /** Übungs-ID → verknüpfter Bibliotheks-Eintrag (Vorschaubild statt Avatar). */
   thumbs?: Map<string, LibraryExercise>
 }) {
-  const rows = useMemo(
-    () =>
-      exercises.map((ex) => {
-        const sets = setsByExercise.get(ex.id) ?? []
-        const sessions = summarizeSessions(onlyWorking(sets)).slice(-SPARK_SESSIONS)
-        // Bester Satz je Session (geschätztes 1RM; bei reinen Wdh.-Übungen ohne Gewicht 0 → Volumen)
-        const trend = sessions.map((s) => (s.bestEstimated1RM > 0 ? s.bestEstimated1RM : s.volume))
-        return { ex, perf: lastPerformance(sets), trend }
-      }),
-    [exercises, setsByExercise],
-  )
+  const muscles = useMuscles(exercises)
+  const rows = useMemo(() => {
+    const all = [...setsByExercise.values()].flat()
+    return exercises.map((ex) => {
+      const sets = setsByExercise.get(ex.id) ?? []
+      const sessions = summarizeSessions(onlyWorking(sets)).slice(-SPARK_SESSIONS)
+      // Bester Satz je Session (geschätztes 1RM, fair bei Vorbelastung; ohne Gewicht → Volumen)
+      const fatigue = fatigueByDate(all, ex.id, muscles)
+      const trend = sessions.map((s) =>
+        s.bestEstimated1RM > 0 ? fairE1RM(s.bestEstimated1RM, fatigue.get(s.date) ?? 0) : s.volume,
+      )
+      return { ex, perf: lastPerformance(sets), trend }
+    })
+  }, [exercises, setsByExercise, muscles])
 
   // Figur über die Bibliotheks-Verknüpfung, sonst über den Namen (keine Fotos mehr).
   const figOf = (ex: Exercise) => figureForLibraryId(thumbs?.get(ex.id)?.id) ?? figureForExercise(ex)

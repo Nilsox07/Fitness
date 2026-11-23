@@ -1,7 +1,8 @@
 // Vorermüdung: Wer erst Schrägbankdrücken und dann Butterfly macht, schafft beim Butterfly weniger
 // als ausgeruht. Gezählt werden die harten Sätze (ohne Aufwärmen) anderer Übungen VOR dieser Übung
 // am selben Tag, die denselben Muskel treffen: gleicher Hauptmuskel = 1, nur als Hilfsmuskel = 0,5.
-// Daraus ein vorsichtiger Leistungsfaktor (Schätzwert): je Satz −1,5 %, höchstens −15 %.
+// Daraus ein Leistungsfaktor (Schätzwert): je Satz −2,5 %, höchstens −20 % (Studien zur Vorermüdung: nach
+// 3–4 harten Sätzen für denselben Muskel ~10–20 % weniger Wdh.). Ab 3 % Unterschied passt die App an.
 // Reine Logik – getestet in fatigue.test.ts.
 
 export interface MuscleInfo {
@@ -17,10 +18,10 @@ interface DaySet {
   reps_right?: number | null
 }
 
-export const FATIGUE_PER_SET = 0.015
-export const FATIGUE_MAX = 0.15
+export const FATIGUE_PER_SET = 0.025
+export const FATIGUE_MAX = 0.2
 /** Ab diesem Unterschied (Faktor) passt die App den Vorschlag an. */
-export const FATIGUE_NOTICE = 0.05
+export const FATIGUE_NOTICE = 0.03
 
 /** Wie stark belastet Übung `before` den Zielmuskel von `target`? */
 export function overlap(target: MuscleInfo, before: MuscleInfo): number {
@@ -84,4 +85,12 @@ export function fatigueByDate(
 /** Muskel-Karte aus der Übungsliste. */
 export function muscleMap(exercises: readonly ({ id: string } & MuscleInfo)[]): Map<string, MuscleInfo> {
   return new Map(exercises.map((e) => [e.id, { muscle_group: e.muscle_group, secondary_muscles: e.secondary_muscles }]))
+}
+
+/**
+ * Faire Leistung: geschätztes Maximum eines Tages, hochgerechnet auf „ausgeruht“. So zählt Butterfly
+ * nach Schrägbank in Verlauf und Trend nicht als Rückschritt.
+ */
+export function fairE1RM(e1rm: number, fatigueSets: number): number {
+  return e1rm / fatigueFactor(fatigueSets)
 }

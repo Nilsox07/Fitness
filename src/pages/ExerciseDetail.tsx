@@ -28,7 +28,8 @@ import {
   type ExerciseInput,
 } from "../hooks/useExercises";
 import { useAllSets } from "../hooks/useWorkouts";
-import { fatigueByDate, muscleMap } from "../lib/fatigue";
+import { fairE1RM, fatigueByDate } from "../lib/fatigue";
+import { useMuscles } from "../hooks/useMuscles";
 import { useAiStatus } from "../hooks/useAi";
 import { useTheme } from "../lib/theme";
 import { dayLabel } from "../lib/day";
@@ -191,15 +192,22 @@ export default function ExerciseDetail() {
   }, [working]);
 
   const sessions = useMemo(() => summarizeSessions(working), [working]);
+  // Vorermüdung je Tag (welche Übungen für denselben Muskel kamen davor?) – Nebenmuskeln inklusive
+  const muscles = useMuscles(exercises);
+  const fatigue = useMemo(
+    () => (exercise ? fatigueByDate(allSets ?? [], exercise.id, muscles) : new Map<string, number>()),
+    [allSets, muscles, exercise],
+  );
   const chartData = useMemo(
     () =>
       sessions.map((s) => ({
         date: shortDate(s.date),
-        est1RM: s.bestEstimated1RM,
+        // fair: vorbelastete Tage auf „ausgeruht“ hochgerechnet (sonst sähe es wie ein Rückschritt aus)
+        est1RM: Math.round(fairE1RM(s.bestEstimated1RM, fatigue.get(s.date) ?? 0) * 10) / 10,
         topWeight: s.topWeight,
         volume: Math.round(s.volume),
       })),
-    [sessions],
+    [sessions, fatigue],
   );
 
   const periodChartData = useMemo(() => {
@@ -211,12 +219,6 @@ export default function ExerciseDetail() {
       .filter((x) => x.date >= from)
       .map((x) => x.row);
   }, [period, sessions, chartData]);
-
-  // Vorermüdung je Tag (welche Übungen für denselben Muskel kamen davor?)
-  const fatigue = useMemo(
-    () => (exercise ? fatigueByDate(allSets ?? [], exercise.id, muscleMap(exercises ?? [])) : new Map<string, number>()),
-    [allSets, exercises, exercise],
-  );
 
   const suggestion = useMemo(
     () => (exercise ? progressionSuggestion(exercise, sets, { fatigue }) : null),
@@ -519,6 +521,9 @@ export default function ExerciseDetail() {
                 />
               </LineChart>
             </ResponsiveContainer>
+          )}
+          {metric === "est1RM" && sessions.some((x) => (fatigue.get(x.date) ?? 0) > 0) && (
+            <p className="mt-1 text-[11px] text-cocoa-muted">Vorbelastete Tage fair auf „ausgeruht“ hochgerechnet</p>
           )}
         </section>
       )}
