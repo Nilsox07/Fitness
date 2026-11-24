@@ -148,8 +148,8 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
-- **Bedienung nach UX-Recherche:** Satznummer gedrückt halten = ziehen (`SortableSets`, `dropIndex`), kurz tippen =
-  Menü. „Tauschen“-Chip an der Übung (solange nichts erledigt) → Alternative ersetzt die Übung (`swapExercise`, „nur
+- **Bedienung nach UX-Recherche:** Sätze verschieben nur im Sortier-Modus („Reihenfolge ändern“ unter den Sätzen →
+  kompakte Zeilen mit Griff, `SortableSets` mit `hold={0}`, `dropIndex`) – nichts verrutscht beim Scrollen. „Tauschen“-Chip an der Übung (solange nichts erledigt) → Alternative ersetzt die Übung (`swapExercise`, „nur
   heute / auch im Plan“). Hinweis-Leiste: „Satz gelöscht · Rückgängig“ (gleiche ID zurück), „Satz hinzugefügt · Als
   Aufwärmen/Drop“. Satz-Menü: Duplizieren. Übungs-Menü: Aufwärmsätze 0–3 als Rampe.
 - **Aufwärm-Gewohnheit je Muskelgruppe** (`warmupHabit`): ohne eigene „kalte“ Erfahrung zählt zuerst dieselbe

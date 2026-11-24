@@ -1,5 +1,5 @@
-// Sätze per Gedrückthalten verschieben: Satznummer kurz halten → Satz hebt sich an und folgt dem Finger,
-// die anderen rücken zur Seite, Loslassen setzt ihn ab. Kurzes Tippen bleibt „Optionen öffnen“.
+// Sätze verschieben (Sortier-Modus im Training): am Griff ziehen → Satz hebt sich an und folgt dem Finger,
+// die anderen rücken zur Seite, Loslassen setzt ihn ab. Optional erst nach kurzem Halten (`hold`).
 
 import { useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
 import { haptic } from '../../lib/native'
@@ -21,10 +21,13 @@ export function SortableSets<T extends { id: string }>({
   items,
   render,
   onMove,
+  hold = HOLD_MS,
 }: {
   items: readonly T[]
   render: (item: T, index: number, handle: DragHandle, dragging: boolean) => ReactNode
   onMove: (from: number, to: number) => void
+  /** Halten bis zum Ziehen in ms (0 = sofort, für eigene Griffe) */
+  hold?: number
 }) {
   const refs = useRef<(HTMLDivElement | null)[]>([])
   const press = useRef<{ index: number; y: number; timer: ReturnType<typeof setTimeout> | undefined } | null>(null)
@@ -41,20 +44,23 @@ export function SortableSets<T extends { id: string }>({
         const el = e.currentTarget
         const id = e.pointerId
         const y = e.clientY
-        press.current = {
-          index,
-          y,
-          timer: setTimeout(() => {
-            const heights = refs.current.slice(0, items.length).map((r) => (r?.offsetHeight ?? 56) + 4)
-            try {
-              el.setPointerCapture(id)
-            } catch {
-              /* ignore */
-            }
-            void haptic('medium')
-            setDrag({ from: index, dy: 0, heights, startY: y })
-          }, HOLD_MS),
+        const start = () => {
+          const heights = refs.current.slice(0, items.length).map((r) => (r?.offsetHeight ?? 56) + 4)
+          try {
+            el.setPointerCapture(id)
+          } catch {
+            /* ignore */
+          }
+          void haptic('medium')
+          setDrag({ from: index, dy: 0, heights, startY: y })
         }
+        // Griff im Sortier-Modus: sofort ziehen; sonst erst nach kurzem Halten
+        if (hold <= 0) {
+          e.preventDefault()
+          start()
+          return
+        }
+        press.current = { index, y, timer: setTimeout(start, hold) }
       },
       onPointerMove: (e) => {
         if (drag) {

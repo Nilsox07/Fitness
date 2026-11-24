@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { haptic } from '../../lib/native'
 import { ArrowDown, Check, Flame, Minus, Plus, Trash2 } from 'lucide-react'
 import { SetOptionsSheet, type SetOrderItem } from './SetOptionsSheet'
-import type { DragHandle } from './SortableSets'
 import { useDeleteSet, useUpdateSet } from '../../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../../lib/weights'
 import { SET_TYPE_LABEL, type Exercise, type SetType, type WorkoutSet } from '../../types'
@@ -128,8 +127,6 @@ export function CompactSetRow({
   onChangeType,
   onDeleted,
   onDuplicate,
-  dragHandle,
-  dragging = false,
   flash = false,
 }: {
   set: WorkoutSet
@@ -147,9 +144,6 @@ export function CompactSetRow({
   /** Nach dem Löschen (für „Rückgängig“) */
   onDeleted?: (s: WorkoutSet) => void
   onDuplicate?: () => void
-  /** Satznummer gedrückt halten = ziehen (SortableSets) */
-  dragHandle?: DragHandle
-  dragging?: boolean
   /** Kurz hervorheben (gerade hinzugefügt) */
   flash?: boolean
 }) {
@@ -312,11 +306,10 @@ export function CompactSetRow({
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            {...dragHandle}
             className={`grid h-12 select-none place-items-center rounded-xl text-sm font-bold tabular transition ${
               s.set_type === 'working' ? 'text-cocoa' : 'text-cocoa-light'
-            } ${open || dragging ? 'bg-sand-dark' : 'bg-sand'}`}
-            aria-label={`${SET_TYPE_LABEL[s.set_type]} – Optionen (gedrückt halten zum Verschieben)`}
+            } ${open ? 'bg-sand-dark' : 'bg-sand'}`}
+            aria-label={`${SET_TYPE_LABEL[s.set_type]} – Optionen`}
           >
             {s.set_type === 'warmup' ? <Flame size={16} /> : s.set_type === 'drop' ? <ArrowDown size={16} /> : badge}
           </button>

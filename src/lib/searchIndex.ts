@@ -121,7 +121,7 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
   {
     id: 'move-set',
     label: 'Satz verschieben',
-    sub: 'Satznummer gedrückt halten und ziehen',
+    sub: 'Unter den Sätzen „Reihenfolge ändern“',
     section: 'Training',
     to: '/',
     keywords: 'satz verschieben reihenfolge ziehen sortieren aufwärmsatz nach oben drop duplizieren rückgängig',
@@ -420,7 +420,8 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     sub: 'Schlafbedarf heute & wann ins Bett',
     section: 'Fortschritt',
     to: '/sleep',
-    keywords: 'schlafenszeit bett ins bett schlafbedarf aufstehen wecker schlafschuld schlafziel wochenende feiertag urlaub rhythmus',
+    keywords:
+      'schlafenszeit bett ins bett schlafbedarf aufstehen wecker schlafschuld schlafziel wochenende feiertag urlaub rhythmus',
     needs: 'watch',
   },
   {

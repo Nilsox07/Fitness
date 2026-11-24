@@ -68,6 +68,8 @@ import { effectiveSecondary } from '../lib/warmMuscles'
 import { LibraryResults } from '../components/library/LibraryResults'
 import {
   ArrowDown,
+  ArrowUpDown,
+  GripVertical,
   AlertTriangle,
   BookOpen,
   Check,
@@ -759,6 +761,9 @@ export default function Workout() {
   const rest = useRestTimer()
   // Gerade hinzugefügter Satz leuchtet kurz auf (man sieht, wo er gelandet ist)
   const [flashId, setFlashId] = useState<string | null>(null)
+  // Sortier-Modus: Sätze nur hier mit Griff verschiebbar (nichts verrutscht beim Scrollen)
+  const [sorting, setSorting] = useState(false)
+  useEffect(() => setSorting(false), [exerciseId])
   // Hinweis-Leiste über der Aktionsleiste: „Satz hinzugefügt → als Aufwärmen/Drop“, „Satz gelöscht → Rückgängig“
   type Toast = { text: string; actions: { label: string; icon?: ReactNode; run: () => void }[] }
   const [toast, setToast] = useState<Toast | null>(null)
@@ -1508,14 +1513,54 @@ export default function Workout() {
           {activeSets.length > 0 ? (
             <div className="space-y-1">
               <SetTableHeader />
-              <SortableSets
-                items={activeSets}
-                onMove={(from, to) => moveSet(activeSets, from, to)}
-                render={(s, i, handle, dragging) => (
+              {sorting && (
+                <p className="px-1 pb-1 text-xs text-cocoa-muted">
+                  Am Griff rechts ziehen, um die Reihenfolge zu ändern.
+                </p>
+              )}
+              {sorting ? (
+                <SortableSets
+                  items={activeSets}
+                  hold={0}
+                  onMove={(from, to) => moveSet(activeSets, from, to)}
+                  render={(s, _i, handle, dragging) => (
+                    <div
+                      className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${dragging ? 'bg-cream' : 'bg-sand/70 dark:bg-sand'}`}
+                    >
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cream text-sm font-bold text-cocoa-light dark:bg-sand-light">
+                        {s.set_type === 'warmup' ? (
+                          <Flame size={15} />
+                        ) : s.set_type === 'drop' ? (
+                          <ArrowDown size={15} />
+                        ) : (
+                          badgeFor(s, activeSets)
+                        )}
+                      </span>
+                      <span className="tabular min-w-0 flex-1 truncate text-sm font-semibold">
+                        {s.weight.toLocaleString('de-DE', { maximumFractionDigits: 2 })} kg
+                        {s.reps > 0 ? ` × ${s.reps}` : ''}
+                        {s.set_type !== 'working' && (
+                          <span className="font-normal text-cocoa-muted">
+                            {' '}
+                            · {s.set_type === 'warmup' ? 'Aufwärmen' : 'Drop'}
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        {...handle}
+                        role="button"
+                        aria-label="Zum Verschieben ziehen"
+                        className="grid h-10 w-10 shrink-0 cursor-grab place-items-center rounded-xl bg-cream text-cocoa-light active:cursor-grabbing dark:bg-sand-light"
+                      >
+                        <GripVertical size={18} />
+                      </span>
+                    </div>
+                  )}
+                />
+              ) : (
+                activeSets.map((s, i) => (
                   <CompactSetRow
                     key={s.id}
-                    dragHandle={handle}
-                    dragging={dragging}
                     set={s}
                     exercise={active}
                     badge={badgeFor(s, activeSets)}
@@ -1538,8 +1583,27 @@ export default function Workout() {
                     onDeleted={onSetDeleted}
                     onDuplicate={() => duplicateSet(s)}
                   />
-                )}
-              />
+                ))
+              )}
+              {activeSets.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSorting((v) => !v)}
+                  className={`mx-auto mt-1 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition active:scale-95 ${
+                    sorting ? 'bg-brand text-on-brand' : 'text-cocoa-light'
+                  }`}
+                >
+                  {sorting ? (
+                    <>
+                      <Check size={14} strokeWidth={3} /> Fertig
+                    </>
+                  ) : (
+                    <>
+                      <ArrowUpDown size={14} /> Reihenfolge ändern
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           ) : (
             <button className="btn-primary w-full" onClick={addTemplate} disabled={busy}>

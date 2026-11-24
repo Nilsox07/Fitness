@@ -145,7 +145,7 @@ export function SetOptionsSheet({
             Reihenfolge
           </SectionLabel>
           <p className="-mt-1 px-1 text-xs text-cocoa-muted">
-            Zeile antippen = dorthin. Oder in der Liste die Satznummer gedrückt halten und ziehen.
+            Zeile antippen = dorthin. Mehrere umsortieren: unter den Sätzen „Reihenfolge ändern“.
           </p>
           {order && order.length > 1 && (
             <ol className="space-y-1" aria-label="Reihenfolge der Sätze">
