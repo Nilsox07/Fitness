@@ -262,3 +262,28 @@ export function renumberedSets<T extends { id: string; set_number: number }>(
   next.splice(to, 0, x)
   return next.flatMap((s, i) => (s.set_number === i + 1 ? [] : [{ id: s.id, set_number: i + 1 }]))
 }
+
+/**
+ * Satz bekommt einen neuen Typ → an die passende Stelle: Aufwärmen nach oben (hinter andere
+ * Aufwärmsätze), Arbeitssatz hinter den letzten Arbeitssatz (vor Drops), Drop ans Ende.
+ * Liefert die Nummern-Patches (ohne den Typ selbst).
+ */
+export function placeForType<T extends { id: string; set_number: number; set_type: string }>(
+  list: readonly T[],
+  id: string,
+  type: string,
+): { id: string; set_number: number }[] {
+  const from = list.findIndex((s) => s.id === id)
+  if (from < 0) return []
+  const others = list.filter((s) => s.id !== id)
+  let to: number
+  if (type === 'warmup') to = others.filter((s) => s.set_type === 'warmup').length
+  else if (type === 'drop') to = others.length
+  else {
+    const lastWorking = others.reduce((m, s, i) => (s.set_type !== 'drop' ? i : m), -1)
+    to = lastWorking + 1
+  }
+  const next = [...others]
+  next.splice(to, 0, list[from])
+  return next.flatMap((s, i) => (s.set_number === i + 1 ? [] : [{ id: s.id, set_number: i + 1 }]))
+}

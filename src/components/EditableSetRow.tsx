@@ -3,7 +3,7 @@ import { ArrowDown, Flame, Minus, MoreHorizontal, Plus } from 'lucide-react'
 import { SetOptionsSheet, type SetOrderItem } from './workout/SetOptionsSheet'
 import { useDeleteSet, useUpdateSet } from '../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../lib/weights'
-import { SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../types'
+import { SET_TYPE_LABEL, type Exercise, type SetType, type WorkoutSet } from '../types'
 
 /** Editierbare Satz-Zeile (Typ, Versagen, Wdh/Gewicht, ggf. links/rechts). */
 export function EditableSetRow({
@@ -12,6 +12,8 @@ export function EditableSetRow({
   onMove,
   workingNo,
   order,
+  onMoveTo,
+  onChangeType,
 }: {
   set: WorkoutSet
   exercise: Exercise
@@ -19,8 +21,20 @@ export function EditableSetRow({
   /** Nummer unter den Arbeitssätzen („1“, „2“ …) */
   workingNo?: string
   order?: SetOrderItem[]
+  onMoveTo?: (index: number) => void
+  onChangeType?: (t: SetType) => void
 }) {
-  return <CompactEditRow set={set} exercise={exercise} onMove={onMove} workingNo={workingNo} order={order} />
+  return (
+    <CompactEditRow
+      set={set}
+      exercise={exercise}
+      onMove={onMove}
+      workingNo={workingNo}
+      order={order}
+      onMoveTo={onMoveTo}
+      onChangeType={onChangeType}
+    />
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -105,12 +119,16 @@ function CompactEditRow({
   onMove,
   workingNo,
   order,
+  onMoveTo,
+  onChangeType,
 }: {
   set: WorkoutSet
   exercise: Exercise
   onMove?: { up: (() => void) | null; down: (() => void) | null }
   workingNo?: string
   order?: SetOrderItem[]
+  onMoveTo?: (index: number) => void
+  onChangeType?: (t: SetType) => void
 }) {
   const update = useUpdateSet()
   const del = useDeleteSet()
@@ -184,10 +202,11 @@ function CompactEditRow({
           set={s}
           badge={badge}
           done={s.reps > 0}
-          onType={(set_type) => update.mutate({ id: s.id, set_type })}
+          onType={(set_type) => (onChangeType ? onChangeType(set_type) : update.mutate({ id: s.id, set_type }))}
           onFailure={(to_failure) => update.mutate({ id: s.id, to_failure })}
           onMove={onMove}
           order={order}
+          onMoveTo={onMoveTo}
           onDelete={() => del.mutate(s)}
           onClose={() => setOpen(false)}
         />

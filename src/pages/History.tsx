@@ -26,7 +26,7 @@ import {
   useUpdateSet,
   useWorkouts,
 } from '../hooks/useWorkouts'
-import { renumberedSets } from '../lib/workoutSession'
+import { placeForType, renumberedSets } from '../lib/workoutSession'
 import { FoodDays } from '../components/FoodDays'
 import { dayLabel, trainingDay } from '../lib/day'
 import { EditableSetRow } from '../components/EditableSetRow'
@@ -141,6 +141,15 @@ export default function History() {
                       set={s}
                       exercise={ex}
                       workingNo={String(sorted.slice(0, i + 1).filter((x) => x.set_type === 'working').length)}
+                      onMoveTo={(to) => renumberedSets(sorted, i, to).forEach((p) => updateSet.mutate(p))}
+                      onChangeType={(t) => {
+                        updateSet.mutate({ id: s.id, set_type: t })
+                        placeForType(
+                          sorted.map((x) => (x.id === s.id ? { ...x, set_type: t } : x)),
+                          s.id,
+                          t,
+                        ).forEach((p) => updateSet.mutate(p))
+                      }}
                       order={sorted.map((x, j) => ({
                         id: x.id,
                         type: x.set_type,

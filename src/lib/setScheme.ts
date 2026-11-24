@@ -69,7 +69,7 @@ const countOf = (types: readonly SetType[], t: SetType) => types.filter((x) => x
 export interface WarmupHistory {
   /** Übliche Anzahl Aufwärmsätze bei DIESER Übung, wenn der Muskel kalt war */
   exercise: number | null
-  /** Übliche Anzahl Aufwärmsätze bei der ersten Übung einer Muskelgruppe (alle Übungen) */
+  /** Sonst: üblich bei derselben Muskelgruppe, sonst bei der ersten Übung eines Trainings */
   habit: number | null
 }
 
@@ -137,7 +137,7 @@ export interface PastSet {
  * Aufwärm-Gewohnheit aus dem Verlauf: Für jedes Training wird die Reihenfolge der Übungen
  * (erster Satz) nachgebaut. War die Muskelgruppe einer Übung da noch kalt (keine frühere Übung mit
  * der Gruppe als Haupt- oder Nebenmuskel), zählt ihre Anzahl Aufwärmsätze. Nur ausgeführte Sätze
- * übergeben. Liefert die Gewohnheit je Übung und insgesamt (letzte 12 Trainings).
+ * übergeben. Liefert die Gewohnheit je Übung, sonst je Muskelgruppe, sonst der ersten Übung eines Trainings.
  */
 export function warmupHabit(
   sets: readonly PastSet[],
@@ -150,9 +150,15 @@ export function warmupHabit(
     else byDate.set(s.date, [s])
   }
   const perEx = new Map<string, number[]>()
-  const overall: number[] = []
+  const perGroup = new Map<string, number[]>()
+  const firstOfDay: number[] = []
+  const push = (m: Map<string, number[]>, k: string, n: number, cap: number) => {
+    const l = m.get(k)
+    if (!l) m.set(k, [n])
+    else if (l.length < cap) l.push(n)
+  }
   const dates = [...byDate.keys()].sort().reverse()
-  dates.forEach((date, i) => {
+  dates.forEach((date) => {
     const day = byDate.get(date)!
     const first = new Map<string, string>()
     const warm = new Map<string, number>()
@@ -162,22 +168,30 @@ export function warmupHabit(
     }
     const order = [...first.entries()].sort((a, b) => (a[1] < b[1] ? -1 : 1)).map(([id]) => id)
     const warmed = new Set<string>()
-    for (const id of order) {
+    order.forEach((id, pos) => {
       const m = muscles(id)
-      if (!m) continue
+      if (!m) return
       if (!warmed.has(m.group)) {
         const n = warm.get(id) ?? 0
-        const l = perEx.get(id)
-        if (!l) perEx.set(id, [n])
-        else if (l.length < 4) l.push(n)
-        if (i < 12) overall.push(n)
+        push(perEx, id, n, 4)
+        push(perGroup, m.group, n, 6)
+        if (pos === 0 && firstOfDay.length < 8) firstOfDay.push(n)
       }
       warmed.add(m.group)
       for (const g of m.secondary) warmed.add(g)
-    }
+    })
   })
-  const habit = usualNumber(overall.slice(0, 8))
-  return { forExercise: (exId) => ({ exercise: usualNumber(perEx.get(exId) ?? []), habit }) }
+  const firstHabit = usualNumber(firstOfDay)
+  return {
+    forExercise: (exId) => {
+      // Ohne eigene Erfahrung: wie bei anderen Übungen derselben Muskelgruppe (Latzug ← Rudern), sonst wie
+      // bei der ersten Übung eines Trainings. Isolationsübungen ohne Aufwärmen (Butterfly, Bauch) zählen
+      // so nicht für den Rücken mit.
+      const g = muscles(exId)?.group
+      const group = g ? usualNumber(perGroup.get(g) ?? []) : null
+      return { exercise: usualNumber(perEx.get(exId) ?? []), habit: group ?? firstHabit }
+    },
+  }
 }
 
 /** Satz-Typen der letzten Einheit einer Übung aus dem Verlauf (Sätze mit Datum). */

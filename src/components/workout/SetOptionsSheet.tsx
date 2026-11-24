@@ -32,6 +32,7 @@ export function SetOptionsSheet({
   onFailure,
   onMove,
   order,
+  onMoveTo,
   onDelete,
   onClose,
 }: {
@@ -43,6 +44,8 @@ export function SetOptionsSheet({
   onMove?: { up: (() => void) | null; down: (() => void) | null }
   /** Alle Sätze der Übung in aktueller Reihenfolge – zeigt, wohin der Satz wandert */
   order?: SetOrderItem[]
+  /** Direkt an Position `index` der Liste setzen (Antippen einer Zeile) */
+  onMoveTo?: (index: number) => void
   onDelete: () => void
   onClose: () => void
 }) {
@@ -126,33 +129,42 @@ export function SetOptionsSheet({
           </SectionLabel>
           {order && order.length > 1 && (
             <ol className="space-y-1" aria-label="Reihenfolge der Sätze">
-              {order.map((o) => {
+              {order.map((o, idx) => {
                 const me = o.id === s.id
                 return (
-                  <li
-                    key={o.id}
-                    aria-current={me ? 'true' : undefined}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-200 ${
-                      me
-                        ? 'bg-brand/10 font-semibold text-cocoa ring-2 ring-brand'
-                        : 'bg-sand/70 text-cocoa-light dark:bg-sand'
-                    }`}
-                  >
-                    <span
-                      className={`grid h-6 w-6 shrink-0 place-items-center text-xs font-bold ${me ? 'text-brand' : ''}`}
+                  <li key={o.id}>
+                    <button
+                      type="button"
+                      disabled={me || !onMoveTo}
+                      onClick={() => onMoveTo?.(idx)}
+                      aria-current={me ? 'true' : undefined}
+                      aria-label={me ? 'Dieser Satz' : `Hierhin verschieben (Position ${idx + 1})`}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-all duration-200 active:scale-[0.98] ${
+                        me
+                          ? 'bg-brand/10 font-semibold text-cocoa ring-2 ring-brand'
+                          : 'bg-sand/70 text-cocoa-light dark:bg-sand'
+                      }`}
                     >
-                      {o.type === 'warmup' ? (
-                        <Flame size={15} />
-                      ) : o.type === 'drop' ? (
-                        <ArrowDown size={15} />
+                      <span
+                        className={`grid h-6 w-6 shrink-0 place-items-center text-xs font-bold ${me ? 'text-brand' : ''}`}
+                      >
+                        {o.type === 'warmup' ? (
+                          <Flame size={15} />
+                        ) : o.type === 'drop' ? (
+                          <ArrowDown size={15} />
+                        ) : (
+                          o.badge
+                        )}
+                      </span>
+                      <span className="tabular min-w-0 flex-1 truncate">
+                        {fmt(o.weight)} kg{o.reps > 0 ? ` × ${o.reps}` : ''}
+                      </span>
+                      {me ? (
+                        <span className="text-[11px] font-semibold text-brand">dieser Satz</span>
                       ) : (
-                        o.badge
+                        onMoveTo && <span className="text-[11px] text-cocoa-muted">hierhin</span>
                       )}
-                    </span>
-                    <span className="tabular min-w-0 flex-1 truncate">
-                      {fmt(o.weight)} kg{o.reps > 0 ? ` × ${o.reps}` : ''}
-                    </span>
-                    {me && <span className="text-[11px] font-semibold text-brand">dieser Satz</span>}
+                    </button>
                   </li>
                 )
               })}

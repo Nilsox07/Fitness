@@ -65,6 +65,7 @@ import { findLibraryMatch } from '../lib/exerciseLibrary'
 import { effectiveSecondary } from '../lib/warmMuscles'
 import { LibraryResults } from '../components/library/LibraryResults'
 import {
+  ArrowDown,
   AlertTriangle,
   BookOpen,
   Check,
@@ -101,6 +102,7 @@ import {
   setPairs,
   sortByOrder,
   renumberedSets,
+  placeForType,
   type Pair,
 } from '../lib/workoutSession'
 
@@ -733,6 +735,7 @@ export default function Workout() {
         to_failure: type === 'working' && lastWorking ? lastWorking.to_failure : type !== 'warmup',
       })
       flashSet(id)
+      if (type === 'working') showAdded(id)
       autoRest()
     })
   }
@@ -744,6 +747,24 @@ export default function Workout() {
   const rest = useRestTimer()
   // Gerade hinzugefügter Satz leuchtet kurz auf (man sieht, wo er gelandet ist)
   const [flashId, setFlashId] = useState<string | null>(null)
+  // Nach „+ Satz“ kurz: als Aufwärm- oder Dropsatz umwandeln (landet dann gleich an der richtigen Stelle)
+  const [addedId, setAddedId] = useState<string | null>(null)
+  const addedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const showAdded = (id: string) => {
+    setAddedId(id)
+    clearTimeout(addedTimer.current)
+    addedTimer.current = setTimeout(() => setAddedId(null), 5000)
+  }
+  function convertAdded(type: SetType) {
+    const set = (latestSets.current ?? []).find((x) => x.id === addedId)
+    setAddedId(null)
+    if (!set) return
+    const base = workingBase || set.weight
+    if (base > 0 && selectedExercise)
+      updateSet.mutate({ id: set.id, weight: snapWeight(selectedExercise, deriveSet(type, base).weight) })
+    changeSetType(set, type)
+    flashSet(set.id)
+  }
   const flashSet = (id: string) => {
     setFlashId(id)
     window.setTimeout(() => setFlashId((cur) => (cur === id ? null : cur)), 1600)
@@ -812,6 +833,16 @@ export default function Workout() {
     if (!prev?.length) return null
     const k = list.filter((x) => x.set_type === s.set_type && x.set_number < s.set_number).length
     return prev.filter((p) => p.set_type === s.set_type)[k] ?? null
+  }
+
+  /** Typ ändern und gleich an die passende Stelle (Aufwärmen oben, Drop ans Ende). */
+  function changeSetType(set: WorkoutSet, type: SetType) {
+    const list = (latestSets.current ?? [])
+      .filter((x) => x.exercise_id === set.exercise_id && x.workout_id === set.workout_id)
+      .map((x) => (x.id === set.id ? { ...x, set_type: type } : x))
+      .sort((a, b) => a.set_number - b.set_number)
+    updateSet.mutate({ id: set.id, set_type: type, ...(type === 'warmup' ? { to_failure: false } : {}) })
+    placeForType(list, set.id, type).forEach((p) => updateSet.mutate(p))
   }
 
   /** Satz verschieben: neue Reihenfolge durchnummerieren (1, 2, 3 …), nur geänderte speichern. */
@@ -1353,6 +1384,8 @@ export default function Workout() {
                     reps: x.reps,
                   }))}
                   flash={flashId === s.id}
+                  onMoveTo={(to) => moveSet(activeSets, i, to)}
+                  onChangeType={(t) => changeSetType(s, t)}
                 />
               ))}
             </div>
@@ -1372,6 +1405,25 @@ export default function Workout() {
             bottom: 'calc(82px + env(safe-area-inset-bottom))',
           }}
         >
+          {addedId && (
+            <div className="anim-fade mb-2 flex items-center gap-2 rounded-2xl bg-cocoa px-3 py-2 text-sm text-bg shadow-lg dark:bg-sand-light dark:text-cocoa">
+              <span className="min-w-0 flex-1 truncate font-semibold">Satz hinzugefügt</span>
+              <button
+                type="button"
+                className="flex items-center gap-1 rounded-full bg-bg/15 px-2.5 py-1 text-xs font-semibold dark:bg-cocoa/10"
+                onClick={() => convertAdded('warmup')}
+              >
+                <Flame size={13} /> Als Aufwärmen
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-1 rounded-full bg-bg/15 px-2.5 py-1 text-xs font-semibold dark:bg-cocoa/10"
+                onClick={() => convertAdded('drop')}
+              >
+                <ArrowDown size={13} /> Als Drop
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2 rounded-3xl bg-cream/95 p-2 shadow-[0_4px_24px_rgb(0_0_0/0.12)] ring-1 ring-sand-dark/40 backdrop-blur">
             <RestControl timer={rest} exercise={active ? { id: active.id, name: active.name } : undefined} />
             {rest.left == null && (

@@ -169,6 +169,30 @@ describe('Aufwärmen nach Gewohnheit – nur kalte Einheiten zählen', () => {
     expect(planSetTypes({ scheme: S, last: sessions[0], sessions, muscleWarm: true, warmups: h })).toEqual([W, W, W])
   })
 
+  it('Plan beginnt mit Rudern, heute Latzug zuerst: Isolationsübungen ohne Aufwärmen zählen nicht mit', () => {
+    const M2: Record<string, { group: string; secondary: string[] }> = {
+      ...M,
+      pushdown: { group: 'triceps', secondary: [] },
+      fly: { group: 'chest', secondary: [] },
+      abs: { group: 'abs', secondary: [] },
+    }
+    const ses = (date: string) =>
+      day(date, [
+        ['row', 1, 3],
+        ['lat', 0, 3],
+        ['curl', 0, 3],
+        ['pushdown', 0, 3],
+        ['fly', 0, 3],
+        ['abs', 0, 2],
+      ])
+    const hist = [...ses('2026-11-10'), ...ses('2026-11-13'), ...ses('2026-11-17')]
+    const h = warmupHabit(hist, (id) => M2[id]).forExercise('lat')
+    expect(h).toEqual({ exercise: null, habit: 1 })
+    expect(planSetTypes({ scheme: S, last: [W, W, W], sessions: [[W, W, W]], muscleWarm: false, warmups: h })[0]).toBe(
+      'warmup',
+    )
+  })
+
   it('wer bei kaltem Muskel nie aufwärmt, bekommt keinen Aufwärmsatz', () => {
     const hist = [
       ...day('2026-11-03', [

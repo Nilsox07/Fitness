@@ -148,6 +148,10 @@ einer App, aber nur das sichtbar, was man nutzt.
   7-Tage-Schlafschuld (max. 60 min). Zubettgehzeit = Aufstehzeit (`prefs.wakeTime` oder Median der letzten
   Nächte) − Bedarf ÷ Schlafeffizienz. Karte „Heute Nacht“ auf `/sleep`, Widget `bedtime`, Buddy-Tipp ab 18 Uhr,
   lokale Erinnerung `bedtime` 30 min vorher (nur App, nur mit Uhr; Server sendet sie nie).
+- **Aufwärm-Gewohnheit je Muskelgruppe** (`warmupHabit`): ohne eigene „kalte“ Erfahrung zählt zuerst dieselbe
+  Muskelgruppe (Latzug ← Rudern), dann die erste Übung eines Trainings – Isolationsübungen ohne Aufwärmen verwässern
+  das nicht mehr. **Satz-Typ ändern sortiert ein** (`placeForType`), nach „+ Satz“ kurz „Als Aufwärmen/Als Drop“,
+  im Satz-Menü Zeile antippen = hierhin verschieben. UX-Recherche: `docs/ux-recherche-nischen-apps.md`.
 - **Aufwärmen abgleichen statt einmal festlegen** (`Workout.tsx`): „warm“ zählt nur aus *erledigten* Sätzen anderer
   Übungen. Solange eine Übung nicht begonnen ist, werden Aufwärmsätze ergänzt/entfernt, wenn sich die Lage ändert
   (`warmKey`, gemerkt je Training in `wo_warmup_plan_<id>`; gleiche Lage → eigene Änderungen bleiben). Der frühere

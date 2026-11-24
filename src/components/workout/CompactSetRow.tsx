@@ -4,7 +4,7 @@ import { ArrowDown, Check, Flame, Minus, Plus, Trash2 } from 'lucide-react'
 import { SetOptionsSheet, type SetOrderItem } from './SetOptionsSheet'
 import { useDeleteSet, useUpdateSet } from '../../hooks/useWorkouts'
 import { ladderStep, parseLadder, snapToLadder } from '../../lib/weights'
-import { SET_TYPE_LABEL, type Exercise, type WorkoutSet } from '../../types'
+import { SET_TYPE_LABEL, type Exercise, type SetType, type WorkoutSet } from '../../types'
 
 export interface PrevSet {
   reps: number
@@ -123,6 +123,8 @@ export function CompactSetRow({
   onDone,
   onMove,
   order,
+  onMoveTo,
+  onChangeType,
   flash = false,
 }: {
   set: WorkoutSet
@@ -134,6 +136,9 @@ export function CompactSetRow({
   onMove?: { up: (() => void) | null; down: (() => void) | null }
   /** Alle Sätze der Übung (für die Reihenfolge im Satz-Menü) */
   order?: SetOrderItem[]
+  onMoveTo?: (index: number) => void
+  /** Typ ändern inkl. Einsortieren (sonst nur Typ speichern) */
+  onChangeType?: (t: SetType) => void
   /** Kurz hervorheben (gerade hinzugefügt) */
   flash?: boolean
 }) {
@@ -391,10 +396,23 @@ export function CompactSetRow({
             set={s}
             badge={badge}
             done={done}
-            onType={(set_type) => update.mutate({ id: s.id, set_type })}
+            onType={(set_type) => {
+              if (set_type === s.set_type) return
+              if (onChangeType) {
+                moved.current = true
+                onChangeType(set_type)
+              } else update.mutate({ id: s.id, set_type })
+            }}
             onFailure={(to_failure) => update.mutate({ id: s.id, to_failure })}
             onMove={trackedMove}
             order={order}
+            onMoveTo={
+              onMoveTo &&
+              ((i) => {
+                moved.current = true
+                onMoveTo(i)
+              })
+            }
             onDelete={remove}
             onClose={() => {
               setOpen(false)

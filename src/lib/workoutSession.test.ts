@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  placeForType,
   renumberedSets,
   afterSetDone,
   matchingSet,
@@ -141,5 +142,29 @@ describe('Sätze umsortieren', () => {
   it('außerhalb der Liste: nichts', () => {
     expect(renumberedSets(sets, 0, -1)).toEqual([])
     expect(renumberedSets(sets, 3, 4)).toEqual([])
+  })
+})
+
+describe('Typ ändern sortiert ein', () => {
+  const L = [
+    { id: 'w', set_number: 1, set_type: 'warmup' },
+    { id: 'a', set_number: 2, set_type: 'working' },
+    { id: 'b', set_number: 3, set_type: 'working' },
+    { id: 'd', set_number: 4, set_type: 'drop' },
+    { id: 'n', set_number: 5, set_type: 'working' }, // neu angehängt
+  ]
+  const order = (patches: { id: string; set_number: number }[]) => {
+    const no = new Map(L.map((s) => [s.id, s.set_number]))
+    for (const p of patches) no.set(p.id, p.set_number)
+    return [...no.entries()].sort((x, y) => x[1] - y[1]).map(([id]) => id)
+  }
+  it('Aufwärmen nach oben hinter andere Aufwärmsätze', () => {
+    expect(order(placeForType(L, 'n', 'warmup'))).toEqual(['w', 'n', 'a', 'b', 'd'])
+  })
+  it('Arbeitssatz vor den Drop', () => {
+    expect(order(placeForType(L, 'n', 'working'))).toEqual(['w', 'a', 'b', 'n', 'd'])
+  })
+  it('Drop ans Ende', () => {
+    expect(order(placeForType(L, 'a', 'drop'))).toEqual(['w', 'b', 'd', 'n', 'a'])
   })
 })
