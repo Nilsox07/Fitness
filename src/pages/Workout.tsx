@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { endWorkout, touchWorkout } from '../lib/activeWorkout'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useExercises } from '../hooks/useExercises'
-import { usePlans } from '../hooks/usePlans'
+import { useAddPlanExercise, usePlans, useRemovePlanExercise, useReorderPlanExercises } from '../hooks/usePlans'
 import {
   useAddSet,
   useAddSets,
@@ -50,6 +50,7 @@ import {
 } from '../types'
 import { CompactSetRow, SetTableHeader, isSetDone, type PrevSet } from '../components/workout/CompactSetRow'
 import { RestControl, useRestTimer } from '../components/workout/RestControl'
+import { SortableSets } from '../components/workout/SortableSets'
 import { SessionClock } from '../components/workout/SessionClock'
 import { PremiumSheet, SheetHero } from '../components/ui/PremiumSheet'
 import { BIG_INPUT } from '../components/ui/GroupList'
@@ -61,6 +62,7 @@ import { showBuddyMoment } from '../components/buddy/BuddyMoment'
 import { LibrarySheet } from '../components/library/LibrarySheet'
 import { ExerciseHowTo } from '../components/library/ExerciseHowTo'
 import { useLibrary, useLibraryMatch } from '../components/library/useLibrary'
+import { lastPerformance } from '../components/exercises/ExerciseListNew'
 import { findLibraryMatch } from '../lib/exerciseLibrary'
 import { effectiveSecondary } from '../lib/warmMuscles'
 import { LibraryResults } from '../components/library/LibraryResults'
@@ -250,6 +252,9 @@ export default function Workout() {
   const { data: allSets } = useAllSets()
   const { prefs: userPrefs } = useUserPrefs()
   const { data: plans } = usePlans()
+  const addPlanEx = useAddPlanExercise()
+  const removePlanEx = useRemovePlanExercise()
+  const reorderPlan = useReorderPlanExercises()
   const createWorkout = useCreateWorkout()
   const addSet = useAddSet()
   const addSets = useAddSets()
@@ -379,6 +384,8 @@ export default function Workout() {
   const [hypeBusy, setHypeBusy] = useState(false)
   const [altAi, setAltAi] = useState<{ name: string | null; reason: string } | null>(null)
   const [altBusy, setAltBusy] = useState(false)
+  // Tauschen: gewählte Alternative, wartet auf „nur heute / auch im Plan“
+  const [swapTo, setSwapTo] = useState<string | null>(null)
 
   async function findAltAi() {
     if (!selectedExercise || !exercises) return
@@ -409,8 +416,13 @@ export default function Workout() {
   // Übungs-Alternativen: eigene Übungen mit gleicher Primär-Muskelgruppe
   const alternatives = useMemo(() => {
     if (!selectedExercise || !exercises) return []
-    return exercises.filter((e) => e.id !== selectedExercise.id && e.muscle_group === selectedExercise.muscle_group)
-  }, [selectedExercise, exercises])
+    // zuletzt benutzte zuerst (die kennt man und hat Werte dazu)
+    const last = new Map<string, string>()
+    for (const x of allSets ?? []) if (x.date > (last.get(x.exercise_id) ?? '')) last.set(x.exercise_id, x.date)
+    return exercises
+      .filter((e) => e.id !== selectedExercise.id && e.muscle_group === selectedExercise.muscle_group)
+      .sort((a, b) => (last.get(b.id) ?? '').localeCompare(last.get(a.id) ?? '') || a.name.localeCompare(b.name))
+  }, [selectedExercise, exercises, allSets])
 
   const [shareContent, setShareContent] = useState<ShareContent | null>(null)
   function shareToday() {
@@ -747,17 +759,110 @@ export default function Workout() {
   const rest = useRestTimer()
   // Gerade hinzugefügter Satz leuchtet kurz auf (man sieht, wo er gelandet ist)
   const [flashId, setFlashId] = useState<string | null>(null)
-  // Nach „+ Satz“ kurz: als Aufwärm- oder Dropsatz umwandeln (landet dann gleich an der richtigen Stelle)
+  // Hinweis-Leiste über der Aktionsleiste: „Satz hinzugefügt → als Aufwärmen/Drop“, „Satz gelöscht → Rückgängig“
+  type Toast = { text: string; actions: { label: string; icon?: ReactNode; run: () => void }[] }
+  const [toast, setToast] = useState<Toast | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const showToast = (t: Toast) => {
+    setToast(t)
+    clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(null), 5000)
+  }
   const [addedId, setAddedId] = useState<string | null>(null)
-  const addedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const showAdded = (id: string) => {
     setAddedId(id)
-    clearTimeout(addedTimer.current)
-    addedTimer.current = setTimeout(() => setAddedId(null), 5000)
+    showToast({
+      text: 'Satz hinzugefügt',
+      actions: [
+        { label: 'Als Aufwärmen', icon: <Flame size={13} />, run: () => convertAdded('warmup', id) },
+        { label: 'Als Drop', icon: <ArrowDown size={13} />, run: () => convertAdded('drop', id) },
+      ],
+    })
   }
-  function convertAdded(type: SetType) {
-    const set = (latestSets.current ?? []).find((x) => x.id === addedId)
+  /** Gelöschter Satz: mit gleicher ID und gleichen Werten zurückholen. */
+  function onSetDeleted(set: WorkoutSet) {
+    showToast({
+      text:
+        set.set_type === 'warmup'
+          ? 'Aufwärmsatz gelöscht'
+          : set.set_type === 'drop'
+            ? 'Dropsatz gelöscht'
+            : 'Satz gelöscht',
+      actions: [
+        {
+          label: 'Rückgängig',
+          run: () => {
+            const {
+              id,
+              workout_id,
+              exercise_id,
+              set_number,
+              reps,
+              weight,
+              reps_right,
+              weight_right,
+              set_type,
+              to_failure,
+            } = set
+            addSet.mutate({
+              id,
+              workout_id,
+              exercise_id,
+              set_number,
+              reps,
+              weight,
+              reps_right,
+              weight_right,
+              set_type,
+              to_failure,
+            })
+            flashSet(id)
+          },
+        },
+      ],
+    })
+  }
+  /** Satz kopieren: direkt dahinter, nachfolgende rücken auf. */
+  function duplicateSet(set: WorkoutSet) {
+    const list = (latestSets.current ?? [])
+      .filter((x) => x.exercise_id === set.exercise_id && x.workout_id === set.workout_id)
+      .sort((a, b) => b.set_number - a.set_number)
+    for (const x of list)
+      if (x.set_number > set.set_number) updateSet.mutate({ id: x.id, set_number: x.set_number + 1 })
+    const id = newId()
+    addSet.mutate({
+      id,
+      workout_id: set.workout_id,
+      exercise_id: set.exercise_id,
+      set_number: set.set_number + 1,
+      reps: 0,
+      weight: set.weight,
+      reps_right: set.reps_right == null ? null : 0,
+      weight_right: set.weight_right,
+      set_type: set.set_type,
+      to_failure: set.to_failure,
+    })
+    flashSet(id)
+  }
+  /** Aufwärm-Rampe auf Knopfdruck: offene Aufwärmsätze ersetzen durch n neue (40 → 75 %). */
+  function warmupRamp(n: number) {
+    if (!selectedExercise) return
+    const ex = selectedExercise
+    const exSets = setsForExercise
+    const open = exSets.filter((x) => x.set_type === 'warmup' && !isSetDone(x, ex.unilateral))
+    open.forEach((x) => deleteSet.mutate(x))
+    insertWarmups(
+      ex,
+      exSets.filter((x) => !open.includes(x)),
+      workingBase || (exSets.find((x) => x.set_type === 'working')?.weight ?? 0),
+      n,
+    )
+    if (todaysWorkout) writeWarmupPlan(todaysWorkout.id, { ...readWarmupPlan(todaysWorkout.id), [ex.id]: n })
+  }
+  function convertAdded(type: SetType, id = addedId) {
+    const set = (latestSets.current ?? []).find((x) => x.id === id)
     setAddedId(null)
+    setToast(null)
     if (!set) return
     const base = workingBase || set.weight
     if (base > 0 && selectedExercise)
@@ -1040,6 +1145,36 @@ export default function Workout() {
     unpair(exId)
     setExerciseId(after ?? remaining[remaining.length - 1] ?? '')
     setSheet(null)
+  }
+
+  /**
+   * Gerät besetzt → Übung tauschen: Die Alternative ersetzt die aktuelle (nicht erledigte Sätze fallen
+   * weg, erledigte bleiben), auch in der Plan-Liste für heute. `inPlan` ersetzt sie dauerhaft im Plan.
+   */
+  function swapExercise(fromId: string, toId: string, inPlan: boolean) {
+    const list = setsOf(fromId)
+    const done = list.filter((x) => isPerformed(x))
+    removingIds.current.add(fromId)
+    list.filter((x) => !isPerformed(x)).forEach((x) => deleteSet.mutate(x))
+    if (done.length === 0) unpair(fromId)
+    if (woId && planQueue) {
+      setPlanQueue(woId, { ...planQueue, ids: planQueue.ids.map((id) => (id === fromId ? toId : id)) })
+    }
+    if (inPlan && queuePlan && queuePlan.exercise_ids.includes(fromId) && !queuePlan.exercise_ids.includes(toId)) {
+      const ids = queuePlan.exercise_ids.map((id) => (id === fromId ? toId : id))
+      removePlanEx.mutate(
+        { plan_id: queuePlan.id, exercise_id: fromId },
+        {
+          onSuccess: () =>
+            addPlanEx.mutate(
+              { plan_id: queuePlan.id, exercise_id: toId, position: ids.indexOf(toId) },
+              { onSuccess: () => reorderPlan.mutate({ plan_id: queuePlan.id, exercise_ids: ids }) },
+            ),
+        },
+      )
+    }
+    setSwapTo(null)
+    addExerciseToday(toId)
   }
 
   const dateLabel = new Date(today + 'T00:00:00').toLocaleDateString('de-DE', {
@@ -1330,6 +1465,15 @@ export default function Workout() {
                     <Link2 size={11} /> Supersatz
                   </span>
                 )}
+                {!activeSets.some((x) => isPerformed(x)) && (
+                  <button
+                    className="flex shrink-0 items-center gap-1 rounded-full bg-sand px-2.5 py-0.5 text-[11px] font-semibold text-cocoa-light active:scale-95"
+                    onClick={() => setSheet('alts')}
+                    aria-label="Übung tauschen (Gerät besetzt)"
+                  >
+                    <RefreshCw size={11} /> Tauschen
+                  </button>
+                )}
                 {activeHowTo && (
                   <button
                     className="flex shrink-0 items-center gap-1 rounded-full bg-cocoa px-2.5 py-0.5 text-[11px] font-semibold text-cream active:scale-95"
@@ -1364,30 +1508,38 @@ export default function Workout() {
           {activeSets.length > 0 ? (
             <div className="space-y-1">
               <SetTableHeader />
-              {activeSets.map((s, i) => (
-                <CompactSetRow
-                  key={s.id}
-                  set={s}
-                  exercise={active}
-                  badge={badgeFor(s, activeSets)}
-                  prev={prevFor(active.id, s, activeSets)}
-                  onDone={() => onSetDone(active.id, s)}
-                  onMove={{
-                    up: i > 0 ? () => moveSet(activeSets, i, i - 1) : null,
-                    down: i < activeSets.length - 1 ? () => moveSet(activeSets, i, i + 1) : null,
-                  }}
-                  order={activeSets.map((x) => ({
-                    id: x.id,
-                    type: x.set_type,
-                    badge: badgeFor(x, activeSets),
-                    weight: x.weight,
-                    reps: x.reps,
-                  }))}
-                  flash={flashId === s.id}
-                  onMoveTo={(to) => moveSet(activeSets, i, to)}
-                  onChangeType={(t) => changeSetType(s, t)}
-                />
-              ))}
+              <SortableSets
+                items={activeSets}
+                onMove={(from, to) => moveSet(activeSets, from, to)}
+                render={(s, i, handle, dragging) => (
+                  <CompactSetRow
+                    key={s.id}
+                    dragHandle={handle}
+                    dragging={dragging}
+                    set={s}
+                    exercise={active}
+                    badge={badgeFor(s, activeSets)}
+                    prev={prevFor(active.id, s, activeSets)}
+                    onDone={() => onSetDone(active.id, s)}
+                    onMove={{
+                      up: i > 0 ? () => moveSet(activeSets, i, i - 1) : null,
+                      down: i < activeSets.length - 1 ? () => moveSet(activeSets, i, i + 1) : null,
+                    }}
+                    order={activeSets.map((x) => ({
+                      id: x.id,
+                      type: x.set_type,
+                      badge: badgeFor(x, activeSets),
+                      weight: x.weight,
+                      reps: x.reps,
+                    }))}
+                    flash={flashId === s.id}
+                    onMoveTo={(to) => moveSet(activeSets, i, to)}
+                    onChangeType={(t) => changeSetType(s, t)}
+                    onDeleted={onSetDeleted}
+                    onDuplicate={() => duplicateSet(s)}
+                  />
+                )}
+              />
             </div>
           ) : (
             <button className="btn-primary w-full" onClick={addTemplate} disabled={busy}>
@@ -1405,23 +1557,22 @@ export default function Workout() {
             bottom: 'calc(82px + env(safe-area-inset-bottom))',
           }}
         >
-          {addedId && (
+          {toast && (
             <div className="anim-fade mb-2 flex items-center gap-2 rounded-2xl bg-cocoa px-3 py-2 text-sm text-bg shadow-lg dark:bg-sand-light dark:text-cocoa">
-              <span className="min-w-0 flex-1 truncate font-semibold">Satz hinzugefügt</span>
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded-full bg-bg/15 px-2.5 py-1 text-xs font-semibold dark:bg-cocoa/10"
-                onClick={() => convertAdded('warmup')}
-              >
-                <Flame size={13} /> Als Aufwärmen
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded-full bg-bg/15 px-2.5 py-1 text-xs font-semibold dark:bg-cocoa/10"
-                onClick={() => convertAdded('drop')}
-              >
-                <ArrowDown size={13} /> Als Drop
-              </button>
+              <span className="min-w-0 flex-1 truncate font-semibold">{toast.text}</span>
+              {toast.actions.map((a) => (
+                <button
+                  key={a.label}
+                  type="button"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-bg/15 px-2.5 py-1 text-xs font-semibold dark:bg-cocoa/10"
+                  onClick={() => {
+                    setToast(null)
+                    a.run()
+                  }}
+                >
+                  {a.icon} {a.label}
+                </button>
+              ))}
             </div>
           )}
           <div className="flex items-center gap-2 rounded-3xl bg-cream/95 p-2 shadow-[0_4px_24px_rgb(0_0_0/0.12)] ring-1 ring-sand-dark/40 backdrop-blur">
@@ -1493,7 +1644,7 @@ export default function Workout() {
               <MenuIcon>
                 <RefreshCw size={17} />
               </MenuIcon>
-              <span className="flex-1">Gerät besetzt? Alternative</span>
+              <span className="flex-1">Gerät besetzt? Übung tauschen</span>
               <ChevronRight size={16} className="text-cocoa-muted" />
             </button>
             <button
@@ -1507,6 +1658,39 @@ export default function Workout() {
               </MenuIcon>
               Satz hinzufügen
             </button>
+            {!activeSets.some((x) => x.set_type === 'warmup' && isSetDone(x, active.unilateral)) && (
+              <div className="flex min-h-[3.25rem] items-center gap-3 px-4 py-2.5">
+                <MenuIcon>
+                  <Flame size={17} />
+                </MenuIcon>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold">Aufwärmsätze</span>
+                  <span className="block text-xs text-cocoa-muted">Steigend bis ~75 % vom Arbeitsgewicht</span>
+                </span>
+                <span className="flex shrink-0 gap-1 rounded-full bg-sand p-1">
+                  {[0, 1, 2, 3].map((n) => {
+                    const cur = activeSets.filter((x) => x.set_type === 'warmup').length
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        aria-label={`${n} Aufwärmsätze`}
+                        aria-pressed={cur === n}
+                        onClick={() => {
+                          warmupRamp(n)
+                          setSheet(null)
+                        }}
+                        className={`tabular h-8 w-8 rounded-full text-sm font-semibold transition ${
+                          cur === n ? 'bg-cream text-cocoa shadow-sm' : 'text-cocoa-light'
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    )
+                  })}
+                </span>
+              </div>
+            )}
             {activeSets.length > 0 && (
               <button
                 className="text-red-500 dark:text-red-400"
@@ -1686,28 +1870,80 @@ export default function Workout() {
 
       {sheet === 'alts' && active && (
         <PremiumSheet
-          title="Alternative Übung"
+          title="Übung tauschen"
           subtitle={`Statt ${active.name} · ${active.muscle_group}`}
           onClose={() => {
             setSheet(null)
             setAltAi(null)
+            setSwapTo(null)
           }}
           bodyClassName="space-y-3"
         >
-          {alternatives.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {alternatives.map((a) => (
+          {swapTo ? (
+            <div className="anim-fade space-y-2">
+              <p className="px-1 text-sm text-cocoa-light">
+                <span className="font-semibold text-cocoa">{exById.get(swapTo)?.name}</span> statt {active.name} – nur
+                heute oder auch künftig im Plan „{queuePlan?.name}“?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  key={a.id}
-                  className="rounded-full bg-sand px-3 py-1.5 text-sm font-semibold text-cocoa transition active:scale-95"
-                  onClick={() => addExerciseToday(a.id)}
+                  className="btn rounded-2xl bg-sand py-3 text-cocoa"
+                  onClick={() => swapExercise(active.id, swapTo, false)}
                 >
-                  {a.name}
+                  Nur heute
                 </button>
-              ))}
+                <button className="btn-primary rounded-2xl py-3" onClick={() => swapExercise(active.id, swapTo, true)}>
+                  Auch im Plan
+                </button>
+              </div>
+              <button
+                className="w-full py-1.5 text-center text-xs font-semibold text-cocoa-light"
+                onClick={() => setSwapTo(null)}
+              >
+                Andere wählen
+              </button>
             </div>
+          ) : alternatives.length > 0 ? (
+            <ul className="divide-y divide-sand-dark/40 overflow-hidden rounded-2xl bg-cream">
+              {alternatives.map((a) => {
+                const perf = lastPerformance((allSets ?? []).filter((x) => x.exercise_id === a.id))
+                return (
+                  <li key={a.id}>
+                    <button
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-sand-light"
+                      onClick={() =>
+                        queuePlan?.exercise_ids.includes(active.id)
+                          ? setSwapTo(a.id)
+                          : swapExercise(active.id, a.id, false)
+                      }
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold">{a.name}</span>
+                        <span className="block truncate text-xs text-cocoa-muted">{perf ?? 'Noch nicht gemacht'}</span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1 rounded-full bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand">
+                        <RefreshCw size={13} /> Tauschen
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
           ) : (
-            <p className="text-sm text-cocoa-light">Keine eigene Übung mit gleicher Muskelgruppe.</p>
+            <p className="text-sm text-cocoa-light">
+              Keine eigene Übung mit gleicher Muskelgruppe – füge unten eine hinzu.
+            </p>
+          )}
+          {!swapTo && (
+            <button
+              className="flex w-full items-center justify-center gap-1.5 py-1.5 text-sm font-semibold text-cocoa-light"
+              onClick={() => {
+                setSwapTo(null)
+                setSheet('picker')
+              }}
+            >
+              <Plus size={15} /> Andere Übung suchen
+            </button>
           )}
           {gate.enabled && (
             <button
@@ -1726,7 +1962,10 @@ export default function Workout() {
                 className="anim-fade w-full rounded-2xl bg-brand/10 p-3.5 text-left text-sm"
                 onClick={() => {
                   const ex = exercises?.find((e) => e.name === altAi.name)
-                  if (ex) addExerciseToday(ex.id)
+                  if (ex)
+                    queuePlan?.exercise_ids.includes(active.id)
+                      ? setSwapTo(ex.id)
+                      : swapExercise(active.id, ex.id, false)
                   setAltAi(null)
                 }}
               >

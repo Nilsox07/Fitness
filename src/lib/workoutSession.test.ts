@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  dropIndex,
   placeForType,
   renumberedSets,
   afterSetDone,
@@ -166,5 +167,19 @@ describe('Typ ändern sortiert ein', () => {
   })
   it('Drop ans Ende', () => {
     expect(order(placeForType(L, 'a', 'drop'))).toEqual(['w', 'b', 'd', 'n', 'a'])
+  })
+})
+
+describe('Ziehen: Zielposition', () => {
+  const h = [60, 60, 60, 60]
+  it('über die Hälfte der Nachbarzeile = eine Position weiter', () => {
+    expect(dropIndex(2, -20, h)).toBe(2)
+    expect(dropIndex(2, -35, h)).toBe(1)
+    expect(dropIndex(2, -100, h)).toBe(0)
+    expect(dropIndex(0, 95, h)).toBe(2)
+  })
+  it('nicht über die Liste hinaus', () => {
+    expect(dropIndex(0, -300, h)).toBe(0)
+    expect(dropIndex(3, 300, h)).toBe(3)
   })
 })

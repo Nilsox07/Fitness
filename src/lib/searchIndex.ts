@@ -111,6 +111,22 @@ export const SEARCH_ENTRIES: SearchEntry[] = [
     keywords: 'teilen instagram story whatsapp status bild sticker durchsichtig posten',
   },
   {
+    id: 'swap-exercise',
+    label: 'Übung tauschen',
+    sub: 'Gerät besetzt? „Tauschen“ an der Übung',
+    section: 'Training',
+    to: '/',
+    keywords: 'tauschen gerät besetzt maschine belegt alternative ersetzen statt übung wechseln',
+  },
+  {
+    id: 'move-set',
+    label: 'Satz verschieben',
+    sub: 'Satznummer gedrückt halten und ziehen',
+    section: 'Training',
+    to: '/',
+    keywords: 'satz verschieben reihenfolge ziehen sortieren aufwärmsatz nach oben drop duplizieren rückgängig',
+  },
+  {
     id: 'set-scheme',
     label: 'Sätze pro Übung',
     sub: 'Arbeitssätze, Aufwärmen, Dropsatz',

@@ -287,3 +287,21 @@ export function placeForType<T extends { id: string; set_number: number; set_typ
   next.splice(to, 0, list[from])
   return next.flatMap((s, i) => (s.set_number === i + 1 ? [] : [{ id: s.id, set_number: i + 1 }]))
 }
+
+/** Zielposition aus Verschiebung in Pixeln und den Zeilenhöhen (Ziehen in SortableSets; getestet in workoutSession.test.ts). */
+export function dropIndex(from: number, dy: number, heights: readonly number[]): number {
+  let to = from
+  let rest = dy
+  if (dy > 0) {
+    while (to < heights.length - 1 && rest > heights[to + 1] / 2) {
+      rest -= heights[to + 1]
+      to++
+    }
+  } else {
+    while (to > 0 && -rest > heights[to - 1] / 2) {
+      rest += heights[to - 1]
+      to--
+    }
+  }
+  return to
+}

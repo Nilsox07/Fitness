@@ -1,7 +1,7 @@
 // Optionen eines Satzes (Satz-Kürzel antippen): Art, bis zum Versagen, Reihenfolge, Löschen.
 
 import type { ReactNode } from 'react'
-import { ArrowDown, ChevronDown, ChevronUp, Dumbbell, Flame, Trash2 } from 'lucide-react'
+import { ArrowDown, ChevronDown, ChevronUp, Copy, Dumbbell, Flame, Trash2 } from 'lucide-react'
 import { PremiumSheet } from '../ui/PremiumSheet'
 import { Toggle } from '../profile/ui'
 import { SectionLabel } from '../progress/ProgressHeader'
@@ -34,6 +34,7 @@ export function SetOptionsSheet({
   order,
   onMoveTo,
   onDelete,
+  onDuplicate,
   onClose,
 }: {
   set: WorkoutSet
@@ -47,6 +48,8 @@ export function SetOptionsSheet({
   /** Direkt an Position `index` der Liste setzen (Antippen einer Zeile) */
   onMoveTo?: (index: number) => void
   onDelete: () => void
+  /** Kopie direkt dahinter */
+  onDuplicate?: () => void
   onClose: () => void
 }) {
   const title = s.set_type === 'working' ? `Satz ${badge}` : SET_TYPE_LABEL[s.set_type]
@@ -64,16 +67,30 @@ export function SetOptionsSheet({
       onClose={onClose}
       bodyClassName="space-y-5"
       footer={
-        <button
-          type="button"
-          onClick={() => {
-            onDelete()
-            onClose()
-          }}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-500/10 py-3 text-sm font-semibold text-red-500 transition active:scale-[0.98]"
-        >
-          <Trash2 size={16} /> Satz löschen
-        </button>
+        <div className="flex gap-2">
+          {onDuplicate && (
+            <button
+              type="button"
+              onClick={() => {
+                onDuplicate()
+                onClose()
+              }}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-sand py-3 text-sm font-semibold text-cocoa transition active:scale-[0.98]"
+            >
+              <Copy size={16} /> Duplizieren
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              onDelete()
+              onClose()
+            }}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-500/10 py-3 text-sm font-semibold text-red-500 transition active:scale-[0.98]"
+          >
+            <Trash2 size={16} /> Löschen
+          </button>
+        </div>
       }
     >
       <section className="space-y-2">
@@ -127,6 +144,9 @@ export function SetOptionsSheet({
           >
             Reihenfolge
           </SectionLabel>
+          <p className="-mt-1 px-1 text-xs text-cocoa-muted">
+            Zeile antippen = dorthin. Oder in der Liste die Satznummer gedrückt halten und ziehen.
+          </p>
           {order && order.length > 1 && (
             <ol className="space-y-1" aria-label="Reihenfolge der Sätze">
               {order.map((o, idx) => {
